@@ -1,5 +1,5 @@
 module.exports = {
-  productName: "TangSengDaoDao", //项目名
+  productName: "DMWork", //项目名
   appId: "com.xinbida.macapp",
   copyright: "Copyright © ShangHaiXinBiDa", //版权
   directories: {

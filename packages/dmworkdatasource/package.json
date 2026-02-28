@@ -1,0 +1,9 @@
+{
+  "name": "@dmwork/datasource",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "dependencies": {
+    "@dmwork/base": "*",
+    "axios": "^0.25.0"
+  }
+}

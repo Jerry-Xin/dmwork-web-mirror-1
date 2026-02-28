@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import  { BaseModule, WKApp } from '@tsdaodao/base';
-import  { LoginModule } from '@tsdaodao/login';
-import  { DataSourceModule } from '@tsdaodao/datasource';
-import {ContactsModule} from '@tsdaodao/contacts';
+import  { BaseModule, WKApp } from '@dmwork/base';
+import  { LoginModule } from '@dmwork/login';
+import  { DataSourceModule } from '@dmwork/datasource';
+import {ContactsModule} from '@dmwork/contacts';
 
 const apiURL = "https://api.botgate.cn/v1/"
 

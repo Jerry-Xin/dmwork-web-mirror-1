@@ -12,6 +12,7 @@ export class LoginStatus {
 export enum LoginType {
     qrcode, // 二维码登录
     phone, // 手机号登录
+    register, // 注册
 }
 
 export class LoginVM extends ProviderListener {
@@ -34,6 +35,13 @@ export class LoginVM extends ProviderListener {
     // ---------- 手机登录方式 ----------
     username?:string
     password?:string
+
+    // ---------- 注册方式 ----------
+    registerUsername?:string
+    registerName?:string
+    registerPassword?:string
+    registerConfirmPassword?:string
+    registerLoading: boolean = false
 
     set autoRefresh(v: boolean) {
         this._autoRefresh = v
@@ -136,6 +144,24 @@ export class LoginVM extends ProviderListener {
             this.loginLoading = false
             this.notifyListener()
         }) // flag 0.app 1.pc
+    }
+
+    async requestRegister(username: string, name: string, password: string) {
+        this.registerLoading = true
+        this.notifyListener()
+        const device = this.getDevice()
+        return WKApp.apiClient.post(`user/usernameregister`, {
+            "username": username,
+            "name": name,
+            "password": password,
+            "flag": 1,
+            "device": device,
+        }).then((result) => {
+            this.loginSuccess(result)
+        }).finally(() => {
+            this.registerLoading = false
+            this.notifyListener()
+        })
     }
 
     getDevice() {

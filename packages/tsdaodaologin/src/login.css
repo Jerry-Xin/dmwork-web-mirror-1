@@ -93,6 +93,15 @@
     cursor: pointer;
 }
 
+.wk-login-content-form-switch {
+    color: var(--wk-color-theme);
+    font-size: 15px;
+    font-weight: normal;
+    text-align: center;
+    cursor: pointer;
+    margin-top: 16px;
+}
+
 .wk-login-footer {
     color: #262626;
     font-size: 16px;

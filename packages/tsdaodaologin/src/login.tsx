@@ -72,6 +72,67 @@ class Login extends Component<any, LoginState> {
                                 }}>
                                     扫描登录
                                 </div>
+                                <div className="wk-login-content-form-switch" onClick={() => {
+                                    vm.loginType = LoginType.register
+                                }}>
+                                    没有账号？注册
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="wk-login-content-phonelogin" style={{ "display": vm.loginType === LoginType.register ? "block" : "none" }}>
+                        <div className="wk-login-content-logo">
+                            <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="logo" />
+                        </div>
+                        <div className="wk-login-content-slogan">
+                            注册新账号
+                        </div>
+                        <div className="wk-login-content-form">
+                            <input type="text" placeholder="用户名（8-22位英文或数字）" onChange={(v) => {
+                                vm.registerUsername = v.target.value
+                            }}></input>
+                            <input type="text" placeholder="昵称" onChange={(v) => {
+                                vm.registerName = v.target.value
+                            }}></input>
+                            <input type="password" placeholder="密码" onChange={(v) => {
+                                vm.registerPassword = v.target.value
+                            }}></input>
+                            <input type="password" placeholder="确认密码" onChange={(v) => {
+                                vm.registerConfirmPassword = v.target.value
+                            }}></input>
+                            <div className="wk-login-content-form-buttons">
+                                <Button loading={vm.registerLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
+                                    if (!vm.registerUsername) {
+                                        Toast.error("用户名不能为空！")
+                                        return
+                                    }
+                                    if (!/^[a-zA-Z0-9]{8,22}$/.test(vm.registerUsername)) {
+                                        Toast.error("用户名必须为8-22位英文或数字！")
+                                        return
+                                    }
+                                    if (!vm.registerName) {
+                                        Toast.error("昵称不能为空！")
+                                        return
+                                    }
+                                    if (!vm.registerPassword) {
+                                        Toast.error("密码不能为空！")
+                                        return
+                                    }
+                                    if (vm.registerPassword !== vm.registerConfirmPassword) {
+                                        Toast.error("两次密码输入不一致！")
+                                        return
+                                    }
+                                    vm.requestRegister(vm.registerUsername, vm.registerName, vm.registerPassword).catch((err) => {
+                                        Toast.error(err.msg)
+                                    })
+                                }}>注册</Button>
+                            </div>
+                            <div className="wk-login-content-form-others">
+                                <div className="wk-login-content-form-switch" onClick={() => {
+                                    vm.loginType = LoginType.phone
+                                }}>
+                                    已有账号？登录
+                                </div>
                             </div>
                         </div>
                     </div>

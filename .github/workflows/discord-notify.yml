@@ -1,0 +1,78 @@
+name: 📢 Discord Notifications
+
+on:
+  issues:
+    types: [opened, closed, reopened]
+  pull_request:
+    types: [opened, closed, merged]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  notify:
+    runs-on: self-hosted
+    steps:
+      - name: 🔔 Notify Discord
+        env:
+          DISCORD_WEBHOOK_TEST: ${{ secrets.DISCORD_WEBHOOK_TEST }}
+          DISCORD_WEBHOOK_REVIEW: ${{ secrets.DISCORD_WEBHOOK_REVIEW }}
+        run: |
+          # Issue events → #测试
+          if [ "${{ github.event_name }}" = "issues" ]; then
+            ACTION="${{ github.event.action }}"
+            TITLE="${{ github.event.issue.title }}"
+            URL="${{ github.event.issue.html_url }}"
+            NUM="${{ github.event.issue.number }}"
+            LABELS=$(echo '${{ toJSON(github.event.issue.labels) }}' | jq -r '.[].name' | tr '\n' ', ' | sed 's/,$//')
+            
+            case $ACTION in
+              opened)  EMOJI="🆕"; MSG="新 Issue" ;;
+              closed)  EMOJI="✅"; MSG="Issue 已关闭" ;;
+              reopened) EMOJI="🔄"; MSG="Issue 重新打开" ;;
+            esac
+            
+            curl -s -X POST "$DISCORD_WEBHOOK_TEST" \
+              -H "Content-Type: application/json" \
+              -d "{\"content\": \"${EMOJI} **${MSG}** #${NUM}: ${TITLE}\n标签: ${LABELS}\n${URL}\"}"
+          fi
+          
+          # PR events → #代码评审
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            ACTION="${{ github.event.action }}"
+            TITLE="${{ github.event.pull_request.title }}"
+            URL="${{ github.event.pull_request.html_url }}"
+            NUM="${{ github.event.pull_request.number }}"
+            
+            case $ACTION in
+              opened)  EMOJI="📝"; MSG="新 PR" ;;
+              closed)
+                if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+                  EMOJI="🎉"; MSG="PR 已合并"
+                else
+                  EMOJI="❌"; MSG="PR 已关闭"
+                fi
+                ;;
+            esac
+            
+            curl -s -X POST "$DISCORD_WEBHOOK_REVIEW" \
+              -H "Content-Type: application/json" \
+              -d "{\"content\": \"${EMOJI} **${MSG}** #${NUM}: ${TITLE}\n${URL}\"}"
+          fi
+          
+          # PR Review → #代码评审
+          if [ "${{ github.event_name }}" = "pull_request_review" ]; then
+            STATE="${{ github.event.review.state }}"
+            REVIEWER="${{ github.event.review.user.login }}"
+            PR_TITLE="${{ github.event.pull_request.title }}"
+            URL="${{ github.event.review.html_url }}"
+            
+            case $STATE in
+              approved)          EMOJI="✅"; MSG="已批准" ;;
+              changes_requested) EMOJI="🔄"; MSG="需要修改" ;;
+              commented)         EMOJI="💬"; MSG="已评论" ;;
+            esac
+            
+            curl -s -X POST "$DISCORD_WEBHOOK_REVIEW" \
+              -H "Content-Type: application/json" \
+              -d "{\"content\": \"${EMOJI} **Review ${MSG}** by ${REVIEWER}: ${PR_TITLE}\n${URL}\"}"
+          fi

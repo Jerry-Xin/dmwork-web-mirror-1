@@ -35,7 +35,7 @@ class Login extends Component<any, LoginState> {
                             更愉快的与朋友交流
                         </div>
                         <div className="wk-login-content-form">
-                            <input type="text" placeholder="手机号" onChange={(v) => {
+                            <input type="text" placeholder="手机号或用户名" onChange={(v) => {
                                 vm.username = v.target.value
                             }}></input>
                             <input type="password" placeholder="密码" onChange={(v) => {
@@ -44,24 +44,27 @@ class Login extends Component<any, LoginState> {
                             <div className="wk-login-content-form-buttons">
                                 <Button loading={vm.loginLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
                                     if (!vm.username) {
-                                        Toast.error("手机号不能为空！")
+                                        Toast.error("手机号或用户名不能为空！")
                                         return
                                     }
                                     if (!vm.password) {
                                         Toast.error("密码不能为空！")
                                         return
                                     }
-                                    let fullPhone = vm.username
-                                    if (vm.username.length == 11 && vm.username.substring(0,1) === "1") {
-                                        fullPhone = `0086${vm.username}`
-                                    }else {
-                                        if(vm.username.startsWith("+") ) {
-                                            fullPhone = `00${vm.username.substring(1)}`
-                                        }else if(!vm.username.startsWith("00")) {
-                                            fullPhone = `00${vm.username}`
+                                    let loginName = vm.username
+                                    const isPhoneNumber = /^\+?\d+$/.test(vm.username)
+                                    if (isPhoneNumber) {
+                                        if (vm.username.length == 11 && vm.username.substring(0,1) === "1") {
+                                            loginName = `0086${vm.username}`
+                                        }else {
+                                            if(vm.username.startsWith("+") ) {
+                                                loginName = `00${vm.username.substring(1)}`
+                                            }else if(!vm.username.startsWith("00")) {
+                                                loginName = `00${vm.username}`
+                                            }
                                         }
                                     }
-                                    vm.requestLoginWithUsernameAndPwd(fullPhone, vm.password).catch((err) => {
+                                    vm.requestLoginWithUsernameAndPwd(loginName, vm.password).catch((err) => {
                                         Toast.error(err.msg)
                                     })
                                 }}>登录</Button>

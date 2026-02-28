@@ -26,6 +26,16 @@ export class ContextMenusData {
 }
 
 export default class ContextMenus extends Component<ContextMenusProps, ContextMenusState> implements ContextMenusContext {
+    private static _instances: Set<ContextMenus> = new Set()
+
+    static hideAll() {
+        ContextMenus._instances.forEach((instance) => {
+            if (instance.isShow()) {
+                instance.hide()
+            }
+        })
+    }
+
     _gHandleClick!: () => void
     constructor(props: any) {
         super(props)
@@ -54,6 +64,12 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
         if (!this.contextMenusRef) {
             return
         }
+        // Hide all other open context menus before showing this one
+        ContextMenus._instances.forEach((instance) => {
+            if (instance !== this && instance.isShow()) {
+                instance.hide()
+            }
+        })
         const clickX = event.clientX;
         const clickY = event.clientY;
         const screenW = window.innerWidth;
@@ -89,6 +105,7 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
     contextMenusRef!: HTMLDivElement | null
 
     componentDidMount() {
+        ContextMenus._instances.add(this)
         const { onContext } = this.props
         if (onContext) {
             onContext(this)
@@ -96,6 +113,7 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
     }
 
     componentWillUnmount() {
+        ContextMenus._instances.delete(this)
     }
 
     render(): ReactNode {
@@ -118,7 +136,7 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
 
             </div>
             <div className="wk-contextmenus-mask" style={{ "visibility": showContextMenus ? "visible" : "hidden" }} onClick={() => {
-                this._handleClick()
+                ContextMenus.hideAll()
             }}>
 
             </div>

@@ -10,12 +10,20 @@ interface FileToolbarProps {
     icon: string
 }
 
+const BLOCKED_EXTENSIONS = [
+    "exe", "bat", "sh", "cmd", "msi", "dll", "php", "jsp", "apk",
+    "com", "scr", "pif", "vbs", "js", "wsf", "ps1",
+]
+
+const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+
 interface FileToolbarState {
     showDialog: boolean
     file?: File
     fileName?: string
     fileSize?: number
     fileExtension?: string
+    sending: boolean
 }
 
 export default class FileToolbar extends Component<FileToolbarProps, FileToolbarState> {
@@ -25,6 +33,7 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
         super(props)
         this.state = {
             showDialog: false,
+            sending: false,
         }
     }
 
@@ -35,6 +44,20 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
     onFileChange() {
         const file = this.$fileInput.files[0]
         if (!file) return
+
+        if (file.size > MAX_FILE_SIZE) {
+            alert(`文件大小不能超过 100MB，当前文件大小为 ${this.formatFileSize(file.size)}`)
+            return
+        }
+
+        const name = file.name || ""
+        const dotIndex = name.lastIndexOf(".")
+        const ext = dotIndex > 0 ? name.substring(dotIndex + 1).toLowerCase() : ""
+        if (BLOCKED_EXTENSIONS.includes(ext)) {
+            alert(`不允许发送 .${ext} 类型的文件`)
+            return
+        }
+
         this.showFile(file)
     }
 
@@ -56,16 +79,22 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
         })
     }
 
-    onSend = () => {
+    onSend = async () => {
         const { conversationContext } = this.props
         const { file, fileName, fileExtension, fileSize } = this.state
 
-        if (file) {
-            const content = new FileContent(file, fileName, fileExtension, fileSize)
-            conversationContext.sendMessage(content)
-        }
+        if (!file) return
 
-        this.setState({ showDialog: false })
+        this.setState({ sending: true })
+
+        try {
+            const content = new FileContent(file, fileName, fileExtension, fileSize)
+            await conversationContext.sendMessage(content)
+            this.setState({ showDialog: false, sending: false })
+        } catch (err) {
+            this.setState({ sending: false })
+            alert("文件发送失败，请重试")
+        }
     }
 
     onClose = () => {
@@ -94,7 +123,7 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
 
     render(): ReactNode {
         const { icon } = this.props
-        const { showDialog, fileName, fileSize, fileExtension } = this.state
+        const { showDialog, fileName, fileSize, fileExtension, sending } = this.state
         const iconInfo = this.getFileIconInfo(fileExtension || "")
 
         return (
@@ -133,8 +162,8 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
                                     </div>
                                 </div>
                                 <div className="wk-filedialog-footer">
-                                    <button onClick={this.onClose}>取消</button>
-                                    <button className="wk-filedialog-footer-okbtn" onClick={this.onSend} style={{ backgroundColor: "var(--wk-color-theme)" }}>发送</button>
+                                    <button onClick={this.onClose} disabled={sending}>取消</button>
+                                    <button className="wk-filedialog-footer-okbtn" onClick={this.onSend} disabled={sending} style={{ backgroundColor: "var(--wk-color-theme)", opacity: sending ? 0.6 : 1 }}>{sending ? "发送中..." : "发送"}</button>
                                 </div>
                             </div>
                         </div>

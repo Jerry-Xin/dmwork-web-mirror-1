@@ -65,6 +65,10 @@ function isPreviewable(extension: string): boolean {
     return ["pdf", "png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)
 }
 
+function isSafeURL(url: string): boolean {
+    return url.startsWith("http://") || url.startsWith("https://")
+}
+
 interface FileCellState {
     downloading: boolean
 }
@@ -88,23 +92,32 @@ export class FileCell extends MessageCell<any, FileCellState> {
         const { message } = this.props
         const content = message.content as FileContent
         const url = this.getFileURL(content)
-        if (!url) return
+        if (!url || !isSafeURL(url)) return
 
-        const a = document.createElement("a")
-        a.href = url
-        a.download = content.name || "file"
-        a.target = "_blank"
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
+        try {
+            const a = document.createElement("a")
+            a.href = url
+            a.download = content.name || "file"
+            a.target = "_blank"
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+        } catch {
+            alert("文件下载失败")
+        }
     }
 
     handlePreview = () => {
         const { message } = this.props
         const content = message.content as FileContent
         const url = this.getFileURL(content)
-        if (!url) return
-        window.open(url, "_blank")
+        if (!url || !isSafeURL(url)) return
+
+        try {
+            window.open(url, "_blank")
+        } catch {
+            alert("文件预览失败")
+        }
     }
 
     render() {

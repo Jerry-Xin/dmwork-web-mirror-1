@@ -83,3 +83,18 @@ body[theme-mode=dark] .wk-message-text-recv {
     display: flow-root;
     unicode-bidi: plaintext;
 }
+
+.wk-stream-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background-color: var(--wk-color-theme);
+    animation: wk-stream-blink 1s infinite;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+}
+
+@keyframes wk-stream-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}

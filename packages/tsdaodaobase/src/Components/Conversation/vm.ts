@@ -294,6 +294,25 @@ export default class ConversationVM extends ProviderListener {
             if (!message.send && message.header.reddot) {
                 this.needSetUnread = true
             }
+
+            // 流式消息处理：追加到已有消息
+            if (message.streamNo) {
+                const existMsg = this.findMessageByStreamNo(message.streamNo)
+                if (existMsg) {
+                    if (!existMsg.message.streams) {
+                        existMsg.message.streams = []
+                    }
+                    existMsg.message.streams.push({
+                        clientMsgNo: message.clientMsgNo,
+                        streamSeq: message.streamSeq || 0,
+                        content: message.content
+                    })
+                    existMsg.message.streamFlag = message.streamFlag
+                    this.notifyListener()
+                    return
+                }
+            }
+
             const messageWrap = new MessageWrap(message)
             this.fillOrder(messageWrap)
             this.appendMessage(messageWrap)
@@ -647,6 +666,19 @@ export default class ConversationVM extends ProviderListener {
         for (let i = this.messages.length - 1; i >= 0; i--) {
             const message = this.messages[i]
             if (message.messageID === messageID) {
+                return message
+            }
+        }
+    }
+
+    // 通过streamNo查找流式消息
+    findMessageByStreamNo(streamNo: string): MessageWrap | undefined {
+        if (!this.messages || this.messages.length <= 0) {
+            return
+        }
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+            const message = this.messages[i]
+            if (message.message.streamNo === streamNo) {
                 return message
             }
         }

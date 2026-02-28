@@ -51,8 +51,26 @@ export class TextCell extends MessageCell {
         return <a  key={`${message.clientMsgNo}-link-${k}`} href={link} target="__blank">{part.text}</a>
     }
 
+    getStreamText() {
+        const { message } = this.props
+        const fullText = message.fullStreamContent
+        const texts = fullText.split("\n")
+        return <span className="wk-message-text-commontext">
+            {texts.map((text: string, i: number) => {
+                return <span key={`${message.clientMsgNo}-stream-${i}`} className="wk-message-text-richtext">{text}{i !== texts.length - 1 ? <br /> : undefined}</span>
+            })}
+            {message.isStreaming && <span className="wk-stream-cursor" />}
+        </span>
+    }
+
     getRenderMessageText() {
         const { message } = this.props
+
+        // 流式消息：使用拼接后的完整内容渲染
+        if (message.streamOn) {
+            return this.getStreamText()
+        }
+
         const parts = message.parts
         const elements = new Array<JSX.Element>()
         if (parts && parts.length > 0) {

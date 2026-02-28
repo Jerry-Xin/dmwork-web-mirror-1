@@ -1,4 +1,4 @@
-import { Setting } from "wukongimjssdk"
+import { Setting, StreamFlag } from "wukongimjssdk"
 import { Channel, ChannelInfo, ChannelTypePerson, Conversation, WKSDK, Message, MessageContentType, MessageStatus, MessageText } from "wukongimjssdk"
 import WKApp from "../App"
 import { MessageContentTypeConst, MessageReasonCode, OrderFactor } from "./Const"
@@ -424,6 +424,29 @@ export class MessageWrap {
             }
         }
         return newParts
+    }
+
+    // 是否是流式消息
+    public get streamOn(): boolean {
+        return this.message.streamOn || false
+    }
+
+    // 流式消息是否正在进行中
+    public get isStreaming(): boolean {
+        return this.streamOn && this.message.streamFlag !== StreamFlag.END
+    }
+
+    // 获取流式消息的完整内容（初始内容 + 所有 stream items 的内容拼接）
+    public get fullStreamContent(): string {
+        const text = (this.content as any)?.text || ''
+        if (!this.message.streams || this.message.streams.length === 0) {
+            return text
+        }
+        let result = text
+        for (const item of this.message.streams) {
+            result += (item.content as any)?.text || ''
+        }
+        return result
     }
 
     public get flame(): boolean {

@@ -32,6 +32,15 @@ jobs:
           cache: 'yarn'
 
       - name: 🔧 Install Dependencies
+        run: |
+          git config --global url."https://github.com/".insteadOf "git+ssh://git@github.com/"
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+      - name: 🔧 Fix git SSH → HTTPS
+        run: |
+          git config --global url."https://github.com/".insteadOf "git+ssh://git@github.com/"
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+
+      - name: 🔧 Install Dependencies
         run: yarn install --frozen-lockfile
 
       - name: 🛠️ Build Frontend

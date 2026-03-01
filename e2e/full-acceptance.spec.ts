@@ -69,6 +69,12 @@ test.describe('一、品牌与页面基础', () => {
     const text = await page.locator('body').innerText();
     expect(text).not.toContain('唐僧叨叨');
   });
+  test('1.5 viewport 禁止缩放拼写正确', async ({ page }) => {
+    await page.goto(BASE_URL);
+    const content = await page.locator('meta[name="viewport"]').getAttribute('content');
+    expect(content).toContain('maximum-scale=1.0');
+    expect(content).not.toContain('maximu-scale');
+  });
 });
 
 // ============ 二、注册 ============
@@ -87,11 +93,28 @@ test.describe('二、注册功能', () => {
     const pwdInputs = page.locator('input[type="password"]:visible');
     expect(await pwdInputs.count()).toBe(2);
   });
+  test('2.4 注册表单自动填充提示', async ({ page }) => {
+    await goToRegister(page);
+    const usernameAuto = await page.locator('input[name="reg-username"]:visible').first().getAttribute('autocomplete');
+    const passwordAuto = await page.locator('input[name="reg-password"]:visible').first().getAttribute('autocomplete');
+    const confirmAuto = await page.locator('input[name="reg-confirm-password"]:visible').first().getAttribute('autocomplete');
+    expect(usernameAuto).toBe('username');
+    expect(passwordAuto).toBe('new-password');
+    expect(confirmAuto).toBe('new-password');
+  });
 });
 
 // ============ 三、登录 ============
 test.describe('三、登录功能', () => {
   test.beforeAll(async () => { await ensureUser(USER_A); });
+
+  test('3.0 登录表单包含自动填充提示', async ({ page }) => {
+    await switchToPasswordLogin(page);
+    const usernameAuto = await page.locator('input[name="username"]:visible').first().getAttribute('autocomplete');
+    const passwordAuto = await page.locator('input[name="password"]:visible').first().getAttribute('autocomplete');
+    expect(usernameAuto).toBe('username');
+    expect(['current-password', 'password']).toContain(passwordAuto ?? '');
+  });
 
   test('3.1 切换到密码登录后有输入框', async ({ page }) => {
     await switchToPasswordLogin(page);
@@ -156,5 +179,13 @@ test.describe('五、响应式', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(BASE_URL);
     await expect(page).toHaveTitle('DMWork');
+  });
+  test('5.3 手机无水平滚动', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(BASE_URL);
+    await page.waitForTimeout(500);
+    const sw = await page.evaluate(() => document.documentElement.scrollWidth);
+    const cw = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(sw).toBeLessThanOrEqual(cw + 2);
   });
 });

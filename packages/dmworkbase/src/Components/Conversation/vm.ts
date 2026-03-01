@@ -302,11 +302,18 @@ export default class ConversationVM extends ProviderListener {
                     if (!existMsg.message.streams) {
                         existMsg.message.streams = []
                     }
-                    existMsg.message.streams.push({
-                        clientMsgNo: message.clientMsgNo,
-                        streamSeq: message.streamSeq || 0,
-                        content: message.content
-                    })
+                    const streamSeq = message.streamSeq || 0
+                    // 去重：跳过已存在的 streamSeq
+                    const exists = existMsg.message.streams.some(s => s.streamSeq === streamSeq)
+                    if (!exists) {
+                        existMsg.message.streams.push({
+                            clientMsgNo: message.clientMsgNo,
+                            streamSeq: streamSeq,
+                            content: message.content
+                        })
+                        // 按 streamSeq 排序，确保乱序到达时内容正确拼接
+                        existMsg.message.streams.sort((a, b) => a.streamSeq - b.streamSeq)
+                    }
                     existMsg.message.streamFlag = message.streamFlag
                     this.notifyListener()
                     return

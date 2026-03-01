@@ -14,7 +14,7 @@ server {
         server_name  localhost;
 
         location /api/ {
-            proxy_pass  ${API_URL};
+            proxy_pass  ${API_URL}/;
             client_max_body_size 1000m;
             client_body_buffer_size 500m;
         }

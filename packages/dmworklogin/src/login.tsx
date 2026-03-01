@@ -35,10 +35,10 @@ class Login extends Component<any, LoginState> {
                             AI Agent 时代的即时通讯
                         </div>
                         <div className="wk-login-content-form">
-                            <input type="text" placeholder="手机号或用户名" onChange={(v) => {
+                            <input type="text" name="username" autoComplete="username" placeholder="手机号或用户名" onChange={(v) => {
                                 vm.username = v.target.value
                             }}></input>
-                            <input type="password" placeholder="密码" onChange={(v) => {
+                            <input type="password" name="password" autoComplete="current-password" placeholder="密码" onChange={(v) => {
                                 vm.password = v.target.value
                             }}></input>
                             <div className="wk-login-content-form-buttons">
@@ -91,16 +91,16 @@ class Login extends Component<any, LoginState> {
                             注册新账号
                         </div>
                         <div className="wk-login-content-form">
-                            <input type="text" placeholder="用户名（8-22位英文或数字）" onChange={(v) => {
+                            <input type="text" name="reg-username" autoComplete="username" placeholder="用户名（8-22位英文或数字）" onChange={(v) => {
                                 vm.registerUsername = v.target.value
                             }}></input>
-                            <input type="text" placeholder="昵称" onChange={(v) => {
+                            <input type="text" name="reg-name" autoComplete="name" placeholder="昵称" onChange={(v) => {
                                 vm.registerName = v.target.value
                             }}></input>
-                            <input type="password" placeholder="密码" onChange={(v) => {
+                            <input type="password" name="reg-password" autoComplete="new-password" placeholder="密码" onChange={(v) => {
                                 vm.registerPassword = v.target.value
                             }}></input>
-                            <input type="password" placeholder="确认密码" onChange={(v) => {
+                            <input type="password" name="reg-confirm-password" autoComplete="new-password" placeholder="确认密码" onChange={(v) => {
                                 vm.registerConfirmPassword = v.target.value
                             }}></input>
                             <div className="wk-login-content-form-buttons">

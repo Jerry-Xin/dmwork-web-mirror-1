@@ -59,6 +59,8 @@
     margin-right: auto;
     padding: 0 16px;
     width: 286px;
+    max-width: calc(100vw - 60px);
+    box-sizing: border-box;
 }
 
 .wk-login-content-form-buttons {
@@ -85,6 +87,7 @@
     margin-right: auto;
     margin-top: 40px;
     width: 320px;
+    max-width: calc(100vw - 40px);
 }
 
 .wk-login-content-form-scanlogin {

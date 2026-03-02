@@ -342,9 +342,11 @@ export class OrganizationalGroupNew extends Component<
       })
     }
 
+    // 系统账号不可被拉入群聊
+    const systemUids = ["botfather", "fileHelper"];
     const setFriendData: any[] = [];
     WKApp.dataSource.contactsList.map((item) => {
-      if (!subscriberUids.includes(item.uid)) {
+      if (!subscriberUids.includes(item.uid) && !systemUids.includes(item.uid)) {
         setFriendData.push({
           name: item.name,
           uid: item.uid,

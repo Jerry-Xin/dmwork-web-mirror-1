@@ -79,6 +79,9 @@ export default class DataSourceModule implements IModule {
             } else if (data.category === "visitor") {
                 channelInfo.orgData.identityIcon = "./identity_icon/visitor.png"
                 channelInfo.orgData.identitySize = { width: "48px", height: "24px" }
+            } else if (data.category === "robot" || data.robot === 1) {
+                channelInfo.orgData.identityIcon = "./identity_icon/robot.png"
+                channelInfo.orgData.identitySize = { width: "18px", height: "18px" }
             }
 
 

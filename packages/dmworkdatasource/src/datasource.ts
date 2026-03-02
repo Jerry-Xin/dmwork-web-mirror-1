@@ -282,6 +282,8 @@ export class CommonDataSource implements ICommonDataSource {
         contacts.status = resultDic["status"] || 0
         contacts.follow = resultDic["follow"] || 0
         contacts.vercode = resultDic["vercode"] || ""
+        contacts.robot = resultDic["robot"] === 1
+        contacts.category = resultDic["category"] || ""
 
         return contacts
     }

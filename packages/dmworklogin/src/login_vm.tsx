@@ -210,7 +210,8 @@ export class LoginVM extends ProviderListener {
         return WKApp.apiClient.post('user/emailregister', {
             email, code, password, name, flag: 1, device,
         }).then((result) => {
-            this.loginSuccess(result)
+            // emailregister wraps response in {data: ...}
+            this.loginSuccess(result.data || result)
         }).finally(() => {
             this.registerLoading = false
             this.notifyListener()
@@ -224,7 +225,8 @@ export class LoginVM extends ProviderListener {
         return WKApp.apiClient.post('user/emaillogin', {
             email, password, flag: 1, device,
         }).then((result) => {
-            this.loginSuccess(result)
+            // emaillogin wraps response in {data: ...}
+            this.loginSuccess(result.data || result)
         }).finally(() => {
             this.loginLoading = false
             this.notifyListener()

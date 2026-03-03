@@ -244,3 +244,17 @@
     height: 50px;
     cursor: pointer;
 }
+/* 验证码行 */
+.wk-login-content-form-code-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.wk-login-content-form-code-row input {
+    flex: 1;
+}
+.wk-login-content-form-code-btn {
+    min-width: 110px;
+    white-space: nowrap;
+    height: 42px;
+}

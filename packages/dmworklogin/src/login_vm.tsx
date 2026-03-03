@@ -13,6 +13,7 @@ export enum LoginType {
     qrcode, // 二维码登录
     phone, // 手机号登录
     register, // 注册
+    forgetPassword, // 忘记密码
 }
 
 export class LoginVM extends ProviderListener {
@@ -42,6 +43,23 @@ export class LoginVM extends ProviderListener {
     registerPassword?:string
     registerConfirmPassword?:string
     registerLoading: boolean = false
+
+    // ---------- 邮箱注册方式 ----------
+    registerEmail?:string
+    registerEmailCode?:string
+    registerEmailPassword?:string
+    registerEmailConfirmPassword?:string
+    registerEmailName?:string
+    emailCodeSending: boolean = false
+    emailCodeCountdown: number = 0
+    private _countdownTimer?: any
+
+    // ---------- 忘记密码 ----------
+    forgetEmail?:string
+    forgetCode?:string
+    forgetNewPassword?:string
+    forgetConfirmPassword?:string
+    forgetLoading: boolean = false
 
     set autoRefresh(v: boolean) {
         this._autoRefresh = v
@@ -160,6 +178,66 @@ export class LoginVM extends ProviderListener {
             this.loginSuccess(result)
         }).finally(() => {
             this.registerLoading = false
+            this.notifyListener()
+        })
+    }
+
+    async requestEmailSendCode(email: string, codeType: number = 0) {
+        this.emailCodeSending = true
+        this.notifyListener()
+        return WKApp.apiClient.post('user/email/sendcode', {
+            email: email,
+            code_type: codeType,
+        }).then(() => {
+            this.emailCodeCountdown = 60
+            this._countdownTimer = setInterval(() => {
+                this.emailCodeCountdown--
+                if (this.emailCodeCountdown <= 0) {
+                    clearInterval(this._countdownTimer)
+                }
+                this.notifyListener()
+            }, 1000)
+        }).finally(() => {
+            this.emailCodeSending = false
+            this.notifyListener()
+        })
+    }
+
+    async requestEmailRegister(email: string, code: string, password: string, name: string) {
+        this.registerLoading = true
+        this.notifyListener()
+        const device = this.getDevice()
+        return WKApp.apiClient.post('user/emailregister', {
+            email, code, password, name, flag: 1, device,
+        }).then((result) => {
+            this.loginSuccess(result)
+        }).finally(() => {
+            this.registerLoading = false
+            this.notifyListener()
+        })
+    }
+
+    async requestEmailLogin(email: string, password: string) {
+        this.loginLoading = true
+        this.notifyListener()
+        const device = this.getDevice()
+        return WKApp.apiClient.post('user/emaillogin', {
+            email, password, flag: 1, device,
+        }).then((result) => {
+            this.loginSuccess(result)
+        }).finally(() => {
+            this.loginLoading = false
+            this.notifyListener()
+        })
+    }
+
+    async requestForgetPassword(email: string, code: string, newPassword: string) {
+        this.forgetLoading = true
+        this.notifyListener()
+        return WKApp.apiClient.post('user/email/forgetpwd', {
+            email, code, new_password: newPassword,
+        }).finally(() => {
+            this.forgetLoading = false
             this.notifyListener()
         })
     }

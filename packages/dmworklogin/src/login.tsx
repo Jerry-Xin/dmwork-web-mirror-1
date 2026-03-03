@@ -35,7 +35,7 @@ class Login extends Component<any, LoginState> {
                             AI Agent 时代的即时通讯
                         </div>
                         <div className="wk-login-content-form">
-                            <input type="text" name="username" autoComplete="username" placeholder="手机号或用户名" onChange={(v) => {
+                            <input type="text" name="username" autoComplete="username" placeholder="邮箱 / 用户名" onChange={(v) => {
                                 vm.username = v.target.value
                             }}></input>
                             <input type="password" name="password" autoComplete="current-password" placeholder="密码" onChange={(v) => {
@@ -44,29 +44,23 @@ class Login extends Component<any, LoginState> {
                             <div className="wk-login-content-form-buttons">
                                 <Button loading={vm.loginLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
                                     if (!vm.username) {
-                                        Toast.error("手机号或用户名不能为空！")
+                                        Toast.error("邮箱或用户名不能为空！")
                                         return
                                     }
                                     if (!vm.password) {
                                         Toast.error("密码不能为空！")
                                         return
                                     }
-                                    let loginName = vm.username
-                                    const isPhoneNumber = /^\+?\d+$/.test(vm.username)
-                                    if (isPhoneNumber) {
-                                        if (vm.username.length == 11 && vm.username.substring(0,1) === "1") {
-                                            loginName = `0086${vm.username}`
-                                        }else {
-                                            if(vm.username.startsWith("+") ) {
-                                                loginName = `00${vm.username.substring(1)}`
-                                            }else if(!vm.username.startsWith("00")) {
-                                                loginName = `00${vm.username}`
-                                            }
-                                        }
+                                    const isEmail = vm.username.includes('@')
+                                    if (isEmail) {
+                                        vm.requestEmailLogin(vm.username, vm.password).catch((err) => {
+                                            Toast.error(err.msg)
+                                        })
+                                    } else {
+                                        vm.requestLoginWithUsernameAndPwd(vm.username, vm.password).catch((err) => {
+                                            Toast.error(err.msg)
+                                        })
                                     }
-                                    vm.requestLoginWithUsernameAndPwd(loginName, vm.password).catch((err) => {
-                                        Toast.error(err.msg)
-                                    })
                                 }}>登录</Button>
                             </div>
                             <div className="wk-login-content-form-others">
@@ -80,6 +74,11 @@ class Login extends Component<any, LoginState> {
                                 }}>
                                     没有账号？注册
                                 </div>
+                                <div className="wk-login-content-form-switch" onClick={() => {
+                                    vm.loginType = LoginType.forgetPassword
+                                }}>
+                                    忘记密码
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -91,41 +90,55 @@ class Login extends Component<any, LoginState> {
                             注册新账号
                         </div>
                         <div className="wk-login-content-form">
-                            <input type="text" name="reg-username" autoComplete="username" placeholder="用户名（8-22位英文或数字）" onChange={(v) => {
-                                vm.registerUsername = v.target.value
+                            <input type="email" name="reg-email" autoComplete="email" placeholder="邮箱" onChange={(v) => {
+                                vm.registerEmail = v.target.value
                             }}></input>
+                            <div className="wk-login-content-form-code-row">
+                                <input type="text" name="reg-code" autoComplete="one-time-code" placeholder="验证码" onChange={(v) => {
+                                    vm.registerEmailCode = v.target.value
+                                }}></input>
+                                <Button className="wk-login-content-form-code-btn" disabled={vm.emailCodeCountdown > 0 || vm.emailCodeSending} loading={vm.emailCodeSending} onClick={() => {
+                                    if (!vm.registerEmail || !vm.registerEmail.includes('@')) {
+                                        Toast.error("请输入正确的邮箱地址！")
+                                        return
+                                    }
+                                    vm.requestEmailSendCode(vm.registerEmail, 0).catch((err) => {
+                                        Toast.error(err.msg)
+                                    })
+                                }}>{vm.emailCodeCountdown > 0 ? `${vm.emailCodeCountdown}s` : '发送验证码'}</Button>
+                            </div>
                             <input type="text" name="reg-name" autoComplete="name" placeholder="昵称" onChange={(v) => {
-                                vm.registerName = v.target.value
+                                vm.registerEmailName = v.target.value
                             }}></input>
                             <input type="password" name="reg-password" autoComplete="new-password" placeholder="密码" onChange={(v) => {
-                                vm.registerPassword = v.target.value
+                                vm.registerEmailPassword = v.target.value
                             }}></input>
                             <input type="password" name="reg-confirm-password" autoComplete="new-password" placeholder="确认密码" onChange={(v) => {
-                                vm.registerConfirmPassword = v.target.value
+                                vm.registerEmailConfirmPassword = v.target.value
                             }}></input>
                             <div className="wk-login-content-form-buttons">
                                 <Button loading={vm.registerLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
-                                    if (!vm.registerUsername) {
-                                        Toast.error("用户名不能为空！")
+                                    if (!vm.registerEmail || !vm.registerEmail.includes('@')) {
+                                        Toast.error("请输入正确的邮箱地址！")
                                         return
                                     }
-                                    if (!/^[a-zA-Z0-9]{8,22}$/.test(vm.registerUsername)) {
-                                        Toast.error("用户名必须为8-22位英文或数字！")
+                                    if (!vm.registerEmailCode) {
+                                        Toast.error("验证码不能为空！")
                                         return
                                     }
-                                    if (!vm.registerName) {
+                                    if (!vm.registerEmailName) {
                                         Toast.error("昵称不能为空！")
                                         return
                                     }
-                                    if (!vm.registerPassword) {
+                                    if (!vm.registerEmailPassword) {
                                         Toast.error("密码不能为空！")
                                         return
                                     }
-                                    if (vm.registerPassword !== vm.registerConfirmPassword) {
+                                    if (vm.registerEmailPassword !== vm.registerEmailConfirmPassword) {
                                         Toast.error("两次密码输入不一致！")
                                         return
                                     }
-                                    vm.requestRegister(vm.registerUsername, vm.registerName, vm.registerPassword).catch((err) => {
+                                    vm.requestEmailRegister(vm.registerEmail, vm.registerEmailCode, vm.registerEmailPassword, vm.registerEmailName).catch((err) => {
                                         Toast.error(err.msg)
                                     })
                                 }}>注册</Button>
@@ -135,6 +148,72 @@ class Login extends Component<any, LoginState> {
                                     vm.loginType = LoginType.phone
                                 }}>
                                     已有账号？登录
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="wk-login-content-phonelogin" style={{ "display": vm.loginType === LoginType.forgetPassword ? "block" : "none" }}>
+                        <div className="wk-login-content-logo">
+                            <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="logo" />
+                        </div>
+                        <div className="wk-login-content-slogan">
+                            重置密码
+                        </div>
+                        <div className="wk-login-content-form">
+                            <input type="email" name="forget-email" autoComplete="email" placeholder="注册邮箱" onChange={(v) => {
+                                vm.forgetEmail = v.target.value
+                            }}></input>
+                            <div className="wk-login-content-form-code-row">
+                                <input type="text" name="forget-code" autoComplete="one-time-code" placeholder="验证码" onChange={(v) => {
+                                    vm.forgetCode = v.target.value
+                                }}></input>
+                                <Button className="wk-login-content-form-code-btn" disabled={vm.emailCodeCountdown > 0 || vm.emailCodeSending} loading={vm.emailCodeSending} onClick={() => {
+                                    if (!vm.forgetEmail || !vm.forgetEmail.includes('@')) {
+                                        Toast.error("请输入正确的邮箱地址！")
+                                        return
+                                    }
+                                    vm.requestEmailSendCode(vm.forgetEmail, 2).catch((err) => {
+                                        Toast.error(err.msg)
+                                    })
+                                }}>{vm.emailCodeCountdown > 0 ? `${vm.emailCodeCountdown}s` : '发送验证码'}</Button>
+                            </div>
+                            <input type="password" name="forget-new-pwd" autoComplete="new-password" placeholder="新密码" onChange={(v) => {
+                                vm.forgetNewPassword = v.target.value
+                            }}></input>
+                            <input type="password" name="forget-confirm-pwd" autoComplete="new-password" placeholder="确认新密码" onChange={(v) => {
+                                vm.forgetConfirmPassword = v.target.value
+                            }}></input>
+                            <div className="wk-login-content-form-buttons">
+                                <Button loading={vm.forgetLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
+                                    if (!vm.forgetEmail || !vm.forgetEmail.includes('@')) {
+                                        Toast.error("请输入正确的邮箱地址！")
+                                        return
+                                    }
+                                    if (!vm.forgetCode) {
+                                        Toast.error("验证码不能为空！")
+                                        return
+                                    }
+                                    if (!vm.forgetNewPassword) {
+                                        Toast.error("新密码不能为空！")
+                                        return
+                                    }
+                                    if (vm.forgetNewPassword !== vm.forgetConfirmPassword) {
+                                        Toast.error("两次密码输入不一致！")
+                                        return
+                                    }
+                                    vm.requestForgetPassword(vm.forgetEmail, vm.forgetCode, vm.forgetNewPassword).then(() => {
+                                        Toast.success("密码重置成功，请登录")
+                                        vm.loginType = LoginType.phone
+                                    }).catch((err) => {
+                                        Toast.error(err.msg)
+                                    })
+                                }}>重置密码</Button>
+                            </div>
+                            <div className="wk-login-content-form-others">
+                                <div className="wk-login-content-form-switch" onClick={() => {
+                                    vm.loginType = LoginType.phone
+                                }}>
+                                    返回登录
                                 </div>
                             </div>
                         </div>
@@ -182,7 +261,7 @@ class Login extends Component<any, LoginState> {
                         <div className="wk-login-footer-buttons">
                             <button onClick={() => {
                                 vm.loginType = LoginType.phone
-                            }}>使用手机号登录</button>
+                            }}>使用账号登录</button>
                         </div>
 
                     </div>

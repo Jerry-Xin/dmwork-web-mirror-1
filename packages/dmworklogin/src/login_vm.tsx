@@ -211,7 +211,7 @@ export class LoginVM extends ProviderListener {
             email, code, password, name, flag: 1, device,
         }).then((result) => {
             // emailregister wraps response in {data: ...}
-            this.loginSuccess(result.data || result)
+            this.loginSuccess(result)
         }).finally(() => {
             this.registerLoading = false
             this.notifyListener()
@@ -226,7 +226,7 @@ export class LoginVM extends ProviderListener {
             email, password, flag: 1, device,
         }).then((result) => {
             // emaillogin wraps response in {data: ...}
-            this.loginSuccess(result.data || result)
+            this.loginSuccess(result)
         }).finally(() => {
             this.loginLoading = false
             this.notifyListener()

@@ -66,7 +66,7 @@ function isPreviewable(extension: string): boolean {
 }
 
 function isSafeURL(url: string): boolean {
-    return url.startsWith("http://") || url.startsWith("https://")
+    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")
 }
 
 interface FileCellState {
@@ -83,7 +83,12 @@ export class FileCell extends MessageCell<any, FileCellState> {
 
     getFileURL(content: FileContent): string {
         if (content.url && content.url !== "") {
-            return WKApp.dataSource.commonDataSource.getFileURL(content.url)
+            const fileUrl = WKApp.dataSource.commonDataSource.getFileURL(content.url)
+            // Ensure we have an absolute URL
+            if (fileUrl && !fileUrl.startsWith("http")) {
+                return window.location.origin + "/" + fileUrl.replace(/^\//, "")
+            }
+            return fileUrl
         }
         return ""
     }

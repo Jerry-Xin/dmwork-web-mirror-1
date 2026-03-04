@@ -80,6 +80,14 @@ class Login extends Component<any, LoginState> {
                                     忘记密码
                                 </div>
                             </div>
+                            <div className="wk-login-content-download">
+                                <a href="/download/dmwork.apk" className="wk-login-download-btn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{marginRight: '6px', verticalAlign: 'middle'}}>
+                                        <path d="M17.523 2.234l-3.473 6.012h3.451l-6.973 12.164 2.548-8.164h-3.548l3.473-6.012h-3.451l6.973-12.164zm-2.523 10.766h2.658l-1.418 4.552 3.895-6.786h-2.635l2.418-4.186-3.895 6.786z"/>
+                                    </svg>
+                                    下载 Android 客户端
+                                </a>
+                            </div>
                         </div>
                     </div>
                     <div className="wk-login-content-phonelogin" style={{ "display": vm.loginType === LoginType.register ? "block" : "none" }}>

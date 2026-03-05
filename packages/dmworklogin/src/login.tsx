@@ -7,6 +7,8 @@ import { WKApp, Provider } from "@dmwork/base"
 import { LoginStatus, LoginType, LoginVM } from "./login_vm";
 import classNames from "classnames";
 
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 type LoginState = {
     loginStatus: string
     loginUUID: string
@@ -51,7 +53,7 @@ class Login extends Component<any, LoginState> {
                                         Toast.error("密码不能为空！")
                                         return
                                     }
-                                    const isEmail = vm.username.includes('@')
+                                    const isEmail = isValidEmail(vm.username)
                                     if (isEmail) {
                                         vm.requestEmailLogin(vm.username, vm.password).catch((err) => {
                                             Toast.error(err.msg)
@@ -106,7 +108,7 @@ class Login extends Component<any, LoginState> {
                                     vm.registerEmailCode = v.target.value
                                 }}></input>
                                 <Button className="wk-login-content-form-code-btn" disabled={vm.emailCodeCountdown > 0 || vm.emailCodeSending} loading={vm.emailCodeSending} onClick={() => {
-                                    if (!vm.registerEmail || !vm.registerEmail.includes('@')) {
+                                    if (!vm.registerEmail || !isValidEmail(vm.registerEmail)) {
                                         Toast.error("请输入正确的邮箱地址！")
                                         return
                                     }
@@ -126,7 +128,7 @@ class Login extends Component<any, LoginState> {
                             }}></input>
                             <div className="wk-login-content-form-buttons">
                                 <Button loading={vm.registerLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
-                                    if (!vm.registerEmail || !vm.registerEmail.includes('@')) {
+                                    if (!vm.registerEmail || !isValidEmail(vm.registerEmail)) {
                                         Toast.error("请输入正确的邮箱地址！")
                                         return
                                     }
@@ -176,7 +178,7 @@ class Login extends Component<any, LoginState> {
                                     vm.forgetCode = v.target.value
                                 }}></input>
                                 <Button className="wk-login-content-form-code-btn" disabled={vm.emailCodeCountdown > 0 || vm.emailCodeSending} loading={vm.emailCodeSending} onClick={() => {
-                                    if (!vm.forgetEmail || !vm.forgetEmail.includes('@')) {
+                                    if (!vm.forgetEmail || !isValidEmail(vm.forgetEmail)) {
                                         Toast.error("请输入正确的邮箱地址！")
                                         return
                                     }
@@ -193,7 +195,7 @@ class Login extends Component<any, LoginState> {
                             }}></input>
                             <div className="wk-login-content-form-buttons">
                                 <Button loading={vm.forgetLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
-                                    if (!vm.forgetEmail || !vm.forgetEmail.includes('@')) {
+                                    if (!vm.forgetEmail || !isValidEmail(vm.forgetEmail)) {
                                         Toast.error("请输入正确的邮箱地址！")
                                         return
                                     }

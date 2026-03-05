@@ -484,7 +484,7 @@ export default class ConversationVM extends ProviderListener {
         if (conversation && conversation.reminders && conversation.reminders.length > 0) {
             const ids = new Array<number>()
             for (const reminder of conversation.reminders) {
-                if (reminder.done) {
+                if (!reminder.done) {
                     ids.push(reminder.reminderID)
                 }
             }

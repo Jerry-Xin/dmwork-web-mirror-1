@@ -108,8 +108,8 @@ export default class DataSourceModule implements IModule {
                 }
             }
             members.sort((a, b) => {
-                var roleA = a.role === GroupRole.owner ? 999 : a.role;
-                var roleB = b.role === GroupRole.owner ? 999 : b.role;
+                const roleA = a.role === GroupRole.owner ? 999 : a.role;
+                const roleB = b.role === GroupRole.owner ? 999 : b.role;
                 return roleB - roleA;
             })
             return members;

@@ -66,7 +66,7 @@ export default class ImageToolbar extends Component<ImageToolbarProps, ImageTool
     showFile(file: any) {
         const self = this
         if (file.type && file.type.startsWith('image/')) {
-            var reader = new FileReader();
+            const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onloadend = function (e: any) {
                 self.setState({

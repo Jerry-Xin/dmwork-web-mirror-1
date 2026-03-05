@@ -125,10 +125,10 @@ export class LoginInfo {
 
   // 获取查询参数
   public getQueryVariable(variable: string) {
-    var query = window.location.search.substring(1);
-    var vars = query.split("&");
-    for (var i = 0; i < vars.length; i++) {
-      var pair = vars[i].split("=");
+    const query = window.location.search.substring(1);
+    const vars = query.split("&");
+    for (let i = 0; i < vars.length; i++) {
+      const pair = vars[i].split("=");
       if (pair[0] === variable) {
         return pair[1];
       }
@@ -343,7 +343,7 @@ export default class WKApp extends ProviderListener {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (
       c
     ) {
-      var r = (Math.random() * 16) | 0,
+      const r = (Math.random() * 16) | 0,
         v = c == "x" ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
@@ -585,7 +585,7 @@ export default class WKApp extends ProviderListener {
   }
 
   public getFriendApplys(): Array<FriendApply> {
-    var friendApplys = new Array<FriendApply>();
+    const friendApplys = new Array<FriendApply>();
     const value = WKApp.loginInfo.getStorageItem(this.getFriendApplysKey());
     if (!value || value === "") {
       return friendApplys;
@@ -669,7 +669,7 @@ export default class WKApp extends ProviderListener {
       friendApplys = new Array<FriendApply>();
     }
 
-    var exist = false;
+    let exist = false;
     for (let index = 0; index < friendApplys.length; index++) {
       const friendAy = friendApplys[index];
       if (friendAy.uid === friendApply.uid) {
@@ -693,7 +693,7 @@ export default class WKApp extends ProviderListener {
     if (!friendApplys) {
       friendApplys = new Array<FriendApply>();
     }
-    var exist = false;
+    let exist = false;
     for (let index = 0; index < friendApplys.length; index++) {
       const friendAy = friendApplys[index];
       if (friendAy.uid === friendApply.uid) {

@@ -71,7 +71,7 @@ export default class WaveCanvas extends Component<WaveCanvasProps> {
             }
         }
 
-        var maxWaveform = 0 // 最大波浪的值
+        let maxWaveform = 0 // 最大波浪的值
         for (const value of filteredSamplesMA) {
             if (value > maxWaveform) {
                 maxWaveform = value;

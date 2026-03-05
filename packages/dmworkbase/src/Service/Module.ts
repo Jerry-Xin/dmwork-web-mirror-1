@@ -45,7 +45,7 @@ export class EndpointManager {
     register(endpoint: Endpoint) {
         this.endpointIDMap.set(endpoint.sid, endpoint)
         if (endpoint.category && endpoint.category !== "") {
-            var endpoints = this.endpointCategoryMap.get(endpoint.category)
+            let endpoints = this.endpointCategoryMap.get(endpoint.category)
             if (endpoints && endpoints.length > 0) {
                 endpoints = endpoints.filter((p) => p.sid !== endpoint.sid)
             } else {
@@ -59,24 +59,24 @@ export class EndpointManager {
         return this.endpointIDMap.get(sid);
     }
     getWithCategory(category: string): Endpoint[] | undefined {
-        var endpoints = this.endpointCategoryMap.get(category);
+        const endpoints = this.endpointCategoryMap.get(category);
         endpoints?.sort((a, b) => {
             return a.sort - b.sort;
         });
         return endpoints;
     }
     invoke(sid: string, param?: any) {
-        var endpoint = EndpointManager.shared.get(sid);
+        const endpoint = EndpointManager.shared.get(sid);
         if (endpoint?.handler) {
             return endpoint?.handler!(param);
         }
     }
     invokes<T>(category: string, param?: any) {
-        var endpoints = EndpointManager.shared.getWithCategory(category);
-        var results = new Array<T>();
+        const endpoints = EndpointManager.shared.getWithCategory(category);
+        const results = new Array<T>();
         if (endpoints && endpoints.length > 0) {
             for (const endpoint of endpoints) {
-                var result = endpoint.handler!(param);
+                const result = endpoint.handler!(param);
                 if (result) {
                     results.push(result);
                 }

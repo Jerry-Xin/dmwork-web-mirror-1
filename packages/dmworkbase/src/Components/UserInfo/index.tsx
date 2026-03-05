@@ -30,7 +30,7 @@ export default class UserInfo extends Component<UserInfoProps> {
             return undefined
         }
 
-        var content = <></>
+        let content = <></>
         if (vm.relation() === UserRelation.friend) {
             content = <Button theme='solid' type="primary" onClick={() => {
                 WKApp.shared.baseContext.hideUserInfo()

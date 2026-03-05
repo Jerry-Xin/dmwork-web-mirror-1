@@ -41,7 +41,7 @@ export default class APIClient {
         axios.interceptors.response.use(function (response) {
             return response;
         }, function (error) {
-            var msg = "";
+            let msg = "";
             switch (error.response && error.response.status) {
                 case 400:
                     msg = error.response.data.msg;
@@ -99,13 +99,13 @@ export default class APIClient {
                 const results = new Array<T>()
                 if (value.data instanceof Array) {
                     for (const data of value.data) {
-                        var resp = config.resp()
+                        const resp = config.resp()
                         resp.fill(data)
                         results.push(resp as unknown as T)
                     }
                     return results
                 } else {
-                    var sresp = config.resp()
+                    const sresp = config.resp()
                     sresp.fill(value.data)
                     return Promise.resolve(sresp)
                 }

@@ -13,7 +13,7 @@ export class ConversationProvider implements IConversationProvider {
         if (!messages || messages.length === 0) {
             return undefined
         }
-        var params = []
+        const params = []
         for (const message of messages) {
             params.push({
                 "message_id": message.messageID,
@@ -40,14 +40,14 @@ export class ConversationProvider implements IConversationProvider {
 
     // 同步消息 由于isdelete导致可能一页消息数量不够 甚至没有，所以 syncGetMessages 写成回调
     async syncMessages(channel: Channel, opts: SyncMessageOptions = new SyncMessageOptions()): Promise<Message[]> {
-        var messages = await this.syncGetMessages(channel, opts);
+        const messages = await this.syncGetMessages(channel, opts);
         return messages
     }
 
     async syncGetMessages(channel: Channel, opts: SyncMessageOptions): Promise<Message[]> {
         let messages = new Array<Message>()
         const limit = opts.limit || 15;
-        var resp = await WKApp.apiClient.post(`message/channel/sync`, { "limit": limit, "channel_id": channel.channelID, "channel_type": channel.channelType, "start_message_seq": opts.startMessageSeq || 0, "end_message_seq": opts.endMessageSeq || 0, "pull_mode": opts.pullMode });
+        const resp = await WKApp.apiClient.post(`message/channel/sync`, { "limit": limit, "channel_id": channel.channelID, "channel_type": channel.channelType, "start_message_seq": opts.startMessageSeq || 0, "end_message_seq": opts.endMessageSeq || 0, "pull_mode": opts.pullMode });
         const messageList = resp && resp["messages"]
         if (messageList) {
             messageList.forEach((msg: any) => {

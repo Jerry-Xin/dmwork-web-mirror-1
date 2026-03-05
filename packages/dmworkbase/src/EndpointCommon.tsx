@@ -29,7 +29,7 @@ export class EndpointCommon {
 
   removeOnLogin(v: VoidFunction) {
     const len = this._onLogins.length;
-    for (var i = 0; i < len; i++) {
+    for (let i = 0; i < len; i++) {
       if (v === this._onLogins[i]) {
         this._onLogins.splice(i, 1);
         return;
@@ -227,7 +227,7 @@ export class EndpointCommon {
 
   callOnLogin() {
     const len = this._onLogins.length;
-    for (var i = 0; i < len; i++) {
+    for (let i = 0; i < len; i++) {
       this._onLogins[i]();
     }
   }

@@ -271,7 +271,7 @@ function updateTray(unread = 0, isFlash= false): any {
 }
 
 function createMenu() {
-  var menu = Menu.buildFromTemplate(mainMenu);
+  const menu = Menu.buildFromTemplate(mainMenu);
 
   if (isOsx) {
     // macOS: Set application menu (appears in menu bar)

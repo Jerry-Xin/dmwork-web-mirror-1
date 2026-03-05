@@ -92,7 +92,7 @@ interface EmojiPanelProps {
     onSticker?: (sticker: any) => void
 }
 
-var stickerCategories = new Array<any>()
+let stickerCategories = new Array<any>()
 export class EmojiPanel extends Component<EmojiPanelProps, EmojiPanelState> {
     emojiService: EmojiService
 

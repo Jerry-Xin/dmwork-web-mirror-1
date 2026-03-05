@@ -294,9 +294,9 @@ export function handleGlobalSearchClick(item: any, type: string,hideModal?:()=>v
         const payload = item.payload
         let downloadURL = WKApp.dataSource.commonDataSource.getImageURL(payload.url || '')
         if (downloadURL.indexOf("?") != -1) {
-            downloadURL += "&filename=" + payload.name
+            downloadURL += "&filename=" + encodeURIComponent(payload.name)
         } else {
-            downloadURL += "?filename=" + payload.name
+            downloadURL += "?filename=" + encodeURIComponent(payload.name)
         }
         window.open(`${downloadURL}`, 'top');
     }

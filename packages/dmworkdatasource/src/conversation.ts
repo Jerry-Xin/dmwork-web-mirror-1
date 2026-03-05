@@ -32,7 +32,7 @@ export class ConversationProvider implements IConversationProvider {
     }
 
     markConversationUnread(channel: Channel, unread: number): Promise<void> {
-        return WKApp.apiClient.put('coversation/clearUnread', { "channel_id": channel.channelID, "channel_type": channel.channelType, "unread": unread > 0 ? unread : 0 }).catch(function (error) {
+        return WKApp.apiClient.put('conversation/clearUnread', { "channel_id": channel.channelID, "channel_type": channel.channelType, "unread": unread > 0 ? unread : 0 }).catch(function (error) {
             return error;
         });
 

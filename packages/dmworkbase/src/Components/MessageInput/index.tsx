@@ -11,6 +11,8 @@ import InputStyle from "./defaultStyle";
 import {IconSend} from '@douyinfe/semi-icons';
 import { Notification, Button } from '@douyinfe/semi-ui';
 
+
+const MAX_MESSAGE_LENGTH = 5000;
 export type OnInsertFnc = (text: string) => void
 export type OnAddMentionFnc = (uid: string, name: string) => void
 
@@ -126,9 +128,9 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
     send() {
         const { value } = this.state;
-        if (value && value.length > 5000) {
+        if (value && value.length > MAX_MESSAGE_LENGTH) {
             Notification.error({
-                content: "输入内容长度不能大于5000字符！",
+                content: `输入内容长度不能大于${MAX_MESSAGE_LENGTH}字符！`,
             })
             return
         }

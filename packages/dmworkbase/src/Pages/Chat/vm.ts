@@ -11,6 +11,8 @@ import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
 import { EndpointID } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
 
+
+const TOP_CONVERSATION_SCORE_BOOST = 1000000000000;
 export class ChatVM extends ProviderListener {
     conversations: ConversationWrap[] = new Array()
     loading: boolean = false // 最近会话是否加载中
@@ -226,10 +228,10 @@ export class ChatVM extends ProviderListener {
             let aScore = a.timestamp;
             let bScore = b.timestamp;
             if (a.extra?.top === 1) {
-                aScore += 1000000000000;
+                aScore += TOP_CONVERSATION_SCORE_BOOST;
             }
             if (b.extra?.top === 1) {
-                bScore += 1000000000000;
+                bScore += TOP_CONVERSATION_SCORE_BOOST;
             }
             return bScore - aScore;
         });

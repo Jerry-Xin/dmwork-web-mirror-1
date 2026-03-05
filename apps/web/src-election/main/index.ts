@@ -35,6 +35,8 @@ let isOsx = process.platform === "darwin";
 let isWin = !isOsx;
 
 const isDevelopment = process.env.NODE_ENV !== "production";
+const APP_EXIT_DELAY_MS = 1000;
+const TRAY_FLASH_INTERVAL_MS = 1000;
 
 
 let mainMenu: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[] = [
@@ -54,7 +56,7 @@ let mainMenu: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[] = [
           mainWindow = null;
           setTimeout(() => {
             app.exit(0);
-          }, 1000);
+          }, APP_EXIT_DELAY_MS);
         },
       },
     ],
@@ -195,7 +197,7 @@ let trayMenu: Electron.MenuItemConstructorOptions[] = [
       mainWindow = null;
       setTimeout(() => {
         app.exit(0);
-      }, 1000);
+      }, APP_EXIT_DELAY_MS);
     },
   },
 ];
@@ -257,7 +259,7 @@ function updateTray(unread = 0, isFlash= false): any {
           }else{
             tray.setImage(trayIcon);
           }
-      },1000) // 从500ms改为1000ms，减少CPU使用
+      }, TRAY_FLASH_INTERVAL_MS);
       }else{
         tray.setImage(trayIcon);
         clearInterval(flashTimer);

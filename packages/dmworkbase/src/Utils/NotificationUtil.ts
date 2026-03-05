@@ -16,6 +16,8 @@ declare global {
   }
 }
 
+const NOTIFICATION_TIMEOUT_MS = 5000;
+
 export interface NotificationOptions {
   title: string;
   body: string;
@@ -236,14 +238,14 @@ export class NotificationUtil {
       },
       onClose: () => {
       },
-      timeout: 5000, // 5 seconds auto-close
+      timeout: NOTIFICATION_TIMEOUT_MS,
     });
 
     // Store timeout ID for cleanup
     if (this.messageNotification) {
       this.messageNotificationTimeoutId = window.setTimeout(() => {
         this.messageNotification?.close();
-      }, 5000);
+      }, NOTIFICATION_TIMEOUT_MS);
     }
   }
 

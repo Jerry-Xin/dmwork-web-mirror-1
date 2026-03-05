@@ -1,6 +1,9 @@
 import { ChannelQrcodeResp, Contacts, IChannelDataSource, ICommonDataSource, WKApp, RequestConfig, GroupRole } from "@dmwork/base";
 import { Channel, ChannelInfo, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageContentType,ConversationExtra,Subscriber } from "wukongimjssdk";
 
+const MAX_GROUP_LIST_LIMIT = 100000;
+const MAX_FAVORITES_PAGE_SIZE = 10000;
+
 export class ChannelDataSource implements IChannelDataSource {
 
     async exitChannel(channel: Channel): Promise<void> {
@@ -29,7 +32,7 @@ export class ChannelDataSource implements IChannelDataSource {
     async groupSaveList(): Promise<ChannelInfo[]> {
         const resp = await WKApp.apiClient.get('group/my', {
             param: {
-                "limit": 100000,
+                "limit": MAX_GROUP_LIST_LIMIT,
             }
         });
         const channelInfos = [];
@@ -167,7 +170,7 @@ export class CommonDataSource implements ICommonDataSource {
     }
     getFavoritesAll(): Promise<any> {
         // TODO: 这里先取10000足够 等后面再做分页
-        return WKApp.apiClient.get(`favorite/my?page_index=1&page_size=10000`)
+        return WKApp.apiClient.get(`favorite/my?page_index=1&page_size=${MAX_FAVORITES_PAGE_SIZE}`)
     }
     favorities(message: Message): Promise<void>{
         var content: string = ""

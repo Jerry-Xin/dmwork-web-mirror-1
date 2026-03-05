@@ -324,7 +324,8 @@ const getWindowConfig = () => {
     webPreferences: {
       // 加载脚本
       preload: join(__dirname, "..", "preload/index"),
-      nodeIntegration: true,
+      nodeIntegration: false,
+      contextIsolation: true,
     },
     // frame: !isWin,
   };

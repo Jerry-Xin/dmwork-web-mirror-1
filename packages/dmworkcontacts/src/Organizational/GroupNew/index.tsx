@@ -360,7 +360,8 @@ export class OrganizationalGroupNew extends Component<
 
   onFriendChange(values: string[]) {
     const getFriendOpt: any[] = [];
-    const { friendData, optPersonnelData } = this.state;
+    const { friendData } = this.state;
+    let { optPersonnelData } = this.state;
 
     for (const item of friendData) {
       let exist = false;
@@ -376,12 +377,7 @@ export class OrganizationalGroupNew extends Component<
       } else {
         item.checked = false
         // 删除已选中的
-        for (let i = 0; i < optPersonnelData.length; i++) {
-          if (optPersonnelData[i].uid == item.uid) {
-            optPersonnelData.splice(i, 1);
-            break;
-          }
-        }
+        optPersonnelData = optPersonnelData.filter(p => p.uid !== item.uid);
       }
     }
 

@@ -78,6 +78,13 @@ export class LoginVM extends ProviderListener {
         this.advance()
     }
 
+    didUnMount(): void {
+        if (this._countdownTimer) {
+            clearInterval(this._countdownTimer)
+            this._countdownTimer = undefined
+        }
+    }
+
     set loginType(v: LoginType) {
         this._loginType = v
         if (v === LoginType.qrcode) {

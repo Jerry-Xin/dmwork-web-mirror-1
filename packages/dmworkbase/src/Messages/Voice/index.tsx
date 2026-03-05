@@ -12,12 +12,9 @@ import { MessageWrap } from "../../Service/Model"
 const BenzAMRRecorder = require('benz-amr-recorder');
 
 export class VoiceContent extends MediaMessageContent {
-    url!:string // 语音文件下载地址
-    timeTrad!:number // 语音秒长
-    waveform!:string // 语音波纹 base64编码
-    // url = ""
-    // timeTrad = 0 // 秒长
-    // waveform  = []// 声音波浪
+    url!:string
+    timeTrad!:number
+    waveform!:string
     decodeJSON(content:any) {
         this.url = content["url"] || ""
         this.timeTrad = content["timeTrad"] || 0
@@ -27,16 +24,78 @@ export class VoiceContent extends MediaMessageContent {
         return MessageContentTypeConst.voice
     }
     get conversationDigest() {
-
         return "[语音]"
     }
 }
 
-const playStatusWaitPlay = 1 // 等待播放
-const playStatusPlaying = 2 // 播放中
-const playStatusDownloading = 3 // 下载中
+const playStatusWaitPlay = 1
+const playStatusPlaying = 2
+const playStatusDownloading = 3
 
-let voicePlayer = new BenzAMRRecorder();
+/**
+ * Singleton voice player manager.
+ * Ensures only one voice plays at a time and properly cleans up resources.
+ */
+class VoicePlayerManager {
+    private player: any = null;
+    private activeComponent: VoiceCell | null = null;
+    private activeXhr: XMLHttpRequest | null = null;
+
+    stop() {
+        if (this.player) {
+            try {
+                if (this.player.isPlaying()) {
+                    this.player.stop();
+                }
+            } catch {
+                // ignore errors during cleanup
+            }
+            this.player = null;
+        }
+        if (this.activeXhr) {
+            this.activeXhr.abort();
+            this.activeXhr = null;
+        }
+        if (this.activeComponent) {
+            this.activeComponent.clearTimer();
+            this.activeComponent = null;
+        }
+    }
+
+    createPlayer(component: VoiceCell): any {
+        this.stop();
+        this.player = new BenzAMRRecorder();
+        this.activeComponent = component;
+        return this.player;
+    }
+
+    setXhr(xhr: XMLHttpRequest) {
+        if (this.activeXhr) {
+            this.activeXhr.abort();
+        }
+        this.activeXhr = xhr;
+    }
+
+    clearXhr() {
+        this.activeXhr = null;
+    }
+
+    getPlayer() {
+        return this.player;
+    }
+
+    isActiveComponent(component: VoiceCell): boolean {
+        return this.activeComponent === component;
+    }
+
+    unregister(component: VoiceCell) {
+        if (this.activeComponent === component) {
+            this.stop();
+        }
+    }
+}
+
+const voicePlayerManager = new VoicePlayerManager();
 
 export interface VoiceCellState {
     playStatus:number
@@ -44,10 +103,6 @@ export interface VoiceCellState {
 }
 
 export class VoiceCell extends MessageCell<any,VoiceCellState> {
-    //  canvasRef = React.createRef();
-    //  waveform;
-    //  timeFormat = "00:00"
-    //  voicePlayer
     canvasRef!:React.RefObject<any>
     lightWavformRef!:React.RefObject<any>
     timeRef!:React.RefObject<any>
@@ -77,124 +132,98 @@ export class VoiceCell extends MessageCell<any,VoiceCellState> {
         s = Math.ceil(s);
         let minute = parseInt(`${s / 60}`);
         let second = parseInt(`${s % 60}`);
-        let minuteStr = ""
-        let secondStr = ""
-        if (minute > 9) {
-            minuteStr = `${minute}`
-        } else {
-            minuteStr = `0${minute}`
-        }
-        if (second > 9) {
-            secondStr = `${second}`
-        } else {
-            secondStr = `0${second}`
-        }
+        let minuteStr = minute > 9 ? `${minute}` : `0${minute}`;
+        let secondStr = second > 9 ? `${second}` : `0${second}`;
         return minuteStr + ":" + secondStr
     }
 
-    componentWillUnmount() {
-        if (voicePlayer.isPlaying()) {
-            voicePlayer.stop();
-        }
+    clearTimer() {
         if (this.timer) {
-            clearInterval(this.timer)
+            clearInterval(this.timer);
+            this.timer = undefined;
         }
     }
 
-    playOrPauseVoice(e:any) {
-        if (voicePlayer.isPlaying()) {
-            voicePlayer.stop();
-            
-            this.setState({
-                playStatus: playStatusWaitPlay,
-            })
+    componentWillUnmount() {
+        voicePlayerManager.unregister(this);
+        this.clearTimer();
+    }
 
-            // 当前播放中暂停
-            if (e.currentTarget.className.indexOf('voicePlaying') > -1) {
+    playOrPauseVoice(e:any) {
+        const currentPlayer = voicePlayerManager.getPlayer();
+        if (currentPlayer && currentPlayer.isPlaying()) {
+            const wasThisComponent = voicePlayerManager.isActiveComponent(this);
+            voicePlayerManager.stop();
+            this.setState({ playStatus: playStatusWaitPlay });
+            if (wasThisComponent) {
                 return;
             }
         }
-        voicePlayer = new BenzAMRRecorder()
-        const { message } = this.props
 
+        const player = voicePlayerManager.createPlayer(this);
+        const { message } = this.props;
         const voiceURL = WKApp.dataSource.commonDataSource.getFileURL(this.content.url);
 
         if (message.voiceBuff) {
-            voicePlayer.initWithArrayBuffer(message.voiceBuff).then(() => {
-                voicePlayer.play();
+            player.initWithArrayBuffer(message.voiceBuff).then(() => {
+                player.play();
             });
         } else {
-            this.setState({
-                playStatus: playStatusDownloading,
-            })
-            const p = new Promise((resolve, reject) => {
-                let xhr = new XMLHttpRequest();
-                xhr.open('GET', voiceURL, true);
-                xhr.responseType = 'arraybuffer';
-                xhr.onload = function () {
-                    resolve(this.response);
-                };
-                xhr.onerror = function () {
-                    reject(new Error('Failed to fetch ' + voiceURL));
-                };
-                xhr.send();
-            });
-            p.then((array) => {
-                message.voiceBuff = array
-                voicePlayer.initWithArrayBuffer(array).then(() => {
-                    voicePlayer.play();
+            this.setState({ playStatus: playStatusDownloading });
+            const xhr = new XMLHttpRequest();
+            voicePlayerManager.setXhr(xhr);
+            xhr.open('GET', voiceURL, true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = () => {
+                voicePlayerManager.clearXhr();
+                if (!voicePlayerManager.isActiveComponent(this)) return;
+                message.voiceBuff = xhr.response;
+                player.initWithArrayBuffer(xhr.response).then(() => {
+                    player.play();
                 });
-            })
+            };
+            xhr.onerror = () => {
+                voicePlayerManager.clearXhr();
+                if (voicePlayerManager.isActiveComponent(this)) {
+                    this.setState({ playStatus: playStatusWaitPlay });
+                }
+            };
+            xhr.send();
         }
 
-        voicePlayer.onPlay(() => {
-            this.setState({
-                playStatus: playStatusPlaying,
-            })
-            // 优化: 减少更新频率从100ms到200ms，减少50%的CPU使用
+        player.onPlay(() => {
+            this.setState({ playStatus: playStatusPlaying });
             this.timer = setInterval(() => {
-                const progress = (voicePlayer.getCurrentPosition() / voicePlayer.getDuration()) * 100
-                // console.log(progress)
+                if (!voicePlayerManager.isActiveComponent(this)) {
+                    this.clearTimer();
+                    return;
+                }
+                const progress = (player.getCurrentPosition() / player.getDuration()) * 100;
                 if (this.lightWavformRef.current) {
-                    this.lightWavformRef.current.style.width = `${progress}%`
+                    this.lightWavformRef.current.style.width = `${progress}%`;
                 }
                 if (this.timeRef.current) {
-                    this.timeRef.current.innerText = this.formatSecond(voicePlayer.getDuration() - voicePlayer.getCurrentPosition())
+                    this.timeRef.current.innerText = this.formatSecond(player.getDuration() - player.getCurrentPosition());
                 }
-                // this.setState({
-                //     progress: (this.voicePlayer.getCurrentPosition()/this.content.timeTrad)*100,
-                // })
-
-            }, 200); // 优化: 从100ms改为200ms，减少CPU使用但保持流畅度
+            }, 200);
         });
 
-        voicePlayer.onEnded(() => {
-            if(this.timer) {
-                clearInterval(this.timer)
-                this.timer = undefined
-            }
-           
-            this.setState({
-                playStatus: playStatusWaitPlay,
-            })
+        player.onEnded(() => {
+            this.clearTimer();
+            this.setState({ playStatus: playStatusWaitPlay });
             if (this.lightWavformRef.current) {
-                this.lightWavformRef.current.style.width = `0%`
+                this.lightWavformRef.current.style.width = `0%`;
             }
             if (this.timeRef.current) {
-                this.timeRef.current.innerText = this.formatSecond(voicePlayer.getDuration())
+                this.timeRef.current.innerText = this.formatSecond(player.getDuration());
             }
         });
     }
 
     getPlayStatusClassname() {
         const { playStatus } = this.state
-        if (playStatus === playStatusPlaying) {
-            return "voicePlaying"
-        }
-
-        if (playStatus === playStatusDownloading) {
-            return "voiceDownloading"
-        }
+        if (playStatus === playStatusPlaying) return "voicePlaying"
+        if (playStatus === playStatusDownloading) return "voiceDownloading"
         return ""
     }
 
@@ -202,9 +231,7 @@ export class VoiceCell extends MessageCell<any,VoiceCellState> {
         const { message, context } = this.props
         const { playStatus } = this.state
         const isSend = message.message.send;
-        // const url = WKApp.shared().commonProvider.getImageURL(content.url)
         return <MessageBase message={message} context={context} >
-            {/* <canvas ref={this.canvasRef}  style={{width:"140px",height:"23px"}}/> */}
             <div className="wk-message-voice">
                 <div className={classNames("voicePlay", this.getPlayStatusClassname())} onClick={(e) => {
                     this.playOrPauseVoice.bind(this)(e);
@@ -231,7 +258,6 @@ export class VoiceCell extends MessageCell<any,VoiceCellState> {
                     <div className="wk-message-voice-info-status">
                         <div className="wk-message-voice-info-time" ref={this.timeRef}>
                             {this.timeFormat}
-                            {/* <div className={style.status}>*</div> */}
                         </div>
                         <div className="wk-message-voice-info-tail">
                             <MessageTrail message={message} />

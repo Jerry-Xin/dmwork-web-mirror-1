@@ -6,14 +6,14 @@ export default class StorageService {
     public static shared = new StorageService()
 
     setItem(key:string,value:string) {
-        localStorage.setItem(key, value)
+        sessionStorage.setItem(key, value)
     }
 
     getItem(key:string) {
-        return localStorage.getItem(key)
+        return sessionStorage.getItem(key)
     }
 
     removeItem(key:string) {
-        localStorage.removeItem(key)
+        sessionStorage.removeItem(key)
     }
 }

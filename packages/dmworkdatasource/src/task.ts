@@ -9,7 +9,9 @@ export class MediaMessageUploadTask extends MessageTask {
     getUUID(){
         const len=32;//32长度
         const radix=16;//16进制
-        const chars='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');const uuid:string[]=[]; let i;if(len){for(i=0;i<len;i++)uuid[i]=chars[0|Math.random()*radix];}else{let r;uuid[8]=uuid[13]=uuid[18]=uuid[23]='-';uuid[14]='4';for(i=0;i<36;i++){if(!uuid[i]){r=0|Math.random()*16;uuid[i]=chars[(i===19)?(r&0x3)|0x8:r];}}}
+        const bytes = new Uint8Array(len);
+        crypto.getRandomValues(bytes);
+        const chars='0123456789ABCDEF'.split('');const uuid:string[]=[]; let i;for(i=0;i<len;i++)uuid[i]=chars[bytes[i] % radix];
         return uuid.join('');
       }
 

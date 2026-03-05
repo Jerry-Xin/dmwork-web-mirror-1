@@ -1,4 +1,3 @@
-import axios from "axios";
 import React, { Component } from "react";
 import { Button, Spin, Toast } from '@douyinfe/semi-ui';
 import './login.css'

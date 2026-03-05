@@ -6,7 +6,7 @@ import {
   ThemeMode,
 } from "@dmwork/base";
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot, Root } from "react-dom/client";
 import Blacklist from "./Blacklist";
 import { FriendAdd } from "./FriendAdd";
 import GroupSave from "./GroupSave";
@@ -124,20 +124,21 @@ export default class ContactsModule implements IModule {
         const ref: any = React.createRef();
         document.body.appendChild(div);
 
+        const root: Root = createRoot(div);
+
         const remove = () => {
           if (!ref.current) return;
-          ReactDOM.unmountComponentAtNode(div);
+          root.unmount();
           document.body.removeChild(div);
         };
 
-        ReactDOM.render(
+        root.render(
           <OrganizationalGroupNew
             ref={ref}
             channel={channel}
             remove={remove}
             action={OrganizationalGroupNewAction.createGroup}
-          />,
-          div
+          />
         );
 
         ref.current.onShowModal();

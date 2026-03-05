@@ -6,6 +6,34 @@ import { WKApp, Provider } from "@dmwork/base"
 import { LoginStatus, LoginType, LoginVM } from "./login_vm";
 import classNames from "classnames";
 
+
+// Known safe error messages from the server that can be shown to users
+const KNOWN_ERROR_MESSAGES: Record<string, string> = {
+    "用户名或密码错误": "用户名或密码错误",
+    "验证码错误": "验证码错误",
+    "验证码已过期": "验证码已过期",
+    "该邮箱已注册": "该邮箱已注册",
+    "该用户名已存在": "该用户名已存在",
+    "账号已被禁用": "账号已被禁用",
+    "发送过于频繁": "发送过于频繁，请稍后再试",
+};
+
+/**
+ * Sanitize server error messages to prevent information leakage.
+ * Only known safe messages are shown; unknown errors get a generic message.
+ */
+function sanitizeErrorMessage(msg: string): string {
+    if (!msg || typeof msg !== "string") return "操作失败，请稍后重试";
+    const known = KNOWN_ERROR_MESSAGES[msg];
+    if (known) return known;
+    // Check if message looks safe (short, no HTML, no stack trace)
+    if (msg.length <= 50 && !/[<>{}]|Error:|at /.test(msg)) {
+        return msg;
+    }
+    console.warn("Suppressed raw server error:", msg);
+    return "操作失败，请稍后重试";
+}
+
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 type LoginState = {
@@ -55,11 +83,11 @@ class Login extends Component<any, LoginState> {
                                     const isEmail = isValidEmail(vm.username)
                                     if (isEmail) {
                                         vm.requestEmailLogin(vm.username, vm.password).catch((err) => {
-                                            Toast.error(err.msg)
+                                            Toast.error(sanitizeErrorMessage(err.msg))
                                         })
                                     } else {
                                         vm.requestLoginWithUsernameAndPwd(vm.username, vm.password).catch((err) => {
-                                            Toast.error(err.msg)
+                                            Toast.error(sanitizeErrorMessage(err.msg))
                                         })
                                     }
                                 }}>登录</Button>
@@ -112,7 +140,7 @@ class Login extends Component<any, LoginState> {
                                         return
                                     }
                                     vm.requestEmailSendCode(vm.registerEmail, 0).catch((err) => {
-                                        Toast.error(err.msg)
+                                        Toast.error(sanitizeErrorMessage(err.msg))
                                     })
                                 }}>{vm.emailCodeCountdown > 0 ? `${vm.emailCodeCountdown}s` : '发送验证码'}</Button>
                             </div>
@@ -148,7 +176,7 @@ class Login extends Component<any, LoginState> {
                                         return
                                     }
                                     vm.requestEmailRegister(vm.registerEmail, vm.registerEmailCode, vm.registerEmailPassword, vm.registerEmailName).catch((err) => {
-                                        Toast.error(err.msg)
+                                        Toast.error(sanitizeErrorMessage(err.msg))
                                     })
                                 }}>注册</Button>
                             </div>
@@ -182,7 +210,7 @@ class Login extends Component<any, LoginState> {
                                         return
                                     }
                                     vm.requestEmailSendCode(vm.forgetEmail, 2).catch((err) => {
-                                        Toast.error(err.msg)
+                                        Toast.error(sanitizeErrorMessage(err.msg))
                                     })
                                 }}>{vm.emailCodeCountdown > 0 ? `${vm.emailCodeCountdown}s` : '发送验证码'}</Button>
                             </div>
@@ -214,7 +242,7 @@ class Login extends Component<any, LoginState> {
                                         Toast.success("密码重置成功，请登录")
                                         vm.loginType = LoginType.phone
                                     }).catch((err) => {
-                                        Toast.error(err.msg)
+                                        Toast.error(sanitizeErrorMessage(err.msg))
                                     })
                                 }}>重置密码</Button>
                             </div>

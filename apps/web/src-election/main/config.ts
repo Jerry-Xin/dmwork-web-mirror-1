@@ -1,7 +1,7 @@
 const DMWORK_CONFIG = {
   appId: "com.dmwork.im",
   name: "DMWork",
-  updataUrl: 'https://api.botgate.cn/'
+  updateUrl: 'https://api.botgate.cn/'
 };
 
 export default DMWORK_CONFIG;

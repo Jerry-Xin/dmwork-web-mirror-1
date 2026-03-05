@@ -467,7 +467,29 @@ function restartApp() {
   app.exit(0);
 }
 
+const ALLOWED_DEEP_LINK_SCHEMES = ["dmwork:"];
+
+function isValidDeepLink(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (!ALLOWED_DEEP_LINK_SCHEMES.includes(parsed.protocol)) {
+      return false;
+    }
+    const dangerousPatterns = /javascript:|data:|vbscript:|file:/i;
+    if (dangerousPatterns.test(url)) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function onDeepLink(url: string) {
+  if (!isValidDeepLink(url)) {
+    console.warn("Rejected invalid deep link:", url);
+    return;
+  }
   console.log("onOpenDeepLink", url);
   mainWindow.webContents.send("deep-link", url);
 }

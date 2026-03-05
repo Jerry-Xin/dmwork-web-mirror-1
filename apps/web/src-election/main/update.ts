@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import { autoUpdater } from "electron-updater";
 import logger from "electron-log";
 import path from "path";
-import DMWORK_CONFIG from "./confing";
+import DMWORK_CONFIG from "./config";
 const feedUrl = `${DMWORK_CONFIG.updataUrl}v1/common/pcupdater/`;
 
 let mainWindow: BrowserWindow;

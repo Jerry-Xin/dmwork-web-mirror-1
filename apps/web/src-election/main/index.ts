@@ -16,7 +16,7 @@ import Screenshots from "electron-screenshots";
 import { join } from "path";
 
 import logo, { getNoMessageTrayIcon } from "./logo";
-import DMWORK_CONFIG from "./confing";
+import DMWORK_CONFIG from "./config";
 import checkUpdate from './update';
 import { electronNotificationManager } from './notification';
 import { getRandomSid } from "./utils/search";

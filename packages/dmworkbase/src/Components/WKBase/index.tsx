@@ -168,7 +168,7 @@ export default class WKBase
       orgCode,
       orgUid,
     } = this.state;
-    const baseURl = WKApp.apiClient.config.apiURL.replace("v1/", "");
+    const baseURL = WKApp.apiClient.config.apiURL.replace("v1/", "");
     return (
       <div className="wk-base">
         {this.props.children}
@@ -273,7 +273,7 @@ export default class WKBase
         >
           {orgId && orgUid && orgCode && (
             <iframe
-              src={`${baseURl}web/join_org.html?org_id=${orgId}&uid=${orgUid}&code=${orgCode}`}
+              src={`${baseURL}web/join_org.html?org_id=${orgId}&uid=${orgUid}&code=${orgCode}`}
               style={{ width: "100%", height: "100%", border: "none" }}
             ></iframe>
           )}

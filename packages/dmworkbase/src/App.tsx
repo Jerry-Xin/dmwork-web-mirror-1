@@ -442,11 +442,11 @@ export default class WKApp extends ProviderListener {
       }
       return WKApp.dataSource.commonDataSource.getImageURL(logo);
     }
-    const baseURl = WKApp.apiClient.config.apiURL;
+    const baseURL = WKApp.apiClient.config.apiURL;
     if (channel.channelType === ChannelTypePerson) {
-      return `${baseURl}users/${channel.channelID}/avatar?v=${avatarTag}`;
+      return `${baseURL}users/${channel.channelID}/avatar?v=${avatarTag}`;
     } else if (channel.channelType == ChannelTypeGroup) {
-      return `${baseURl}groups/${channel.channelID}/avatar?v=${avatarTag}`;
+      return `${baseURL}groups/${channel.channelID}/avatar?v=${avatarTag}`;
     }
     return "";
   }
@@ -457,8 +457,8 @@ export default class WKApp extends ProviderListener {
   }
 
   avatarOrg(orgID: string) {
-    const baseURl = WKApp.apiClient.config.apiURL;
-    return `${baseURl}organizations/${orgID}/logo`;
+    const baseURL = WKApp.apiClient.config.apiURL;
+    return `${baseURL}organizations/${orgID}/logo`;
   }
 
   // 我的用户头像发送改变

@@ -226,8 +226,8 @@ export class CommonDataSource implements ICommonDataSource {
                 return path
             }
         }
-        const baseURl = WKApp.apiClient.config.apiURL
-        return `${baseURl}${path}`
+        const baseURL = WKApp.apiClient.config.apiURL
+        return `${baseURL}${path}`
     }
     getFileURL(path: string): string {
         if (path && path.length > 4) {
@@ -236,8 +236,8 @@ export class CommonDataSource implements ICommonDataSource {
                 return path
             }
         }
-        const baseURl = WKApp.apiClient.config.apiURL
-        return `${baseURl}${path}`
+        const baseURL = WKApp.apiClient.config.apiURL
+        return `${baseURL}${path}`
     }
 
 

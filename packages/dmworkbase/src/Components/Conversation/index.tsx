@@ -475,12 +475,12 @@ export class Conversation extends Component<ConversationProps> implements Conver
     }
 
     chatToolbarUI() {
-        const toolbars = WKApp.endpoints.chatToolbars(this)
+        const toolbars = WKApp.endpoints.chatToolbarsWithKey(this)
         return <ul className="wk-conversation-chattoolbars">
             {
-                toolbars.map((t, i) => {
-                    return <li key={i} className="wk-conversation-chattoolbars-item" >
-                        {t}
+                toolbars.map((t) => {
+                    return <li key={t.sid} className="wk-conversation-chattoolbars-item" >
+                        {t.node}
                     </li>
                 })
             }

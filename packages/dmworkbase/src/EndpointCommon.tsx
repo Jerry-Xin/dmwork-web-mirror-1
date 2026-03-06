@@ -161,6 +161,20 @@ export class EndpointCommon {
     return EndpointManager.shared.invokes(EndpointCategory.chatToolbars, ctx);
   }
 
+  chatToolbarsWithKey(ctx: ConversationContext): { sid: string; node: React.ReactNode }[] {
+    const endpoints = EndpointManager.shared.getWithCategory(EndpointCategory.chatToolbars);
+    const results: { sid: string; node: React.ReactNode }[] = [];
+    if (endpoints && endpoints.length > 0) {
+      for (const endpoint of endpoints) {
+        const result = endpoint.handler!(ctx);
+        if (result) {
+          results.push({ sid: endpoint.sid, node: result });
+        }
+      }
+    }
+    return results;
+  }
+
   registerChannelHeaderRightItem(
     id: string,
     callback: (param: any) => JSX.Element | undefined,

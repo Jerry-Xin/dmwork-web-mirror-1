@@ -121,26 +121,22 @@ export default class ContactsModule implements IModule {
       (param) => {
         const channel = param.channel as any;
         const div = document.createElement("div");
-        const ref: any = React.createRef();
         document.body.appendChild(div);
 
         const remove = () => {
-          if (!ref.current) return;
           ReactDOM.unmountComponentAtNode(div);
           document.body.removeChild(div);
         };
 
         ReactDOM.render(
           <OrganizationalGroupNew
-            ref={ref}
             channel={channel}
             remove={remove}
             action={OrganizationalGroupNewAction.createGroup}
+            autoShow={true}
           />,
           div
         );
-
-        ref.current.onShowModal();
       }
     );
   }

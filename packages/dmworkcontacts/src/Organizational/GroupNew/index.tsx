@@ -32,6 +32,7 @@ interface IPorpsOrganizationalGroupNew {
   showAdd?: boolean;
   render?: JSX.Element;
   remove?: () => void;
+  autoShow?: boolean;
 }
 
 interface ISateOrganizationalGroupNew {
@@ -75,8 +76,9 @@ export class OrganizationalGroupNew extends Component<
   }
 
   componentDidMount(): void {
-    // this.getFriendData();
-
+    if (this.props.autoShow) {
+      this.onShowModal();
+    }
   }
 
   // 获取加入公司

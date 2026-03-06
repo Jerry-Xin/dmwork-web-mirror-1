@@ -1157,7 +1157,7 @@ export default class BaseModule implements IModule {
                   },
                   "群公告",
                   400,
-                  false,
+                  true,
                   true
                 );
               },

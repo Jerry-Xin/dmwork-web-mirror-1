@@ -1,4 +1,4 @@
-import { Button } from "@douyinfe/semi-ui";
+import { Button, Toast } from "@douyinfe/semi-ui";
 import axios from "axios";
 import { Channel } from "wukongimjssdk";
 import React from "react";
@@ -25,6 +25,9 @@ export class ChannelAvatar extends Component<ChannelAvatarProps>{
         return axios.post(`groups/${channel.channelID}/avatar`, param, {
             headers: { "Content-Type": "multipart/form-data", "token": WKApp.loginInfo.token || "" },
         }).catch(error => {
+            console.error('Avatar upload failed:', error);
+            Toast.error('头像上传失败，请重试');
+            throw error;
         })
     }
     onFileChange() {

@@ -26,7 +26,13 @@ export default class MergeforwardContent extends MessageContent {
 
     decodeJSON(content: any) {
         this.channelType = content["channel_type"] || 0
-        this.users = content["users"] || []
+        const rawUsers: Array<{ uid: string, name: string }> = content["users"] || []
+        const seen = new Set<string>()
+        this.users = rawUsers.filter(u => {
+            if (seen.has(u.uid)) return false
+            seen.add(u.uid)
+            return true
+        })
         let msgMaps = content["msgs"]
 
         let messages = new Array()

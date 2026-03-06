@@ -165,7 +165,10 @@ export default class ConversationVM extends ProviderListener {
             return messageWrap.message
         })
         if (checkedMessages && checkedMessages.length > 0) {
+            const addedUIDs = new Set<string>()
             for (const message of checkedMessages) {
+                if (addedUIDs.has(message.fromUID)) continue
+                addedUIDs.add(message.fromUID)
                 let channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(message.fromUID, ChannelTypePerson))
                 users.push({ uid: message.fromUID, name: channelInfo?.title })
             }

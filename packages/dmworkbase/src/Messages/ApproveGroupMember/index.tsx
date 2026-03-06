@@ -5,6 +5,15 @@ import './index.css'
 import { MessageWrap } from "../../Service/Model"
 import WKApp from "../../App"
 
+function isSafeUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return ['http:', 'https:'].includes(parsed.protocol);
+    } catch {
+        return false;
+    }
+}
+
 export class ApproveGroupMemberCell extends MessageCell {
 
     render() {
@@ -20,7 +29,7 @@ export class ApproveGroupMemberCell extends MessageCell {
         });
         if (resp) {
             let url = resp["url"]
-            if (url) {
+            if (url && isSafeUrl(url)) {
                 window.open(url, '_blank');
             }
         }

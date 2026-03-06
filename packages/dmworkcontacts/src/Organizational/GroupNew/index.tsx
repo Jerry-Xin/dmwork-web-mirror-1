@@ -103,7 +103,7 @@ export class OrganizationalGroupNew extends Component<
     const departments: any = this.handleTree(res.departments);
     // 人员
     const employees: any[] = [];
-    res.employees.map((y: any) => {
+    res.employees.forEach((y: any) => {
       employees.push({
         label: y.employee_name,
         value: y.employee_id,
@@ -125,7 +125,7 @@ export class OrganizationalGroupNew extends Component<
   // 处理全部子部门人数
   handelEmployeesNum(arr: any[]) {
     let employeesNums: number[] = [];
-    arr.map((item) => {
+    arr.forEach((item) => {
       if (item.employees && item.employees.length > 0) {
         employeesNums.push(item.employees.length);
       }
@@ -139,7 +139,7 @@ export class OrganizationalGroupNew extends Component<
 
   handleTree(arr: any[]) {
     const OTree: any = [];
-    arr.map((item: any) => {
+    arr.forEach((item: any) => {
       let children: any[] = [];
       let employeesNum: number = 0;
       // 获取当前部门人数
@@ -149,7 +149,7 @@ export class OrganizationalGroupNew extends Component<
       // 获取全部子部门人数
       if (item.children) {
         const employeesNums = this.handelEmployeesNum(item.children);
-        employeesNums.map((num) => {
+        employeesNums.forEach((num) => {
           employeesNum += num;
         });
       }
@@ -157,7 +157,7 @@ export class OrganizationalGroupNew extends Component<
       if (item.children && item.employees) {
         children = this.handleTree(item.children);
         const employees: any[] = [];
-        item.employees.map((y: any) => {
+        item.employees.forEach((y: any) => {
           employees.push({
             label: y.employee_name,
             value: y.employee_id,
@@ -177,7 +177,7 @@ export class OrganizationalGroupNew extends Component<
       // 只有人员
       if (!item.children && item.employees) {
         const employees: any[] = [];
-        item.employees.map((y: any) => {
+        item.employees.forEach((y: any) => {
           employees.push({
             label: y.employee_name,
             value: y.employee_id,
@@ -276,7 +276,7 @@ export class OrganizationalGroupNew extends Component<
 
   handOptTree(arr: any[]) {
     let OTree: any = [];
-    arr.map((item: any) => {
+    arr.forEach((item: any) => {
       if (item.children && item.is_department) {
         const res = this.handOptTree(item.children);
         OTree = [...OTree, ...res];
@@ -346,7 +346,7 @@ export class OrganizationalGroupNew extends Component<
     // 系统账号不可被拉入群聊
     const systemUids = ["botfather", "fileHelper"];
     const setFriendData: any[] = [];
-    WKApp.dataSource.contactsList.map((item) => {
+    WKApp.dataSource.contactsList.forEach((item) => {
       if (!subscriberUids.includes(item.uid) && !systemUids.includes(item.uid)) {
         setFriendData.push({
           name: item.name,

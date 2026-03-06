@@ -15,20 +15,8 @@ export class DataSource {
         const maxVersion = this.contactsMaxSyncVersion()
         const results = await this.commonDataSource.contactsSync(maxVersion)
         if (results && results.length > 0) {
-            const newContactsList = new Array()
-            for (let index = 0; index < this.contactsList.length; index++) {
-                const oldContacts = this.contactsList[index];
-                var exist: boolean = false
-                for (const newContacts of results) {
-                    if (oldContacts.uid === newContacts.uid) {
-                        exist = true
-                        break
-                    }
-                }
-                if (!exist) {
-                    newContactsList.push(oldContacts)
-                }
-            }
+            const newContactsMap = new Map(results.map(c => [c.uid, c]))
+            const newContactsList = this.contactsList.filter(c => !newContactsMap.has(c.uid))
             newContactsList.push(...results)
 
             this.contactsList = newContactsList

@@ -343,7 +343,7 @@ export class MessageWrap {
                 data = { "uid": mention.uids[i] }
             }
 
-            parts.push(new Part(PartType.mention, text.substr(index, mentionMatchResult[0].length), data))
+            parts.push(new Part(PartType.mention, text.substring(index, index + mentionMatchResult[0].length), data))
             text = text.substring(index + mentionMatchResult[0].length);
 
             i++
@@ -378,7 +378,7 @@ export class MessageWrap {
                     if (index > 0) {
                         newParts.push(new Part(PartType.text, text.substring(0, index)));
                     }
-                    newParts.push(new Part(PartType.emoji, text.substr(index, matchResult[0].length)));
+                    newParts.push(new Part(PartType.emoji, text.substring(index, index + matchResult[0].length)));
                     text = text.substring(index + matchResult[0].length);
                 }
             } else {
@@ -416,7 +416,7 @@ export class MessageWrap {
                     if (index > 0) {
                         newParts.push(new Part(PartType.text, text.substring(0, index)));
                     }
-                    newParts.push(new Part(PartType.link, text.substr(index, matchResult[0].length)));
+                    newParts.push(new Part(PartType.link, text.substring(index, index + matchResult[0].length)));
                     text = text.substring(index + matchResult[0].length);
                 }
             } else {

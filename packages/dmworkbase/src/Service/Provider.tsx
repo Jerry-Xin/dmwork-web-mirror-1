@@ -2,7 +2,8 @@ import React, { HTMLProps,Component } from "react"
 
 export interface IProviderListener {
     notifyListener():void;
-    listen(f?:(callback?:()=>void)=>void):void;
+    listen(f:(callback?:()=>void)=>void):void;
+    clearListeners():void;
     didMount():void
     didUnMount():void
 }
@@ -20,6 +21,10 @@ export class ProviderListener implements IProviderListener {
 
     didMount() {
 
+    }
+
+    clearListeners(): void {
+        this.callback = undefined
     }
 
     didUnMount(): void {
@@ -57,7 +62,7 @@ export default class Provider extends Component<ProviderProps> {
     }
 
     componentWillUnmount() {
-        this.listener.listen(undefined)
+        this.listener.clearListeners()
         this.listener.didUnMount()
     }
     render() {

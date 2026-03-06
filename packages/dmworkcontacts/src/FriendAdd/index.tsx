@@ -45,7 +45,7 @@ export class FriendAdd extends Component<FriendAddProps,FriendAddState> {
         if(result.exist !== 1) {
             Toast.error("用户不存在！")
         }else {
-            WKApp.shared.baseContext.showUserInfo(result.data.uid,undefined,result.data.vercode)
+            WKApp.shared.baseContext.showUserInfo(result.data?.uid,undefined,result.data?.vercode)
         }
       }
     }   

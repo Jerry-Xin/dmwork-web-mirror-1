@@ -47,7 +47,7 @@ export default class ContactsList extends Component<any, ContactsState> {
                 if(v.uid === channelInfo.channel.channelID) {
                     exist = true
                     v.name = channelInfo.title
-                    v.remark = channelInfo?.orgData.remark 
+                    v.remark = channelInfo?.orgData?.remark 
                     return
                 }
             })

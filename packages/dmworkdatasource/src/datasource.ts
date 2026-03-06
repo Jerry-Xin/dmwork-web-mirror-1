@@ -37,8 +37,7 @@ export class ChannelDataSource implements IChannelDataSource {
         });
         const channelInfos = [];
         if (resp) {
-
-            if (resp.length === 0) return [];
+            if (!Array.isArray(resp) || resp.length === 0) return [];
             for (const data of resp) {
                 let channelInfo = new ChannelInfo();
                 channelInfo.channel = new Channel(data.group_no, ChannelTypeGroup);

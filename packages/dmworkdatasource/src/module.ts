@@ -65,11 +65,11 @@ export default class DataSourceModule implements IModule {
             channelInfo.orgData.notice = data.notice;
 
             if (channel.channelType === ChannelTypePerson) {
-                channelInfo.orgData.shortNo = data.extra.short_no ?? ""
+                channelInfo.orgData.shortNo = data.extra?.short_no ?? ""
             } else if (channel.channelType === ChannelTypeGroup) {
                 channelInfo.orgData.forbidden = data.forbidden;
                 channelInfo.orgData.invite = data.invite;
-                channelInfo.orgData.forbiddenAddFriend = data.extra.forbidden_add_friend;
+                channelInfo.orgData.forbiddenAddFriend = data.extra?.forbidden_add_friend;
                 channelInfo.orgData.save = data.save;
             }
             if (data.category === "system" || data.category === "customerService") { // 官方账号

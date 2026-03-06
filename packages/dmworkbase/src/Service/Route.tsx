@@ -43,7 +43,9 @@ export default class RouteManager {
     const component = EndpointManager.shared.invoke(`${EndpointID.routePrefix}${path}`, param)
     if (component) {
       let sid = getSid()
-      window.history.pushState({}, "title", `${path}?sid=${sid}`)
+      const url = new URL(path, window.location.origin)
+      url.searchParams.set('sid', sid)
+      window.history.pushState({}, "title", url.pathname + url.search)
       WKApp.shared.restContent(component)
     }
   }

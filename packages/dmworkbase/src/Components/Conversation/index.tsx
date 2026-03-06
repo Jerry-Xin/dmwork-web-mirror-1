@@ -820,7 +820,7 @@ class ReplyView extends Component<ReplyViewProps> {
                 <div className="wk-replyview-content-first">
                     <div className="wk-replyview-content-userinfo">
                         <div className="wk-replyview-content-userinfo-avatar">
-                            <WKAvatar style={{ "width": "24px", "height": "24px", "borderRadius": "50%" }} channel={new Channel(message.fromUID, ChannelTypePerson)}></WKAvatar>
+                            <WKAvatar style={{ "width": "24px", "height": "24px", "borderRadius": "50%" }} channel={new Channel(message.fromUID, ChannelTypePerson)} showBotBadge={fromChannelInfo?.orgData?.robot === 1}></WKAvatar>
                         </div>
                         <div className="wk-replyview-content-userinfo-name">
                             {

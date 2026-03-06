@@ -7,7 +7,7 @@ import WKApp from "../../App";
 import  { IconSearchStroked } from '@douyinfe/semi-icons';
 import "./index.css"
 import React from "react";
-import WKAvatar from "../WKAvatar";
+import WKAvatar, { isBot } from "../WKAvatar";
 
 interface ConversationSelectProps {
     onFinished?: (channels: Channel[]) => void
@@ -143,7 +143,7 @@ export default class ConversationSelect extends Component<ConversationSelectProp
                                 return <div key={`${channel.channelID}-selected`} className="wk-conversationselect-content-selectedAvatar" onClick={() => {
                                     this.select(channel)
                                 }}>
-                                    <WKAvatar channel={channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }}></WKAvatar>
+                                    <WKAvatar channel={channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} showBotBadge={isBot(channel.channelID)}></WKAvatar>
                                 </div>
                             })
                         }
@@ -184,7 +184,7 @@ export default class ConversationSelect extends Component<ConversationSelectProp
                                         </div>
                                         <div className="wk-conversationselect-content-box-data">
                                             <div>
-                                                <WKAvatar channel={conversationWrap.channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} />
+                                                <WKAvatar channel={conversationWrap.channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} showBotBadge={conversationWrap.channelInfo?.orgData?.robot === 1} />
                                             </div>
                                             <div className="wk-conversationselect-content-box-name">
                                                 {
@@ -221,7 +221,7 @@ export default class ConversationSelect extends Component<ConversationSelectProp
                                         </div>
                                         <div className="wk-conversationselect-content-box-data">
                                             <div >
-                                                <WKAvatar channel={channelInfo.channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} />
+                                                <WKAvatar channel={channelInfo.channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} showBotBadge={channelInfo?.orgData?.robot === 1} />
                                             </div>
                                             <div className="wk-conversationselect-content-box-name">
                                                 {

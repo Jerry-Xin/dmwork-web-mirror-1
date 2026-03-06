@@ -3,7 +3,7 @@ import { MentionsInput, Mention, SuggestionDataItem } from 'react-mentions'
 import ConversationContext from "../Conversation/context";
 import clazz from 'classnames';
 import './mention.css'
-import { Channel, ChannelTypePerson, Subscriber } from "wukongimjssdk";
+import WKSDK, { Channel, ChannelTypePerson, Subscriber } from "wukongimjssdk";
 import hotkeys from 'hotkeys-js';
 import WKApp from "../../App";
 import "./index.css"
@@ -44,6 +44,7 @@ class MemberSuggestionDataItem implements SuggestionDataItem {
     id!: string | number;
     display!: string;
     icon!: string
+    isBot?: boolean
 }
 
 export interface MessageInputContext {
@@ -235,6 +236,8 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                 item.id = member.uid
                 item.icon = WKApp.shared.avatarChannel(new Channel(member.uid, ChannelTypePerson))
                 item.display = member.name
+                const chInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(member.uid, ChannelTypePerson))
+                item.isBot = chInfo?.orgData?.robot === 1
                 return item
             });
             selectedItems.splice(0, 0, {
@@ -337,8 +340,13 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                             ) => {
                                 return (
                                     <div className={clazz("wk-messageinput-member", focused ? "wk-messageinput-selected" : null)}>
-                                        <div className="wk-messageinput-iconbox">
+                                        <div className="wk-messageinput-iconbox wk-avatar-wrapper">
                                             <img alt="" className="wk-messageinput-icon" style={{ width: `24px`, height: `24px`, borderRadius: `24px` }} src={(suggestion as MemberSuggestionDataItem).icon} />
+                                            {(suggestion as MemberSuggestionDataItem).isBot && (
+                                                <div className="wk-avatar-bot-badge">
+                                                    <img src="./identity_icon/robot.png" alt="bot" className="wk-avatar-bot-badge-icon" />
+                                                </div>
+                                            )}
                                         </div>
                                         <div><strong>{highlightedDisplay}</strong></div>
                                     </div>

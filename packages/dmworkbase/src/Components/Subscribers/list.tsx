@@ -6,7 +6,7 @@ import { IconSearchStroked } from "@douyinfe/semi-icons";
 import "./list.css";
 import WKApp from "../../App";
 import WKSDK, { Channel, ChannelTypePerson, Subscriber } from "wukongimjssdk";
-import WKAvatar from "../WKAvatar";
+import WKAvatar, { isBot } from "../WKAvatar";
 import { Checkbox } from "@douyinfe/semi-ui/lib/es/checkbox";
 import { GroupRole } from "../../Service/Const";
 
@@ -192,7 +192,7 @@ export class SubscriberList extends Component<
                         </div>
                       ) : undefined}
                       <div className="wk-subscrierlist-item-avatar">
-                        <WKAvatar src={item.avatar}></WKAvatar>
+                        <WKAvatar src={item.avatar} showBotBadge={isBot(item.uid)}></WKAvatar>
                       </div>
                       <div className="wk-subscrierlist-item-content">
                         <div className="wk-subscrierlist-item-name">

@@ -4,7 +4,7 @@ import { Component, ReactNode } from "react";
 import { ImageContent } from "../../Messages/Image";
 import MergeforwardContent from "../../Messages/Mergeforward";
 import { dateFormat, getTimeStringAutoShort2 } from "../../Utils/time";
-import WKAvatar from "../WKAvatar";
+import WKAvatar, { isBot } from "../WKAvatar";
 import WKViewQueueHeader from "../WKViewQueueHeader";
 import WKApp from "../../App";
 
@@ -110,7 +110,7 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
                             return <div className="wk-mergeforwardmessagelist-content-msg" key={m.messageID}>
                                 <div className="wk-mergeforwardmessagelist-content-msg-avatar" style={{ "width": "40px", "height": "40px", "borderRadius": "50%" }}>
                                     {
-                                        showAvatar?<WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)} style={{ "width": "40px", "height": "40px", "borderRadius": "50%" }}></WKAvatar>:undefined
+                                        showAvatar?<WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)} style={{ "width": "40px", "height": "40px", "borderRadius": "50%" }} showBotBadge={isBot(m.fromUID)}></WKAvatar>:undefined
                                     }
                                 </div>
                                 <div className="wk-mergeforwardmessagelist-content-msg-info">

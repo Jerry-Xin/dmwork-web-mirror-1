@@ -164,7 +164,7 @@ export default class ConversationList extends Component<ConversationListProps, C
             <div className={classNames("wk-conversationlist-item-content", selected ? "wk-conversationlist-item-selected" : undefined)}>
                 <div className="wk-conversationlist-item-left">
                     <div className="wk-conversationlist-item-avatar-box">
-                        <WKAvatar  channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
+                        <WKAvatar  channel={conversationWrap.channel} key={avatarKey} showBotBadge={channelInfo?.orgData?.robot === 1}></WKAvatar>
                         {
                             channelInfo && this.needShowOnlineStatus(channelInfo) ? <OnlineStatusBadge tip={this.getOnlineTip(channelInfo)}></OnlineStatusBadge> : undefined
                         }

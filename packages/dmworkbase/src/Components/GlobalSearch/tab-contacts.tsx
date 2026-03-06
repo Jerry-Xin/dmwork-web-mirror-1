@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { ReactNode } from "react";
 import ItemContacts from "./item-contacts";
 import WKApp from "../../App";
+import { isBot } from "../WKAvatar";
 import "./tab-contacts.css"
 
 interface TabContactsProps {
@@ -23,7 +24,8 @@ export default class TabContacts extends Component<TabContactsProps> {
                     return <ItemContacts 
                     key={item.channel_id} 
                     name={item.channel_name} 
-                    avatar={WKApp.shared.avatarUser(item.channel_id)} 
+                    avatar={WKApp.shared.avatarUser(item.channel_id)}
+                    showBotBadge={isBot(item.channel_id)}
                     onClick={()=>{
                         if(this.props.onClick) {
                             this.props.onClick(item)

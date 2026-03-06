@@ -166,7 +166,7 @@ export default class ContactsList extends Component<any, ContactsState> {
                                 {i === 0 ? indexName : ""}
                             </div>
                             <div className="wk-contacts-section-item-avatar">
-                                <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)}></WKAvatar>
+                                <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)} showBotBadge={item.robot}></WKAvatar>
                             </div>
                             <div className="wk-contacts-section-item-name">
                                 {name}

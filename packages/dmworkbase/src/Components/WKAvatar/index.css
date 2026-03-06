@@ -3,3 +3,36 @@
     height: 50px;
     border-radius: 40%;
 }
+
+.wk-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+}
+
+.wk-avatar-wrapper .wk-avatar {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.wk-avatar-bot-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 33%;
+    height: 33%;
+    background-color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+.wk-avatar-bot-badge-icon {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+}

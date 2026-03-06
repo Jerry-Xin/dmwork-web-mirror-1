@@ -105,8 +105,13 @@ export default class UserInfo extends Component<UserInfoProps> {
                             </div> : (<>
                                 <div className="wk-userinfo-header">
                                     <div className="wk-userinfo-user">
-                                        <div className="wk-userinfo-user-avatar">
+                                        <div className="wk-userinfo-user-avatar wk-avatar-wrapper">
                                             <Image src={WKApp.shared.avatarUser(uid)}></Image>
+                                            {vm.channelInfo?.orgData?.robot === 1 && (
+                                                <div className="wk-avatar-bot-badge">
+                                                    <img src="./identity_icon/robot.png" alt="bot" className="wk-avatar-bot-badge-icon" />
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="wk-userinfo-user-info">
                                             <div className="wk-userinfo-user-info-name">

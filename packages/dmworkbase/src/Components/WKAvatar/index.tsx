@@ -1,14 +1,24 @@
-import { Channel } from "wukongimjssdk";
+import WKSDK, { Channel, ChannelTypePerson } from "wukongimjssdk";
 import React from "react";
 import { Component, CSSProperties } from "react";
 import WKApp from "../../App";
 import "./index.css"
+
+/**
+ * Check if a user is a bot by looking up channelInfo.
+ * Centralizes the repeated WKSDK.shared().channelManager.getChannelInfo(...) pattern.
+ */
+export function isBot(uid: string): boolean {
+    const info = WKSDK.shared().channelManager.getChannelInfo(new Channel(uid, ChannelTypePerson))
+    return info?.orgData?.robot === 1
+}
 
 interface WKAvatarProps {
     channel?: Channel
     src?: string
     style?: CSSProperties
     random?: string
+    showBotBadge?: boolean
 }
 
 const defaultAvatarSVG = `
@@ -56,7 +66,20 @@ export default class WKAvatar extends Component<WKAvatarProps, WKAvatarState> {
         
     }
     render() {
-        const { style } = this.props
-        return <img alt="" style={style} className="wk-avatar" src={this.state.src} onLoad={this.handleLoad.bind(this)} onError={this.handleImgError.bind(this)} />
+        const { style, showBotBadge } = this.props
+        const avatarImg = <img alt="" style={style} className="wk-avatar" src={this.state.src} onLoad={this.handleLoad.bind(this)} onError={this.handleImgError.bind(this)} />
+
+        if (!showBotBadge) {
+            return avatarImg
+        }
+
+        return (
+            <div className="wk-avatar-wrapper" style={{ width: style?.width, height: style?.height }}>
+                {avatarImg}
+                <div className="wk-avatar-bot-badge">
+                    <img src="./identity_icon/robot.png" alt="bot" className="wk-avatar-bot-badge-icon" />
+                </div>
+            </div>
+        )
     }
 }

@@ -14,6 +14,7 @@ import { css } from "@emotion/react";
 import Checkbox from "../../Components/Checkbox";
 import classNames from "classnames";
 import { Popconfirm } from "@douyinfe/semi-ui";
+import WKAvatar from "../../Components/WKAvatar";
 
 interface MessageBaseProps extends HTMLProps<any>{
     message: MessageWrap
@@ -212,7 +213,7 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                         {
                             this.needAvatar() && (<div className="senderAvatar" onClick={(el) => {
                                 context.onTapAvatar(message.fromUID, el)
-                            }}><img alt="" src={WKApp.shared.avatarChannel(channelInfo?.channel!)} /></div>)
+                            }}><WKAvatar channel={channelInfo?.channel} style={{ width: "40px", height: "40px", borderRadius: "50%" }} showBotBadge={channelInfo?.orgData?.robot === 1} /></div>)
                         }
 
                         <div className={this.getBubbleBoxClassName()}>

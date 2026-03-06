@@ -175,9 +175,13 @@ export class DefaultEmojiService implements EmojiService {
 
     ])
 
-    emojiKeys? :string[] 
+    emojiKeys? :string[]
+    private _cachedRegExp: RegExp | null = null
 
     emojiRegExp() {
+        if (this._cachedRegExp) {
+            return this._cachedRegExp
+        }
         if(!this.emojiKeys) {
             this.emojiKeys = new Array<string>()
            const keys = this.emojiMap.keys()
@@ -185,7 +189,8 @@ export class DefaultEmojiService implements EmojiService {
                 this.emojiKeys.push(emojiKey)
            }
         }
-        return new RegExp(`(${this.emojiKeys.join("|")})`)
+        this._cachedRegExp = new RegExp(`(${this.emojiKeys.join("|")})`)
+        return this._cachedRegExp
     }
 
     // emojiValueMap: any = null  // 倒过来的emojiMap

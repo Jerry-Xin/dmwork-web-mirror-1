@@ -11,13 +11,24 @@ export class SubscriberListVM extends ProviderListener {
     limit: number = 50
     hasMore: boolean = true
     keyword: string = ""
+    private _isMounted: boolean = false
+    private _delayTimer?: ReturnType<typeof setTimeout>
     constructor(channel: Channel) {
         super()
         this.channel = channel
     }
 
     didMount(): void {
+        this._isMounted = true
         this.delyRequestSubscribers()
+    }
+
+    didUnMount(): void {
+        this._isMounted = false
+        if (this._delayTimer) {
+            clearTimeout(this._delayTimer)
+            this._delayTimer = undefined
+        }
     }
 
     search(keyword:string) {
@@ -34,6 +45,7 @@ export class SubscriberListVM extends ProviderListener {
             limit: this.limit,
             keyword: this.keyword,
         })
+        if (!this._isMounted) return
         this.hasMore = subscribers&&subscribers.length>=this.limit
         if (subscribers) {
             if (this.currPage === 1) {
@@ -47,8 +59,11 @@ export class SubscriberListVM extends ProviderListener {
 
     delyRequestSubscribers = () => {
         // 延迟执行,这样动画切换的时候就不会显的卡顿
-        setTimeout(async () => {
-            this.requestSubscribers()
+        this._delayTimer = setTimeout(async () => {
+            this._delayTimer = undefined
+            if (this._isMounted) {
+                this.requestSubscribers()
+            }
         }, 250)
     }
 
@@ -59,7 +74,9 @@ export class SubscriberListVM extends ProviderListener {
         this.loading = true
         this.currPage++
         await this.requestSubscribers()
-        this.loading = false
+        if (this._isMounted) {
+            this.loading = false
+        }
     }
 
 }

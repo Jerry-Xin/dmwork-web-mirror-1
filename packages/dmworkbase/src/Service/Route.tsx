@@ -5,17 +5,25 @@ import { EndpointManager } from "./Module";
 import { getSid } from "../Utils/search";
 
 export default class RouteManager {
-  private constructor() {
-    window.onpopstate = function (e:any) {
-      RouteManager.shared.push(window.location.pathname)
+  private handlePopState = () => {
+    RouteManager.shared.push(window.location.pathname)
+  }
 
-    };
-    window.onpageshow = function () {
-      RouteManager.shared.push(window.location.pathname)
-    };
+  private handlePageShow = () => {
+    RouteManager.shared.push(window.location.pathname)
+  }
+
+  private constructor() {
+    window.addEventListener('popstate', this.handlePopState);
+    window.addEventListener('pageshow', this.handlePageShow);
     this.currentPath = "/"
   }
   public static shared = new RouteManager()
+
+  destroy() {
+    window.removeEventListener('popstate', this.handlePopState);
+    window.removeEventListener('pageshow', this.handlePageShow);
+  }
 
   currentPath?:string // 当前路由path
 

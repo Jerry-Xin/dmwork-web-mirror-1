@@ -147,6 +147,7 @@ export class LoginVM extends ProviderListener {
             return
         }
         this.loginLoading = true
+        this.notifyListener()
         try {
             const resp = await WKApp.apiClient.post(`user/login_authcode/${authCode}`);
             if (resp) {

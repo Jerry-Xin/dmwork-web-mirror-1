@@ -28,7 +28,7 @@ export class ConversationProvider implements IConversationProvider {
         })
     }
     revokeMessage(message: Message): Promise<void> {
-        return WKApp.apiClient.post(`message/revoke?channel_id=${message.channel.channelID}&channel_type=${message.channel.channelType}&message_id=${message.messageID}&client_msg_no=${message.clientMsgNo}`)
+        return WKApp.apiClient.post(`message/revoke?channel_id=${encodeURIComponent(message.channel.channelID)}&channel_type=${encodeURIComponent(String(message.channel.channelType))}&message_id=${encodeURIComponent(String(message.messageID))}&client_msg_no=${encodeURIComponent(message.clientMsgNo)}`)
     }
 
     markConversationUnread(channel: Channel, unread: number): Promise<void> {

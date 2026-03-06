@@ -68,7 +68,7 @@ export class MediaMessageUploadTask extends MessageTask {
 
     // 获取上传路径
     async getUploadURL(path:string) :Promise<string|undefined> {
-       const result = await WKApp.apiClient.get(`file/upload?path=${path}&type=chat`)
+       const result = await WKApp.apiClient.get(`file/upload?path=${encodeURIComponent(path)}&type=chat`)
        if(result) {
            return result.url
        }

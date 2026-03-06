@@ -7,8 +7,8 @@ import { MessageCell } from "../MessageCell"
 import "./index.css"
 
 export class LocationContent extends MessageContent {
-    lng: number = 0 // 纬度
-    lat: number = 0 // 经度
+    lng: number = 0 // 经度 (longitude)
+    lat: number = 0 // 纬度 (latitude)
     title!: string // 位置标题
     address!: string // 具体地址
     img!: string // 封面图远程地址

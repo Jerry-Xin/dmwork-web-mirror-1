@@ -354,16 +354,16 @@ export default class WKApp extends ProviderListener {
   getOSAndVersion() {
     const userAgent: string = navigator.userAgent;
     if (/Windows NT (\d+\.\d+)/i.test(userAgent)) {
-      const version = userAgent.match(/Windows NT (\d+\.\d+)/i)?.[1];
+      const version = userAgent.match(/Windows NT (\d+\.\d+)/i)?.[1] ?? "unknown";
       return `Windows ${version}`;
     } else if (/Mac OS X (\d+_\d+(_\d+)?)/i.test(userAgent)) {
-      const version = userAgent.match(/Mac OS X (\d+_\d+(_\d+)?)/i)?.[1]?.replace(/_/g, ".");
+      const version = userAgent.match(/Mac OS X (\d+_\d+(_\d+)?)/i)?.[1]?.replace(/_/g, ".") ?? "unknown";
       return `MacOS ${version}`;
     } else if (/Android (\d+(\.\d+)?)/i.test(userAgent)) {
-      const version = userAgent.match(/Android (\d+(\.\d+)?)/i)?.[1];
+      const version = userAgent.match(/Android (\d+(\.\d+)?)/i)?.[1] ?? "unknown";
       return `Android ${version}`;
     } else if (/CPU (iPhone )?OS (\d+_\d+(_\d+)?)/i.test(userAgent)) {
-      const version = userAgent.match(/CPU (iPhone )?OS (\d+_\d+(_\d+)?)/i)?.[2]?.replace(/_/g, ".");
+      const version = userAgent.match(/CPU (iPhone )?OS (\d+_\d+(_\d+)?)/i)?.[2]?.replace(/_/g, ".") ?? "unknown";
       return `iOS ${version}`;
     } else if (/Linux/i.test(userAgent)) {
       return "Linux (version not available)";

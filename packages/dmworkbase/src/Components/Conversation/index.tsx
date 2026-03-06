@@ -32,10 +32,14 @@ export class Conversation extends Component<ConversationProps> implements Conver
     scrollTimer: number | null = null
     updateBrowseToMessageSeqAndReminderDoneing: boolean = false
     private _dragFileCallback?: (file: File) => void
+    private _beforeUnloadHandler: () => void
 
     constructor(props: any) {
         super(props)
         this.state = {
+        }
+        this._beforeUnloadHandler = () => {
+            this.dealloc()
         }
     }
 
@@ -180,9 +184,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
             this.insertText(this.vm.draft())
         }
 
-        window.onbeforeunload = () => { // 浏览器关闭
-            this.dealloc()
-        }
+        window.addEventListener('beforeunload', this._beforeUnloadHandler)
 
         this.vm.onFirstMessagesLoaded = () => {
             this.updateBrowseToMessageSeqAndReminderDoneIfNeed()
@@ -195,6 +197,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
     }
 
     componentWillUnmount() {
+        window.removeEventListener('beforeunload', this._beforeUnloadHandler)
         this.dealloc()
     }
     dealloc() {

@@ -198,6 +198,10 @@ export class Conversation extends Component<ConversationProps> implements Conver
         this.dealloc()
     }
     dealloc() {
+        if (this.scrollTimer) {
+            clearTimeout(this.scrollTimer)
+            this.scrollTimer = null
+        }
         this.vm.markUnread()
         this.markConversationExtra()
         WKApp.shared.openChannel = undefined

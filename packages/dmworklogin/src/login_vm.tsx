@@ -147,11 +147,17 @@ export class LoginVM extends ProviderListener {
             return
         }
         this.loginLoading = true
-        const resp = await WKApp.apiClient.post(`user/login_authcode/${authCode}`);
-        if (resp) {
-            this.loginSuccess(resp)
+        try {
+            const resp = await WKApp.apiClient.post(`user/login_authcode/${authCode}`);
+            if (resp) {
+                this.loginSuccess(resp)
+            }
+        } catch (error) {
+            console.error('Login failed:', error)
+        } finally {
+            this.loginLoading = false
+            this.notifyListener()
         }
-        this.loginLoading = false
     }
 
     async requestLoginWithUsernameAndPwd(username: string, password: string) {

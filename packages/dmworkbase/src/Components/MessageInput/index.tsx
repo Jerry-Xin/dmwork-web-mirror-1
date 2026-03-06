@@ -57,6 +57,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     toolbars: Array<ElementType>
     inputRef: any
     eventListener: any
+    private previousScope: string = 'all'
     constructor(props: MessageInputProps) {
         super(props)
         this.toolbars = []
@@ -77,6 +78,8 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     componentDidMount() {
         const self = this;
         const scope = "messageInput"
+        // Save the previous scope to restore on unmount (fix for scope pollution)
+        this.previousScope = hotkeys.getScope()
         hotkeys.filter = function (event) {
             return true;
         }
@@ -108,6 +111,8 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     componentWillUnmount() {
         const scope = "messageInput"
         hotkeys.unbind('ctrl+enter', scope);
+        // Restore the previous scope to prevent scope pollution
+        hotkeys.setScope(this.previousScope);
 
         if (this.eventListener) {
             document.removeEventListener("keydown", this.eventListener)

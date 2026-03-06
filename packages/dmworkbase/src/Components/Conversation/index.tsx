@@ -361,7 +361,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         }
 
         const reminders = this.vm.currentConversation?.reminders
-        if (!reminders || reminders.length == 0) {
+        if (!reminders || reminders.length === 0) {
             return
         }
         const doneReminderIDs: number[] = []
@@ -730,7 +730,7 @@ class ConversationPositionView extends Component<ConversationPositionViewProps, 
     }
 
     getReminderTypes(reminders: Reminder[] | undefined) {
-        if (!reminders || reminders.length == 0) {
+        if (!reminders || reminders.length === 0) {
             return []
         }
         const types = new Set<number>()

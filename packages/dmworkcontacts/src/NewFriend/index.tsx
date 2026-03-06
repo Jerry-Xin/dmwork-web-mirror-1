@@ -39,9 +39,9 @@ export class NewFriend extends Component {
                                         </div>
                                     </div>
                                     <div className="wk-newfriend-content-action">
-                                        <Button loading={vm.currentFriendApply?.to_uid === f.to_uid && vm.sureLoading } disabled={f.status == FriendApplyState.accepted} onClick={()=>{
+                                        <Button loading={vm.currentFriendApply?.to_uid === f.to_uid && vm.sureLoading } disabled={f.status === FriendApplyState.accepted} onClick={()=>{
                                            vm.friendSure(f)
-                                        }}>{f.status == FriendApplyState.accepted ? "已添加" : "确认"}</Button>
+                                        }}>{f.status === FriendApplyState.accepted ? "已添加" : "确认"}</Button>
                                     </div>
                                 </li>
                             })

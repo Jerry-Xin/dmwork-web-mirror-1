@@ -193,7 +193,7 @@ export class UserInfoVM extends ProviderListener {
       param: { group_no: this.fromChannel?.channelID || '' },
     });
     this.channelInfo = Convert.userToChannelInfo(res);
-    if (!this.vercode || this.vercode == "") {
+    if (!this.vercode || this.vercode === "") {
       if (res.vercode && res.vercode !== "") {
         this.vercode = res.vercode
       }

@@ -319,18 +319,18 @@ export class OrganizationalGroupNew extends Component<
     let subscribers = new Array<Subscriber>();
 
     // 群聊
-    if (this.props.channel.channelID.trim() != "") {
+    if (this.props.channel.channelID.trim() !== "") {
       const channel = new Channel(this.props.channel.channelID, this.props.channel.channelType)
 
       // 个人聊天，对方不可选
-      if (this.props.channel.channelType == ChannelTypePerson) {
+      if (this.props.channel.channelType === ChannelTypePerson) {
         const sub = new Subscriber()
         sub.uid = this.props.channel.channelID
         subscribers.push(sub)
       } else {
         // 群聊
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel); // 获取频道信息
-        if (channelInfo?.orgData?.group_type == SuperGroup) {
+        if (channelInfo?.orgData?.group_type === SuperGroup) {
           subscribers = await WKApp.dataSource.channelDataSource.subscribers(channel, {
             limit: 5000,
             page: 1
@@ -375,7 +375,7 @@ export class OrganizationalGroupNew extends Component<
     for (const item of friendData) {
       let exist = false;
       for (const value of values) {
-        if (value == item.uid) {
+        if (value === item.uid) {
           exist = true;
           break
         }
@@ -434,7 +434,7 @@ export class OrganizationalGroupNew extends Component<
   async onOK() {
     const channel = this.props.channel as any;
     const { optPersonnelData } = this.state;
-    if (optPersonnelData.length == 0) {
+    if (optPersonnelData.length === 0) {
       return Toast.warning("请选择联系人");
     }
 
@@ -443,7 +443,7 @@ export class OrganizationalGroupNew extends Component<
     });
 
     // 创建群
-    if (this.props.action == OrganizationalGroupNewAction.createGroup) {
+    if (this.props.action === OrganizationalGroupNewAction.createGroup) {
 
       try {
         await WKApp.dataSource.channelDataSource.createChannel([
@@ -455,7 +455,7 @@ export class OrganizationalGroupNew extends Component<
       }
     }
     // 添加联系人
-    if (this.props.action == OrganizationalGroupNewAction.AddMember) {
+    if (this.props.action === OrganizationalGroupNewAction.AddMember) {
       try {
         await WKApp.dataSource.channelDataSource.addSubscribers(
           channel,

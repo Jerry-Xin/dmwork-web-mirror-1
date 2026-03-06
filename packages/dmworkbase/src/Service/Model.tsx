@@ -221,7 +221,7 @@ export class MessageWrap {
         this.message.status = status
     }
     public get reasonCode() {
-        if (this.status == MessageStatus.Normal) {
+        if (this.status === MessageStatus.Normal) {
             return MessageReasonCode.reasonSuccess
         }
         return this._reasonCode || MessageReasonCode.reasonUnknown

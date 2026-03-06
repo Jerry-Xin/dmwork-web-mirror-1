@@ -120,7 +120,7 @@ export class LoginInfo {
     this.setStorageItemForSID("name", this.name ?? "");
     this.setStorageItemForSID("role", this.role ?? "");
     this.setStorageItemForSID("is_work", this.isWork ? "1" : "0");
-    this.setStorageItemForSID("sex", this.sex == 1 ? "1" : "0");
+    this.setStorageItemForSID("sex", this.sex === 1 ? "1" : "0");
   }
 
   // 获取查询参数
@@ -281,7 +281,7 @@ export default class WKApp extends ProviderListener {
     WKSDK.shared().config.provider.connectAddrCallback = async (
       callback: ConnectAddrCallback
     ) => {
-      if (!this.wsaddrs || this.wsaddrs.length == 0) {
+      if (!this.wsaddrs || this.wsaddrs.length === 0) {
         this.wsaddrs = await WKApp.dataSource.commonDataSource.imConnectAddrs();
       }
       if (this.wsaddrs.length > 0) {
@@ -302,7 +302,7 @@ export default class WKApp extends ProviderListener {
       (status: ConnectStatus, reasonCode?: number) => {
         if (status === ConnectStatus.ConnectKick) {
           WKApp.shared.logout();
-        } else if (reasonCode == 2) {
+        } else if (reasonCode === 2) {
           // 认证失败！
           WKApp.shared.logout();
         } else if (status === ConnectStatus.Disconnect) {
@@ -437,7 +437,7 @@ export default class WKApp extends ProviderListener {
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
     if (channelInfo && channelInfo.logo && channelInfo.logo !== "") {
       let logo = channelInfo.logo;
-      if (logo.indexOf("?") != -1) {
+      if (logo.indexOf("?") !== -1) {
         logo += "&v=" + avatarTag;
       } else {
         logo += "?v=" + avatarTag;
@@ -447,7 +447,7 @@ export default class WKApp extends ProviderListener {
     const baseURL = WKApp.apiClient.config.apiURL;
     if (channel.channelType === ChannelTypePerson) {
       return `${baseURL}users/${channel.channelID}/avatar?v=${avatarTag}`;
-    } else if (channel.channelType == ChannelTypeGroup) {
+    } else if (channel.channelType === ChannelTypeGroup) {
       return `${baseURL}groups/${channel.channelID}/avatar?v=${avatarTag}`;
     }
     return "";

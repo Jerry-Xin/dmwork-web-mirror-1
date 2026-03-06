@@ -105,7 +105,7 @@ export class MeInfoVM extends ProviderListener {
                         subTitle: WKApp.loginInfo.name,
                         onClick: () => {
                             this.inputEditPush(context, WKApp.loginInfo.name || "", async (value) => {
-                                if (value.trim() == "") {
+                                if (value.trim() === "") {
                                     Toast.error("名字不能为空！")
                                     return
                                 }
@@ -142,7 +142,7 @@ export class MeInfoVM extends ProviderListener {
 
         let sex = WKApp.loginInfo.sex === 0 ? Sex.Female : Sex.Male
         let sexStr = "男"
-        if (sex == Sex.Female) {
+        if (sex === Sex.Female) {
             sexStr = "女"
         }
 

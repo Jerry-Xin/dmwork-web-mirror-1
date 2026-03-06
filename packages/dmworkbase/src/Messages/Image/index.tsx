@@ -77,7 +77,7 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
     getImageSrc(content: ImageContent) {
         if (content.url && content.url !== "") { // 等待发送的消息
             let downloadURL = WKApp.dataSource.commonDataSource.getImageURL(content.url, { width: content.width, height: content.height })
-            if (downloadURL.indexOf("?") != -1) {
+            if (downloadURL.indexOf("?") !== -1) {
                 downloadURL += "&filename=image.png"
             } else {
                 downloadURL += "?filename=image.png"

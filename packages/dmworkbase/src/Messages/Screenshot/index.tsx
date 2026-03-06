@@ -12,7 +12,7 @@ export class ScreenshotContent extends MessageContent {
 
     get tip() {
         let name = ""
-        if (this.fromUID == WKApp.loginInfo.uid) {
+        if (this.fromUID === WKApp.loginInfo.uid) {
             name = "你"
         } else {
             let channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(this.fromUID, ChannelTypePerson))

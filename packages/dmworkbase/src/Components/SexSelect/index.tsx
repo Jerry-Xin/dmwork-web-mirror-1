@@ -28,7 +28,7 @@ export class SexSelect extends Component<SexSelectProps,SexSelectState>{
                     onSelect(Sex.Male)
                 }
             }}>
-                <div style={{"visibility":`${sex==Sex.Male?'unset':'hidden'}`}}><IconCheckboxTick className="wk-sex-select-item checked" size="large" /></div>
+                <div style={{"visibility":`${sex===Sex.Male?'unset':'hidden'}`}}><IconCheckboxTick className="wk-sex-select-item checked" size="large" /></div>
                 <div className="wk-sex-select-item sex">男</div>
             </div>
             <div className="wk-sex-select-item" onClick={() => {
@@ -36,7 +36,7 @@ export class SexSelect extends Component<SexSelectProps,SexSelectState>{
                     onSelect(Sex.Female)
                 }
             }}>
-                 <div style={{"visibility":`${sex==Sex.Female?'unset':'hidden'}`}}><IconCheckboxTick className="wk-sex-select-item checked" size="large" /></div>
+                 <div style={{"visibility":`${sex===Sex.Female?'unset':'hidden'}`}}><IconCheckboxTick className="wk-sex-select-item checked" size="large" /></div>
                 <div className="wk-sex-select-item sex">女</div>
             </div>
         </div>

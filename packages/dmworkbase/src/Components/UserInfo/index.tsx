@@ -37,7 +37,7 @@ export default class UserInfo extends Component<UserInfoProps> {
                 WKApp.endpoints.showConversation(new Channel(vm.uid, ChannelTypePerson))
             }}>发送消息</Button>
         } else {
-            if (!vm.vercode || vm.vercode == "") { // 没有验证码，不显示添加好友按钮
+            if (!vm.vercode || vm.vercode === "") { // 没有验证码，不显示添加好友按钮
                 return undefined
             }
             content = <Button onClick={() => {

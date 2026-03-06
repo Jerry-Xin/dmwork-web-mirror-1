@@ -28,7 +28,7 @@ export class InputEdit extends Component<InputEditProps>{
                 }
             }} autosize rows={2}  showClear maxCount={maxCount} onKeyDown={(e)=>{
                 if(!allowWrap) {
-                    if(e.keyCode!=13) return;
+                    if(e.keyCode !== 13) return;
                     e.preventDefault();
                 }
             }}></TextArea>

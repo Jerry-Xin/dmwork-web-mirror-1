@@ -589,16 +589,16 @@ export default class BaseModule implements IModule {
     WKApp.endpoints.registerMessageContextMenus(
       "contextmenus.revoke",
       (message, context) => {
-        if (message.messageID == "") {
+        if (message.messageID === "") {
           return null;
         }
 
         let isManager = false;
-        if (message.channel.channelType == ChannelTypeGroup) {
+        if (message.channel.channelType === ChannelTypeGroup) {
           const sub = WKSDK.shared().channelManager.getSubscribeOfMe(
             message.channel
           );
-          if (sub?.role == GroupRole.manager || sub?.role == GroupRole.owner) {
+          if (sub?.role === GroupRole.manager || sub?.role === GroupRole.owner) {
             isManager = true;
           }
         }
@@ -934,7 +934,7 @@ export default class BaseModule implements IModule {
       const data = context.routeData() as ChannelSettingRouteData;
       const channel = data.channel;
 
-      if (channel.channelType == ChannelTypeCustomerService) {
+      if (channel.channelType === ChannelTypeCustomerService) {
         return;
       }
 
@@ -1236,7 +1236,7 @@ export default class BaseModule implements IModule {
         const channel = data.channel;
         const rows = new Array<Row>();
 
-        if (channel.channelType == ChannelTypeCustomerService) {
+        if (channel.channelType === ChannelTypeCustomerService) {
           return;
         }
 
@@ -1284,7 +1284,7 @@ export default class BaseModule implements IModule {
           })
         );
 
-        if (channel.channelType == ChannelTypeGroup) {
+        if (channel.channelType === ChannelTypeGroup) {
           rows.push(
             new Row({
               cell: ListItemSwitch,

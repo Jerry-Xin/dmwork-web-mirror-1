@@ -170,7 +170,7 @@ export default class ConversationSelect extends Component<ConversationSelectProp
                                 if(!keyword || keyword === "") {
                                     return true
                                 }
-                               return v.channelInfo?.title.indexOf(keyword)!=-1
+                               return v.channelInfo?.title.indexOf(keyword) !== -1
                             }).map((conversationWrap: ConversationWrap) => {
 
                                 return (

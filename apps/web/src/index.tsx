@@ -8,7 +8,7 @@ import  { LoginModule } from '@dmwork/login';
 import  { DataSourceModule } from '@dmwork/datasource';
 import {ContactsModule} from '@dmwork/contacts';
 
-const apiURL = "https://api.botgate.cn/v1/"
+const apiURL = process.env.REACT_APP_API_URL || "https://api.botgate.cn/v1/"
 
 if((window as any).__TAURI_IPC__) { // tauri环境
   WKApp.apiClient.config.apiURL = apiURL

@@ -40,7 +40,12 @@ export class ProhibitwordsService {
     load() {
         const prohibitwordsJson = StorageService.shared.getItem("prohibitwords")
         if (prohibitwordsJson && prohibitwordsJson.length > 0) {
-            this.prohibitwords = JSON.parse(prohibitwordsJson)
+            try {
+                this.prohibitwords = JSON.parse(prohibitwordsJson)
+            } catch (e) {
+                console.error('Failed to parse prohibitwords:', e)
+                this.prohibitwords = []
+            }
         }
     }
     save() {

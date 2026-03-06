@@ -123,7 +123,12 @@ export class VoiceCell extends MessageCell<any,VoiceCellState> {
         const { message } = props
         this.content = message.content
         if(this.content.waveform && this.content.waveform.length>0) {
-            this.waveform = new Uint8Array(atob(this.content.waveform).split('').map(char => char.charCodeAt(0)));
+            try {
+                this.waveform = new Uint8Array(atob(this.content.waveform).split('').map(char => char.charCodeAt(0)));
+            } catch (e) {
+                console.error('Failed to decode waveform base64:', e);
+                this.waveform = new Uint8Array(0);
+            }
         }
         this.timeFormat = this.formatSecond(this.content.timeTrad)
     }

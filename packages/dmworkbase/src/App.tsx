@@ -592,7 +592,13 @@ export default class WKApp extends ProviderListener {
     if (!value || value === "") {
       return friendApplys;
     }
-    const friendApplyObjs = JSON.parse(value);
+    let friendApplyObjs: any[] = [];
+    try {
+      friendApplyObjs = JSON.parse(value);
+    } catch (e) {
+      console.error('Failed to parse friend apply data:', e);
+      return friendApplys;
+    }
 
     if (friendApplyObjs && friendApplyObjs.length > 0) {
       for (const friendApplyObj of friendApplyObjs) {

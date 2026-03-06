@@ -34,9 +34,14 @@ export class LocationCell extends MessageCell {
         const content = message.content as LocationContent
         return <MessageBase hiddeBubble={true} message={message} context={context}>
             <div className="wk-message-location" onClick={()=>{
-                const title = encodeURIComponent(content.title || '')
-                const address = encodeURIComponent(content.address || '')
-                window.open(`https://lbs.amap.com/tools/showmap/?1_800_460_${content.lng}_${content.lat}&=${title}&=${address}&=&=&=`)
+                const lng = Math.min(180, Math.max(-180, Number(content.lng) || 0))
+                const lat = Math.min(90, Math.max(-90, Number(content.lat) || 0))
+                const baseUrl = 'https://lbs.amap.com/tools/showmap/'
+                const path = `1_800_460_${lng}_${lat}`
+                const url = new URL(baseUrl + '?' + path)
+                url.searchParams.set('title', content.title || '')
+                url.searchParams.set('address', content.address || '')
+                window.open(url.toString())
             }}>
                 <div className="wk-message-location-content">
                     <div className="wk-message-location-content-title">{content.title}</div>

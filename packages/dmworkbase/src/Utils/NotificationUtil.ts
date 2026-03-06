@@ -223,7 +223,7 @@ export class NotificationUtil {
 
     // Create new notification using web API
     this.messageNotification = await this.createNotification({
-      title: channelInfo ? channelInfo.orgData.displayName : "通知",
+      title: channelInfo?.orgData?.displayName ?? "通知",
       body: description,
       channel: message.channel,
       fromUid: message.fromUID,
@@ -260,8 +260,8 @@ export class NotificationUtil {
     const channel = new Channel(fromUID, 1); // ChannelTypePerson = 1
 
     this.callNotification = await this.createNotification({
-      title: channelInfo ? channelInfo.orgData.displayName : "通知",
-      body: `${channelInfo.title}正在呼叫您`,
+      title: channelInfo?.orgData?.displayName ?? "通知",
+      body: `${channelInfo?.title ?? "用户"}正在呼叫您`,
       channel: channel,
       fromUid: fromUID,
       tag: "call",

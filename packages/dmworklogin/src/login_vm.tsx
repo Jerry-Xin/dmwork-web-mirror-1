@@ -197,10 +197,16 @@ export class LoginVM extends ProviderListener {
             code_type: codeType,
         }).then(() => {
             this.emailCodeCountdown = 60
+            // Clear any existing timer before creating a new one
+            if (this._countdownTimer) {
+                clearInterval(this._countdownTimer)
+                this._countdownTimer = undefined
+            }
             this._countdownTimer = setInterval(() => {
                 this.emailCodeCountdown--
                 if (this.emailCodeCountdown <= 0) {
                     clearInterval(this._countdownTimer)
+                    this._countdownTimer = undefined
                 }
                 this.notifyListener()
             }, 1000)

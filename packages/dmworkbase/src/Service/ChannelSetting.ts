@@ -56,7 +56,9 @@ export class ChannelSettingManager {
 
     _onSetting(setting: any, channel: Channel): Promise<void> {
         return WKApp.dataSource.channelDataSource.updateSetting(setting, channel).catch((err) => {
+            console.error('Setting update failed:', err);
             Toast.error(err.msg)
+            throw err;
         })
     }
 }

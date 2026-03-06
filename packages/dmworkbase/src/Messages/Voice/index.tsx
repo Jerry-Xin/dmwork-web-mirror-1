@@ -130,8 +130,8 @@ export class VoiceCell extends MessageCell<any,VoiceCellState> {
 
     formatSecond(s:any) {
         s = Math.ceil(s);
-        let minute = parseInt(`${s / 60}`);
-        let second = parseInt(`${s % 60}`);
+        let minute = Math.floor(s / 60);
+        let second = Math.floor(s % 60);
         let minuteStr = minute > 9 ? `${minute}` : `0${minute}`;
         let secondStr = second > 9 ? `${second}` : `0${second}`;
         return minuteStr + ":" + secondStr

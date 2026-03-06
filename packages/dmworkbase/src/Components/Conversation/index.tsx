@@ -364,25 +364,20 @@ export class Conversation extends Component<ConversationProps> implements Conver
         if (!reminders || reminders.length == 0) {
             return
         }
-        let change = false
+        const doneReminderIDs: number[] = []
         for (const reminder of reminders) {
             if (reminder.done) {
                 continue
             }
             const message = this.vm.findMessageWithMessageSeq(reminder.messageSeq)
             if (message && this.isVisiableMessage(message.message, viewport)) {
-                reminder.done = true
-                change = true
+                doneReminderIDs.push(reminder.reminderID)
                 continue
             }
         }
-        if (change) {
-            const conversation = WKSDK.shared().conversationManager.findConversation(this.channel())
-            if (conversation) {
-                conversation.reminders = reminders
-                WKSDK.shared().conversationManager.notifyConversationListeners(conversation, ConversationAction.update)
-            }
-            this.vm.notifyListener()
+        if (doneReminderIDs.length > 0) {
+            // Persist reminder done status to server via SDK (fixes #169)
+            WKSDK.shared().reminderManager.done(doneReminderIDs)
         }
 
     }

@@ -273,7 +273,8 @@ export default class WKBase
         >
           {orgId && orgUid && orgCode && (
             <iframe
-              src={`${baseURL}web/join_org.html?org_id=${orgId}&uid=${orgUid}&code=${orgCode}`}
+              src={`${baseURL}web/join_org.html?org_id=${encodeURIComponent(orgId)}&uid=${encodeURIComponent(orgUid)}&code=${encodeURIComponent(orgCode)}`}
+              sandbox="allow-scripts allow-same-origin"
               style={{ width: "100%", height: "100%", border: "none" }}
             ></iframe>
           )}

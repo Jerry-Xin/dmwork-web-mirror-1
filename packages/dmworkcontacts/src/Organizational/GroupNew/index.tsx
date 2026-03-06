@@ -99,10 +99,17 @@ export class OrganizationalGroupNew extends Component<
     const res = await WKApp.apiClient.get(
       `/organizations/${org_id}/department`
     );
+    if (!res) return;
     // 部门
-    const departments: any = this.handleTree(res.departments);
+    const departments: any = Array.isArray(res.departments)
+      ? this.handleTree(res.departments)
+      : [];
     // 人员
     const employees: any[] = [];
+    if (!Array.isArray(res.employees)) {
+      this.setState({ treeData: [...departments] });
+      return;
+    }
     res.employees.forEach((y: any) => {
       employees.push({
         label: y.employee_name,

@@ -86,7 +86,7 @@ export default class APIClient {
 
     private async wrapResult<T = APIResp>(result: Promise<AxiosResponse>, config?: RequestConfig): Promise<T|any> {
         if (!result) {
-            return Promise.reject()
+            return Promise.reject(new Error("Invalid request: result is null or undefined"))
         }
         
         return  result.then((value) => {

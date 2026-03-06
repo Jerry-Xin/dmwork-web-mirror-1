@@ -333,7 +333,16 @@ export class LoginVM extends ProviderListener {
             this.advance(result)
         }).catch(() => {
             this._pullErrCount++
-            this.pullLoginStatus(uuid)
+            if (this._pullErrCount < this._pullMaxErrCount) {
+                setTimeout(() => {
+                    this.pullLoginStatus(uuid)
+                }, 2000)
+            } else {
+                this._pullErrCount = 0
+                this.loginStatus = LoginStatus.getUUID
+                this.advance()
+                this.notifyListener()
+            }
         })
     }
     showAvatar() {

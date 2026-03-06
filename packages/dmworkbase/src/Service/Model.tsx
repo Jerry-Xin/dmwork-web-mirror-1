@@ -37,8 +37,28 @@ export class ConversationWrap {
     public get channelInfo() {
         return this.conversation.channelInfo
     }
+    // System/event message content types that should not contribute to unread count
+    private static systemContentTypes: Set<number> = new Set([
+        MessageContentTypeConst.addMembers,       // 1002 添加群成员
+        MessageContentTypeConst.removeMembers,     // 1003 删除群成员
+        MessageContentTypeConst.channelUpdate,     // 1005 频道更新
+        MessageContentTypeConst.newGroupOwner,     // 1008 新的管理员
+        MessageContentTypeConst.approveGroupMember,// 1009 审批群成员
+    ])
+
+    private isSystemMessage(message: Message | undefined): boolean {
+        if (!message) return false
+        return ConversationWrap.systemContentTypes.has(message.contentType)
+    }
+
     public get unread() {
-        return this.conversation.unread
+        const rawUnread = this.conversation.unread
+        // If unread is 1 and the last message is a system/event message,
+        // don't show unread badge (fixes #165)
+        if (rawUnread === 1 && this.isSystemMessage(this.conversation.lastMessage)) {
+            return 0
+        }
+        return rawUnread
     }
 
     public get timestamp() {

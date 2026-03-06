@@ -33,9 +33,9 @@ export class ConversationProvider implements IConversationProvider {
 
     markConversationUnread(channel: Channel, unread: number): Promise<void> {
         return WKApp.apiClient.put('conversation/clearUnread', { "channel_id": channel.channelID, "channel_type": channel.channelType, "unread": unread > 0 ? unread : 0 }).catch(function (error) {
-            return error;
+            console.error('Failed to mark conversation unread:', error);
+            throw error;
         });
-
     }
 
     // 同步消息 由于isdelete导致可能一页消息数量不够 甚至没有，所以 syncGetMessages 写成回调

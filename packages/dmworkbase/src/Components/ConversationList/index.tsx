@@ -17,6 +17,7 @@ import { BeatLoader } from "react-spinners";
 import { RevokeCell } from "../../Messages/Revoke";
 import { FlameMessageCell } from "../../Messages/Flame";
 import WKAvatar from "../WKAvatar";
+import AiBadge from "../AiBadge";
 export interface ConversationListProps {
     conversations: ConversationWrap[]
     select?: Channel
@@ -164,7 +165,7 @@ export default class ConversationList extends Component<ConversationListProps, C
             <div className={classNames("wk-conversationlist-item-content", selected ? "wk-conversationlist-item-selected" : undefined)}>
                 <div className="wk-conversationlist-item-left">
                     <div className="wk-conversationlist-item-avatar-box">
-                        <WKAvatar  channel={conversationWrap.channel} key={avatarKey} showBotBadge={channelInfo?.orgData?.robot === 1}></WKAvatar>
+                        <WKAvatar  channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
                         {
                             channelInfo && this.needShowOnlineStatus(channelInfo) ? <OnlineStatusBadge tip={this.getOnlineTip(channelInfo)}></OnlineStatusBadge> : undefined
                         }
@@ -176,8 +177,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                         <div className="wk-conversationlist-item-name">
                             <h3>
                                 {channelInfo?.orgData.displayName}
-
-
+                                {channelInfo?.orgData?.robot === 1 && <AiBadge />}
                             </h3>
                             {
                                 channelInfo?.orgData.identityIcon ? <img style={{ "marginLeft": "4px", "width": channelInfo?.orgData?.identitySize.width, "height": channelInfo?.orgData?.identitySize.height }} src={channelInfo?.orgData.identityIcon}></img> : undefined

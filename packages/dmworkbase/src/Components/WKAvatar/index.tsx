@@ -18,7 +18,6 @@ interface WKAvatarProps {
     src?: string
     style?: CSSProperties
     random?: string
-    showBotBadge?: boolean
 }
 
 const defaultAvatarSVG = `
@@ -66,20 +65,7 @@ export default class WKAvatar extends Component<WKAvatarProps, WKAvatarState> {
         
     }
     render() {
-        const { style, showBotBadge } = this.props
-        const avatarImg = <img alt="" style={style} className="wk-avatar" src={this.state.src} onLoad={this.handleLoad.bind(this)} onError={this.handleImgError.bind(this)} />
-
-        if (!showBotBadge) {
-            return avatarImg
-        }
-
-        return (
-            <div className="wk-avatar-wrapper" style={{ width: style?.width, height: style?.height }}>
-                {avatarImg}
-                <div className="wk-avatar-bot-badge">
-                    <img src="./identity_icon/robot.png" alt="bot" className="wk-avatar-bot-badge-icon" />
-                </div>
-            </div>
-        )
+        const { style } = this.props
+        return <img alt="" style={style} className="wk-avatar" src={this.state.src} onLoad={this.handleLoad.bind(this)} onError={this.handleImgError.bind(this)} />
     }
 }

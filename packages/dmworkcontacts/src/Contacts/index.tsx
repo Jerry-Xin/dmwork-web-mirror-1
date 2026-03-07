@@ -10,6 +10,7 @@ import { Channel, ChannelTypePerson, WKSDK,ChannelInfoListener,ChannelInfo } fro
 import { ContactsListManager } from "../Service/ContactsListManager";
 import { Card } from "@dmwork/base/src/Messages/Card";
 import WKAvatar from "@dmwork/base/src/Components/WKAvatar";
+import AiBadge from "@dmwork/base/src/Components/AiBadge";
 
 export class ContactsState {
     indexList: string[] = []
@@ -166,10 +167,11 @@ export default class ContactsList extends Component<any, ContactsState> {
                                 {i === 0 ? indexName : ""}
                             </div>
                             <div className="wk-contacts-section-item-avatar">
-                                <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)} showBotBadge={item.robot}></WKAvatar>
+                                <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)}></WKAvatar>
                             </div>
                             <div className="wk-contacts-section-item-name">
                                 {name}
+                                {item.robot && <AiBadge />}
                             </div>
                         </div>
                     })

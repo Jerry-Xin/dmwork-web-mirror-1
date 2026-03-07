@@ -1,0 +1,24 @@
+.ai-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    font-weight: 600;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.ai-badge-default {
+    font-size: 10px;
+    padding: 1px 4px;
+    line-height: 12px;
+}
+
+.ai-badge-small {
+    font-size: 8px;
+    padding: 1px 3px;
+    line-height: 10px;
+}

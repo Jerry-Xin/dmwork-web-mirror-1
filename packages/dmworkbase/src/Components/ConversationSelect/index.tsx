@@ -8,6 +8,7 @@ import  { IconSearchStroked } from '@douyinfe/semi-icons';
 import "./index.css"
 import React from "react";
 import WKAvatar, { isBot } from "../WKAvatar";
+import AiBadge from "../AiBadge";
 
 interface ConversationSelectProps {
     onFinished?: (channels: Channel[]) => void
@@ -143,7 +144,7 @@ export default class ConversationSelect extends Component<ConversationSelectProp
                                 return <div key={`${channel.channelID}-selected`} className="wk-conversationselect-content-selectedAvatar" onClick={() => {
                                     this.select(channel)
                                 }}>
-                                    <WKAvatar channel={channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} showBotBadge={isBot(channel.channelID)}></WKAvatar>
+                                    <WKAvatar channel={channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }}></WKAvatar>
                                 </div>
                             })
                         }
@@ -184,12 +185,11 @@ export default class ConversationSelect extends Component<ConversationSelectProp
                                         </div>
                                         <div className="wk-conversationselect-content-box-data">
                                             <div>
-                                                <WKAvatar channel={conversationWrap.channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} showBotBadge={conversationWrap.channelInfo?.orgData?.robot === 1} />
+                                                <WKAvatar channel={conversationWrap.channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} />
                                             </div>
                                             <div className="wk-conversationselect-content-box-name">
-                                                {
-                                                    conversationWrap.channelInfo?.orgData.displayName
-                                                }
+                                                {conversationWrap.channelInfo?.orgData.displayName}
+                                                {conversationWrap.channelInfo?.orgData?.robot === 1 && <AiBadge />}
                                             </div>
                                         </div>
                                     </div>
@@ -221,12 +221,11 @@ export default class ConversationSelect extends Component<ConversationSelectProp
                                         </div>
                                         <div className="wk-conversationselect-content-box-data">
                                             <div >
-                                                <WKAvatar channel={channelInfo.channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} showBotBadge={channelInfo?.orgData?.robot === 1} />
+                                                <WKAvatar channel={channelInfo.channel} style={{ width: "48px", height: "48px", borderRadius: "48px" }} />
                                             </div>
                                             <div className="wk-conversationselect-content-box-name">
-                                                {
-                                                    channelInfo?.orgData.displayName
-                                                }
+                                                {channelInfo?.orgData.displayName}
+                                                {channelInfo?.orgData?.robot === 1 && <AiBadge />}
                                             </div>
                                         </div>
                                     </div>

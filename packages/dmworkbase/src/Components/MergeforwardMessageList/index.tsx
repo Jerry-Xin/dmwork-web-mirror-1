@@ -5,6 +5,7 @@ import { ImageContent } from "../../Messages/Image";
 import MergeforwardContent from "../../Messages/Mergeforward";
 import { dateFormat, getTimeStringAutoShort2 } from "../../Utils/time";
 import WKAvatar, { isBot } from "../WKAvatar";
+import AiBadge from "../AiBadge";
 import WKViewQueueHeader from "../WKViewQueueHeader";
 import WKApp from "../../App";
 
@@ -110,13 +111,14 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
                             return <div className="wk-mergeforwardmessagelist-content-msg" key={m.messageID}>
                                 <div className="wk-mergeforwardmessagelist-content-msg-avatar" style={{ "width": "40px", "height": "40px", "borderRadius": "50%" }}>
                                     {
-                                        showAvatar?<WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)} style={{ "width": "40px", "height": "40px", "borderRadius": "50%" }} showBotBadge={isBot(m.fromUID)}></WKAvatar>:undefined
+                                        showAvatar?<WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)} style={{ "width": "40px", "height": "40px", "borderRadius": "50%" }}></WKAvatar>:undefined
                                     }
                                 </div>
                                 <div className="wk-mergeforwardmessagelist-content-msg-info">
                                     <div className="wk-mergeforwardmessagelist-content-msg-info-first">
                                         <div className="wk-mergeforwardmessagelist-content-msg-info-first-name">
                                             {fromChannelInfo?.title}
+                                            {isBot(m.fromUID) && <AiBadge size="small" />}
                                         </div>
                                         <div className="wk-mergeforwardmessagelist-content-msg-info-first-time">
                                                 {getTimeStringAutoShort2(m.timestamp*1000,true)}

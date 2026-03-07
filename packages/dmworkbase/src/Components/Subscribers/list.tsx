@@ -7,6 +7,7 @@ import "./list.css";
 import WKApp from "../../App";
 import WKSDK, { Channel, ChannelTypePerson, Subscriber } from "wukongimjssdk";
 import WKAvatar, { isBot } from "../WKAvatar";
+import AiBadge from "../AiBadge";
 import { Checkbox } from "@douyinfe/semi-ui/lib/es/checkbox";
 import { GroupRole } from "../../Service/Const";
 
@@ -192,11 +193,12 @@ export class SubscriberList extends Component<
                         </div>
                       ) : undefined}
                       <div className="wk-subscrierlist-item-avatar">
-                        <WKAvatar src={item.avatar} showBotBadge={isBot(item.uid)}></WKAvatar>
+                        <WKAvatar src={item.avatar}></WKAvatar>
                       </div>
                       <div className="wk-subscrierlist-item-content">
                         <div className="wk-subscrierlist-item-name">
                           {this.getShowName(item)}
+                          {isBot(item.uid) && <AiBadge />}
                         </div>
                         <div className="wk-subscrierlist-item-desc">
                           {this.getRoleName(item)}

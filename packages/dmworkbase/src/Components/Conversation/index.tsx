@@ -12,6 +12,7 @@ import MessageInput, { MentionModel, MessageInputContext } from "../MessageInput
 import ContextMenus, { ContextMenusContext } from "../ContextMenus";
 import classNames from "classnames";
 import WKAvatar from "../WKAvatar";
+import AiBadge from "../AiBadge";
 import { IconClose, IconEdit, IconReply } from "@douyinfe/semi-icons";
 import { Toast, Spin } from "@douyinfe/semi-ui";
 import { FlameMessageCell } from "../../Messages/Flame";
@@ -839,12 +840,11 @@ class ReplyView extends Component<ReplyViewProps> {
                 <div className="wk-replyview-content-first">
                     <div className="wk-replyview-content-userinfo">
                         <div className="wk-replyview-content-userinfo-avatar">
-                            <WKAvatar style={{ "width": "24px", "height": "24px", "borderRadius": "50%" }} channel={new Channel(message.fromUID, ChannelTypePerson)} showBotBadge={fromChannelInfo?.orgData?.robot === 1}></WKAvatar>
+                            <WKAvatar style={{ "width": "24px", "height": "24px", "borderRadius": "50%" }} channel={new Channel(message.fromUID, ChannelTypePerson)}></WKAvatar>
                         </div>
                         <div className="wk-replyview-content-userinfo-name">
-                            {
-                                fromChannelInfo?.title
-                            }
+                            {fromChannelInfo?.title}
+                            {fromChannelInfo?.orgData?.robot === 1 && <AiBadge size="small" />}
                         </div>
                     </div>
                 </div>

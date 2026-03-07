@@ -21,11 +21,11 @@ export default class TabContacts extends Component<TabContactsProps> {
                     if (this.props.keyword && item.channel_name.indexOf(this.props.keyword) !== -1) {
                         item.channel_name = item.channel_name.replace(this.props.keyword, `<mark>${this.props.keyword}</mark>`)
                     }
-                    return <ItemContacts 
-                    key={item.channel_id} 
-                    name={item.channel_name} 
+                    return <ItemContacts
+                    key={item.channel_id}
+                    name={item.channel_name}
                     avatar={WKApp.shared.avatarUser(item.channel_id)}
-                    showBotBadge={isBot(item.channel_id)}
+                    isBot={isBot(item.channel_id)}
                     onClick={()=>{
                         if(this.props.onClick) {
                             this.props.onClick(item)

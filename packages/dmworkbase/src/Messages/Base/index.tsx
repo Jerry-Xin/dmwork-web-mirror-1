@@ -213,7 +213,7 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                         {
                             this.needAvatar() && (<div className="senderAvatar" onClick={(el) => {
                                 context.onTapAvatar(message.fromUID, el)
-                            }}><WKAvatar channel={channelInfo?.channel} style={{ width: "40px", height: "40px", borderRadius: "50%" }} showBotBadge={channelInfo?.orgData?.robot === 1} /></div>)
+                            }}><WKAvatar channel={channelInfo?.channel} style={{ width: "40px", height: "40px", borderRadius: "50%" }} /></div>)
                         }
 
                         <div className={this.getBubbleBoxClassName()}>

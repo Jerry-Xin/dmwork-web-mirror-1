@@ -198,10 +198,10 @@ export class CommonDataSource implements ICommonDataSource {
         return WKApp.apiClient.delete(`favorites/${id}`)
     }
     userStickerCategory(): Promise<any> {
-        return WKApp.apiClient.get(`sticker/user/category`)
+        return WKApp.apiClient.get(`sticker/user/category`).catch(() => [])
     }
     getStickers(category: string): Promise<any> {
-        return WKApp.apiClient.get(`sticker/user/sticker?category=${encodeURIComponent(category)}`)
+        return WKApp.apiClient.get(`sticker/user/sticker?category=${encodeURIComponent(category)}`).catch(() => [])
     }
     searchUser(keyword: string): Promise<any> {
         return WKApp.apiClient.get(`user/search?keyword=${encodeURIComponent(keyword)}`)

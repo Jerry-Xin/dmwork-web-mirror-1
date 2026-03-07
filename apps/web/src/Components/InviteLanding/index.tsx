@@ -102,11 +102,11 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
         if (!regUsername || !regPassword) { Toast.warning("请输入用户名和密码"); return; }
         this.setState({ regLoading: true });
         try {
-            // Register
-            const regResp = await fetch(`${WKApp.apiClient.config.apiURL}user/register`, {
+            // Register using usernameregister API (no code required)
+            const regResp = await fetch(`${WKApp.apiClient.config.apiURL}user/usernameregister`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: regUsername, password: regPassword, code: "123456" }),
+                body: JSON.stringify({ username: regUsername, name: regUsername, password: regPassword, flag: 1 }),
             });
             const regData = await regResp.json();
             if (!regResp.ok) { Toast.error(regData.msg || "注册失败"); this.setState({ regLoading: false }); return; }

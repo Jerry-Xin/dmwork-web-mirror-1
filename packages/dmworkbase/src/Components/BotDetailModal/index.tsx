@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Modal, Button, Spin, Toast } from "@douyinfe/semi-ui";
 import { Channel, ChannelTypePerson, WKSDK } from "wukongimjssdk";
-import { WKApp } from "../../App";
+import WKApp from "../../App";
 import WKAvatar from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import "./index.css";

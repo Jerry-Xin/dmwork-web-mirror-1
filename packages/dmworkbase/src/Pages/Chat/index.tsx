@@ -3,7 +3,7 @@ import { Conversation } from "../../Components/Conversation";
 import ConversationList from "../../Components/ConversationList";
 import Provider from "../../Service/Provider";
 
-import { Spin, Modal, Popover, Toast } from "@douyinfe/semi-ui";
+import { Spin, Modal, Popover } from "@douyinfe/semi-ui";
 import { IconPlus, IconSearch } from "@douyinfe/semi-icons";
 import { ChatVM, handleGlobalSearchClick } from "./vm";
 import "./index.css";
@@ -19,7 +19,7 @@ import GlobalSearch from "../../Components/GlobalSearch";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import SpaceList from "../../Components/SpaceList";
 import SpaceCreate from "../../Components/SpaceCreate";
-import { Space, SpaceService } from "../../Service/SpaceService";
+import { Space } from "../../Service/SpaceService";
 
 export interface ChatContentPageProps {
   channel: Channel;
@@ -172,24 +172,14 @@ export class ChatContentPage extends Component<
   }
 }
 
-interface ChatPageState {
-  allSpaces: Space[];
-  showSpaceDropdown: boolean;
-}
-
-export default class ChatPage extends Component<any, ChatPageState> {
+export default class ChatPage extends Component<any> {
   vm!: ChatVM;
   spaceListRef: SpaceList | null = null;
   constructor(props: any) {
     super(props);
-    this.state = { allSpaces: [], showSpaceDropdown: false };
   }
 
-  componentDidMount() {
-    SpaceService.shared.getMySpaces().then(spaces => {
-      this.setState({ allSpaces: spaces });
-    }).catch(() => {});
-  }
+  componentDidMount() {}
 
   componentWillUnmount() { }
 
@@ -213,69 +203,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
               >
                 <div className="wk-chat-content-left">
                   <div className="wk-chat-search">
-                    <div className="wk-chat-title" style={{ position: 'relative', cursor: 'pointer' }} onClick={() => this.setState(prev => ({ showSpaceDropdown: !prev.showSpaceDropdown }))}>
-                      {(() => {
-                        const currentSpace = this.state.allSpaces.find(s => s.space_id === WKApp.shared.currentSpaceId);
-                        const colors = ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'];
-                        const statusIcon = vm.connectStatus === 1 ? '🟢' : vm.connectStatus === 2 ? '🟡' : '🔴';
-                        return currentSpace ? (
-                          <>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, backgroundColor: colors[currentSpace.name.charCodeAt(0) % colors.length], color: 'white', fontSize: 14, fontWeight: 600, marginRight: 8 }}>
-                              {currentSpace.name.charAt(0)}
-                            </span>
-                            {currentSpace.name}
-                            <span style={{ fontSize: 10, marginLeft: 4 }}>{statusIcon}</span>
-                            <span style={{ fontSize: 12, marginLeft: 2, color: '#999' }}>▾</span>
-                          </>
-                        ) : (
-                          <>{vm.connectTitle} <span style={{ fontSize: 10, marginLeft: 4 }}>{statusIcon}</span></>
-                        );
-                      })()}
-                      {this.state.showSpaceDropdown && (
-                        <div className="wk-chat-space-dropdown" onClick={e => e.stopPropagation()}>
-                          {this.state.allSpaces.map(space => {
-                            const isSelected = space.space_id === WKApp.shared.currentSpaceId;
-                            const colors = ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'];
-                            return (
-                              <div key={space.space_id} className={classNames("wk-chat-space-dropdown-item", isSelected && "wk-chat-space-dropdown-item-selected")} onClick={() => {
-                                WKApp.shared.currentSpaceId = space.space_id;
-                                localStorage.setItem("currentSpaceId", space.space_id);
-                                WKApp.shared.notifyListener();
-                                WKApp.mittBus.emit("space-changed", space);
-                                this.setState({ showSpaceDropdown: false });
-                              }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 6, backgroundColor: colors[space.name.charCodeAt(0) % colors.length], color: 'white', fontSize: 12, fontWeight: 600, marginRight: 8 }}>
-                                  {space.name.charAt(0)}
-                                </span>
-                                <span style={{ flex: 1 }}>{space.name}</span>
-                                <span className="wk-chat-space-invite-btn" title="复制邀请链接" onClick={async (e) => {
-                                  e.stopPropagation();
-                                  try {
-                                    const detail = await WKApp.apiClient.get(`/space/${space.space_id}`);
-                                    if (detail.invite_code) {
-                                      const link = `${window.location.origin}${window.location.pathname}?invite=${detail.invite_code}`;
-                                      await navigator.clipboard.writeText(link);
-                                      Toast.success("邀请链接已复制");
-                                    } else {
-                                      Toast.warning("该 Space 暂无邀请码");
-                                    }
-                                  } catch { Toast.error("获取邀请码失败"); }
-                                }}>🔗</span>
-                                {isSelected && <span style={{ color: 'var(--wk-color-theme, #6366F1)', marginLeft: 4 }}>✓</span>}
-                              </div>
-                            );
-                          })}
-                          <div className="wk-chat-space-dropdown-divider"></div>
-                          <div className="wk-chat-space-dropdown-item" onClick={() => {
-                            vm.showSpaceCreate = true;
-                            this.setState({ showSpaceDropdown: false });
-                          }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 6, backgroundColor: '#e0e0e0', color: '#666', fontSize: 16, fontWeight: 600, marginRight: 8 }}>+</span>
-                            <span style={{ flex: 1, color: '#5b6abf' }}>加入 / 创建 Space</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <div className="wk-chat-title">会话</div>
                     <div
                       style={{ marginRight: '20px', alignItems: 'center', display: 'flex', cursor: 'pointer' }}
                       onClick={() => {

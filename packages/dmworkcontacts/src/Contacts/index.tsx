@@ -454,7 +454,7 @@ export default class ContactsList extends Component<any, ContactsState> {
             this.baseContext = baseCtx
         }}>
             <div className="wk-contacts">
-                <WKNavMainHeader title="通讯录"></WKNavMainHeader>
+                {/* 标题由全局顶栏提供 */}
                 <div className="wk-contacts-content">
                     {this.renderAccordionSection('members', '👥', '组织内联系人')}
                     {this.renderAccordionSection('bots', '🤖', 'Bot')}

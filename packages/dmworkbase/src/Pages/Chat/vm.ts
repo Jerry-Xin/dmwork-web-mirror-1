@@ -18,6 +18,7 @@ export class ChatVM extends ProviderListener {
     conversations: ConversationWrap[] = new Array()
     loading: boolean = false // 最近会话是否加载中
     private _connectTitle: string = "" // 连接标题
+    connectStatus: number = 0 // 0=disconnected, 1=connected, 2=connecting
     private _showChannelSetting: boolean = false // 是否显示频道设置
     private _selectedConversation?: ConversationWrap // 选中的最近会话
     private _showAddPopover = false // 点击添加按钮弹出的popover
@@ -253,11 +254,14 @@ export class ChatVM extends ProviderListener {
 
     setConnectTitleWithConnectStatus(connectStatus: ConnectStatus) {
         if (connectStatus === ConnectStatus.Connected) {
+            this.connectStatus = 1
             this.connectTitle = WKApp.config.appName
         } else if (connectStatus === ConnectStatus.Disconnect) {
-            this.connectTitle = "已断开"
+            this.connectStatus = 0
+            this.connectTitle = WKApp.config.appName
         } else {
-            this.connectTitle = "连接中..."
+            this.connectStatus = 2
+            this.connectTitle = WKApp.config.appName
         }
     }
 

@@ -19,7 +19,7 @@ import GlobalSearch from "../../Components/GlobalSearch";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import SpaceList from "../../Components/SpaceList";
 import SpaceCreate from "../../Components/SpaceCreate";
-import { Space } from "../../Service/SpaceService";
+import { Space, SpaceService } from "../../Service/SpaceService";
 
 export interface ChatContentPageProps {
   channel: Channel;
@@ -172,15 +172,23 @@ export class ChatContentPage extends Component<
   }
 }
 
-export default class ChatPage extends Component<any> {
+interface ChatPageState {
+  allSpaces: Space[];
+  showSpaceDropdown: boolean;
+}
+
+export default class ChatPage extends Component<any, ChatPageState> {
   vm!: ChatVM;
   spaceListRef: SpaceList | null = null;
   constructor(props: any) {
     super(props);
+    this.state = { allSpaces: [], showSpaceDropdown: false };
   }
 
   componentDidMount() {
-    // WKApp.routeMain.replaceToRoot(<ChatContentPage vm={this.vm}></ChatContentPage>)
+    SpaceService.shared.getMySpaces().then(spaces => {
+      this.setState({ allSpaces: spaces });
+    }).catch(() => {});
   }
 
   componentWillUnmount() { }
@@ -205,7 +213,48 @@ export default class ChatPage extends Component<any> {
               >
                 <div className="wk-chat-content-left">
                   <div className="wk-chat-search">
-                    <div className="wk-chat-title">{vm.connectTitle}</div>
+                    <div className="wk-chat-title" style={{ position: 'relative', cursor: 'pointer' }} onClick={() => this.setState(prev => ({ showSpaceDropdown: !prev.showSpaceDropdown }))}>
+                      {(() => {
+                        const currentSpace = this.state.allSpaces.find(s => s.space_id === WKApp.shared.currentSpaceId);
+                        const colors = ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'];
+                        const statusIcon = vm.connectStatus === 1 ? '🟢' : vm.connectStatus === 2 ? '🟡' : '🔴';
+                        return currentSpace ? (
+                          <>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 5, backgroundColor: colors[currentSpace.name.charCodeAt(0) % colors.length], color: 'white', fontSize: 12, fontWeight: 600, marginRight: 6 }}>
+                              {currentSpace.name.charAt(0)}
+                            </span>
+                            {currentSpace.name}
+                            <span style={{ fontSize: 10, marginLeft: 4 }}>{statusIcon}</span>
+                            <span style={{ fontSize: 12, marginLeft: 2, color: '#999' }}>▾</span>
+                          </>
+                        ) : (
+                          <>{vm.connectTitle} <span style={{ fontSize: 10, marginLeft: 4 }}>{statusIcon}</span></>
+                        );
+                      })()}
+                      {this.state.showSpaceDropdown && (
+                        <div className="wk-chat-space-dropdown" onClick={e => e.stopPropagation()}>
+                          {this.state.allSpaces.map(space => {
+                            const isSelected = space.space_id === WKApp.shared.currentSpaceId;
+                            const colors = ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'];
+                            return (
+                              <div key={space.space_id} className={classNames("wk-chat-space-dropdown-item", isSelected && "wk-chat-space-dropdown-item-selected")} onClick={() => {
+                                WKApp.shared.currentSpaceId = space.space_id;
+                                localStorage.setItem("currentSpaceId", space.space_id);
+                                WKApp.shared.notifyListener();
+                                WKApp.mittBus.emit("space-changed", space);
+                                this.setState({ showSpaceDropdown: false });
+                              }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 6, backgroundColor: colors[space.name.charCodeAt(0) % colors.length], color: 'white', fontSize: 12, fontWeight: 600, marginRight: 8 }}>
+                                  {space.name.charAt(0)}
+                                </span>
+                                <span style={{ flex: 1 }}>{space.name}</span>
+                                {isSelected && <span style={{ color: 'var(--wk-color-theme, #6366F1)' }}>✓</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                     <div
                       style={{ marginRight: '20px', alignItems: 'center', display: 'flex', cursor: 'pointer' }}
                       onClick={() => {

@@ -325,3 +325,32 @@ body[theme-mode=dark] .wk-chat-popover {
 .wk-conversation-header-mask:hover {
     background-color: rgb(0,0,0,0.1);
 }
+/* Space 切换下拉（会话页标题） */
+.wk-chat-space-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    background: var(--wk-color-item, white);
+    border: 1px solid var(--wk-color-border, #e8e8e8);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    z-index: 100;
+    padding: 4px;
+    margin-top: 4px;
+}
+.wk-chat-space-dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: normal;
+}
+.wk-chat-space-dropdown-item:hover {
+    background: var(--wk-color-hover, #f5f5f5);
+}
+.wk-chat-space-dropdown-item-selected {
+    background: var(--wk-color-hover, #f0f0ff);
+}

@@ -131,17 +131,66 @@ export default class ContactsList extends Component<any, ContactsState> {
             if (!keyword || keyword === "") return true
             return m.name.indexOf(keyword) !== -1
         })
-        const contacts: Contacts[] = filtered.map((m) => {
+
+        // 分离 Bot 和普通成员
+        const bots: Contacts[] = []
+        const users: Contacts[] = []
+        for (const m of filtered) {
             const c = new Contacts()
             c.uid = m.uid
             c.name = m.name
             c.avatar = m.avatar
             c.follow = 1
-            c.robot = false
+            c.robot = m.robot === 1
             ;(c as any)._spaceRole = m.role
-            return c
+            if (c.robot) {
+                bots.push(c)
+            } else {
+                users.push(c)
+            }
+        }
+
+        // Bot 排序：BotFather 固定第一，其余按名称
+        bots.sort((a, b) => {
+            if (a.uid === 'botfather') return -1
+            if (b.uid === 'botfather') return 1
+            return a.name.localeCompare(b.name)
         })
-        this.buildIndex(contacts)
+
+        // 构建索引：先 Bot 分组，再成员字母分组
+        const indexItemMap = new Map<string, Contacts[]>()
+        const indexList: string[] = []
+
+        if (bots.length > 0) {
+            indexItemMap.set('🤖 Bot', bots)
+            indexList.push('🤖 Bot')
+        }
+
+        // 成员按字母分组
+        for (const item of users) {
+            let name = item.name
+            if (item.remark && item.remark !== "") name = item.remark
+            let pinyinNick = getPinyin(toSimplized(name)).toUpperCase()
+            let indexName = !pinyinNick || /[^a-z]/i.test(pinyinNick[0]) ? "#" : pinyinNick[0]
+            let existItems = indexItemMap.get(indexName)
+            if (!existItems) {
+                existItems = []
+                indexList.push(indexName)
+            }
+            existItems.push(item)
+            indexItemMap.set(indexName, existItems)
+        }
+
+        // 字母排序（Bot 分组已在最前）
+        const botIdx = indexList.indexOf('🤖 Bot')
+        const rest = indexList.filter(i => i !== '🤖 Bot').sort((a, b) => {
+            if (a === "#") return 1
+            if (b === "#") return -1
+            return a.localeCompare(b)
+        })
+        const sorted = botIdx >= 0 ? ['🤖 Bot', ...rest] : rest
+
+        this.setState({ indexList: sorted, indexItemMap })
     }
 
     rebuildIndex() {

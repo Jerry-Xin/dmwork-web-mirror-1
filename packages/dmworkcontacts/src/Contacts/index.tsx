@@ -346,7 +346,7 @@ export default class ContactsList extends Component<any, ContactsState> {
     }
     getFilteredMembers(section: 'members' | 'bots'): Contacts[] {
         const { keyword, spaceMembers } = this.state
-        const filtered = spaceMembers
+        const filtered = (spaceMembers || [])
             .filter(m => section === 'bots' ? m.robot === 1 : m.robot !== 1)
             .filter(m => !keyword || m.name.indexOf(keyword) !== -1)
 
@@ -385,12 +385,14 @@ export default class ContactsList extends Component<any, ContactsState> {
     renderAccordionSection(section: 'members' | 'bots' | 'groups', icon: string, label: string) {
         const { expandedSection, spaceMembers } = this.state
         const isExpanded = expandedSection === section
+        const members = spaceMembers || []
+        const groups = this.state.myGroups || []
         const count = section === 'bots'
-            ? spaceMembers.filter(m => m.robot === 1).length
+            ? members.filter(m => m.robot === 1).length
             : section === 'members'
-            ? spaceMembers.filter(m => m.robot !== 1).length
+            ? members.filter(m => m.robot !== 1).length
             : section === 'groups'
-            ? this.state.myGroups.length
+            ? groups.length
             : 0
 
         const items = (section === 'members' || section === 'bots') ? this.getFilteredMembers(section) : []
@@ -428,8 +430,8 @@ export default class ContactsList extends Component<any, ContactsState> {
                                 </div>
                             )
                         })}
-                        {section === 'groups' && this.state.myGroups.length === 0 && <div style={{ padding: '12px', color: '#999', fontSize: 13 }}>暂无群组</div>}
-                        {section === 'groups' && this.state.myGroups.map((g: any) => (
+                        {section === 'groups' && (this.state.myGroups || []).length === 0 && <div style={{ padding: '12px', color: '#999', fontSize: 13 }}>暂无群组</div>}
+                        {section === 'groups' && (this.state.myGroups || []).map((g: any) => (
                             <div key={g.group_no} className="wk-contacts-section-item" onClick={() => {
                                 WKApp.endpoints.showConversation(new Channel(g.group_no, ChannelTypeGroup))
                             }}>

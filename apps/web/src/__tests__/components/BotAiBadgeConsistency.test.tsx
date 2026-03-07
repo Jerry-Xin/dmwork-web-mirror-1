@@ -61,4 +61,44 @@ describe("Bot AI Badge Consistency (Issue #215)", () => {
             expect(badge?.tagName.toLowerCase()).toBe("span");
         });
     });
+
+    describe("No robot.png identityIcon for bots", () => {
+        it("module.ts should not set identityIcon for robot category", async () => {
+            // Read the module.ts file content to verify robot.png is not used for identityIcon
+            const fs = require("fs");
+            const path = require("path");
+            // Test runs from apps/web, so go up two levels to reach repo root
+            const modulePath = path.resolve(
+                process.cwd(),
+                "../../packages/dmworkdatasource/src/module.ts"
+            );
+            const content = fs.readFileSync(modulePath, "utf8");
+
+            // Verify robot.png is NOT set as identityIcon
+            expect(content).not.toMatch(/identityIcon.*robot\.png/);
+
+            // Verify the comment indicates AiBadge should be used instead
+            expect(content).toMatch(/robot.*identit(y|ies).*AiBadge|AiBadge.*robot/i);
+        });
+
+        it("should only set identityIcon for official and visitor categories", async () => {
+            const fs = require("fs");
+            const path = require("path");
+            // Test runs from apps/web, so go up two levels to reach repo root
+            const modulePath = path.resolve(
+                process.cwd(),
+                "../../packages/dmworkdatasource/src/module.ts"
+            );
+            const content = fs.readFileSync(modulePath, "utf8");
+
+            // identityIcon should only be used for official.png and visitor.png
+            const identityIconMatches = content.match(/identityIcon\s*=\s*["'].*?["']/g) || [];
+            const allowedIcons = ["official.png", "visitor.png"];
+
+            identityIconMatches.forEach((match: string) => {
+                const hasAllowedIcon = allowedIcons.some((icon) => match.includes(icon));
+                expect(hasAllowedIcon).toBe(true);
+            });
+        });
+    });
 });

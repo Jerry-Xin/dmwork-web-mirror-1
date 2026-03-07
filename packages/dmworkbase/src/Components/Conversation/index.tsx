@@ -27,6 +27,8 @@ export interface ConversationProps {
 }
 
 export class Conversation extends Component<ConversationProps> implements ConversationContext {
+    // 缓存各会话的引用/回复状态，切换会话时保留
+    private static replyStateCache: Map<string, { message: Message, handlerType: number }> = new Map()
     vm!: ConversationVM
     contextMenusContext!: ContextMenusContext
     avatarMenusContext!: ContextMenusContext // 点击头像弹出的菜单
@@ -202,6 +204,14 @@ export class Conversation extends Component<ConversationProps> implements Conver
         if (this.vm.hasDraft()) {
             this.insertText(this.vm.draft())
         }
+        // 恢复引用/回复状态
+        const channelKey = `${channel.channelID}-${channel.channelType}`
+        const cachedReplyState = Conversation.replyStateCache.get(channelKey)
+        if (cachedReplyState) {
+            this.vm.currentReplyMessage = cachedReplyState.message
+            this.vm.currentHandlerType = cachedReplyState.handlerType
+            Conversation.replyStateCache.delete(channelKey)
+        }
 
         window.addEventListener('beforeunload', this._beforeUnloadHandler)
 
@@ -223,6 +233,16 @@ export class Conversation extends Component<ConversationProps> implements Conver
         if (this.scrollTimer) {
             clearTimeout(this.scrollTimer)
             this.scrollTimer = null
+        }
+        // 保存引用/回复状态到缓存
+        const channelKey = `${this.props.channel.channelID}-${this.props.channel.channelType}`
+        if (this.vm.currentReplyMessage) {
+            Conversation.replyStateCache.set(channelKey, {
+                message: this.vm.currentReplyMessage,
+                handlerType: this.vm.currentHandlerType,
+            })
+        } else {
+            Conversation.replyStateCache.delete(channelKey)
         }
         this.vm.markUnread()
         this.markConversationExtra()

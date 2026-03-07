@@ -215,7 +215,9 @@ export default class ContactsList extends Component<any, ContactsState> {
                             name = item.remark
                         }
                         return <div key={item.uid} className={classnames("wk-contacts-section-item", WKApp.shared.openChannel?.channelType === ChannelTypePerson && WKApp.shared.openChannel?.channelID === item.uid ? "wk-contacts-section-item-selected" : undefined)} onClick={() => {
-                            const channel = new Channel(item.uid, ChannelTypePerson)
+                            const spaceId = WKApp.shared.currentSpaceId
+                            const channelId = spaceId ? `s${spaceId}_${item.uid}` : item.uid
+                            const channel = new Channel(channelId, ChannelTypePerson)
                             WKApp.endpoints.showConversation(channel)
                             this.setState({})
                         }} onContextMenu={(e) => {

@@ -187,7 +187,9 @@ export default class DataSourceModule implements IModule {
         WKSDK.shared().config.provider.syncConversationsCallback = async (filter?: any): Promise<Array<Conversation>> => {
             let resp: any
             let conversations = new Array<Conversation>();
-            resp = await WKApp.apiClient.post("conversation/sync", { "msg_count": 1 })
+            const spaceId = WKApp.shared.currentSpaceId || ""
+            const syncUrl = spaceId ? `conversation/sync?space_id=${encodeURIComponent(spaceId)}` : "conversation/sync"
+            resp = await WKApp.apiClient.post(syncUrl, { "msg_count": 1 })
             if (resp) {
                 resp.conversations.forEach((conversationMap: any) => {
                     let model = Convert.toConversation(conversationMap);

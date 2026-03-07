@@ -78,13 +78,15 @@ export class ChatVM extends ProviderListener {
 
     set selectedSpace(v: Space | undefined) {
         this._selectedSpace = v
+        WKApp.shared.currentSpaceId = v?.space_id || ""
         WKApp.mittBus.emit('space-changed', v)
         if (v) {
             this.loadSpaceMembers(v.space_id)
         } else {
             this._spaceMemberUids = new Set()
-            this.notifyListener()
         }
+        // 切换 Space 时重新同步会话列表
+        this.requestConversationList()
     }
 
     get selectedSpace() {
@@ -101,14 +103,15 @@ export class ChatVM extends ProviderListener {
     }
 
     get filteredConversations(): ConversationWrap[] {
-        if (!this._selectedSpace || this._spaceMemberUids.size === 0) {
-            return this.conversations
+        if (!this._selectedSpace) {
+            // 个人空间：只显示不带 Space 前缀的会话
+            return this.conversations.filter((c) => {
+                return !c.channel.channelID.match(/^s[^_]+_/)
+            })
         }
+        const spacePrefix = `s${this._selectedSpace.space_id}_`
         return this.conversations.filter((c) => {
-            if (c.channel.channelType === ChannelTypePerson) {
-                return this._spaceMemberUids.has(c.channel.channelID)
-            }
-            return false
+            return c.channel.channelID.startsWith(spacePrefix)
         })
     }
 

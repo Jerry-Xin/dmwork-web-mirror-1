@@ -249,6 +249,7 @@ export default class WKApp extends ProviderListener {
 
   isPC = false; // 是否是PC端
   deviceId: string = ""; // 设备ID
+  currentSpaceId: string = ""; // 当前选中的 Space ID
   deviceName: string = ""; // 设备名称
   deviceModel: string = ""; // 设备型号
 

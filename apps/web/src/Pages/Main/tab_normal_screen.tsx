@@ -4,18 +4,33 @@ import React from "react";
 import { Component } from "react";
 import MainVM, { VersionInfo } from "./vm";
 import "./tab_normal_screen.css";
-import { Badge, Modal, Toast, Progress, Button } from "@douyinfe/semi-ui";
+import { Badge, Modal, Toast, Progress, Button, Tooltip } from "@douyinfe/semi-ui";
+import { Space, SpaceService } from "@dmwork/base/src/Service/SpaceService";
 
 export interface TabNormalScreenProps {
   vm: MainVM;
 }
 
-export class TabNormalScreen extends Component<TabNormalScreenProps> {
+interface TabNormalScreenState {
+  spaces: Space[];
+}
+
+export class TabNormalScreen extends Component<TabNormalScreenProps, TabNormalScreenState> {
+  state: TabNormalScreenState = { spaces: [] };
+
   componentDidMount() {
     WKApp.menus.setRefresh = () => {
       this.setState({});
     };
+    this.loadSpaces();
   }
+
+  loadSpaces = async () => {
+    try {
+      const spaces = await SpaceService.shared.getMySpaces();
+      this.setState({ spaces });
+    } catch {}
+  };
   render() {
     const { vm } = this.props;
     return (
@@ -72,6 +87,33 @@ export class TabNormalScreen extends Component<TabNormalScreenProps> {
               </li>
             );
           })}
+
+          {/* Space 切换器 */}
+          {this.state.spaces.length > 0 && (
+            <li className="wk-main-sider-space-switcher">
+              {this.state.spaces.map((space) => {
+                const isSelected = WKApp.shared.currentSpaceId === space.space_id;
+                const colors = ["#667eea", "#764ba2", "#f093fb", "#4facfe", "#43e97b", "#fa709a", "#fee140", "#a18cd1"];
+                const colorIndex = space.name.charCodeAt(0) % colors.length;
+                return (
+                  <Tooltip key={space.space_id} content={space.name} position="right">
+                    <div
+                      className={classnames("wk-sider-space-icon", isSelected && "wk-sider-space-icon-selected")}
+                      style={{ backgroundColor: colors[colorIndex] }}
+                      onClick={() => {
+                        WKApp.shared.currentSpaceId = space.space_id;
+                        localStorage.setItem("currentSpaceId", space.space_id);
+                        WKApp.shared.notifyListener();
+                        WKApp.mittBus.emit("space-changed", space);
+                      }}
+                    >
+                      {space.name.charAt(0)}
+                    </div>
+                  </Tooltip>
+                );
+              })}
+            </li>
+          )}
 
           <li
             className="wk-main-sider-setting-box"

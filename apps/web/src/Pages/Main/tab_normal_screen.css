@@ -199,3 +199,38 @@
   .wk-main-sider-meinfo .semi-modal-body {
     height: 500px;
   }
+/* Space 切换器 */
+.wk-main-sider-space-switcher {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  margin-top: auto;
+}
+
+.wk-sider-space-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.wk-sider-space-icon:hover {
+  border-radius: 8px;
+  opacity: 0.85;
+}
+
+.wk-sider-space-icon-selected {
+  border-color: var(--wk-color-theme, #6366F1);
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}

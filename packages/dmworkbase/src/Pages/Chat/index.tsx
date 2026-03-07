@@ -245,16 +245,7 @@ export default class ChatPage extends Component<any> {
                                 }}></Button> */}
                     </Popover>
                   </div>
-                  <SpaceList
-                    selectedSpaceId={vm.selectedSpace?.space_id}
-                    onSelect={(space: Space | undefined) => {
-                      vm.selectedSpace = space;
-                    }}
-                    onCreateClick={() => {
-                      vm.showSpaceCreate = true;
-                    }}
-                    ref={(ref: SpaceList | null) => { this.spaceListRef = ref; }}
-                  />
+                  {/* SpaceList 已移至侧边栏 */}
                   <div className="wk-chat-conversation-list">
                     {vm.loading ? (
                       <div className="wk-chat-conversation-list-loading">

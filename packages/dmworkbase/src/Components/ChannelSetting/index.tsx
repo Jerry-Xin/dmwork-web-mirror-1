@@ -47,7 +47,7 @@ export default class ChannelSetting extends Component<ChannelSettingProps> {
            let  memberCount = vm.subscribers.length
 
             const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
-            if(channelInfo && channelInfo.orgData.member_count) {
+            if(channelInfo?.orgData?.member_count) {
                 memberCount = channelInfo.orgData.member_count
             }
            

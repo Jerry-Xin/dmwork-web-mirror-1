@@ -39,6 +39,7 @@ export default class DataSourceModule implements IModule {
                 console.warn(`channel info not found: ${channel.channelID}/${channel.channelType}`);
                 channelInfo.channel = channel;
                 channelInfo.title = channel.channelID;
+                channelInfo.orgData = {};
                 return channelInfo;
             }
 

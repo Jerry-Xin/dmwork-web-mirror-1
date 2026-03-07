@@ -103,16 +103,9 @@ export class ChatVM extends ProviderListener {
     }
 
     get filteredConversations(): ConversationWrap[] {
-        if (!this._selectedSpace) {
-            // 个人空间：只显示不带 Space 前缀的会话
-            return this.conversations.filter((c) => {
-                return !c.channel.channelID.match(/^s[^_]+_/)
-            })
-        }
-        const spacePrefix = `s${this._selectedSpace.space_id}_`
-        return this.conversations.filter((c) => {
-            return c.channel.channelID.startsWith(spacePrefix)
-        })
+        // Space 模式下，后端 conversation sync 已按 space_id 过滤
+        // 前端不再二次过滤，直接返回所有会话
+        return this.conversations
     }
 
     private async loadSpaceMembers(spaceId: string) {

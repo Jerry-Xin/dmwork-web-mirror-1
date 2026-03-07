@@ -258,6 +258,9 @@ export class LoginVM extends ProviderListener {
         this.notifyListener()
         return WKApp.apiClient.post('user/email/forgetpwd', {
             email, code, new_password: newPassword,
+        }).then((result) => {
+            this.clearSensitiveFields()
+            return result
         }).finally(() => {
             this.forgetLoading = false
             this.notifyListener()
@@ -272,10 +275,17 @@ export class LoginVM extends ProviderListener {
         }
     }
 
+    clearSensitiveFields() {
+        this.password = ''
+        this.registerEmailPassword = ''
+        this.forgetNewPassword = ''
+    }
+
     loginSuccess(data:any) {
         if (!data || !data.uid || !data.token) {
             throw new Error('Invalid login response: missing required fields (uid, token)')
         }
+        this.clearSensitiveFields()
         const loginInfo = WKApp.loginInfo
         loginInfo.appID = data.app_id ?? ''
         loginInfo.uid = data.uid

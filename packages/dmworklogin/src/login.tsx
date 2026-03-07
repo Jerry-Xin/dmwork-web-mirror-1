@@ -5,6 +5,8 @@ import QRCode from 'qrcode.react';
 import { WKApp, Provider } from "@dmwork/base"
 import { LoginStatus, LoginType, LoginVM } from "./login_vm";
 import classNames from "classnames";
+import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
+import { validatePassword } from "./passwordStrength";
 
 
 // Known safe error messages from the server that can be shown to users
@@ -149,7 +151,9 @@ class Login extends Component<any, LoginState> {
                             }}></input>
                             <input type="password" name="reg-password" autoComplete="off" placeholder="密码" onChange={(v) => {
                                 vm.registerEmailPassword = v.target.value
+                                vm.notifyListener()
                             }}></input>
+                            <PasswordStrengthIndicator password={vm.registerEmailPassword || ''} />
                             <input type="password" name="reg-confirm-password" autoComplete="off" placeholder="确认密码" onChange={(v) => {
                                 vm.registerEmailConfirmPassword = v.target.value
                             }}></input>
@@ -167,8 +171,9 @@ class Login extends Component<any, LoginState> {
                                         Toast.error("昵称不能为空！")
                                         return
                                     }
-                                    if (!vm.registerEmailPassword) {
-                                        Toast.error("密码不能为空！")
+                                    const passwordError = validatePassword(vm.registerEmailPassword || '');
+                                    if (passwordError) {
+                                        Toast.error(passwordError)
                                         return
                                     }
                                     if (vm.registerEmailPassword !== vm.registerEmailConfirmPassword) {
@@ -216,7 +221,9 @@ class Login extends Component<any, LoginState> {
                             </div>
                             <input type="password" name="forget-new-pwd" autoComplete="off" placeholder="新密码" onChange={(v) => {
                                 vm.forgetNewPassword = v.target.value
+                                vm.notifyListener()
                             }}></input>
+                            <PasswordStrengthIndicator password={vm.forgetNewPassword || ''} />
                             <input type="password" name="forget-confirm-pwd" autoComplete="off" placeholder="确认新密码" onChange={(v) => {
                                 vm.forgetConfirmPassword = v.target.value
                             }}></input>
@@ -230,8 +237,9 @@ class Login extends Component<any, LoginState> {
                                         Toast.error("验证码不能为空！")
                                         return
                                     }
-                                    if (!vm.forgetNewPassword) {
-                                        Toast.error("新密码不能为空！")
+                                    const newPasswordError = validatePassword(vm.forgetNewPassword || '');
+                                    if (newPasswordError) {
+                                        Toast.error(newPasswordError)
                                         return
                                     }
                                     if (vm.forgetNewPassword !== vm.forgetConfirmPassword) {

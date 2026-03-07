@@ -8,6 +8,10 @@
     "@types/qrcode.react": "^1.0.2",
     "axios": "^0.25.0",
     "keypair": "^1.0.4",
-    "qrcode.react": "^1.0.1"
+    "qrcode.react": "^1.0.1",
+    "zxcvbn": "^4.4.2"
+  },
+  "devDependencies": {
+    "@types/zxcvbn": "^4.4.5"
   }
 }

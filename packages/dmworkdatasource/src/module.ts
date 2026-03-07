@@ -31,7 +31,16 @@ export default class DataSourceModule implements IModule {
         WKSDK.shared().config.provider.channelInfoCallback = async function (channel: Channel): Promise<ChannelInfo> {
             let channelInfo = new ChannelInfo(),
                 isUsers = channel.channelType === ChannelTypePerson;
-            const resp = await WKApp.apiClient.get(`channels/${channel.channelID}/${channel.channelType}`);
+            let resp: any;
+            try {
+                resp = await WKApp.apiClient.get(`channels/${channel.channelID}/${channel.channelType}`);
+            } catch (err) {
+                // channel 不存在（400/404），返回空 ChannelInfo，不重试
+                console.warn(`channel info not found: ${channel.channelID}/${channel.channelType}`);
+                channelInfo.channel = channel;
+                channelInfo.title = channel.channelID;
+                return channelInfo;
+            }
 
             const data = resp
 

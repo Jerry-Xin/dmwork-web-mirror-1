@@ -60,7 +60,7 @@ export default class SlashCommandMenu extends Component<SlashCommandMenuProps> {
                             onSelect(cmd);
                         }}
                     >
-                        <div className="wk-slash-command-name">/{cmd.command}</div>
+                        <div className="wk-slash-command-name">{cmd.command.startsWith('/') ? cmd.command : `/${cmd.command}`}</div>
                         <div className="wk-slash-command-desc">{cmd.description}</div>
                     </div>
                 ))}

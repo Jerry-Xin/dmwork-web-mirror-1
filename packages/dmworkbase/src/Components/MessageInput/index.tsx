@@ -272,7 +272,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
     handleSlashSelect = (cmd: BotCommand) => {
         this.setState({
-            value: `/${cmd.command} `,
+            value: `${cmd.command.startsWith('/') ? cmd.command : `/${cmd.command}`} `,
             slashMenuVisible: false,
             slashFilter: "",
             slashActiveIndex: 0,

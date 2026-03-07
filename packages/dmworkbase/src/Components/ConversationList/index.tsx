@@ -2,6 +2,7 @@ import WKSDK from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { Channel, ChannelInfo, ChannelTypePerson } from "wukongimjssdk";
 import React, { Component } from "react";
+import { Modal } from "@douyinfe/semi-ui";
 import { ConversationWrap, MessageWrap } from "../../Service/Model";
 import { getTimeStringAutoShort2 } from '../../Utils/time'
 import classNames from "classnames";
@@ -265,18 +266,42 @@ export default class ConversationList extends Component<ConversationListProps, C
                 },
                 {
                     title: "关闭聊天窗口", onClick: () => {
-                        this.onCloseChat(selectConversationWrap?.channel!)
+                        Modal.confirm({
+                            title: '确认关闭',
+                            content: '确定要关闭此聊天窗口吗？',
+                            okText: '确定',
+                            cancelText: '取消',
+                            onOk: () => {
+                                this.onCloseChat(selectConversationWrap?.channel!)
+                            },
+                        })
                     }
                 },
                 {
                     title: "清空聊天记录", onClick: () => {
-                        this.onClearMessages(selectConversationWrap?.channel!)
+                        Modal.confirm({
+                            title: '确认清空',
+                            content: '确定要清空所有聊天记录吗？此操作不可撤销。',
+                            okText: '确定',
+                            cancelText: '取消',
+                            onOk: () => {
+                                this.onClearMessages(selectConversationWrap?.channel!)
+                            },
+                        })
                     }
                 },
                 {
                     title: "关闭窗口并清空聊天记录", onClick: () => {
-                        this.onCloseChat(selectConversationWrap?.channel!)
-                        this.onClearMessages(selectConversationWrap?.channel!)
+                        Modal.confirm({
+                            title: '确认关闭并清空',
+                            content: '确定要关闭窗口并清空所有聊天记录吗？此操作不可撤销。',
+                            okText: '确定',
+                            cancelText: '取消',
+                            onOk: () => {
+                                this.onCloseChat(selectConversationWrap?.channel!)
+                                this.onClearMessages(selectConversationWrap?.channel!)
+                            },
+                        })
                     }
                 },
             ]} />

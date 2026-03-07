@@ -6,6 +6,7 @@ import WKApp from "../../App";
 import "./tab-all.css"
 import WKSDK, { Channel, ChannelTypePerson, MessageContentType } from "wukongimjssdk";
 import { MessageContentTypeConst } from "../../Service/Const";
+import { throttle } from "../../Utils/rateLimit";
 
 
 interface TabAllProps {
@@ -18,14 +19,14 @@ interface TabAllProps {
 
 export default class TabAll extends Component<TabAllProps> {
 
-    handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    handleScroll = throttle((event: React.UIEvent<HTMLDivElement>) => {
         const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
         if (scrollTop + clientHeight >= scrollHeight) {
             if (this.props.loadMore) {
                 this.props.loadMore();
             }
         }
-    };
+    }, 100);
 
     render(): ReactNode {
 

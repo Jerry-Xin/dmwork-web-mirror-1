@@ -2,6 +2,7 @@ import classNames from "classnames";
 import React from "react";
 import { Component } from "react";
 import WKViewQueue, { WKViewQueueContext } from "../WKViewQueue";
+import { throttle } from "../../Utils/rateLimit";
 import "./index.css"
 
 const smallScreenWidth = 640 // 小屏最大宽度（index.css @media screen 里也需要改成这个值的大小）
@@ -26,7 +27,7 @@ export class WKLayout extends Component<WKLayoutProps>{
     routeLister!:VoidFunction
     constructor(props: any) {
         super(props)
-        this.gResize = this.resize.bind(this)
+        this.gResize = this.resize
     }
 
     componentDidMount() {
@@ -43,9 +44,9 @@ export class WKLayout extends Component<WKLayoutProps>{
         this.rightContext.removeRouteListener(this.routeLister)
     }
 
-    resize() {
+    resize = throttle(() => {
         this.setState({})
-    }
+    }, 100)
 
     render() {
         const { onRenderTab, contentLeft,contentRight,onLeftContext,onRightContext } = this.props

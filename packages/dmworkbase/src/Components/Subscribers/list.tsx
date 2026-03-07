@@ -10,6 +10,7 @@ import WKAvatar, { isBot } from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import { Checkbox } from "@douyinfe/semi-ui/lib/es/checkbox";
 import { GroupRole } from "../../Service/Const";
+import { debounce, throttle } from "../../Utils/rateLimit";
 
 export interface SubscriberListProps {
   channel: Channel;
@@ -33,19 +34,43 @@ export class SubscriberList extends Component<
     };
   }
 
+  // Store debounced search functions per VM instance
+  private debouncedSearchMap = new WeakMap<SubscriberListVM, (v: string) => void>();
+
+  getDebouncedSearch = (vm: SubscriberListVM) => {
+    if (!this.debouncedSearchMap.has(vm)) {
+      this.debouncedSearchMap.set(vm, debounce((v: string) => {
+        vm.search(v);
+      }, 300));
+    }
+    return this.debouncedSearchMap.get(vm)!;
+  };
+
   onSearch = (v: string, vm: SubscriberListVM) => {
-    vm.search(v);
+    this.getDebouncedSearch(vm)(v);
+  };
+
+  // Store throttled scroll handlers per VM instance
+  private throttledScrollMap = new WeakMap<SubscriberListVM, (e: React.UIEvent<HTMLDivElement>) => void>();
+
+  getThrottledScroll = (vm: SubscriberListVM) => {
+    if (!this.throttledScrollMap.has(vm)) {
+      this.throttledScrollMap.set(vm, throttle((e: React.UIEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLDivElement;
+        const offset = 200;
+        if (
+          target.scrollTop + target.clientHeight + offset >=
+          target.scrollHeight
+        ) {
+          vm.loadMoreSubscribersIfNeed();
+        }
+      }, 100));
+    }
+    return this.throttledScrollMap.get(vm)!;
   };
 
   handleScroll = (e: React.UIEvent<HTMLDivElement>, vm: SubscriberListVM) => {
-    const target = e.target as HTMLDivElement;
-    const offset = 200;
-    if (
-      target.scrollTop + target.clientHeight + offset >=
-      target.scrollHeight
-    ) {
-      vm.loadMoreSubscribersIfNeed();
-    }
+    this.getThrottledScroll(vm)(e);
   };
 
   // 获取显示名称

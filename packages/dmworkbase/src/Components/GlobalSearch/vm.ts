@@ -2,6 +2,7 @@ import WKSDK, { Channel, ChannelInfo, ChannelInfoListener, ChannelTypePerson, Me
 import APIClient from "../../Service/APIClient";
 import { MessageContentTypeConst } from "../../Service/Const";
 import { ProviderListener } from "../../Service/Provider";
+import { debounce } from "../../Utils/rateLimit";
 
 export default class GlobalSearchVM extends ProviderListener {
     // 选中的tab组件
@@ -96,14 +97,14 @@ export default class GlobalSearchVM extends ProviderListener {
         WKSDK.shared().channelManager.removeListener(this.channelInfoListener)
     }
 
-    // 输入框输入事件
-    public handleInputChange = (value: string) => {
+    // 输入框输入事件 (debounced to reduce API calls)
+    public handleInputChange = debounce((value: string) => {
         if (!this.isComposing) {
             this.keyword = value;
             this.initLoad()
             this.requestSearch();
         }
-    };
+    }, 300);
 
     public initLoad() {
         this.page = 1

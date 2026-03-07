@@ -22,11 +22,53 @@ body[theme-mode=dark] .wk-messageinput-box {
     width: 100%;
     padding: 0px 15px 15px 15px;
     box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+}
+
+.wk-messageinput-menu-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    border: 1px solid #d9d9d9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    color: #666;
+    margin-right: 8px;
+    margin-top: 2px;
+    user-select: none;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.wk-messageinput-menu-btn:hover {
+    background-color: #f0f0f0;
+    border-color: #bbb;
+}
+
+.wk-messageinput-menu-btn:active {
+    background-color: #e0e0e0;
+}
+
+body[theme-mode=dark] .wk-messageinput-menu-btn {
+    border-color: #555;
+    color: #aaa;
+}
+
+body[theme-mode=dark] .wk-messageinput-menu-btn:hover {
+    background-color: #3a3a3a;
+    border-color: #777;
 }
 
 .wk-messageinput-input {
     height: 100%;
     width: 100%;
+    flex: 1;
+    min-width: 0;
     border: none;
     color: #333;
     font-size: 14px;

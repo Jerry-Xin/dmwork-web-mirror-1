@@ -282,6 +282,14 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         }
     }
 
+    handleMenuButtonClick = () => {
+        this.setState((prev) => ({
+            slashMenuVisible: !prev.slashMenuVisible,
+            slashFilter: "",
+            slashActiveIndex: 0,
+        }))
+    }
+
 
     insertText(text: string): void {
         let newText = this.state.value + text;
@@ -393,6 +401,15 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                             activeIndex={slashActiveIndex}
                             onSelect={this.handleSlashSelect}
                         />
+                    )}
+                    {botCommands && botCommands.length > 0 && (
+                        <div
+                            className="wk-messageinput-menu-btn"
+                            onClick={this.handleMenuButtonClick}
+                            title="斜杠命令"
+                        >
+                            /
+                        </div>
                     )}
                     <MentionsInput
                         style={InputStyle.getStyle()}

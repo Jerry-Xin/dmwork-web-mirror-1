@@ -357,6 +357,8 @@ export default class ConversationVM extends ProviderListener {
                 if (message.channel.isEqual(this.channel)) {
                     WKSDK.shared().chatManager.syncMessageExtras(this.channel, this.findMaxExtraVersion()).then((messageExtras) => {
                         this.updateMessageByMessageExtras(messageExtras)
+                    }).catch((err) => {
+                        console.error('[ConversationVM] syncMessageExtras failed:', err)
                     })
                 }
 
@@ -391,6 +393,9 @@ export default class ConversationVM extends ProviderListener {
             } else {
                 WKSDK.shared().channelManager.fetchChannelInfo(this.channel).then(() => {
                     this.channelInfo = WKSDK.shared().channelManager.getChannelInfo(this.channel)
+                    this.loadChannelInfoFinished()
+                }).catch((err) => {
+                    console.error('[ConversationVM] fetchChannelInfo failed:', err)
                     this.loadChannelInfoFinished()
                 })
             }

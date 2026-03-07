@@ -133,7 +133,22 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         const { slashMenuVisible } = this.state
         if (!slashMenuVisible) return
         const filtered = this.getFilteredSlashCommands()
-        if (filtered.length === 0) return
+
+        if (e.key === 'Escape') {
+            e.preventDefault()
+            this.setState({ slashMenuVisible: false })
+            return
+        }
+
+        if (filtered.length === 0) {
+            // 没有匹配的命令，Enter 正常发送
+            if (e.key === 'Enter' && !e.ctrlKey) {
+                e.preventDefault()
+                this.setState({ slashMenuVisible: false })
+                this.send()
+            }
+            return
+        }
 
         if (e.key === 'ArrowDown') {
             e.preventDefault()
@@ -148,9 +163,6 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         } else if (e.key === 'Enter') {
             e.preventDefault()
             this.handleSlashSelect(filtered[this.state.slashActiveIndex])
-        } else if (e.key === 'Escape') {
-            e.preventDefault()
-            this.setState({ slashMenuVisible: false })
         }
     }
 

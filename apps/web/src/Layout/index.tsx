@@ -15,9 +15,10 @@ export default class AppLayout extends Component {
     componentDidMount() {
         this.onLogin = () => {
             const sid = getSid()
-            window.location.href = `./index.html?sid=${sid}`
-
             Notification.requestPermission() // 请求通知权限
+            // 确保跳转到根路径，不停留在 /login
+            const baseUrl = window.location.origin
+            window.location.href = `${baseUrl}/?sid=${sid}`
         }
         WKApp.endpoints.addOnLogin(this.onLogin)
 
@@ -86,7 +87,7 @@ export default class AppLayout extends Component {
         return <Provider create={() => {
             return WKApp.shared
         }} render={(vm: WKApp): any => {
-            if (!WKApp.shared.isLogined() || window.location.pathname === '/login') {
+            if (!WKApp.shared.isLogined() || window.location.pathname.endsWith('/login')) {
                 const loginComponent = WKApp.route.get("/login")
                 if (!loginComponent) {
                     return <div>没有登录模块！</div>

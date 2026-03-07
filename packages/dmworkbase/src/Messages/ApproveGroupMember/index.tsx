@@ -4,15 +4,7 @@ import { MessageCell } from "../MessageCell"
 import './index.css'
 import { MessageWrap } from "../../Service/Model"
 import WKApp from "../../App"
-
-function isSafeUrl(url: string): boolean {
-    try {
-        const parsed = new URL(url);
-        return ['http:', 'https:'].includes(parsed.protocol);
-    } catch {
-        return false;
-    }
-}
+import { isSafeUrl } from "../../Utils/security"
 
 export class ApproveGroupMemberCell extends MessageCell {
 

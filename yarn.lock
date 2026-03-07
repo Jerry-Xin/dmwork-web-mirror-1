@@ -1253,7 +1253,7 @@
   resolved "https://registry.npmmirror.com/@discoveryjs/json-ext/-/json-ext-0.5.7.tgz"
   integrity sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==
 
-"@dmwork/base@*", "@dmwork/base@file:/home/yu/dmwork-web/packages/dmworkbase":
+"@dmwork/base@*", "@dmwork/base@file:/private/tmp/dmwork-web/packages/dmworkbase":
   version "1.0.0"
   resolved "file:packages/dmworkbase"
   dependencies:
@@ -1280,7 +1280,7 @@
     sensitive-word-tool "^1.1.9"
     wukongimjssdk "^1.2.11"
 
-"@dmwork/contacts@*", "@dmwork/contacts@file:/home/yu/dmwork-web/packages/dmworkcontacts":
+"@dmwork/contacts@*", "@dmwork/contacts@file:/private/tmp/dmwork-web/packages/dmworkcontacts":
   version "1.0.0"
   resolved "file:packages/dmworkcontacts"
   dependencies:
@@ -1288,14 +1288,14 @@
     axios "^0.25.0"
     classnames "^2.3.1"
 
-"@dmwork/datasource@*", "@dmwork/datasource@file:/home/yu/dmwork-web/packages/dmworkdatasource":
+"@dmwork/datasource@*", "@dmwork/datasource@file:/private/tmp/dmwork-web/packages/dmworkdatasource":
   version "1.0.0"
   resolved "file:packages/dmworkdatasource"
   dependencies:
     "@dmwork/base" "*"
     axios "^0.25.0"
 
-"@dmwork/login@*", "@dmwork/login@file:/home/yu/dmwork-web/packages/dmworklogin":
+"@dmwork/login@*", "@dmwork/login@file:/private/tmp/dmwork-web/packages/dmworklogin":
   version "1.0.0"
   resolved "file:packages/dmworklogin"
   dependencies:
@@ -1305,8 +1305,9 @@
     axios "^0.25.0"
     keypair "^1.0.4"
     qrcode.react "^1.0.1"
+    zxcvbn "^4.4.2"
 
-"@dmwork/web@file:/home/yu/dmwork-web/apps/web":
+"@dmwork/web@file:/private/tmp/dmwork-web/apps/web":
   version "1.0.6"
   resolved "file:apps/web"
   dependencies:
@@ -2431,15 +2432,10 @@
   resolved "https://registry.npmmirror.com/@tauri-apps/api/-/api-1.6.0.tgz"
   integrity sha512-rqI++FWClU5I2UBp4HXFvl+sBWkdigBkxnpJDQUWttNyG7IZP4FwQGhTNL5EOw0vI8i6eSAJ5frLqO7n7jbJdg==
 
-"@tauri-apps/cli-linux-x64-gnu@1.6.3":
+"@tauri-apps/cli-darwin-arm64@1.6.3":
   version "1.6.3"
-  resolved "https://registry.npmjs.org/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-1.6.3.tgz"
-  integrity sha512-Uvi7M+NK3tAjCZEY1WGel+dFlzJmqcvu3KND+nqa22762NFmOuBIZ4KJR/IQHfpEYqKFNUhJfCGnpUDfiC3Oxg==
-
-"@tauri-apps/cli-linux-x64-musl@1.6.3":
-  version "1.6.3"
-  resolved "https://registry.npmjs.org/@tauri-apps/cli-linux-x64-musl/-/cli-linux-x64-musl-1.6.3.tgz"
-  integrity sha512-rc6B342C0ra8VezB/OJom9j/N+9oW4VRA4qMxS2f4bHY2B/z3J9NPOe6GOILeg4v/CV62ojkLsC3/K/CeF3fqQ==
+  resolved "https://registry.npmjs.org/@tauri-apps/cli-darwin-arm64/-/cli-darwin-arm64-1.6.3.tgz"
+  integrity sha512-fQN6IYSL8bG4NvkdKE4sAGF4dF/QqqQq4hOAU+t8ksOzHJr0hUlJYfncFeJYutr/MMkdF7hYKadSb0j5EE9r0A==
 
 "@tauri-apps/cli@^1.5.0":
   version "1.6.3"
@@ -2849,6 +2845,14 @@
   resolved "https://registry.npmmirror.com/@types/parse-json/-/parse-json-4.0.2.tgz"
   integrity sha512-dISoDXWWQwUquiKsyZ4Ng+HX2KsPL7LyHKHQwgGFEA3IaKac4Obd+h2a/a6waisAoepJlBcx9paWqjA8/HVjCw==
 
+"@types/plist@^3.0.1":
+  version "3.0.5"
+  resolved "https://registry.npmmirror.com/@types/plist/-/plist-3.0.5.tgz"
+  integrity sha512-E6OCaRmAe4WDmWNsL/9RMqdkkzDCY1etutkflWk4c+AcjDU07Pcz1fQwTX0TQz+Pxqn9i4L1TU3UFpjnrcDgxA==
+  dependencies:
+    "@types/node" "*"
+    xmlbuilder ">=11.0.1"
+
 "@types/prettier@^2.1.5":
   version "2.7.3"
   resolved "https://registry.npmmirror.com/@types/prettier/-/prettier-2.7.3.tgz"
@@ -3050,6 +3054,11 @@
   version "2.0.11"
   resolved "https://registry.npmmirror.com/@types/unist/-/unist-2.0.11.tgz"
   integrity sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==
+
+"@types/verror@^1.10.3":
+  version "1.10.10"
+  resolved "https://registry.npmmirror.com/@types/verror/-/verror-1.10.10.tgz"
+  integrity sha512-l4MM0Jppn18hb9xmM6wwD1uTdShpf9Pn80aXTStnK1C94gtPvJcV2FrDmbOQUAQfJ1cKZHktkQUDwEqaAKXMMg==
 
 "@types/ws@^8.5.5":
   version "8.5.12"
@@ -3871,6 +3880,11 @@ asap@~2.0.6:
   resolved "https://registry.npmmirror.com/asap/-/asap-2.0.6.tgz"
   integrity sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==
 
+assert-plus@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmmirror.com/assert-plus/-/assert-plus-1.0.0.tgz"
+  integrity sha512-NfJ4UzBCcQGLDlQq7nHxH+tv3kyZ0hHQqF5BO6J7tNJeP5do1llPr8dZ8zHonfhAu0PHAdMkSo+8o0wxg9lZWw==
+
 ast-types-flow@^0.0.8:
   version "0.0.8"
   resolved "https://registry.npmmirror.com/ast-types-flow/-/ast-types-flow-0.0.8.tgz"
@@ -4273,7 +4287,7 @@ buffer-from@^1.0.0:
   resolved "https://registry.npmmirror.com/buffer-from/-/buffer-from-1.1.2.tgz"
   integrity sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==
 
-buffer@^5.5.0:
+buffer@^5.1.0, buffer@^5.5.0:
   version "5.7.1"
   resolved "https://registry.npmmirror.com/buffer/-/buffer-5.7.1.tgz"
   integrity sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==
@@ -4611,6 +4625,14 @@ cli-spinners@^2.5.0:
   resolved "https://registry.npmmirror.com/cli-spinners/-/cli-spinners-2.9.2.tgz"
   integrity sha512-ywqV+5MmyL4E7ybXgKys4DugZbX0FC6LnwrhjuykIjnK9k8OQacQ7axGKnjDXWNhns0xot3bZI5h55H8yo9cJg==
 
+cli-truncate@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.npmmirror.com/cli-truncate/-/cli-truncate-2.1.0.tgz"
+  integrity sha512-n8fOixwDD6b/ObinzTrp1ZKFzbgvKZvuz/TvejnLn1aQfC6r52XEx85FmuC+3HI+JM7coBRXUvNqEU2PHVrHpg==
+  dependencies:
+    slice-ansi "^3.0.0"
+    string-width "^4.2.0"
+
 cliui@^7.0.2:
   version "7.0.4"
   resolved "https://registry.npmmirror.com/cliui/-/cliui-7.0.4.tgz"
@@ -4893,7 +4915,7 @@ core-js@^3.19.2:
   resolved "https://registry.npmmirror.com/core-js/-/core-js-3.38.1.tgz"
   integrity sha512-OP35aUorbU3Zvlx7pjsFdu1rGNnD4pgw/CWoYzRY3t2EzoVT7shKHY1dlAy3f41cGIO7ZDPQimhGFTlEYkG/Hw==
 
-core-util-is@~1.0.0:
+core-util-is@~1.0.0, core-util-is@1.0.2:
   version "1.0.2"
   resolved "https://registry.npmmirror.com/core-util-is/-/core-util-is-1.0.2.tgz"
   integrity sha512-3lqz5YjWTYnW6dlDa5TLaTCcShfar1e40rmcJVwCBJC6mWlFuj0eCHIElmG1g5kyuJ/GD+8Wn4FFCcz4gJPfaQ==
@@ -4919,6 +4941,13 @@ cosmiconfig@^7.0.0:
     parse-json "^5.0.0"
     path-type "^4.0.0"
     yaml "^1.10.0"
+
+crc@^3.8.0:
+  version "3.8.0"
+  resolved "https://registry.npmmirror.com/crc/-/crc-3.8.0.tgz"
+  integrity sha512-iX3mfgcTMIq3ZKLIsVFAbv7+Mc10kxabAGQb8HvjA1o3T1PIYprbakQ65d3I+2HGHt6nSKkM9PYjgoJO2KcFBQ==
+  dependencies:
+    buffer "^5.1.0"
 
 cross-dirname@^0.1.0:
   version "0.1.0"
@@ -5457,6 +5486,20 @@ dmg-builder@26.0.12:
     js-yaml "^4.1.0"
   optionalDependencies:
     dmg-license "^1.0.11"
+
+dmg-license@^1.0.11:
+  version "1.0.11"
+  resolved "https://registry.npmmirror.com/dmg-license/-/dmg-license-1.0.11.tgz"
+  integrity sha512-ZdzmqwKmECOWJpqefloC5OJy1+WZBBse5+MR88z9g9Zn4VY+WYUkAyojmhzJckH5YbbZGcYIuGAkY5/Ys5OM2Q==
+  dependencies:
+    "@types/plist" "^3.0.1"
+    "@types/verror" "^1.10.3"
+    ajv "^6.10.0"
+    crc "^3.8.0"
+    iconv-corefoundation "^1.1.7"
+    plist "^3.0.4"
+    smart-buffer "^4.0.2"
+    verror "^1.10.0"
 
 dns-packet@^5.2.2:
   version "5.6.1"
@@ -6027,7 +6070,7 @@ escodegen@^2.0.0:
   optionalDependencies:
     source-map "~0.6.1"
 
-"eslint-config-custom@file:/home/yu/dmwork-web/packages/eslint-config-custom":
+"eslint-config-custom@file:/private/tmp/dmwork-web/packages/eslint-config-custom":
   version "0.0.0"
   resolved "file:packages/eslint-config-custom"
   dependencies:
@@ -6647,6 +6690,11 @@ extract-zip@^2.0.1:
   optionalDependencies:
     "@types/yauzl" "^2.9.1"
 
+extsprintf@^1.2.0:
+  version "1.4.1"
+  resolved "https://registry.npmmirror.com/extsprintf/-/extsprintf-1.4.1.tgz"
+  integrity sha512-Wrk35e8ydCKDj/ArClo1VrPVmN8zph5V4AtHwIuHhvMXsKf73UT3BOD+azBIW+3wOJ4FhEH7zyaJCFvChjYvMA==
+
 "fast-copy@^3.0.1 ":
   version "3.0.2"
   resolved "https://registry.npmmirror.com/fast-copy/-/fast-copy-3.0.2.tgz"
@@ -6975,6 +7023,16 @@ fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"
   integrity sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==
+
+fsevents@^2.3.2, fsevents@~2.3.2:
+  version "2.3.3"
+  resolved "https://registry.npmmirror.com/fsevents/-/fsevents-2.3.3.tgz"
+  integrity sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==
+
+fsevents@2.3.2:
+  version "2.3.2"
+  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.2.tgz"
+  integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
 
 function-bind@^1.1.2:
   version "1.1.2"
@@ -7634,6 +7692,14 @@ humanize-ms@^1.2.1:
   integrity sha512-Fl70vYtsAFb/C06PTS9dZBo7ihau+Tu/DNCk/OyHhea07S+aeMWpFFkUaXRa8fI+ScZbEI8dfSxwY7gxZ9SAVQ==
   dependencies:
     ms "^2.0.0"
+
+iconv-corefoundation@^1.1.7:
+  version "1.1.7"
+  resolved "https://registry.npmmirror.com/iconv-corefoundation/-/iconv-corefoundation-1.1.7.tgz"
+  integrity sha512-T10qvkw0zz4wnm560lOEg0PovVqUXuOFhhHAkixw8/sycy7TJt7v/RrkEKEQnAw2viPSJu6iAkErxnzR0g8PpQ==
+  dependencies:
+    cli-truncate "^2.1.0"
+    node-addon-api "^1.6.3"
 
 iconv-lite@^0.6.2, iconv-lite@^0.6.3:
   version "0.6.3"
@@ -10136,6 +10202,11 @@ node-abi@^3.45.0:
   dependencies:
     semver "^7.3.5"
 
+node-addon-api@^1.6.3:
+  version "1.7.2"
+  resolved "https://registry.npmmirror.com/node-addon-api/-/node-addon-api-1.7.2.tgz"
+  integrity sha512-ibPK3iA+vaY1eEjESkQkM0BbCqFOaZMiXRTtdB0u7b4djtY6JnsjvPdUHVMg6xQt3B8fpTTWHI9A+ADjM9frzg==
+
 node-api-version@^0.2.0:
   version "0.2.1"
   resolved "https://registry.npmmirror.com/node-api-version/-/node-api-version-0.2.1.tgz"
@@ -10163,15 +10234,15 @@ node-releases@^2.0.27:
   resolved "https://registry.npmjs.org/node-releases/-/node-releases-2.0.27.tgz"
   integrity sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==
 
-node-screenshots-linux-x64-gnu@0.2.1:
+node-screenshots-darwin-arm64@0.2.1:
   version "0.2.1"
-  resolved "https://registry.npmjs.org/node-screenshots-linux-x64-gnu/-/node-screenshots-linux-x64-gnu-0.2.1.tgz"
-  integrity sha512-P2h511my2JytMSAW8+uvO+lGj1BwapERWbC6i56u5WbLIy/zgT1SQwNvcZNbPE8sxb1q8pqF3MerLcftnW0f+w==
+  resolved "https://registry.npmjs.org/node-screenshots-darwin-arm64/-/node-screenshots-darwin-arm64-0.2.1.tgz"
+  integrity sha512-mcNcdn5zABYNVXIb1vq58mItFlpr03T8VJetD892qy+hqNAQdZd/vvplw+ZIlb4tuH7sR1gia67WRsBRO5nrQA==
 
-node-screenshots-linux-x64-musl@0.2.1:
+node-screenshots-darwin-universal@0.2.1:
   version "0.2.1"
-  resolved "https://registry.npmjs.org/node-screenshots-linux-x64-musl/-/node-screenshots-linux-x64-musl-0.2.1.tgz"
-  integrity sha512-+B37/VYzH86ywWyF9XkYYicyf/BTan4TADsmxPlK+a/UHHZEnp1YjEM66sBIQTIVhVhv1DC6YUv9AppBpoV9AA==
+  resolved "https://registry.npmmirror.com/node-screenshots-darwin-universal/-/node-screenshots-darwin-universal-0.2.1.tgz"
+  integrity sha512-cNqBasCyMU/P87Ej3hK/vedAk86DrVkpoxd2zz5qLA3h850Ew9qb/7g0MTYsRatbZFoLhw7MgFwAZkiNh4Mr9g==
 
 node-screenshots@^0.2.1:
   version "0.2.1"
@@ -10727,7 +10798,7 @@ playwright@1.58.2:
   optionalDependencies:
     fsevents "2.3.2"
 
-plist@^3.0.5, plist@^3.1.0, plist@3.1.0:
+plist@^3.0.4, plist@^3.0.5, plist@^3.1.0, plist@3.1.0:
   version "3.1.0"
   resolved "https://registry.npmmirror.com/plist/-/plist-3.1.0.tgz"
   integrity sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==
@@ -12726,6 +12797,15 @@ slash@^4.0.0:
   resolved "https://registry.npmmirror.com/slash/-/slash-4.0.0.tgz"
   integrity sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==
 
+slice-ansi@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npmmirror.com/slice-ansi/-/slice-ansi-3.0.0.tgz"
+  integrity sha512-pSyv7bSTC7ig9Dcgbw9AuRNUb5k5V6oDudjZoMBSr13qpLBG7tB+zgCkARjq7xIUgdz5P1Qe8u+rSGdouOOIyQ==
+  dependencies:
+    ansi-styles "^4.0.0"
+    astral-regex "^2.0.0"
+    is-fullwidth-code-point "^3.0.0"
+
 slice-ansi@^4.0.0:
   version "4.0.0"
   resolved "https://registry.npmjs.org/slice-ansi/-/slice-ansi-4.0.0.tgz"
@@ -12735,7 +12815,7 @@ slice-ansi@^4.0.0:
     astral-regex "^2.0.0"
     is-fullwidth-code-point "^3.0.0"
 
-smart-buffer@^4.2.0:
+smart-buffer@^4.0.2, smart-buffer@^4.2.0:
   version "4.2.0"
   resolved "https://registry.npmmirror.com/smart-buffer/-/smart-buffer-4.2.0.tgz"
   integrity sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==
@@ -13638,7 +13718,7 @@ tsconfig-paths@^3.14.1, tsconfig-paths@^3.15.0:
     minimist "^1.2.6"
     strip-bom "^3.0.0"
 
-"tsconfig@file:/home/yu/dmwork-web/packages/tsconfig":
+"tsconfig@file:/private/tmp/dmwork-web/packages/tsconfig":
   version "0.0.0"
   resolved "file:packages/tsconfig"
 
@@ -13659,10 +13739,10 @@ tsutils@^3.21.0:
   dependencies:
     tslib "^1.8.1"
 
-turbo-linux-64@2.2.1:
+turbo-darwin-arm64@2.2.1:
   version "2.2.1"
-  resolved "https://registry.npmjs.org/turbo-linux-64/-/turbo-linux-64-2.2.1.tgz"
-  integrity sha512-RasrjV+i2B90hoR8r6B2Btf2/ebNT5MJbhkpY0G1EN06E1IkjCKfAXj/1Dwmjy9+Zo0NC2r69L3HxRrtpar8jQ==
+  resolved "https://registry.npmjs.org/turbo-darwin-arm64/-/turbo-darwin-arm64-2.2.1.tgz"
+  integrity sha512-RHW0c1NonsJXXlutlZeunmhLanf0/WbeizFfYgWuTEaJE4MbbhyD/RG4Fm/7iob5kxQ4Es2TzfDPqyMqpIO0GA==
 
 turbo@2.2.1:
   version "2.2.1"
@@ -14041,6 +14121,15 @@ vary@~1.1.2:
   version "1.1.2"
   resolved "https://registry.npmmirror.com/vary/-/vary-1.1.2.tgz"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
+
+verror@^1.10.0:
+  version "1.10.1"
+  resolved "https://registry.npmmirror.com/verror/-/verror-1.10.1.tgz"
+  integrity sha512-veufcmxri4e3XSrT0xwfUR7kguIkaxBeosDg00yDWhk49wdwkSUrvvsm7nc75e1PUyvIeZj6nS8VQRYz2/S4Xg==
+  dependencies:
+    assert-plus "^1.0.0"
+    core-util-is "1.0.2"
+    extsprintf "^1.2.0"
 
 vfile-message@^4.0.0:
   version "4.0.2"
@@ -14629,7 +14718,7 @@ xml-name-validator@^3.0.0:
   resolved "https://registry.npmmirror.com/xml-name-validator/-/xml-name-validator-3.0.0.tgz"
   integrity sha512-A5CUptxDsvxKJEU3yO6DuWBSJz/qizqzJKOMIfUJHETbBw/sFaDxgd6fxm1ewUaM0jZ444Fc5vC5ROYurg/4Pw==
 
-xmlbuilder@^15.1.1:
+xmlbuilder@^15.1.1, xmlbuilder@>=11.0.1:
   version "15.1.1"
   resolved "https://registry.npmmirror.com/xmlbuilder/-/xmlbuilder-15.1.1.tgz"
   integrity sha512-yMqGBqtXyeN1e3TGYvgNgDVZ3j84W4cwkOXQswghol6APgZWaff9lnbvN7MHYJOiXsvGPXtjTYJEiC9J2wv9Eg==

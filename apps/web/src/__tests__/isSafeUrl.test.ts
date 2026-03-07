@@ -3,18 +3,13 @@
  * Tests the URL validation logic to prevent malicious URL protocols
  *
  * Fixes: https://github.com/dmwork-org/dmwork-web/issues/136
+ * Fixes: https://github.com/dmwork-org/dmwork-web/issues/274
  */
 
+// Import the shared isSafeUrl function from dmworkbase package
+import { isSafeUrl } from '../../../../packages/dmworkbase/src/Utils/security';
+
 describe('isSafeUrl URL protocol validation', () => {
-    // Replicates the isSafeUrl logic from ApproveGroupMember/index.tsx
-    function isSafeUrl(url: string): boolean {
-        try {
-            const parsed = new URL(url);
-            return ['http:', 'https:'].includes(parsed.protocol);
-        } catch {
-            return false;
-        }
-    }
 
     describe('valid URLs (should return true)', () => {
         it('should accept https:// URLs', () => {

@@ -60,3 +60,10 @@
     color: #666;
     margin-bottom: 24px;
 }
+
+.invite-landing-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}

@@ -25,6 +25,8 @@ export class ContactsState {
     spaceMembers: SpaceMember[] = []
     botDetailUid?: string // Bot 详情弹窗
     botDetailVisible: boolean = false
+    currentView: 'all' | 'members' | 'bots' = 'all'
+    botGroupCollapsed: boolean = false
     // 手风琴展开状态
     expandedSection: 'members' | 'bots' | 'groups' | null = null
     myGroups: any[] = []

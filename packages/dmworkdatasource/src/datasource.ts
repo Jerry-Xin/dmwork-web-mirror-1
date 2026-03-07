@@ -35,11 +35,12 @@ export class ChannelDataSource implements IChannelDataSource {
         return WKApp.apiClient.post(`group/create`, body);
     }
     async groupSaveList(): Promise<ChannelInfo[]> {
-        const resp = await WKApp.apiClient.get('group/my', {
-            param: {
-                "limit": MAX_GROUP_LIST_LIMIT,
-            }
-        });
+        const param: any = { "limit": MAX_GROUP_LIST_LIMIT }
+        const spaceId = WKApp.shared.currentSpaceId
+        if (spaceId) {
+            param.space_id = spaceId
+        }
+        const resp = await WKApp.apiClient.get('group/my', { param });
         const channelInfos = [];
         if (resp) {
             if (!Array.isArray(resp) || resp.length === 0) return [];

@@ -451,7 +451,12 @@ export default class WKApp extends ProviderListener {
     }
     const baseURL = WKApp.apiClient.config.apiURL;
     if (channel.channelType === ChannelTypePerson) {
-      return `${baseURL}users/${channel.channelID}/avatar?v=${avatarTag}`;
+      // 从 Space channel_id 中提取真实 uid
+      let uid = channel.channelID;
+      if (uid.startsWith('s') && uid.includes('_')) {
+        uid = uid.substring(uid.indexOf('_') + 1);
+      }
+      return `${baseURL}users/${uid}/avatar?v=${avatarTag}`;
     } else if (channel.channelType === ChannelTypeGroup) {
       return `${baseURL}groups/${channel.channelID}/avatar?v=${avatarTag}`;
     }

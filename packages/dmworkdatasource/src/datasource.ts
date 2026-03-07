@@ -124,7 +124,9 @@ export class ChannelDataSource implements IChannelDataSource {
         if (channel.channelType === ChannelTypeGroup) {
             return WKApp.apiClient.put(`groups/${channel.channelID}/setting`, setting)
         } else if (channel.channelType === ChannelTypePerson) { // 个人信息
-            return WKApp.apiClient.put(`users/${channel.channelID}/setting`, setting)
+            let uid = channel.channelID;
+            if (uid.startsWith('s') && uid.includes('_')) uid = uid.substring(uid.indexOf('_') + 1);
+            return WKApp.apiClient.put(`users/${uid}/setting`, setting)
         }
     }
 

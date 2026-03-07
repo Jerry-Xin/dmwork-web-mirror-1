@@ -27,13 +27,23 @@ export default class DataSourceModule implements IModule {
         this.setMessageReadedCallback() // 消息已读未读
     }
 
+    // 从 Space channel_id (s{spaceId}_{uid}) 中提取真实 uid
+    static extractUID(channelID: string): string {
+        if (channelID.startsWith('s') && channelID.includes('_')) {
+            const idx = channelID.indexOf('_')
+            return channelID.substring(idx + 1)
+        }
+        return channelID
+    }
+
     setChannelInfoCallback() {
         WKSDK.shared().config.provider.channelInfoCallback = async function (channel: Channel): Promise<ChannelInfo> {
             let channelInfo = new ChannelInfo(),
                 isUsers = channel.channelType === ChannelTypePerson;
+            const realUID = DataSourceModule.extractUID(channel.channelID);
             let resp: any;
             try {
-                resp = await WKApp.apiClient.get(`channels/${channel.channelID}/${channel.channelType}`);
+                resp = await WKApp.apiClient.get(`channels/${realUID}/${channel.channelType}`);
             } catch (err) {
                 // channel 不存在（400/404），返回空 ChannelInfo，不重试
                 console.warn(`channel info not found: ${channel.channelID}/${channel.channelType}`);
@@ -54,7 +64,7 @@ export default class DataSourceModule implements IModule {
             channelInfo.logo = data.logo
             if (!channelInfo.logo || channelInfo.logo === "") {
                 if (channel.channelType === ChannelTypePerson) {
-                    channelInfo.logo = `users/${channel.channelID}/avatar`
+                    channelInfo.logo = `users/${realUID}/avatar`
                 } else if (channel.channelType === ChannelTypeGroup) {
                     channelInfo.logo = `groups/${channel.channelID}/avatar`
                 }

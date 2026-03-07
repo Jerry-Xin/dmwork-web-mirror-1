@@ -27,6 +27,8 @@ export class ContactsState {
     botDetailVisible: boolean = false
     // 手风琴展开状态
     expandedSection: 'members' | 'bots' | 'groups' | null = null
+    allSpaces: Space[] = []
+    showSpaceDropdown: boolean = false
 }
 
 export default class ContactsList extends Component<any, ContactsState> {
@@ -101,6 +103,11 @@ export default class ContactsList extends Component<any, ContactsState> {
         }
 
         this.rebuildIndex()
+
+        // 加载所有 Space 列表
+        SpaceService.shared.getMySpaces().then(spaces => {
+            this.setState({ allSpaces: spaces })
+        }).catch(() => {})
 
         WKSDK.shared().channelManager.addListener(this.channelInfoListener)
 
@@ -429,13 +436,42 @@ export default class ContactsList extends Component<any, ContactsState> {
                 <WKNavMainHeader title="通讯录"></WKNavMainHeader>
                 <div className="wk-contacts-content">
                     {currentSpace && (
-                        <div className="wk-contacts-menu-header">
-                            <div className="wk-contacts-menu-space-icon" style={{
-                                backgroundColor: ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'][currentSpace.name.charCodeAt(0) % 6],
-                            }}>
-                                {currentSpace.name.charAt(0)}
+                        <div className="wk-contacts-space-switcher">
+                            <div className="wk-contacts-menu-header" onClick={() => this.setState(prev => ({ showSpaceDropdown: !prev.showSpaceDropdown }))}>
+                                <div className="wk-contacts-menu-space-icon" style={{
+                                    backgroundColor: ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'][currentSpace.name.charCodeAt(0) % 6],
+                                }}>
+                                    {currentSpace.name.charAt(0)}
+                                </div>
+                                <span className="wk-contacts-menu-space-name">{currentSpace.name}</span>
+                                <span className="wk-contacts-space-arrow" style={{ transform: this.state.showSpaceDropdown ? 'rotate(180deg)' : 'rotate(0)' }}>▾</span>
                             </div>
-                            <span className="wk-contacts-menu-space-name">{currentSpace.name}</span>
+                            {this.state.showSpaceDropdown && (
+                                <div className="wk-contacts-space-dropdown">
+                                    {this.state.allSpaces.map(space => (
+                                        <div
+                                            key={space.space_id}
+                                            className={classnames("wk-contacts-space-dropdown-item", space.space_id === currentSpace.space_id && "wk-contacts-space-dropdown-item-selected")}
+                                            onClick={() => {
+                                                WKApp.shared.currentSpaceId = space.space_id
+                                                localStorage.setItem("currentSpaceId", space.space_id)
+                                                WKApp.shared.notifyListener()
+                                                WKApp.mittBus.emit("space-changed", space)
+                                                this.setState({ showSpaceDropdown: false })
+                                            }}
+                                        >
+                                            <div className="wk-contacts-menu-space-icon" style={{
+                                                backgroundColor: ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'][space.name.charCodeAt(0) % 6],
+                                                width: 28, height: 28, fontSize: 13,
+                                            }}>
+                                                {space.name.charAt(0)}
+                                            </div>
+                                            <span>{space.name}</span>
+                                            {space.space_id === currentSpace.space_id && <span style={{ marginLeft: 'auto', color: 'var(--wk-color-theme, #6366F1)' }}>✓</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                     {this.renderAccordionSection('members', '👥', '组织内联系人')}

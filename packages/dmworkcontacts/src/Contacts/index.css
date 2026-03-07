@@ -203,3 +203,44 @@ body[theme-mode=dark] .wk-contacts-section-item-name {
     max-height: 60vh;
     overflow-y: auto;
 }
+
+/* Space 切换下拉 */
+.wk-contacts-space-switcher {
+    position: relative;
+}
+.wk-contacts-menu-header {
+    cursor: pointer;
+}
+.wk-contacts-space-arrow {
+    margin-left: auto;
+    font-size: 14px;
+    color: #999;
+    transition: transform 0.2s;
+}
+.wk-contacts-space-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    right: 12px;
+    background: var(--wk-color-item, white);
+    border: 1px solid var(--wk-color-border, #e8e8e8);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 100;
+    padding: 4px;
+}
+.wk-contacts-space-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.wk-contacts-space-dropdown-item:hover {
+    background: var(--wk-color-hover, #f5f5f5);
+}
+.wk-contacts-space-dropdown-item-selected {
+    background: var(--wk-color-hover, #f0f0ff);
+}

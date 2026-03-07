@@ -14,6 +14,7 @@ import MergeforwardContent from "../../Messages/Mergeforward";
 import { TypingListener, TypingManager } from "../../Service/TypingManager";
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
 import { SuperGroup } from "../../Utils/const";
+import { SystemContent } from "wukongimjssdk";
 
 export default class ConversationVM extends ProviderListener {
 
@@ -959,10 +960,30 @@ export default class ConversationVM extends ProviderListener {
         })
     }
 
+    // 去重频繁的系统提示消息（如安全警告），同一内容在5分钟内只保留第一条
+    deduplicateSystemTips(messages: Array<MessageWrap>): Array<MessageWrap> {
+        const minIntervalSec = 300 // 5 minutes
+        const lastSeenMap = new Map<string, number>() // displayText -> timestamp
+        return messages.filter((m) => {
+            // Only process system messages (content_type 1000-2000)
+            if (m.contentType < 1000 || m.contentType > 2000) return true
+            const content = m.content as SystemContent
+            const text = content?.displayText
+            if (!text) return true
+            const lastTimestamp = lastSeenMap.get(text)
+            if (lastTimestamp !== undefined && Math.abs(m.timestamp - lastTimestamp) < minIntervalSec) {
+                return false // skip duplicate within interval
+            }
+            lastSeenMap.set(text, m.timestamp)
+            return true
+        })
+    }
+
     // 刷新消息列表
     refreshMessages(messages: MessageWrap[], callback?: () => void) {
         let newMessages = messages
         this.distinctMessages(newMessages)
+        newMessages = this.deduplicateSystemTips(newMessages)
         newMessages = this.insertTimeOrHistorySplit(newMessages)
         for (let i = 0; i < newMessages.length; i++) {
             const message = newMessages[i]

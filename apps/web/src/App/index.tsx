@@ -54,7 +54,9 @@ async function registerMenus() {
       WKApp.mittBus.emit('friend-applys-unread-count', res.count)
       WKApp.loginInfo.setStorageItem(`${WKApp.loginInfo.uid}-friend-applys-unread-count`, res.count)
       WKApp.menus.refresh();
-    })
+    }).catch(error => {
+      console.warn('Failed to fetch friend apply count:', error);
+    });
   }
 
   WKApp.menus.register("contacts", (param) => {

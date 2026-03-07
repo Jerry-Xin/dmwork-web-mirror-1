@@ -6,7 +6,7 @@ import { toSimplized } from "@dmwork/base";
 import { getPinyin } from "@dmwork/base";
 import classnames from "classnames";
 import { Toast } from "@douyinfe/semi-ui";
-import { Channel, ChannelTypePerson, WKSDK,ChannelInfoListener,ChannelInfo } from "wukongimjssdk";
+import { Channel, ChannelTypePerson, ChannelTypeGroup, WKSDK,ChannelInfoListener,ChannelInfo } from "wukongimjssdk";
 import { ContactsListManager } from "../Service/ContactsListManager";
 import { Card } from "@dmwork/base/src/Messages/Card";
 import WKAvatar from "@dmwork/base/src/Components/WKAvatar";
@@ -27,6 +27,7 @@ export class ContactsState {
     botDetailVisible: boolean = false
     // 手风琴展开状态
     expandedSection: 'members' | 'bots' | 'groups' | null = null
+    myGroups: any[] = []
 }
 
 export default class ContactsList extends Component<any, ContactsState> {
@@ -362,10 +363,23 @@ export default class ContactsList extends Component<any, ContactsState> {
     }
 
     toggleSection = (section: 'members' | 'bots' | 'groups') => {
-        this.setState(prev => ({
-            expandedSection: prev.expandedSection === section ? null : section,
+        const willExpand = this.state.expandedSection !== section
+        this.setState({
+            expandedSection: willExpand ? section : null,
             keyword: undefined,
-        }))
+        }, () => {
+            if (willExpand && section === 'groups') {
+                this.loadMyGroups()
+            }
+        })
+    }
+
+    loadMyGroups() {
+        const spaceId = WKApp.shared.currentSpaceId
+        if (!spaceId) return
+        WKApp.apiClient.get(`/group/my?space_id=${spaceId}`).then((data: any) => {
+            this.setState({ myGroups: data || [] })
+        }).catch(() => {})
     }
 
     renderAccordionSection(section: 'members' | 'bots' | 'groups', icon: string, label: string) {
@@ -375,6 +389,8 @@ export default class ContactsList extends Component<any, ContactsState> {
             ? spaceMembers.filter(m => m.robot === 1).length
             : section === 'members'
             ? spaceMembers.filter(m => m.robot !== 1).length
+            : section === 'groups'
+            ? this.state.myGroups.length
             : 0
 
         const items = (section === 'members' || section === 'bots') ? this.getFilteredMembers(section) : []
@@ -412,7 +428,17 @@ export default class ContactsList extends Component<any, ContactsState> {
                                 </div>
                             )
                         })}
-                        {section === 'groups' && <div style={{ padding: '12px', color: '#999', fontSize: 13 }}>暂无群组</div>}
+                        {section === 'groups' && this.state.myGroups.length === 0 && <div style={{ padding: '12px', color: '#999', fontSize: 13 }}>暂无群组</div>}
+                        {section === 'groups' && this.state.myGroups.map((g: any) => (
+                            <div key={g.group_no} className="wk-contacts-section-item" onClick={() => {
+                                WKApp.endpoints.showConversation(new Channel(g.group_no, ChannelTypeGroup))
+                            }}>
+                                <div className="wk-contacts-section-item-avatar">
+                                    <WKAvatar channel={new Channel(g.group_no, ChannelTypeGroup)}></WKAvatar>
+                                </div>
+                                <div className="wk-contacts-section-item-name">{g.name}</div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>

@@ -36,8 +36,33 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
         regUsername: '', regPassword: '', regLoading: false,
     };
 
+    private isUnmounted = false;
+    private loginInProgress = false;
+    private registerInProgress = false;
+    private joinInProgress = false;
+    private redirecting = false;
+
     componentDidMount() {
         this.loadInviteInfo();
+    }
+
+    componentWillUnmount() {
+        this.isUnmounted = true;
+    }
+
+    private safeSetState(state: Partial<InviteLandingState>) {
+        if (!this.isUnmounted) {
+            this.setState(state as Pick<InviteLandingState, keyof InviteLandingState>);
+        }
+    }
+
+    private redirectToClean() {
+        if (this.redirecting) return;
+        this.redirecting = true;
+        localStorage.removeItem("pendingInviteCode");
+        const url = new URL(window.location.href);
+        url.searchParams.delete("invite");
+        window.location.href = url.toString();
     }
 
     async loadInviteInfo() {
@@ -56,24 +81,27 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
     }
 
     async handleJoin() {
-        this.setState({ joining: true });
+        if (this.joinInProgress) return;
+        this.joinInProgress = true;
+        this.safeSetState({ joining: true });
         try {
             await WKApp.apiClient.post(`/space/join`, { invite_code: this.props.inviteCode });
             Toast.success("加入成功！");
-            localStorage.removeItem("pendingInviteCode");
-            const url = new URL(window.location.href);
-            url.searchParams.delete("invite");
-            window.location.href = url.toString();
+            this.redirectToClean();
         } catch (e: any) {
             Toast.error(e?.msg || "加入失败");
-            this.setState({ joining: false });
+            this.safeSetState({ joining: false });
+        } finally {
+            this.joinInProgress = false;
         }
     }
 
     async handleLogin() {
+        if (this.loginInProgress) return;
+        this.loginInProgress = true;
         const { loginUsername, loginPassword } = this.state;
-        if (!loginUsername || !loginPassword) { Toast.warning("请输入用户名和密码"); return; }
-        this.setState({ loginLoading: true });
+        if (!loginUsername || !loginPassword) { Toast.warning("请输入用户名和密码"); this.loginInProgress = false; return; }
+        this.safeSetState({ loginLoading: true });
         try {
             const resp = await fetch(`${WKApp.apiClient.config.apiURL}user/login`, {
                 method: 'POST',
@@ -81,7 +109,7 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
                 body: JSON.stringify({ username: loginUsername, password: loginPassword }),
             });
             const data = await resp.json();
-            if (!resp.ok) { Toast.error(data.msg || "登录失败"); this.setState({ loginLoading: false }); return; }
+            if (!resp.ok) { Toast.error(data.msg || "登录失败"); this.safeSetState({ loginLoading: false }); return; }
             // Save login info
             WKApp.loginInfo.uid = data.uid;
             WKApp.loginInfo.token = data.token;
@@ -93,14 +121,18 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             await this.joinAfterAuth();
         } catch (e) {
             Toast.error("网络错误");
-            this.setState({ loginLoading: false });
+            this.safeSetState({ loginLoading: false });
+        } finally {
+            this.loginInProgress = false;
         }
     }
 
     async handleRegister() {
+        if (this.registerInProgress) return;
+        this.registerInProgress = true;
         const { regUsername, regPassword } = this.state;
-        if (!regUsername || !regPassword) { Toast.warning("请输入用户名和密码"); return; }
-        this.setState({ regLoading: true });
+        if (!regUsername || !regPassword) { Toast.warning("请输入用户名和密码"); this.registerInProgress = false; return; }
+        this.safeSetState({ regLoading: true });
         try {
             // Register using usernameregister API (no code required)
             const regResp = await fetch(`${WKApp.apiClient.config.apiURL}user/usernameregister`, {
@@ -109,7 +141,7 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
                 body: JSON.stringify({ username: regUsername, name: regUsername, password: regPassword, flag: 1 }),
             });
             const regData = await regResp.json();
-            if (!regResp.ok) { Toast.error(regData.msg || "注册失败"); this.setState({ regLoading: false }); return; }
+            if (!regResp.ok) { Toast.error(regData.msg || "注册失败"); this.safeSetState({ regLoading: false }); return; }
             // Auto login after register
             const loginResp = await fetch(`${WKApp.apiClient.config.apiURL}user/login`, {
                 method: 'POST',
@@ -117,7 +149,7 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
                 body: JSON.stringify({ username: regUsername, password: regPassword }),
             });
             const loginData = await loginResp.json();
-            if (!loginResp.ok) { Toast.error("注册成功但登录失败"); this.setState({ regLoading: false }); return; }
+            if (!loginResp.ok) { Toast.error("注册成功但登录失败"); this.safeSetState({ regLoading: false }); return; }
             WKApp.loginInfo.uid = loginData.uid;
             WKApp.loginInfo.token = loginData.token;
             WKApp.loginInfo.name = loginData.name;
@@ -127,7 +159,9 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             await this.joinAfterAuth();
         } catch (e) {
             Toast.error("网络错误");
-            this.setState({ regLoading: false });
+            this.safeSetState({ regLoading: false });
+        } finally {
+            this.registerInProgress = false;
         }
     }
 
@@ -147,10 +181,7 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             Toast.error("网络错误，加入失败");
             return;
         }
-        localStorage.removeItem("pendingInviteCode");
-        const url = new URL(window.location.href);
-        url.searchParams.delete("invite");
-        window.location.href = url.toString();
+        this.redirectToClean();
     }
 
     render() {

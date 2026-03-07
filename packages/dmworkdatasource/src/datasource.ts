@@ -262,7 +262,7 @@ export class CommonDataSource implements ICommonDataSource {
                     c.avatar = m.avatar || ""
                     c.follow = 1
                     c.status = 1
-                    c.robot = false
+                    c.robot = m.robot === 1
                     contactsList.push(c)
                 }
             }

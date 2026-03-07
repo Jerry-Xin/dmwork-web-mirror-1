@@ -280,8 +280,8 @@ export default class ContactsList extends Component<any, ContactsState> {
                             name = item.remark
                         }
                         return <div key={item.uid} className={classnames("wk-contacts-section-item", WKApp.shared.openChannel?.channelType === ChannelTypePerson && WKApp.shared.openChannel?.channelID === item.uid ? "wk-contacts-section-item-selected" : undefined)} onClick={() => {
-                            if (item.robot) {
-                                // Bot: 弹出详情弹窗
+                            if (item.robot && item.uid !== 'botfather') {
+                                // 非系统 Bot: 弹出详情弹窗
                                 this.setState({ botDetailUid: item.uid, botDetailVisible: true })
                                 return
                             }

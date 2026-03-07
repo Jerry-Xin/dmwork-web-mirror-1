@@ -252,9 +252,15 @@ export class CommonDataSource implements ICommonDataSource {
         const spaceId = WKApp.shared.currentSpaceId;
         if (spaceId) {
             // Space 模式：从 Space 成员获取联系人
+            // 捕获请求发起时的 spaceId，用于防止竞态条件
+            const requestSpaceId = spaceId;
             const members = await WKApp.apiClient.get(`space/${spaceId}/members`, {
                 param: { page: "1", limit: "10000" },
             })
+            // 请求返回后验证 Space 是否已切换，防止将错误数据应用到当前视图
+            if (WKApp.shared.currentSpaceId !== requestSpaceId) {
+                return [];
+            }
             const contactsList = new Array<Contacts>()
             if (members) {
                 for (const m of members) {

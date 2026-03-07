@@ -59,7 +59,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         TypingManager.shared.removeTypingListener(this.typingListener)
     }
 
-    _handleScroll() {
+    _handleScroll = () => {
         this.contextMenusContext.hide()
     }
     _handleContextMenu(conversationWrap: ConversationWrap, event: React.MouseEvent) {
@@ -243,7 +243,7 @@ export default class ConversationList extends Component<ConversationListProps, C
     render() {
         const { conversations, select } = this.props
         const { selectConversationWrap } = this.state
-        return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll.bind(this)}>
+        return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
             {
                 conversations && conversations.map((conversationWrap) => {
                     return this.conversationItem(conversationWrap)

@@ -154,7 +154,7 @@ export class VoiceCell extends MessageCell<any,VoiceCellState> {
         this.clearTimer();
     }
 
-    playOrPauseVoice(e:any) {
+    playOrPauseVoice = (e:any) => {
         const currentPlayer = voicePlayerManager.getPlayer();
         if (currentPlayer && currentPlayer.isPlaying()) {
             const wasThisComponent = voicePlayerManager.isActiveComponent(this);
@@ -238,9 +238,7 @@ export class VoiceCell extends MessageCell<any,VoiceCellState> {
         const isSend = message.message.send;
         return <MessageBase message={message} context={context} >
             <div className="wk-message-voice">
-                <div className={classNames("voicePlay", this.getPlayStatusClassname())} onClick={(e) => {
-                    this.playOrPauseVoice.bind(this)(e);
-                }}>
+                <div className={classNames("voicePlay", this.getPlayStatusClassname())} onClick={this.playOrPauseVoice}>
                     <i className="icon-play"></i>
                     <i className="icon-pause"></i>
                 </div>

@@ -128,7 +128,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
     }
 
-    handleKeyDown(e: React.KeyboardEvent) {
+    handleKeyDown = (e: React.KeyboardEvent) => {
         const { slashMenuVisible } = this.state
         if (!slashMenuVisible) return
         const filtered = this.getFilteredSlashCommands()
@@ -153,7 +153,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         }
     }
 
-    handleKeyPressed(e: any) {
+    handleKeyPressed = (e: any) => {
         if (e.charCode !== 13) { //非回车
             return;
         }
@@ -235,7 +235,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         return undefined
     }
 
-    handleChange(event: { target: { value: string } }) {
+    handleChange = (event: { target: { value: string } }) => {
         const value = event.target.value
         const { botCommands } = this.props
         if (botCommands && botCommands.length > 0 && value.startsWith('/')) {
@@ -269,7 +269,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         )
     }
 
-    handleSlashSelect(cmd: BotCommand) {
+    handleSlashSelect = (cmd: BotCommand) => {
         this.setState({
             value: `/${cmd.command} `,
             slashMenuVisible: false,
@@ -390,15 +390,15 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                             filter={slashFilter}
                             visible={slashMenuVisible}
                             activeIndex={slashActiveIndex}
-                            onSelect={this.handleSlashSelect.bind(this)}
+                            onSelect={this.handleSlashSelect}
                         />
                     )}
                     <MentionsInput
                         style={InputStyle.getStyle()}
                         value={value}
-                        onKeyPress={e => this.handleKeyPressed.bind(this)(e)}
-                        onKeyDown={e => this.handleKeyDown(e)}
-                        onChange={this.handleChange.bind(this)}
+                        onKeyPress={this.handleKeyPressed}
+                        onKeyDown={this.handleKeyDown}
+                        onChange={this.handleChange}
                         className="wk-messageinput-input"
                         placeholder={`按 Ctrl + Enter 换行，按 Enter 发送`}
                         allowSuggestionsAboveCursor={true}

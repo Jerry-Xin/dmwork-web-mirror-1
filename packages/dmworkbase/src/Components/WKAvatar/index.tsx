@@ -55,17 +55,17 @@ export default class WKAvatar extends Component<WKAvatarProps, WKAvatarState> {
         }
         return imgSrc
     }
-    handleImgError() {
+    handleImgError = () => {
         this.setState({ src: defaultAvatarSVG, loadedErr: true });
     };
-    handleLoad() {
+    handleLoad = () => {
         if(!this.state.loadedErr) {
             this.setState({ src: this.getImageSrc() })
         }
-        
+
     }
     render() {
         const { style } = this.props
-        return <img alt="" style={style} className="wk-avatar" src={this.state.src} onLoad={this.handleLoad.bind(this)} onError={this.handleImgError.bind(this)} />
+        return <img alt="" style={style} className="wk-avatar" src={this.state.src} onLoad={this.handleLoad} onError={this.handleImgError} />
     }
 }

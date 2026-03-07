@@ -14,11 +14,11 @@ export class ListItemAvatar extends Component<ListItemAvatarProps>{
     $fileInput: any
     avatarEdit?: WKAvatarEditor|null
 
-    onFileChange() {
+    onFileChange = () => {
         let file = this.$fileInput.files[0];
         this.showFile(file);
     }
-    onFileClick(event: any) {
+    onFileClick = (event: any) => {
         event.target.value = ''  // 防止选中一个文件取消后不能再选中同一个文件
     }
     chooseFile = () => {
@@ -60,7 +60,7 @@ export class ListItemAvatar extends Component<ListItemAvatarProps>{
     render(): ReactNode {
         const { title, avatar } = this.props
         return <div className="wk-list-item wk-list-item-avatar" onClick={this.chooseFile}>
-            <input onClick={this.onFileClick.bind(this)} onChange={this.onFileChange.bind(this)} ref={(ref) => { this.$fileInput = ref }} type="file" multiple={false} accept="image/*" style={{ display: 'none' }} />
+            <input onClick={this.onFileClick} onChange={this.onFileChange} ref={(ref) => { this.$fileInput = ref }} type="file" multiple={false} accept="image/*" style={{ display: 'none' }} />
             <div className="wk-list-item-title">
                 {title}
             </div>

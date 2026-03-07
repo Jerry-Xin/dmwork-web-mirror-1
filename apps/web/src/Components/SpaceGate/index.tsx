@@ -23,7 +23,12 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
         showInviteInput: false,
     };
 
+    private _enterTimer: ReturnType<typeof setTimeout> | null = null;
+    private _isEntering = false;
+    private _isMounted = false;
+
     componentDidMount() {
+        this._isMounted = true;
         const cached = localStorage.getItem("currentSpaceId");
         if (cached) {
             this.enterSpace(cached);
@@ -32,14 +37,35 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
         this.checkSpaces();
     }
 
+    componentWillUnmount() {
+        this._isMounted = false;
+        if (this._enterTimer) {
+            clearTimeout(this._enterTimer);
+            this._enterTimer = null;
+        }
+    }
+
     enterSpace = (spaceId: string) => {
+        if (this._isEntering) return;
+        this._isEntering = true;
+
+        if (this._enterTimer) {
+            clearTimeout(this._enterTimer);
+            this._enterTimer = null;
+        }
+
         WKApp.shared.currentSpaceId = spaceId;
         WKApp.shared.spaceChecked = true;
         localStorage.setItem("currentSpaceId", spaceId);
         try { WKApp.shared.notifyListener(); } catch (_) {}
-        this.forceUpdate();
-        setTimeout(() => {
-            if (document.querySelector(".wk-spacegate")) {
+
+        if (this._isMounted) {
+            this.forceUpdate();
+        }
+
+        this._enterTimer = setTimeout(() => {
+            this._enterTimer = null;
+            if (this._isMounted && document.querySelector(".wk-spacegate")) {
                 window.location.reload();
             }
         }, 300);

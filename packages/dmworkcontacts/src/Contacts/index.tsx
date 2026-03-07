@@ -428,16 +428,6 @@ export default class ContactsList extends Component<any, ContactsState> {
             <div className="wk-contacts">
                 <WKNavMainHeader title="通讯录"></WKNavMainHeader>
                 <div className="wk-contacts-content">
-                    {currentSpace && (
-                        <div className="wk-contacts-menu-header">
-                            <div className="wk-contacts-menu-space-icon" style={{
-                                backgroundColor: ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'][currentSpace.name.charCodeAt(0) % 6],
-                            }}>
-                                {currentSpace.name.charAt(0)}
-                            </div>
-                            <span className="wk-contacts-menu-space-name">{currentSpace.name}</span>
-                        </div>
-                    )}
                     {this.renderAccordionSection('members', '👥', '组织内联系人')}
                     {this.renderAccordionSection('bots', '🤖', 'Bot')}
                     {this.renderAccordionSection('groups', '👥', '我的群组')}

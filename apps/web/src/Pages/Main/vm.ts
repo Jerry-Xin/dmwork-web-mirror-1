@@ -47,6 +47,8 @@ export default class MainVM extends ProviderListener {
   showAppUpdateOperation: boolean;
   appUpdateProgress: number;
 
+  private ipcListeners: { event: string; handler: (...args: any[]) => void }[] = [];
+
   didMount(): void {
     let found = false;
     if (WKApp.route.currentPath) {
@@ -86,12 +88,17 @@ export default class MainVM extends ProviderListener {
     }
   }
 
+  private addIpcListener(event: string, handler: (...args: any[]) => void) {
+    (window as any).ipc.on(event, handler);
+    this.ipcListeners.push({ event, handler });
+  }
+
   appUpdateInit() {
     // 监听升级失败事件
-    (window as any).ipc.on("update-error", (event, message) => {
+    this.addIpcListener("update-error", (event, message) => {
     });
     // 发现可用更新事件
-    (window as any).ipc.on("update-available", (event, message) => {
+    this.addIpcListener("update-available", (event, message) => {
       (window as any).ipc.send("update-app");
       this.lastVersionInfo = {
         appVersion: message.version,
@@ -101,21 +108,21 @@ export default class MainVM extends ProviderListener {
       this.notifyListener();
     });
     // 没有可用更新事件
-    (window as any).ipc.on("update-not-available", (event, message) => {
+    this.addIpcListener("update-not-available", (event, message) => {
       this.showAppUpdate = false;
       this.showAppUpdateOperation = false;
       this.showAppUpdateOperation = false;
       Toast.success("已经是最新版本");
     });
     // 更新下载进度事件
-    (window as any).ipc.on("download-progress", (event, message) => {
+    this.addIpcListener("download-progress", (event, message) => {
       this.showAppUpdate = true;
       this.showAppUpdateOperation = false;
       this.appUpdateProgress = message;
       this.notifyListener();
     });
     // 监听下载完成事件
-    (window as any).ipc.on("update-downloaded", (event, message) => {
+    this.addIpcListener("update-downloaded", (event, message) => {
       this.lastVersionInfo = {
         appVersion: message.version,
         updateDesc: message.releaseNotes,
@@ -125,6 +132,14 @@ export default class MainVM extends ProviderListener {
       this.showAppUpdateOperation = true;
       this.notifyListener();
     });
+  }
+
+  didUnMount(): void {
+    // Clean up IPC listeners to prevent memory leaks
+    for (const { event, handler } of this.ipcListeners) {
+      (window as any).ipc?.removeListener(event, handler);
+    }
+    this.ipcListeners = [];
   }
   // 安装更新
   installUpdate() {

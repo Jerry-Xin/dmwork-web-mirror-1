@@ -134,12 +134,19 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
     async joinAfterAuth() {
         try {
             // Use raw fetch with token since WKApp.apiClient may not have updated token yet
-            await fetch(`${WKApp.apiClient.config.apiURL}space/join`, {
+            const resp = await fetch(`${WKApp.apiClient.config.apiURL}space/join`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'token': WKApp.loginInfo.token || '' },
                 body: JSON.stringify({ invite_code: this.props.inviteCode }),
             });
-        } catch {}
+            if (!resp.ok) {
+                Toast.error("加入 Space 失败");
+                return;
+            }
+        } catch (e) {
+            Toast.error("网络错误，加入失败");
+            return;
+        }
         localStorage.removeItem("pendingInviteCode");
         const url = new URL(window.location.href);
         url.searchParams.delete("invite");

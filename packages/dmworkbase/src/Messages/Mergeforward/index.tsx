@@ -74,14 +74,22 @@ export default class MergeforwardContent extends MessageContent {
             contentType = payloadObj.type
         }
         let messageContent = WKSDK.shared().getMessageContent(contentType)
-        messageContent.decodeJSON(payloadObj)
+        // Use decode() instead of decodeJSON() to properly set contentObj
+        // This ensures inner messages retain full payload for re-forwarding
+        const payloadData = new TextEncoder().encode(JSON.stringify(payloadObj))
+        messageContent.decode(payloadData)
         message.content = messageContent
         return message
     }
 
     messageToMap(message: Message): any {
-
-        return { "message_id": message.messageID, "from_uid": message.fromUID ?? "", "timestamp": message.timestamp, payload: message.content.contentObj }
+        // Use contentObj if available, otherwise fall back to encodeJSON()
+        let payload = message.content.contentObj
+        if (!payload) {
+            payload = message.content.encodeJSON()
+            payload.type = message.content.contentType
+        }
+        return { "message_id": message.messageID, "from_uid": message.fromUID ?? "", "timestamp": message.timestamp, payload: payload }
     }
 }
 

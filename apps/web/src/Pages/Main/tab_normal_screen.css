@@ -200,6 +200,9 @@
     height: 500px;
   }
 /* Space 切换器 */
+.wk-sider-space-icon:first-of-type {
+  margin-top: auto;
+}
 .wk-sider-space-icon {
   list-style: none;
   width: 36px;

@@ -24,7 +24,7 @@ export class MediaMessageUploadTask extends MessageTask {
             const path = `/${this.message.channel.channelType}/${this.message.channel.channelID}/${fileName}${mediaContent.extension??""}`
             const uploadURL = await  this.getUploadURL(path)
             if(uploadURL) {
-                this.uploadFile(mediaContent.file,uploadURL)
+                await this.uploadFile(mediaContent.file,uploadURL)
 
             }else{
                 this.status = TaskStatus.fail

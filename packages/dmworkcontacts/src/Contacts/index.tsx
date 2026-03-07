@@ -25,6 +25,7 @@ export class ContactsState {
     spaceMembers: SpaceMember[] = []
     botDetailUid?: string // Bot 详情弹窗
     botDetailVisible: boolean = false
+    botGroupCollapsed: boolean = false
 }
 
 export default class ContactsList extends Component<any, ContactsState> {
@@ -267,12 +268,22 @@ export default class ContactsList extends Component<any, ContactsState> {
     }
 
     sectionUI(indexName: string) {
-        const { indexItemMap } = this.state
+        const { indexItemMap, botGroupCollapsed } = this.state
         const { canSelect } = this.props
         const items = indexItemMap.get(indexName)
+        const isBotGroup = indexName === '🤖 Bot'
 
         return <div key={indexName} className="wk-contacts-section">
-            <div className="wk-contacts-section-list">
+            {isBotGroup && (
+                <div className="wk-contacts-section-bot-header" onClick={() => this.setState({ botGroupCollapsed: !botGroupCollapsed })} style={{
+                    display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: 'pointer', userSelect: 'none',
+                    fontSize: 13, color: '#888', fontWeight: 500,
+                }}>
+                    <span style={{ marginRight: 6, fontSize: 10, transition: 'transform 0.2s', transform: botGroupCollapsed ? 'rotate(0deg)' : 'rotate(90deg)', display: 'inline-block' }}>▶</span>
+                    🤖 Bot ({items?.length || 0})
+                </div>
+            )}
+            <div className="wk-contacts-section-list" style={isBotGroup && botGroupCollapsed ? { display: 'none' } : undefined}>
                 {
                     items?.map((item, i) => {
                         let name = item.name
@@ -294,7 +305,7 @@ export default class ContactsList extends Component<any, ContactsState> {
                             this._handleContextMenu(item, e)
                         }}>
                             <div className="wk-contacts-section-item-index">
-                                {i === 0 ? indexName : ""}
+                                {i === 0 && !isBotGroup ? indexName : ""}
                             </div>
                             <div className="wk-contacts-section-item-avatar">
                                 <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)}></WKAvatar>

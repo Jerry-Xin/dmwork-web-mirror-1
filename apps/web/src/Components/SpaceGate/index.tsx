@@ -2,12 +2,15 @@ import React, { Component } from "react";
 import { WKApp } from "@dmwork/base";
 import { SpaceService } from "@dmwork/base/src/Service/SpaceService";
 import { Input, Button, Toast, Spin } from "@douyinfe/semi-ui";
+import SpaceCreate from "@dmwork/base/src/Components/SpaceCreate";
 
 interface SpaceGateState {
     loading: boolean;
     noSpace: boolean;
     inviteCode: string;
     joining: boolean;
+    showCreate: boolean;
+    showInviteInput: boolean;
 }
 
 export default class SpaceGate extends Component<{}, SpaceGateState> {
@@ -16,10 +19,11 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
         noSpace: false,
         inviteCode: "",
         joining: false,
+        showCreate: false,
+        showInviteInput: false,
     };
 
     componentDidMount() {
-        // 先检查 localStorage 缓存
         const cached = localStorage.getItem("currentSpaceId");
         if (cached) {
             this.enterSpace(cached);
@@ -32,14 +36,10 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
         WKApp.shared.currentSpaceId = spaceId;
         WKApp.shared.spaceChecked = true;
         localStorage.setItem("currentSpaceId", spaceId);
-        // 双保险：notifyListener + forceUpdate + 延迟 reload
-        try {
-            WKApp.shared.notifyListener();
-        } catch (_) {}
+        try { WKApp.shared.notifyListener(); } catch (_) {}
         this.forceUpdate();
-        // 如果 notifyListener 没生效，300ms 后 reload
         setTimeout(() => {
-            if (document.querySelector(".wk-spacegate-join")) {
+            if (document.querySelector(".wk-spacegate")) {
                 window.location.reload();
             }
         }, 300);
@@ -60,10 +60,7 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
 
     joinSpace = async () => {
         const { inviteCode } = this.state;
-        if (!inviteCode.trim()) {
-            Toast.warning("请输入邀请码");
-            return;
-        }
+        if (!inviteCode.trim()) { Toast.warning("请输入邀请码"); return; }
         this.setState({ joining: true });
         try {
             await SpaceService.shared.joinSpace(inviteCode.trim());
@@ -77,7 +74,7 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
     };
 
     render() {
-        const { loading, noSpace, inviteCode, joining } = this.state;
+        const { loading, noSpace, inviteCode, joining, showCreate, showInviteInput } = this.state;
 
         if (loading && !noSpace) {
             return (
@@ -88,19 +85,58 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
         }
 
         return (
-            <div className="wk-spacegate-join" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", gap: "16px" }}>
-                <h2>加入 Space</h2>
-                <p style={{ color: "#888" }}>请输入邀请码加入一个 Space 开始使用</p>
-                <Input
-                    placeholder="邀请码"
-                    value={inviteCode}
-                    onChange={(v) => this.setState({ inviteCode: v })}
-                    onEnterPress={this.joinSpace}
-                    style={{ width: 300 }}
+            <div className="wk-spacegate" style={{
+                display: "flex", flexDirection: "column", alignItems: "center",
+                justifyContent: "center", height: "100vh",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            }}>
+                <div style={{
+                    background: "white", borderRadius: 16, padding: "48px 40px",
+                    textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+                    minWidth: 360, maxWidth: 420,
+                }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>👋</div>
+                    <h2 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 8px" }}>欢迎使用 DMWork！</h2>
+                    <p style={{ color: "#888", fontSize: 14, marginBottom: 32 }}>加入团队或创建新的工作空间</p>
+
+                    {!showInviteInput ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                            <Button type="primary" size="large" style={{ width: "100%", height: 44 }}
+                                onClick={() => this.setState({ showInviteInput: true })}>
+                                📩 输入邀请码加入团队
+                            </Button>
+                            <Button type="secondary" size="large" style={{ width: "100%", height: 44 }}
+                                onClick={() => this.setState({ showCreate: true })}>
+                                ✨ 创建新团队
+                            </Button>
+                        </div>
+                    ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                            <Input
+                                placeholder="输入邀请码"
+                                size="large"
+                                value={inviteCode}
+                                onChange={(v) => this.setState({ inviteCode: v })}
+                                onEnterPress={this.joinSpace}
+                            />
+                            <Button type="primary" size="large" loading={joining}
+                                style={{ width: "100%", height: 44 }}
+                                onClick={this.joinSpace}>
+                                加入
+                            </Button>
+                            <Button type="tertiary" size="small"
+                                onClick={() => this.setState({ showInviteInput: false })}>
+                                ← 返回
+                            </Button>
+                        </div>
+                    )}
+                </div>
+
+                <SpaceCreate
+                    visible={showCreate}
+                    onClose={() => this.setState({ showCreate: false })}
+                    onSuccess={() => this.checkSpaces()}
                 />
-                <Button theme="solid" type="primary" loading={joining} onClick={this.joinSpace} style={{ width: 300 }}>
-                    加入
-                </Button>
             </div>
         );
     }

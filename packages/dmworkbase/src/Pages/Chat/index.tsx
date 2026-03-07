@@ -249,6 +249,26 @@ export default class ChatPage extends Component<any> {
                       <div className="wk-chat-conversation-list-loading">
                         <Spin style={{ marginTop: "20px" }} />
                       </div>
+                    ) : vm.filteredConversations.length === 0 ? (
+                      <div className="wk-chat-empty-guide">
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+                        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>还没有会话</div>
+                        <div style={{ fontSize: 13, color: '#999', marginBottom: 24 }}>从通讯录选择联系人开始聊天</div>
+                        <div style={{ display: 'flex', gap: 12 }}>
+                          <button className="wk-chat-empty-guide-btn" onClick={() => {
+                            WKApp.endpoints.showConversationSelect?.((channels) => {
+                              if (channels?.length > 0) {
+                                WKApp.endpoints.showConversation(channels[0]);
+                              }
+                            }, "找人聊天");
+                          }}>找人聊天</button>
+                          <button className="wk-chat-empty-guide-btn wk-chat-empty-guide-btn-secondary" onClick={() => {
+                            const menus = WKApp.shared.chatMenus();
+                            const groupMenu = menus.find(m => m.title === "发起群聊");
+                            if (groupMenu?.onClick) groupMenu.onClick();
+                          }}>创建群聊</button>
+                        </div>
+                      </div>
                     ) : (
                       <ConversationList
                         select={WKApp.shared.openChannel}

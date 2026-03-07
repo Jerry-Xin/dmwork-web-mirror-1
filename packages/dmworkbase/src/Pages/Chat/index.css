@@ -375,3 +375,33 @@ body[theme-mode=dark] .wk-chat-popover {
     opacity: 1;
     background: rgba(0,0,0,0.05);
 }
+
+/* 空会话引导 */
+.wk-chat-empty-guide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+.wk-chat-empty-guide-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    background: var(--wk-color-theme, #6366F1);
+    color: white;
+    font-weight: 500;
+}
+.wk-chat-empty-guide-btn:hover {
+    opacity: 0.9;
+}
+.wk-chat-empty-guide-btn-secondary {
+    background: var(--wk-color-hover, #f0f0f0);
+    color: #333;
+}
+.wk-chat-empty-guide-btn-secondary:hover {
+    background: #e0e0e0;
+}

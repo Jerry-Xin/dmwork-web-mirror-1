@@ -18,10 +18,11 @@ export default class AppLayout extends Component {
             const sid = getSid()
             Notification.requestPermission() // 请求通知权限
             const basePath = (window.location.pathname.replace(/\/login\/?$/, '').replace(/\/index\.html$/, '') || '/').replace(/\/+$/, '')
-            // 检查是否有待处理的邀请码
+            // 检查是否有待处理的邀请码（验证格式防止 XSS/Open Redirect）
             const pendingInvite = localStorage.getItem("pendingInviteCode");
-            if (pendingInvite) {
-                window.location.href = `${window.location.origin}${basePath}/?invite=${pendingInvite}&sid=${sid}`
+            if (pendingInvite && /^[a-zA-Z0-9_-]+$/.test(pendingInvite)) {
+                localStorage.removeItem("pendingInviteCode");
+                window.location.href = `${window.location.origin}${basePath}/?invite=${encodeURIComponent(pendingInvite)}&sid=${sid}`
                 return;
             }
             window.location.href = `${window.location.origin}${basePath}/?sid=${sid}`

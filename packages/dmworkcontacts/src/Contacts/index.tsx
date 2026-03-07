@@ -301,7 +301,7 @@ export default class ContactsList extends Component<any, ContactsState> {
                             </div>
                             <div className="wk-contacts-section-item-name">
                                 {name}
-                                {item.robot && <AiBadge />}
+                                {item.robot === 1 && <AiBadge />}
                                 {(item as any)._spaceRole && (item as any)._spaceRole <= 2 && (
                                     <span className="wk-contacts-role-badge" style={{
                                         marginLeft: 6,

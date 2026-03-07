@@ -41,6 +41,7 @@ export default class ConversationVM extends ProviderListener {
     cmdListener!: MessageListener // cmd消息监听
     messageStatusListener!: MessageStatusListener // 消息状态监听
     conversationListener!: ConversationListener // 会话监听
+    subscriberChangeListener!: (channel: Channel) => void // 订阅者变化监听
     lastMessage?: MessageWrap // 此会话的最后一条最新的消息
     lastLocalMessageElement?: HTMLElement | null // 最后一条消息的dom元素
     private _showScrollToBottomBtn?: boolean = false // 是否显示底部按钮
@@ -448,6 +449,7 @@ export default class ConversationVM extends ProviderListener {
 
         TypingManager.shared.removeTypingListener(this.typingListener)
         WKSDK.shared().conversationManager.removeConversationListener(this.conversationListener)
+        WKSDK.shared().channelManager.removeSubscriberChangeListener(this.subscriberChangeListener)
 
     }
 
@@ -457,12 +459,13 @@ export default class ConversationVM extends ProviderListener {
             return
         }
         this.reloadSubscribers()
-        WKSDK.shared().channelManager.addSubscriberChangeListener((channel: Channel) => {
+        this.subscriberChangeListener = (channel: Channel) => {
             if (!this.channel.isEqual(channel)) {
                 return
             }
             this.reloadSubscribers()
-        })
+        }
+        WKSDK.shared().channelManager.addSubscriberChangeListener(this.subscriberChangeListener)
 
         if (this.channelInfo?.orgData?.group_type == SuperGroup) {
             // 如果是超级群则只获取第一页成员

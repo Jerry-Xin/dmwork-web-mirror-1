@@ -9,6 +9,7 @@ import { checkUpdate, installUpdate, UpdateManifest } from '@tauri-apps/api/upda
 import { relaunch } from '@tauri-apps/api/process'
 import { os } from "@tauri-apps/api";
 import { getSid } from "@dmwork/base/src/Utils/search";
+import InviteLanding from "../Components/InviteLanding";
 
 export default class AppLayout extends Component {
     onLogin!: () => void
@@ -16,9 +17,13 @@ export default class AppLayout extends Component {
         this.onLogin = () => {
             const sid = getSid()
             Notification.requestPermission() // 请求通知权限
-            // 确保跳转到应用根路径，不停留在 /login
-            // 使用 pathname 的基础路径（如 /web/）而非 origin 根路径
             const basePath = (window.location.pathname.replace(/\/login\/?$/, '').replace(/\/index\.html$/, '') || '/').replace(/\/+$/, '')
+            // 检查是否有待处理的邀请码
+            const pendingInvite = localStorage.getItem("pendingInviteCode");
+            if (pendingInvite) {
+                window.location.href = `${window.location.origin}${basePath}/?invite=${pendingInvite}&sid=${sid}`
+                return;
+            }
             window.location.href = `${window.location.origin}${basePath}/?sid=${sid}`
         }
         WKApp.endpoints.addOnLogin(this.onLogin)
@@ -85,6 +90,13 @@ export default class AppLayout extends Component {
     }
 
     render() {
+        // 邀请链接检测
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteCode = urlParams.get("invite");
+        if (inviteCode) {
+            return <InviteLanding inviteCode={inviteCode} />;
+        }
+
         return <Provider create={() => {
             return WKApp.shared
         }} render={(vm: WKApp): any => {

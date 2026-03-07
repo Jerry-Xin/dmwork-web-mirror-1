@@ -1,0 +1,62 @@
+.invite-landing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.invite-landing-card {
+    background: white;
+    border-radius: 16px;
+    padding: 48px 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    min-width: 320px;
+    max-width: 400px;
+}
+
+.invite-landing-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.invite-landing-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.invite-landing-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.invite-landing-members {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 32px;
+}
+
+.invite-landing-btn {
+    width: 100%;
+    height: 44px !important;
+    font-size: 16px !important;
+    border-radius: 8px !important;
+}
+
+.invite-landing-error {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 24px;
+}

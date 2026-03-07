@@ -350,6 +350,15 @@ export default class ContactsList extends Component<any, ContactsState> {
             .filter(m => section === 'bots' ? m.robot === 1 : m.robot !== 1)
             .filter(m => !keyword || m.name.indexOf(keyword) !== -1)
 
+        // BotFather 置顶
+        if (section === 'bots') {
+            filtered.sort((a, b) => {
+                if (a.uid === 'botfather') return -1
+                if (b.uid === 'botfather') return 1
+                return a.name.localeCompare(b.name)
+            })
+        }
+
         return filtered.map(m => {
             const c = new Contacts()
             c.uid = m.uid
@@ -413,7 +422,7 @@ export default class ContactsList extends Component<any, ContactsState> {
                             const spaceId = WKApp.shared.currentSpaceId
                             return (
                                 <div key={item.uid} className="wk-contacts-section-item" onClick={() => {
-                                    if (item.robot === 1 && item.uid !== 'botfather') {
+                                    if (item.robot === true && item.uid !== 'botfather') {
                                         this.setState({ botDetailUid: item.uid, botDetailVisible: true })
                                         return
                                     }
@@ -425,7 +434,7 @@ export default class ContactsList extends Component<any, ContactsState> {
                                     </div>
                                     <div className="wk-contacts-section-item-name">
                                         {name}
-                                        {item.robot === 1 && <AiBadge />}
+                                        {item.robot === true && <AiBadge />}
                                     </div>
                                 </div>
                             )

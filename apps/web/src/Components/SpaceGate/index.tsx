@@ -71,6 +71,7 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
             this.checkSpaces();
         } catch {
             Toast.error("邀请码无效或已过期");
+        } finally {
             this.setState({ joining: false });
         }
     };

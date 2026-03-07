@@ -8,7 +8,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 16px;
+    padding: 8px 16px 4px;
 }
 
 .wk-spacelist-title {
@@ -17,29 +17,40 @@
     color: #999;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 body[theme-mode=dark] .wk-spacelist-title {
     color: #888;
 }
 
-.wk-spacelist-add {
+.wk-spacelist-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.wk-spacelist-action-btn {
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 4px;
     color: #999;
+    transition: all 0.15s;
 }
 
-.wk-spacelist-add:hover {
+.wk-spacelist-action-btn:hover {
     background-color: rgba(0, 0, 0, 0.06);
-    color: #333;
+    color: #555;
 }
 
-body[theme-mode=dark] .wk-spacelist-add:hover {
+body[theme-mode=dark] .wk-spacelist-action-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
     color: #ddd;
 }
@@ -64,6 +75,7 @@ body[theme-mode=dark] .wk-spacelist-add:hover {
     padding: 6px 16px;
     cursor: pointer;
     transition: background-color 0.15s;
+    position: relative;
 }
 
 .wk-spacelist-item:hover {
@@ -110,13 +122,14 @@ body[theme-mode=dark] .wk-spacelist-item-selected {
 
 .wk-spacelist-all-icon {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    font-size: 11px;
+    font-size: 14px;
 }
 
 .wk-spacelist-item-info {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    flex: 1;
 }
 
 .wk-spacelist-item-name {
@@ -136,8 +149,93 @@ body[theme-mode=dark] .wk-spacelist-item-name {
     color: #999;
 }
 
-.wk-spacelist-header-actions {
+/* Hover actions on space items */
+.wk-spacelist-item-actions {
+    display: none;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.wk-spacelist-item:hover .wk-spacelist-item-actions {
+    display: flex;
+}
+
+.wk-spacelist-item-action {
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    border-radius: 4px;
+    color: #999;
+    transition: all 0.15s;
+}
+
+.wk-spacelist-item-action:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    color: #555;
+}
+
+body[theme-mode=dark] .wk-spacelist-item-action:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #ddd;
+}
+
+/* Invite modal */
+.wk-spacelist-invite-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wk-spacelist-invite-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wk-spacelist-invite-label {
+    color: #999;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.wk-spacelist-invite-code {
+    background: #f5f5f5;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 14px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.5px;
+}
+
+body[theme-mode=dark] .wk-spacelist-invite-code {
+    background: #333;
+    color: #eee;
+}
+
+.wk-spacelist-invite-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.wk-spacelist-invite-btn:hover {
+    background: #5a6fd6;
+}
+
+.wk-spacelist-invite-btn-full {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
 }

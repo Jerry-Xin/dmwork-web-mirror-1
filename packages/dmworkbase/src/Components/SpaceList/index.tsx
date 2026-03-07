@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import { IconPlus } from "@douyinfe/semi-icons";
-import { Spin, Modal, Input, Toast } from "@douyinfe/semi-ui";
+import { IconPlus, IconSearch, IconLink, IconSetting } from "@douyinfe/semi-icons";
+import { Spin, Modal, Input, Toast, Tooltip } from "@douyinfe/semi-ui";
 import { Space, SpaceService } from "../../Service/SpaceService";
 import "./index.css";
 
@@ -8,6 +8,7 @@ export interface SpaceListProps {
     selectedSpaceId?: string;
     onSelect: (space: Space | undefined) => void;
     onCreateClick: () => void;
+    onSettingsClick?: (space: Space) => void;
 }
 
 interface SpaceListState {
@@ -16,6 +17,10 @@ interface SpaceListState {
     showJoinModal: boolean;
     joinCode: string;
     joining: boolean;
+    inviteLoading: string; // space_id being invited
+    inviteCode: string;
+    showInviteModal: boolean;
+    inviteSpaceName: string;
 }
 
 export default class SpaceList extends Component<SpaceListProps, SpaceListState> {
@@ -27,6 +32,10 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
             showJoinModal: false,
             joinCode: "",
             joining: false,
+            inviteLoading: "",
+            inviteCode: "",
+            showInviteModal: false,
+            inviteSpaceName: "",
         };
     }
 
@@ -62,6 +71,36 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
         }
     };
 
+    handleInvite = async (space: Space, e: React.MouseEvent) => {
+        e.stopPropagation();
+        this.setState({ inviteLoading: space.space_id });
+        try {
+            const resp = await SpaceService.shared.createInvite(space.space_id);
+            this.setState({
+                inviteCode: resp.invite_code,
+                showInviteModal: true,
+                inviteSpaceName: space.name,
+                inviteLoading: "",
+            });
+        } catch {
+            Toast.error("生成邀请链接失败");
+            this.setState({ inviteLoading: "" });
+        }
+    };
+
+    copyInviteCode = () => {
+        navigator.clipboard.writeText(this.state.inviteCode).then(() => {
+            Toast.success("邀请码已复制");
+        });
+    };
+
+    copyInviteLink = () => {
+        const link = `${window.location.origin}/join/${this.state.inviteCode}`;
+        navigator.clipboard.writeText(link).then(() => {
+            Toast.success("邀请链接已复制");
+        });
+    };
+
     renderSpaceAvatar(space: Space) {
         if (space.logo) {
             return <img className="wk-spacelist-item-avatar-img" alt="" src={space.logo} />;
@@ -76,24 +115,32 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
     }
 
     render() {
-        const { selectedSpaceId, onSelect, onCreateClick } = this.props;
-        const { spaces, loading } = this.state;
+        const { selectedSpaceId, onSelect, onCreateClick, onSettingsClick } = this.props;
+        const { spaces, loading, showJoinModal, joinCode, joining,
+                showInviteModal, inviteCode, inviteSpaceName, inviteLoading } = this.state;
 
-        const { showJoinModal, joinCode, joining } = this.state;
+        const selectedSpace = spaces.find(s => s.space_id === selectedSpaceId);
+        const headerLabel = selectedSpace ? selectedSpace.name : "Space";
 
         return (
             <div className="wk-spacelist">
                 <div className="wk-spacelist-header">
-                    <span className="wk-spacelist-title">Space</span>
+                    <span className="wk-spacelist-title" title={headerLabel}>{headerLabel}</span>
                     <div className="wk-spacelist-header-actions">
-                        <div className="wk-spacelist-add" onClick={() => this.setState({ showJoinModal: true })} title="加入 Space">
-                            <span style={{ fontSize: '12px' }}>加入</span>
-                        </div>
-                        <div className="wk-spacelist-add" onClick={onCreateClick} title="创建 Space">
-                            <IconPlus size="small" />
-                        </div>
+                        <Tooltip content="加入空间" position="bottom">
+                            <div className="wk-spacelist-action-btn" onClick={() => this.setState({ showJoinModal: true })}>
+                                <IconSearch size="small" />
+                            </div>
+                        </Tooltip>
+                        <Tooltip content="创建空间" position="bottom">
+                            <div className="wk-spacelist-action-btn" onClick={onCreateClick}>
+                                <IconPlus size="small" />
+                            </div>
+                        </Tooltip>
                     </div>
                 </div>
+
+                {/* Join Modal */}
                 <Modal
                     title="加入 Space"
                     visible={showJoinModal}
@@ -109,6 +156,26 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
                         onEnterPress={this.handleJoin}
                     />
                 </Modal>
+
+                {/* Invite Result Modal */}
+                <Modal
+                    title={`邀请加入「${inviteSpaceName}」`}
+                    visible={showInviteModal}
+                    footer={null}
+                    onCancel={() => this.setState({ showInviteModal: false, inviteCode: "" })}
+                >
+                    <div className="wk-spacelist-invite-modal">
+                        <div className="wk-spacelist-invite-row">
+                            <span className="wk-spacelist-invite-label">邀请码</span>
+                            <code className="wk-spacelist-invite-code">{inviteCode}</code>
+                            <button className="wk-spacelist-invite-btn" onClick={this.copyInviteCode}>复制</button>
+                        </div>
+                        <button className="wk-spacelist-invite-btn wk-spacelist-invite-btn-full" onClick={this.copyInviteLink}>
+                            📋 复制邀请链接
+                        </button>
+                    </div>
+                </Modal>
+
                 {loading ? (
                     <div className="wk-spacelist-loading">
                         <Spin size="small" />
@@ -120,9 +187,7 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
                             onClick={() => onSelect(undefined)}
                         >
                             <div className="wk-spacelist-item-avatar">
-                                <div className="wk-spacelist-item-avatar-letter wk-spacelist-all-icon">
-                                    All
-                                </div>
+                                <div className="wk-spacelist-item-avatar-letter wk-spacelist-all-icon">✦</div>
                             </div>
                             <div className="wk-spacelist-item-info">
                                 <div className="wk-spacelist-item-name">全部会话</div>
@@ -140,6 +205,16 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
                                 <div className="wk-spacelist-item-info">
                                     <div className="wk-spacelist-item-name">{space.name}</div>
                                     <div className="wk-spacelist-item-count">{space.member_count} 人</div>
+                                </div>
+                                <div className="wk-spacelist-item-actions">
+                                    <Tooltip content="邀请成员" position="right">
+                                        <div
+                                            className="wk-spacelist-item-action"
+                                            onClick={(e) => this.handleInvite(space, e)}
+                                        >
+                                            {inviteLoading === space.space_id ? <Spin size="small" /> : <IconLink size="small" />}
+                                        </div>
+                                    </Tooltip>
                                 </div>
                             </div>
                         ))}

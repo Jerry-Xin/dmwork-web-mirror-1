@@ -49,7 +49,7 @@
     cursor: pointer;
     position: absolute;
     left: 0;
-    bottom: 5px;
+    top: 0;
 }
 
 .senderAvatar img {

@@ -33,6 +33,7 @@ export default class ConversationVM extends ProviderListener {
 
     pullupHasMore: boolean = false // 上拉是否有更多
     pulldownFinished: boolean = false // 下拉完成
+    pendingMessages: MessageWrap[] = [] // 缓冲区：pullupHasMore 期间收到的实时消息
     messageContainerId = "viewport" // 消息容器的ID
     static sendQueue: Map<string, Array<MessageWrap>> = new Map() // 发送队列
     private _needSetUnread: boolean = false // 是否需要设置未读数量
@@ -461,6 +462,7 @@ export default class ConversationVM extends ProviderListener {
         TypingManager.shared.removeTypingListener(this.typingListener)
         WKSDK.shared().conversationManager.removeConversationListener(this.conversationListener)
         WKSDK.shared().channelManager.removeSubscriberChangeListener(this.subscriberChangeListener)
+        this.pendingMessages = [] // 清理缓冲区
 
     }
 
@@ -741,6 +743,8 @@ export default class ConversationVM extends ProviderListener {
         const senderIsSelf = messageWrap.fromUID === WKApp.loginInfo.uid
         this.updateLastMessageIfNeed(messageWrap)
         if (this.pullupHasMore) {
+            // 缓存消息，等 pullupHasMore 变 false 后追加，避免消息丢失 (#246)
+            this.pendingMessages.push(messageWrap)
             if (senderIsSelf) {
                 this.notifyListener()
                 this.scrollToBottomIfNeedPull()
@@ -748,6 +752,11 @@ export default class ConversationVM extends ProviderListener {
                 this.notifyListener()
             }
             return
+        }
+        // flush 缓冲区中的 pending 消息
+        if (this.pendingMessages.length > 0) {
+            this.messagesOfOrigin.push(...this.pendingMessages)
+            this.pendingMessages = []
         }
         this.messagesOfOrigin.push(messageWrap)
 
@@ -932,6 +941,12 @@ export default class ConversationVM extends ProviderListener {
         } else {
             this.pullupHasMore = false;
         }
+        // 首页加载完成后 flush 缓冲的实时消息 (#246)
+        if (!this.pullupHasMore && this.pendingMessages.length > 0) {
+            allMessages = [...allMessages, ...this.pendingMessages]
+            allMessages = this.sortMessages(allMessages)
+            this.pendingMessages = []
+        }
         let initMessage: MessageWrap | undefined
         if (initMessageSeq && initMessageSeq > 0) {
             for (const message of allMessages) {
@@ -1074,6 +1089,11 @@ export default class ConversationVM extends ProviderListener {
             this.pullupHasMore = true
         }
         this.messagesOfOrigin = [...this.messagesOfOrigin, ...this.toMessageWraps(newMessages)]
+        // pullup 结束后 flush 缓冲的实时消息 (#246)
+        if (!this.pullupHasMore && this.pendingMessages.length > 0) {
+            this.messagesOfOrigin.push(...this.pendingMessages)
+            this.pendingMessages = []
+        }
         this.refreshAndLocateMessages(this.messagesOfOrigin, undefined, false, () => {
             this.loading = false
         })

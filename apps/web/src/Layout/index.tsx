@@ -18,7 +18,7 @@ export default class AppLayout extends Component {
             Notification.requestPermission() // 请求通知权限
             // 确保跳转到应用根路径，不停留在 /login
             // 使用 pathname 的基础路径（如 /web/）而非 origin 根路径
-            const basePath = window.location.pathname.replace(/\/login\/?$/, '').replace(/\/index\.html$/, '') || '/'
+            const basePath = (window.location.pathname.replace(/\/login\/?$/, '').replace(/\/index\.html$/, '') || '/').replace(/\/+$/, '')
             window.location.href = `${window.location.origin}${basePath}/?sid=${sid}`
         }
         WKApp.endpoints.addOnLogin(this.onLogin)

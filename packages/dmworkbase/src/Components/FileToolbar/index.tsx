@@ -24,6 +24,7 @@ interface FileToolbarState {
     fileSize?: number
     fileExtension?: string
     sending: boolean
+    caption: string
 }
 
 export default class FileToolbar extends Component<FileToolbarProps, FileToolbarState> {
@@ -34,6 +35,7 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
         this.state = {
             showDialog: false,
             sending: false,
+            caption: '',
         }
     }
 
@@ -76,21 +78,23 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
             fileSize: file.size,
             fileExtension: extension,
             showDialog: true,
+            caption: '',
         })
     }
 
     onSend = async () => {
         const { conversationContext } = this.props
-        const { file, fileName, fileExtension, fileSize } = this.state
+        const { file, fileName, fileExtension, fileSize, caption } = this.state
 
         if (!file) return
 
         this.setState({ sending: true })
 
         try {
-            const content = new FileContent(file, fileName, fileExtension, fileSize)
+            const trimmedCaption = caption?.trim() || undefined
+            const content = new FileContent(file, fileName, fileExtension, fileSize, trimmedCaption)
             await conversationContext.sendMessage(content)
-            this.setState({ showDialog: false, sending: false })
+            this.setState({ showDialog: false, sending: false, caption: '' })
         } catch (err) {
             this.setState({ sending: false })
             alert("文件发送失败，请重试")
@@ -98,7 +102,7 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
     }
 
     onClose = () => {
-        this.setState({ showDialog: false })
+        this.setState({ showDialog: false, caption: '' })
     }
 
     formatFileSize(bytes: number): string {
@@ -123,7 +127,7 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
 
     render(): ReactNode {
         const { icon } = this.props
-        const { showDialog, fileName, fileSize, fileExtension, sending } = this.state
+        const { showDialog, fileName, fileSize, fileExtension, sending, caption } = this.state
         const iconInfo = this.getFileIconInfo(fileExtension || "")
 
         return (
@@ -160,6 +164,16 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
                                         <div className="wk-filedialog-preview-name">{fileName}</div>
                                         <div className="wk-filedialog-preview-size">{this.formatFileSize(fileSize || 0)}</div>
                                     </div>
+                                </div>
+                                <div className="wk-filedialog-caption">
+                                    <input
+                                        type="text"
+                                        className="wk-filedialog-caption-input"
+                                        placeholder="添加说明文字..."
+                                        value={caption}
+                                        onChange={(e) => this.setState({ caption: e.target.value })}
+                                        maxLength={500}
+                                    />
                                 </div>
                                 <div className="wk-filedialog-footer">
                                     <button onClick={this.onClose} disabled={sending}>取消</button>

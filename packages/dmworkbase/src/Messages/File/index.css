@@ -102,3 +102,15 @@
 .wk-message-base-bubble-box.send .wk-message-file-action:hover {
     background-color: rgba(255, 255, 255, 0.15);
 }
+
+.wk-message-file-caption {
+    padding: 4px 8px 8px;
+    font-size: 14px;
+    color: var(--wk-text-item);
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.wk-message-base-bubble-box.send .wk-message-file-caption {
+    color: #fff;
+}

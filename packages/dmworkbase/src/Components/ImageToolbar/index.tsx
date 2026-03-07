@@ -19,6 +19,7 @@ interface ImageToolbarState {
     canSend?: boolean
     width?: number
     height?: number
+    caption?: string
 }
 
 export default class ImageToolbar extends Component<ImageToolbarProps, ImageToolbarState>{
@@ -27,6 +28,7 @@ export default class ImageToolbar extends Component<ImageToolbarProps, ImageTool
         super(props)
         this.state = {
             showDialog: false,
+            caption: '',
         }
     }
 
@@ -74,6 +76,7 @@ export default class ImageToolbar extends Component<ImageToolbarProps, ImageTool
                     fileType: "image",
                     previewUrl: reader.result,
                     showDialog: true,
+                    caption: '',
                 });
             };
         }
@@ -82,13 +85,15 @@ export default class ImageToolbar extends Component<ImageToolbarProps, ImageTool
 
     onSend() {
         const {conversationContext} = this.props
-        const {  file, previewUrl,width,height,fileType } = this.state
+        const {  file, previewUrl,width,height,fileType,caption } = this.state
         if(fileType === "image") {
-            conversationContext.sendMessage(new ImageContent(file,previewUrl,width,height))
+            const trimmedCaption = caption?.trim() || undefined
+            conversationContext.sendMessage(new ImageContent(file,previewUrl,width,height,trimmedCaption))
         }
-       
+
         this.setState({
             showDialog: false,
+            caption: '',
         });
     }
     onPreviewLoad(e: any) {
@@ -103,7 +108,7 @@ export default class ImageToolbar extends Component<ImageToolbarProps, ImageTool
     }
     render(): ReactNode {
         const { icon } = this.props
-        const { showDialog, canSend, fileIconInfo, file, fileType, previewUrl } = this.state
+        const { showDialog, canSend, fileIconInfo, file, fileType, previewUrl, caption } = this.state
         return <div className="wk-imagetoolbar" >
             <div className="wk-imagetoolbar-content" onClick={() => {
             this.chooseFile()
@@ -115,9 +120,10 @@ export default class ImageToolbar extends Component<ImageToolbarProps, ImageTool
             </div>
             {
                 showDialog ? (
-                    <ImageDialog onSend={this.onSend.bind(this)} onLoad={this.onPreviewLoad.bind(this)} canSend={canSend} fileIconInfo={fileIconInfo} file={file} fileType={fileType} previewUrl={previewUrl} onClose={() => {
+                    <ImageDialog onSend={this.onSend.bind(this)} onLoad={this.onPreviewLoad.bind(this)} canSend={canSend} fileIconInfo={fileIconInfo} file={file} fileType={fileType} previewUrl={previewUrl} caption={caption} onCaptionChange={(value) => this.setState({ caption: value })} onClose={() => {
                         this.setState({
-                            showDialog: !showDialog
+                            showDialog: !showDialog,
+                            caption: '',
                         })
                     }} />
                 ) : null
@@ -136,6 +142,8 @@ interface ImageDialogProps {
     fileIconInfo?: any,
     canSend?: boolean
     onLoad: (e: any) => void
+    caption?: string
+    onCaptionChange?: (value: string) => void
 }
 
 class ImageDialog extends Component<ImageDialogProps> {
@@ -156,7 +164,7 @@ class ImageDialog extends Component<ImageDialogProps> {
     }
 
     render() {
-        const { onClose, onSend, fileType, previewUrl, file, canSend, fileIconInfo, onLoad } = this.props
+        const { onClose, onSend, fileType, previewUrl, file, canSend, fileIconInfo, onLoad, caption, onCaptionChange } = this.props
         return <div className="wk-imagedialog">
             <div className="wk-imagedialog-mask" onClick={onClose}></div>
             <div className="wk-imagedialog-content">
@@ -184,6 +192,16 @@ class ImageDialog extends Component<ImageDialogProps> {
                             </div>
                         )
                     }
+                    <div className="wk-imagedialog-caption">
+                        <input
+                            type="text"
+                            className="wk-imagedialog-caption-input"
+                            placeholder="添加说明文字..."
+                            value={caption || ''}
+                            onChange={(e) => onCaptionChange && onCaptionChange(e.target.value)}
+                            maxLength={500}
+                        />
+                    </div>
                     <div className="wk-imagedialog-footer" >
                         <button onClick={onClose}>取消</button>
                         <button onClick={onSend} className="wk-imagedialog-footer-okbtn" disabled={!canSend} style={{ backgroundColor: canSend ? WKApp.config.themeColor : 'gray' }}>发送</button>

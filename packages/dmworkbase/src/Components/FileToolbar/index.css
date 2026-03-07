@@ -128,8 +128,33 @@ body[theme-mode=dark] .wk-filedialog-preview {
     color: var(--wk-color-font-tip);
 }
 
+.wk-filedialog-caption {
+    margin-top: 16px;
+    width: 100%;
+}
+
+.wk-filedialog-caption-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #dee0e3;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    outline: none;
+    background-color: var(--wk-color-item);
+    color: var(--wk-text-item);
+}
+
+.wk-filedialog-caption-input:focus {
+    border-color: var(--wk-color-theme, #1890ff);
+}
+
+.wk-filedialog-caption-input::placeholder {
+    color: var(--wk-color-font-tip);
+}
+
 .wk-filedialog-footer {
-    margin-top: 28px;
+    margin-top: 16px;
     justify-content: flex-end;
     display: flex;
 }

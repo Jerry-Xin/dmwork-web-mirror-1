@@ -12,21 +12,34 @@ export class ImageContent extends MediaMessageContent {
     height!: number
     url!: string
     imgData?: string
-    constructor(file?: File, imgData?: string, width?: number, height?: number) {
+    caption?: string
+    mentionUids?: string[]
+    constructor(file?: File, imgData?: string, width?: number, height?: number, caption?: string, mentionUids?: string[]) {
         super()
         this.file = file
         this.imgData = imgData
         this.width = width || 0
         this.height = height || 0
+        this.caption = caption
+        this.mentionUids = mentionUids
     }
     decodeJSON(content: any) {
         this.width = content["width"] || 0
         this.height = content["height"] || 0
         this.url = content["url"] || ''
+        this.caption = content["caption"] || ''
+        this.mentionUids = content["mention_uids"] || []
         this.remoteUrl = this.url
     }
     encodeJSON() {
-        return { "width": this.width || 0, "height": this.height || 0, "url": this.remoteUrl || "" }
+        const json: Record<string, unknown> = { "width": this.width || 0, "height": this.height || 0, "url": this.remoteUrl || "" }
+        if (this.caption) {
+            json["caption"] = this.caption
+        }
+        if (this.mentionUids && this.mentionUids.length > 0) {
+            json["mention_uids"] = this.mentionUids
+        }
+        return json
     }
     get contentType() {
         return MessageContentTypeConst.image
@@ -101,12 +114,19 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
         let scaleSize = this.imageScale(content.width, content.height);
         const imageURL = this.getImageSrc(content) || ""
         return <MessageBase context={context} message={message}>
-            <div style={{ width: scaleSize.width, height: scaleSize.height, cursor: "pointer" }} onClick={() => {
-                this.setState({
-                    showPreview: !this.state.showPreview,
-                })
-            }}>
-                {this.getImageElement()}
+            <div style={{ cursor: "pointer" }}>
+                <div style={{ width: scaleSize.width, height: scaleSize.height }} onClick={() => {
+                    this.setState({
+                        showPreview: !this.state.showPreview,
+                    })
+                }}>
+                    {this.getImageElement()}
+                </div>
+                {content.caption && (
+                    <div className="wk-image-caption" style={{ maxWidth: scaleSize.width, marginTop: '4px', fontSize: '14px', color: 'var(--wk-text-item)', wordBreak: 'break-word' }}>
+                        {content.caption}
+                    </div>
+                )}
             </div>
             <Viewer
                 visible={showPreview}

@@ -246,6 +246,29 @@ export class CommonDataSource implements ICommonDataSource {
 
 
     async contactsSync(version: string): Promise<Contacts[]> {
+        const spaceId = WKApp.shared.currentSpaceId;
+        if (spaceId) {
+            // Space 模式：从 Space 成员获取联系人
+            const members = await WKApp.apiClient.get(`space/${spaceId}/members`, {
+                param: { page: "1", limit: "10000" },
+            })
+            const contactsList = new Array<Contacts>()
+            if (members) {
+                for (const m of members) {
+                    if (m.uid === WKApp.loginInfo.uid) continue; // 排除自己
+                    const c = new Contacts()
+                    c.uid = m.uid
+                    c.name = m.name
+                    c.avatar = m.avatar || ""
+                    c.follow = 1
+                    c.status = 1
+                    c.robot = false
+                    contactsList.push(c)
+                }
+            }
+            return contactsList
+        }
+        // 个人空间：好友同步（兼容）
         const results = await WKApp.apiClient.get(`friend/sync`, {
             param: { version: version,"api_version":"1" },
         })

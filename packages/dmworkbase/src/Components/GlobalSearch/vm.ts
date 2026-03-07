@@ -1,5 +1,6 @@
 import WKSDK, { Channel, ChannelInfo, ChannelInfoListener, ChannelTypePerson, MessageContentManager, SystemContent } from "wukongimjssdk";
 import APIClient from "../../Service/APIClient";
+import WKApp from "../../App";
 import { MessageContentTypeConst } from "../../Service/Const";
 import { ProviderListener } from "../../Service/Provider";
 import { debounce } from "../../Utils/rateLimit";
@@ -130,7 +131,9 @@ export default class GlobalSearchVM extends ProviderListener {
             param.only_message = 1
         }
 
-        APIClient.shared.post("/search/global", param).then(res => {
+        const spaceId = WKApp.shared.currentSpaceId;
+        const searchUrl = spaceId ? `/search/global?space_id=${encodeURIComponent(spaceId)}` : "/search/global";
+        APIClient.shared.post(searchUrl, param).then(res => {
 
             if (res.messages.length < this.limit) {
                 this.loadFinish = true

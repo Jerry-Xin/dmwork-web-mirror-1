@@ -108,6 +108,7 @@ export default class GlobalSearch extends Component<GlobalSearchProps> {
                         onChange={(value) => {
                             vm.handleInputChange(value);
                         }}></Input>
+                    {vm.searchError && <div style={{ color: "#f5222d", fontSize: "13px", textAlign: "center", padding: "8px 0" }}>{vm.searchError}</div>}
                     <div className="wk-search-tabs">
                         <Tabs
                             tabList={vm.tabList}

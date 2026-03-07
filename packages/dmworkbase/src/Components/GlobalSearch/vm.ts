@@ -20,6 +20,7 @@ export default class GlobalSearchVM extends ProviderListener {
     private channelInfoListener!: ChannelInfoListener;
     public channel?: Channel // 查询指定频道的消息
     private requestId = 0 // 请求计数器，用于处理竞态条件
+    public searchError: string | null = null // 搜索失败错误信息
     // tab数据列表
     public get tabList() {
         if (this.searchInChannel) {
@@ -122,6 +123,8 @@ export default class GlobalSearchVM extends ProviderListener {
         this.requestId++
         const currentRequestId = this.requestId
 
+        this.searchError = null
+
         const param: any = {
             keyword: this.keyword || "",
             page: this.page,
@@ -180,16 +183,22 @@ export default class GlobalSearchVM extends ProviderListener {
                     const messageContent = MessageContentManager.shared().getMessageContent(contentType)
                     if (messageContent) {
                         messageContent.decode(this.jsonToUint8Array(v.payload))
-                    }
 
-                    if(messageContent instanceof SystemContent) {
-                        messageContent.content["content"] = "[系统消息]"
-                    }
+                        if(messageContent instanceof SystemContent) {
+                            messageContent.content["content"] = "[系统消息]"
+                        }
 
-                    v.content = messageContent
+                        v.content = messageContent
+                    }
                 }
 
             })
+        }).catch((err) => {
+            console.error("[GlobalSearch] search failed:", err)
+            if (currentRequestId === this.requestId) {
+                this.searchError = "搜索失败，请稍后重试"
+                this.notifyListener()
+            }
         }).finally(() => {
             // 只有最新请求完成时才更新 loadMoreing 状态
             if (currentRequestId === this.requestId) {

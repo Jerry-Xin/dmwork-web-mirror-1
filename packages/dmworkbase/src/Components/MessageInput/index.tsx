@@ -162,7 +162,12 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             return;
         }
         if (this.state.slashMenuVisible) {
-            return;
+            const filtered = this.getFilteredSlashCommands()
+            if (filtered.length > 0) {
+                return; // 有匹配的斜杠命令时，由 handleKeyDown 处理选择
+            }
+            // 没有匹配的命令，关闭菜单并正常发送
+            this.setState({ slashMenuVisible: false })
         }
         e.preventDefault();
 
@@ -239,7 +244,8 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     handleChange = (event: { target: { value: string } }) => {
         const value = event.target.value
         const { botCommands } = this.props
-        if (botCommands && botCommands.length > 0 && value.startsWith('/')) {
+        // 只在输入 / 前缀且没有空格时弹出斜杠命令菜单（避免粘贴完整命令时弹出）
+        if (botCommands && botCommands.length > 0 && value.startsWith('/') && !value.includes(' ') && !value.includes('\n')) {
             const filter = value.slice(1)
             this.setState({
                 value: value,

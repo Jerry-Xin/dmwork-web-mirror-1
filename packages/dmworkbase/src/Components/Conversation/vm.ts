@@ -188,7 +188,12 @@ export default class ConversationVM extends ProviderListener {
             return
         }
 
-        WKApp.conversationProvider.deleteMessages(deletedMessages)
+        try {
+            await WKApp.conversationProvider.deleteMessages(deletedMessages)
+        } catch (error) {
+            console.error('Failed to delete messages remotely:', error)
+            throw error
+        }
 
         this.deleteMessagesFromLocal(deletedMessages)
     }

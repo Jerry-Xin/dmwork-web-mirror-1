@@ -82,6 +82,19 @@ export default class ContactsList extends Component<any, ContactsState> {
 
         WKApp.dataSource.addContactsChangeListener(this.contactsChangeListener)
 
+        // Space 模式：首次加载时自动拉取 Space 成员
+        const spaceId = WKApp.shared.currentSpaceId
+        if (spaceId && !this.state.currentSpace) {
+            SpaceService.shared.getMySpaces().then((spaces) => {
+                const sp = spaces.find((s) => s.space_id === spaceId)
+                if (sp) {
+                    this.setState({ currentSpace: sp }, () => {
+                        this.loadSpaceMembers(sp.space_id)
+                    })
+                }
+            }).catch(() => {})
+        }
+
         this.rebuildIndex()
 
         WKSDK.shared().channelManager.addListener(this.channelInfoListener)

@@ -48,13 +48,19 @@ export default class MainVM extends ProviderListener {
   appUpdateProgress: number;
 
   didMount(): void {
+    let found = false;
     if (WKApp.route.currentPath) {
       for (const menus of this.menusList) {
         if (menus.routePath === WKApp.route.currentPath) {
           this.currentMenus = menus;
+          found = true;
           break;
         }
       }
+    }
+    // 默认选中第一个菜单（消息模块）
+    if (!found && this.menusList.length > 0) {
+      this.currentMenus = this.menusList[0];
     }
 
     if ((window as any).__POWERED_ELECTRON__) {

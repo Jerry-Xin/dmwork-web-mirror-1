@@ -19,6 +19,7 @@ export default class GlobalSearchVM extends ProviderListener {
     public contentTypes = new Array<number>() // 内容类型
     private channelInfoListener!: ChannelInfoListener;
     public channel?: Channel // 查询指定频道的消息
+    private requestId = 0 // 请求计数器，用于处理竞态条件
     // tab数据列表
     public get tabList() {
         if (this.searchInChannel) {
@@ -117,6 +118,9 @@ export default class GlobalSearchVM extends ProviderListener {
 
     // 请求搜索
     public requestSearch() {
+        // 递增请求计数器，用于识别当前请求
+        this.requestId++
+        const currentRequestId = this.requestId
 
         const param: any = {
             keyword: this.keyword || "",
@@ -134,6 +138,10 @@ export default class GlobalSearchVM extends ProviderListener {
         const spaceId = WKApp.shared.currentSpaceId;
         const searchUrl = spaceId ? `/search/global?space_id=${encodeURIComponent(spaceId)}` : "/search/global";
         APIClient.shared.post(searchUrl, param).then(res => {
+            // 忽略过期请求的响应，只处理最新请求的结果
+            if (currentRequestId !== this.requestId) {
+                return
+            }
 
             if (res.messages.length < this.limit) {
                 this.loadFinish = true
@@ -173,18 +181,21 @@ export default class GlobalSearchVM extends ProviderListener {
                     if (messageContent) {
                         messageContent.decode(this.jsonToUint8Array(v.payload))
                     }
-                    
+
                     if(messageContent instanceof SystemContent) {
                         messageContent.content["content"] = "[系统消息]"
                     }
-                    
+
                     v.content = messageContent
                 }
-               
+
             })
         }).finally(() => {
-            this.loadMoreing = false
-            this.notifyListener()
+            // 只有最新请求完成时才更新 loadMoreing 状态
+            if (currentRequestId === this.requestId) {
+                this.loadMoreing = false
+                this.notifyListener()
+            }
         })
     }
 

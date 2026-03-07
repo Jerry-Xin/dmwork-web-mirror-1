@@ -353,14 +353,33 @@ export class OrganizationalGroupNew extends Component<
     // 系统账号不可被拉入群聊
     const systemUids = ["botfather", "fileHelper"];
     const setFriendData: any[] = [];
-    WKApp.dataSource.contactsList.forEach((item) => {
-      if (!subscriberUids.includes(item.uid) && !systemUids.includes(item.uid)) {
-        setFriendData.push({
-          name: item.name,
-          uid: item.uid,
+
+    // Space 模式：从 Space 成员列表获取可选联系人
+    const spaceId = WKApp.shared.currentSpaceId;
+    if (spaceId) {
+      try {
+        const { SpaceService } = await import("@dmwork/base/src/Service/SpaceService");
+        const members = await SpaceService.shared.getMembers(spaceId, 1, 10000);
+        members.forEach((m: any) => {
+          if (!subscriberUids.includes(m.uid) && !systemUids.includes(m.uid) && m.uid !== WKApp.loginInfo.uid) {
+            setFriendData.push({ name: m.name, uid: m.uid });
+          }
+        });
+      } catch {
+        // fallback to contacts list
+        WKApp.dataSource.contactsList.forEach((item) => {
+          if (!subscriberUids.includes(item.uid) && !systemUids.includes(item.uid)) {
+            setFriendData.push({ name: item.name, uid: item.uid });
+          }
         });
       }
-    });
+    } else {
+      WKApp.dataSource.contactsList.forEach((item) => {
+        if (!subscriberUids.includes(item.uid) && !systemUids.includes(item.uid)) {
+          setFriendData.push({ name: item.name, uid: item.uid });
+        }
+      });
+    }
     this.setState({
       friendData: [...setFriendData],
       friendSearchData: [...setFriendData],

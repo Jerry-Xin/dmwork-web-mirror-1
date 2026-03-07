@@ -3,6 +3,7 @@ import { WKApp, WKBase, Provider } from "@dmwork/base"
 import { listen } from '@tauri-apps/api/event'
 // import Provider from "limbase/src/Service/Provider";
 import { MainPage } from "../Pages/Main";
+import SpaceGate from "../Components/SpaceGate";
 import { Notification as NotificationUI, Button } from '@douyinfe/semi-ui';
 import { checkUpdate, installUpdate, UpdateManifest } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
@@ -91,6 +92,10 @@ export default class AppLayout extends Component {
                     return <div>没有登录模块！</div>
                 }
                 return loginComponent
+            }
+            // Space 模式：检查用户是否属于至少一个 Space
+            if (!WKApp.shared.currentSpaceId && !WKApp.shared.spaceChecked) {
+                return <SpaceGate />
             }
             return <WKBase onContext={(ctx) => {
                 WKApp.shared.baseContext = ctx

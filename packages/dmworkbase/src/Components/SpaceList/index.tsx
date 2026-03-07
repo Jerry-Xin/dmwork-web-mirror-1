@@ -48,6 +48,10 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
         try {
             const spaces = await SpaceService.shared.getMySpaces();
             this.setState({ spaces, loading: false });
+            // 只有一个 Space 时自动选中
+            if (spaces.length === 1 && !this.props.selectedSpaceId) {
+                this.props.onSelect(spaces[0]);
+            }
         } catch {
             this.setState({ loading: false });
         }
@@ -182,17 +186,7 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
                     </div>
                 ) : (
                     <div className="wk-spacelist-items">
-                        <div
-                            className={`wk-spacelist-item ${!selectedSpaceId ? "wk-spacelist-item-selected" : ""}`}
-                            onClick={() => onSelect(undefined)}
-                        >
-                            <div className="wk-spacelist-item-avatar">
-                                <div className="wk-spacelist-item-avatar-letter wk-spacelist-all-icon">✦</div>
-                            </div>
-                            <div className="wk-spacelist-item-info">
-                                <div className="wk-spacelist-item-name">全部会话</div>
-                            </div>
-                        </div>
+                        {/* 移除"全部会话" — Space 模式下所有会话都在 Space 内 */}
                         {spaces.map((space) => (
                             <div
                                 key={space.space_id}

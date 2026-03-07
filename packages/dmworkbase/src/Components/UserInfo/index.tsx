@@ -32,7 +32,15 @@ export default class UserInfo extends Component<UserInfoProps> {
         }
 
         let content = <></>
-        if (vm.relation() === UserRelation.friend) {
+        // Space 模式：成员间可直接发消息，无需好友关系
+        const spaceId = WKApp.shared.currentSpaceId;
+        if (spaceId) {
+            content = <Button theme='solid' type="primary" onClick={() => {
+                WKApp.shared.baseContext.hideUserInfo()
+                const channelId = `s${spaceId}_${vm.uid}`
+                WKApp.endpoints.showConversation(new Channel(channelId, ChannelTypePerson))
+            }}>发送消息</Button>
+        } else if (vm.relation() === UserRelation.friend) {
             content = <Button theme='solid' type="primary" onClick={() => {
                 WKApp.shared.baseContext.hideUserInfo()
                 WKApp.endpoints.showConversation(new Channel(vm.uid, ChannelTypePerson))

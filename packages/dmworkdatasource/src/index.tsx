@@ -1,1 +1,2 @@
-export { default as DataSourceModule } from "./module" 
+export { default as DataSourceModule } from "./module"
+export * from "./space"

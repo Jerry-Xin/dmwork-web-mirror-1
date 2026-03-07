@@ -54,3 +54,9 @@ export * from "./Components/SmallTableEdit";
 export * from "./Service/Convert";
 
 export * from "./Utils/search"
+
+export { default as SpaceList } from "./Components/SpaceList"
+export { default as SpaceCreate } from "./Components/SpaceCreate"
+export { default as SpaceMembers } from "./Components/SpaceMembers"
+export { default as SpaceSettings } from "./Components/SpaceSettings"
+export * from "./Service/SpaceService"

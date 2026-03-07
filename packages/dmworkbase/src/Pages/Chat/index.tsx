@@ -17,6 +17,9 @@ import { ChatMenus } from "../../App";
 import ConversationContext from "../../Components/Conversation/context";
 import GlobalSearch from "../../Components/GlobalSearch";
 import { ShowConversationOptions } from "../../EndpointCommon";
+import SpaceList from "../../Components/SpaceList";
+import SpaceCreate from "../../Components/SpaceCreate";
+import { Space } from "../../Service/SpaceService";
 
 export interface ChatContentPageProps {
   channel: Channel;
@@ -171,6 +174,7 @@ export class ChatContentPage extends Component<
 
 export default class ChatPage extends Component<any> {
   vm!: ChatVM;
+  spaceListRef: SpaceList | null = null;
   constructor(props: any) {
     super(props);
   }
@@ -241,6 +245,16 @@ export default class ChatPage extends Component<any> {
                                 }}></Button> */}
                     </Popover>
                   </div>
+                  <SpaceList
+                    selectedSpaceId={vm.selectedSpace?.space_id}
+                    onSelect={(space: Space | undefined) => {
+                      vm.selectedSpace = space;
+                    }}
+                    onCreateClick={() => {
+                      vm.showSpaceCreate = true;
+                    }}
+                    ref={(ref: SpaceList | null) => { this.spaceListRef = ref; }}
+                  />
                   <div className="wk-chat-conversation-list">
                     {vm.loading ? (
                       <div className="wk-chat-conversation-list-loading">
@@ -249,7 +263,7 @@ export default class ChatPage extends Component<any> {
                     ) : (
                       <ConversationList
                         select={WKApp.shared.openChannel}
-                        conversations={vm.conversations}
+                        conversations={vm.filteredConversations}
                         onClearMessages={this.vm.clearMessages.bind(this.vm)}
                         onClick={(conversation: ConversationWrap) => {
                           vm.selectedConversation = conversation;
@@ -263,9 +277,18 @@ export default class ChatPage extends Component<any> {
                   </div>
                 </div>
               </div>
+              <SpaceCreate
+                visible={vm.showSpaceCreate}
+                onClose={() => {
+                  vm.showSpaceCreate = false;
+                }}
+                onSuccess={() => {
+                  this.spaceListRef?.loadSpaces();
+                }}
+              />
               <Modal
-                visible={vm.showGlobalSearch} 
-                closeOnEsc={true} 
+                visible={vm.showGlobalSearch}
+                closeOnEsc={true}
                 onCancel={() => {
                   vm.showGlobalSearch = false
                 }}

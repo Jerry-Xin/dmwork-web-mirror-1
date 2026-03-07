@@ -13,6 +13,8 @@
     width: var(--wk-wdith-conversation-list);
     height: 100%;
     border-right: var(--wk-line);
+    display: flex;
+    flex-direction: column;
 }
 
 .wk-chat-search {
@@ -46,7 +48,8 @@ body[theme-mode=dark] .wk-chat-title {
 
 .wk-chat-conversation-list {
     width: 100%;
-    height: calc(100% - var(--wk-height-chat-search));
+    flex: 1;
+    overflow-y: auto;
 }
 
 .wk-chat-content-right {

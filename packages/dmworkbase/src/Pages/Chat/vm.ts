@@ -1,4 +1,4 @@
-import WKSDK, { MessageContentType } from "wukongimjssdk";
+import WKSDK, { MessageContentType, ChannelTypePerson } from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ConnectStatus, ConnectStatusListener } from "wukongimjssdk";
 import { ConversationAction, ConversationListener } from "wukongimjssdk";
@@ -10,6 +10,7 @@ import { animateScroll, scroller } from 'react-scroll';
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
 import { EndpointID } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
+import { Space, SpaceService } from "../../Service/SpaceService";
 
 
 const TOP_CONVERSATION_SCORE_BOOST = 1000000000000;
@@ -26,6 +27,9 @@ export class ChatVM extends ProviderListener {
     private messageDeleteListener!: MessageDeleteListener
     private conversationListID = "wk-conversationlist"
     private _showGlobalSearch = false // 是否显示全局搜索
+    private _selectedSpace?: Space // 选中的 Space
+    private _showSpaceCreate = false // 是否显示创建 Space 弹窗
+    private _spaceMemberUids: Set<string> = new Set() // 当前 space 的成员 uid 集合
 
     set showAddPopover(v: boolean) {
         this._showAddPopover = v
@@ -70,6 +74,51 @@ export class ChatVM extends ProviderListener {
 
     get connectTitle() {
         return this._connectTitle
+    }
+
+    set selectedSpace(v: Space | undefined) {
+        this._selectedSpace = v
+        if (v) {
+            this.loadSpaceMembers(v.space_id)
+        } else {
+            this._spaceMemberUids = new Set()
+            this.notifyListener()
+        }
+    }
+
+    get selectedSpace() {
+        return this._selectedSpace
+    }
+
+    set showSpaceCreate(v: boolean) {
+        this._showSpaceCreate = v
+        this.notifyListener()
+    }
+
+    get showSpaceCreate() {
+        return this._showSpaceCreate
+    }
+
+    get filteredConversations(): ConversationWrap[] {
+        if (!this._selectedSpace || this._spaceMemberUids.size === 0) {
+            return this.conversations
+        }
+        return this.conversations.filter((c) => {
+            if (c.channel.channelType === ChannelTypePerson) {
+                return this._spaceMemberUids.has(c.channel.channelID)
+            }
+            return false
+        })
+    }
+
+    private async loadSpaceMembers(spaceId: string) {
+        try {
+            const members = await SpaceService.shared.getMembers(spaceId, 1, 10000)
+            this._spaceMemberUids = new Set(members.map((m) => m.uid))
+        } catch {
+            this._spaceMemberUids = new Set()
+        }
+        this.notifyListener()
     }
 
     didMount(): void {

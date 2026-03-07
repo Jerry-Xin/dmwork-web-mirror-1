@@ -18,6 +18,12 @@
     align-items: center;
     gap: 6px;
 }
+.wk-bot-detail-id {
+    font-size: 13px;
+    color: #aaa;
+    margin-top: 2px;
+    font-family: monospace;
+}
 .wk-bot-detail-creator {
     font-size: 13px;
     color: #999;

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Modal, Button, Spin } from "@douyinfe/semi-ui";
+import { Modal, Button, Spin, Toast } from "@douyinfe/semi-ui";
 import { Channel, ChannelTypePerson, WKSDK } from "wukongimjssdk";
 import { WKApp } from "../../App";
 import WKAvatar from "../WKAvatar";
@@ -16,22 +16,28 @@ interface BotDetailModalProps {
 interface BotDetailModalState {
     loading: boolean;
     name: string;
+    username: string;
     description: string;
     creatorName: string;
     botCommands: string;
+    isFriend: boolean;
+    applying: boolean;
 }
 
 export default class BotDetailModal extends Component<BotDetailModalProps, BotDetailModalState> {
     state: BotDetailModalState = {
         loading: true,
         name: "",
+        username: "",
         description: "",
         creatorName: "",
         botCommands: "",
+        isFriend: false,
+        applying: false,
     };
 
     componentDidMount() {
-        this.loadBotInfo();
+        if (this.props.uid) this.loadBotInfo();
     }
 
     componentDidUpdate(prevProps: BotDetailModalProps) {
@@ -46,18 +52,35 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
 
         this.setState({ loading: true });
         try {
-            const channelInfo = await WKSDK.shared().channelManager.fetchChannelInfo(
-                new Channel(uid, ChannelTypePerson)
-            );
+            // 用 user detail API 获取完整信息（包含 follow）
+            const data = await WKApp.apiClient.get(`users/${uid}`);
             this.setState({
                 loading: false,
-                name: channelInfo?.title || uid,
-                description: channelInfo?.orgData?.bot_description || "暂无简介",
-                creatorName: channelInfo?.orgData?.bot_creator_name || "",
-                botCommands: channelInfo?.orgData?.bot_commands || "",
+                name: data.name || uid,
+                username: data.username || uid,
+                description: data.bot_description || "暂无简介",
+                creatorName: data.bot_creator_name || "",
+                botCommands: data.bot_commands || "",
+                isFriend: data.follow === 1,
             });
         } catch {
-            this.setState({ loading: false, name: uid, description: "暂无简介" });
+            // fallback to channel info
+            try {
+                const channelInfo = await WKSDK.shared().channelManager.fetchChannelInfo(
+                    new Channel(uid, ChannelTypePerson)
+                );
+                this.setState({
+                    loading: false,
+                    name: channelInfo?.title || uid,
+                    username: uid,
+                    description: channelInfo?.orgData?.bot_description || "暂无简介",
+                    creatorName: channelInfo?.orgData?.bot_creator_name || "",
+                    botCommands: channelInfo?.orgData?.bot_commands || "",
+                    isFriend: channelInfo?.orgData?.follow === 1,
+                });
+            } catch {
+                this.setState({ loading: false, name: uid });
+            }
         }
     };
 
@@ -69,9 +92,26 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
         onClose();
     };
 
+    handleAddFriend = async () => {
+        const { uid } = this.props;
+        this.setState({ applying: true });
+        try {
+            await WKApp.apiClient.post("friend/apply", {
+                body: { to_uid: uid, remark: "" },
+            });
+            Toast.success("好友申请已发送");
+            // Bot auto_approve=1 时会自动通过，刷新状态
+            setTimeout(() => this.loadBotInfo(), 500);
+        } catch {
+            Toast.error("申请失败");
+        } finally {
+            this.setState({ applying: false });
+        }
+    };
+
     render() {
         const { visible, onClose, uid } = this.props;
-        const { loading, name, description, creatorName, botCommands } = this.state;
+        const { loading, name, username, description, creatorName, botCommands, isFriend, applying } = this.state;
 
         let commands: { cmd: string; remark: string }[] = [];
         try {
@@ -98,6 +138,7 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                             <div className="wk-bot-detail-name">
                                 {name} <AiBadge />
                             </div>
+                            <div className="wk-bot-detail-id">@{username}</div>
                             {creatorName && (
                                 <div className="wk-bot-detail-creator">
                                     由 {creatorName} 创建
@@ -119,15 +160,28 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                                 ))}
                             </div>
                         )}
-                        <Button
-                            theme="solid"
-                            type="primary"
-                            block
-                            onClick={this.handleChat}
-                            style={{ marginTop: 16 }}
-                        >
-                            发消息
-                        </Button>
+                        {isFriend ? (
+                            <Button
+                                theme="solid"
+                                type="primary"
+                                block
+                                onClick={this.handleChat}
+                                style={{ marginTop: 16 }}
+                            >
+                                发送消息
+                            </Button>
+                        ) : (
+                            <Button
+                                theme="solid"
+                                type="primary"
+                                block
+                                loading={applying}
+                                onClick={this.handleAddFriend}
+                                style={{ marginTop: 16 }}
+                            >
+                                添加好友
+                            </Button>
+                        )}
                     </div>
                 )}
             </Modal>

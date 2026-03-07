@@ -16,8 +16,6 @@ import { Space, SpaceMember, SpaceService } from "@dmwork/base/src/Service/Space
 
 const SpaceRoleLabels: Record<number, string> = { 1: '创建者', 2: '管理员', 3: '成员' }
 
-type ContactsView = 'menu' | 'members' | 'bots' | 'groups'
-
 export class ContactsState {
     indexList: string[] = []
     indexItemMap: Map<string, Contacts[]> = new Map()
@@ -27,8 +25,8 @@ export class ContactsState {
     spaceMembers: SpaceMember[] = []
     botDetailUid?: string // Bot 详情弹窗
     botDetailVisible: boolean = false
-    botGroupCollapsed: boolean = false
-    currentView: ContactsView = 'menu'
+    // 手风琴展开状态
+    expandedSection: 'members' | 'bots' | 'groups' | null = null
 }
 
 export default class ContactsList extends Component<any, ContactsState> {
@@ -345,89 +343,104 @@ export default class ContactsList extends Component<any, ContactsState> {
         </div>
 
     }
-    renderMenuView() {
-        const space = this.state.currentSpace
-        const memberCount = this.state.spaceMembers.filter(m => m.robot !== 1).length
-        const botCount = this.state.spaceMembers.filter(m => m.robot === 1).length
+    getFilteredMembers(section: 'members' | 'bots'): Contacts[] {
+        const { keyword, spaceMembers } = this.state
+        const filtered = spaceMembers
+            .filter(m => section === 'bots' ? m.robot === 1 : m.robot !== 1)
+            .filter(m => !keyword || m.name.indexOf(keyword) !== -1)
+
+        return filtered.map(m => {
+            const c = new Contacts()
+            c.uid = m.uid
+            c.name = m.name
+            c.avatar = m.avatar || ""
+            c.follow = 1
+            c.robot = m.robot === 1
+            ;(c as any)._spaceRole = m.role
+            return c
+        })
+    }
+
+    toggleSection = (section: 'members' | 'bots' | 'groups') => {
+        this.setState(prev => ({
+            expandedSection: prev.expandedSection === section ? null : section,
+            keyword: undefined,
+        }))
+    }
+
+    renderAccordionSection(section: 'members' | 'bots' | 'groups', icon: string, label: string) {
+        const { expandedSection, spaceMembers } = this.state
+        const isExpanded = expandedSection === section
+        const count = section === 'bots'
+            ? spaceMembers.filter(m => m.robot === 1).length
+            : section === 'members'
+            ? spaceMembers.filter(m => m.robot !== 1).length
+            : 0
+
+        const items = (section === 'members' || section === 'bots') ? this.getFilteredMembers(section) : []
 
         return (
-            <div className="wk-contacts-menu">
-                {space && (
-                    <div className="wk-contacts-menu-header">
-                        <div className="wk-contacts-menu-space-icon" style={{
-                            backgroundColor: ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'][space.name.charCodeAt(0) % 6],
-                        }}>
-                            {space.name.charAt(0)}
-                        </div>
-                        <span className="wk-contacts-menu-space-name">{space.name}</span>
+            <div className="wk-contacts-accordion" key={section}>
+                <div className="wk-contacts-accordion-header" onClick={() => this.toggleSection(section)}>
+                    <span className="wk-contacts-accordion-arrow" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                    <span className="wk-contacts-accordion-icon">{icon}</span>
+                    <span className="wk-contacts-accordion-label">{label}</span>
+                    {count > 0 && <span className="wk-contacts-accordion-count">({count})</span>}
+                </div>
+                {isExpanded && (
+                    <div className="wk-contacts-accordion-body">
+                        {items.map((item) => {
+                            let name = item.name
+                            if (item.remark && item.remark !== "") name = item.remark
+                            const spaceId = WKApp.shared.currentSpaceId
+                            return (
+                                <div key={item.uid} className="wk-contacts-section-item" onClick={() => {
+                                    if (item.robot === true && item.uid !== 'botfather') {
+                                        this.setState({ botDetailUid: item.uid, botDetailVisible: true })
+                                        return
+                                    }
+                                    const channelId = spaceId ? `s${spaceId}_${item.uid}` : item.uid
+                                    WKApp.endpoints.showConversation(new Channel(channelId, ChannelTypePerson))
+                                }}>
+                                    <div className="wk-contacts-section-item-avatar">
+                                        <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)}></WKAvatar>
+                                    </div>
+                                    <div className="wk-contacts-section-item-name">
+                                        {name}
+                                        {item.robot === true && <AiBadge />}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                        {section === 'groups' && <div style={{ padding: '12px', color: '#999', fontSize: 13 }}>暂无群组</div>}
                     </div>
                 )}
-                <div className="wk-contacts-menu-list">
-                    <div className="wk-contacts-menu-item" onClick={() => {
-                        this.setState({ currentView: 'members' }, () => this.rebuildIndex())
-                    }}>
-                        <span className="wk-contacts-menu-item-icon">👥</span>
-                        <span className="wk-contacts-menu-item-label">组织内联系人</span>
-                        <span className="wk-contacts-menu-item-count">{memberCount}</span>
-                        <span className="wk-contacts-menu-item-arrow">›</span>
-                    </div>
-                    <div className="wk-contacts-menu-item" onClick={() => {
-                        this.setState({ currentView: 'bots' }, () => this.rebuildIndex())
-                    }}>
-                        <span className="wk-contacts-menu-item-icon">🤖</span>
-                        <span className="wk-contacts-menu-item-label">Bot</span>
-                        <span className="wk-contacts-menu-item-count">{botCount}</span>
-                        <span className="wk-contacts-menu-item-arrow">›</span>
-                    </div>
-                    <div className="wk-contacts-menu-item" onClick={() => {
-                        this.setState({ currentView: 'groups' })
-                    }}>
-                        <span className="wk-contacts-menu-item-icon">👥</span>
-                        <span className="wk-contacts-menu-item-label">我的群组</span>
-                        <span className="wk-contacts-menu-item-arrow">›</span>
-                    </div>
-                </div>
             </div>
         )
     }
 
-    renderListView() {
-        const { indexList, currentView } = this.state
-        const viewTitle = currentView === 'members' ? '联系人' : currentView === 'bots' ? 'Bot' : '我的群组'
-
-        return (
-            <>
-                <div className="wk-contacts-list-back" onClick={() => this.setState({ currentView: 'menu', keyword: undefined })}>
-                    <span>‹ 返回</span>
-                </div>
-                <div className="wk-contacts-content-header">
-                    <Search placeholder={`搜索${viewTitle}`} onChange={(v) => {
-                        this.setState({ keyword: v }, () => this.rebuildIndex())
-                    }}></Search>
-                </div>
-                <div className="wk-contacts-content-contacts">
-                    {indexList.map((indexName) => this.sectionUI(indexName))}
-                </div>
-            </>
-        )
-    }
-
     render() {
-        const { currentView, currentSpace } = this.state
-        const isMenuView = currentView === 'menu' && !!currentSpace
+        const { currentSpace } = this.state
 
         return <WKBase onContext={(baseCtx) => {
             this.baseContext = baseCtx
         }}>
             <div className="wk-contacts">
-                <WKNavMainHeader title={
-                    isMenuView ? "通讯录" :
-                    currentView === 'members' ? '联系人' :
-                    currentView === 'bots' ? 'Bot' :
-                    currentView === 'groups' ? '我的群组' : '联系人'
-                }></WKNavMainHeader>
+                <WKNavMainHeader title="通讯录"></WKNavMainHeader>
                 <div className="wk-contacts-content">
-                    {isMenuView ? this.renderMenuView() : this.renderListView()}
+                    {currentSpace && (
+                        <div className="wk-contacts-menu-header">
+                            <div className="wk-contacts-menu-space-icon" style={{
+                                backgroundColor: ['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'][currentSpace.name.charCodeAt(0) % 6],
+                            }}>
+                                {currentSpace.name.charAt(0)}
+                            </div>
+                            <span className="wk-contacts-menu-space-name">{currentSpace.name}</span>
+                        </div>
+                    )}
+                    {this.renderAccordionSection('members', '👥', '组织内联系人')}
+                    {this.renderAccordionSection('bots', '🤖', 'Bot')}
+                    {this.renderAccordionSection('groups', '👥', '我的群组')}
                 </div>
                 <ContextMenus onContext={(context: ContextMenusContext) => {
                     this.contextMenusContext = context

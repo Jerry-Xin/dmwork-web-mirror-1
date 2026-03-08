@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { WKApp, WKBase, Provider } from "@dmwork/base"
+import { WKApp, WKBase, Provider, ErrorBoundary } from "@dmwork/base"
 import { listen } from '@tauri-apps/api/event'
 // import Provider from "limbase/src/Service/Provider";
 import { MainPage } from "../Pages/Main";
@@ -120,11 +120,13 @@ export default class AppLayout extends Component {
             if (!WKApp.shared.currentSpaceId && !WKApp.shared.spaceChecked) {
                 return <SpaceGate />
             }
-            return <WKBase onContext={(ctx) => {
-                WKApp.shared.baseContext = ctx
-            }}>
-                <MainPage />
-            </WKBase>
+            return <ErrorBoundary moduleName="应用">
+                <WKBase onContext={(ctx) => {
+                    WKApp.shared.baseContext = ctx
+                }}>
+                    <MainPage />
+                </WKBase>
+            </ErrorBoundary>
         }} />
 
     }

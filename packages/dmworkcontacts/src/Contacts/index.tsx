@@ -1,6 +1,6 @@
 import React from "react";
 import { Component } from "react";
-import { Contacts, ContactsChangeListener, ContextMenus, ContextMenusContext, WKApp, WKBase, WKBaseContext, WKNavMainHeader, Search, UserRelation } from "@dmwork/base"
+import { Contacts, ContactsChangeListener, ContextMenus, ContextMenusContext, WKApp, WKBase, WKBaseContext, WKNavMainHeader, Search, UserRelation, ErrorBoundary } from "@dmwork/base"
 import "./index.css"
 import { toSimplized } from "@dmwork/base";
 import { getPinyin } from "@dmwork/base";
@@ -466,6 +466,7 @@ export default class ContactsList extends Component<any, ContactsState> {
         return <WKBase onContext={(baseCtx) => {
             this.baseContext = baseCtx
         }}>
+            <ErrorBoundary moduleName="通讯录">
             <div className="wk-contacts">
                 {/* 标题由全局顶栏提供 */}
                 <div className="wk-contacts-content">
@@ -507,6 +508,7 @@ export default class ContactsList extends Component<any, ContactsState> {
                     }}
                 />
             </div>
+            </ErrorBoundary>
         </WKBase>
     }
 }

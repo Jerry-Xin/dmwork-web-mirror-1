@@ -2,6 +2,7 @@ import React, { Component, ReactNode } from "react";
 import { Conversation } from "../../Components/Conversation";
 import ConversationList from "../../Components/ConversationList";
 import Provider from "../../Service/Provider";
+import { ErrorBoundary } from "../../Components/ErrorBoundary";
 
 import { Spin, Modal, Popover } from "@douyinfe/semi-ui";
 import { IconPlus, IconSearch } from "@douyinfe/semi-icons";
@@ -137,35 +138,39 @@ export class ChatContentPage extends Component<
             </div>
           </div>
           <div className="wk-chat-conversation">
-            <Conversation
-              initLocateMessageSeq={initLocateMessageSeq}
-              shouldShowHistorySplit={true}
-              onContext={(ctx) => {
-                this.conversationContext = ctx;
-                this.setState({});
-              }}
-              key={channel.getChannelKey()}
-              chatBg={
-                WKApp.config.themeMode === ThemeMode.dark
-                  ? undefined
-                  : require("./assets/chat_bg.svg").default
-              }
-              channel={channel}
-            ></Conversation>
+            <ErrorBoundary moduleName="聊天">
+              <Conversation
+                initLocateMessageSeq={initLocateMessageSeq}
+                shouldShowHistorySplit={true}
+                onContext={(ctx) => {
+                  this.conversationContext = ctx;
+                  this.setState({});
+                }}
+                key={channel.getChannelKey()}
+                chatBg={
+                  WKApp.config.themeMode === ThemeMode.dark
+                    ? undefined
+                    : require("./assets/chat_bg.svg").default
+                }
+                channel={channel}
+              ></Conversation>
+            </ErrorBoundary>
           </div>
         </div>
 
         <div className={classNames("wk-chat-channelsetting")}>
-          <ChannelSetting
-            conversationContext={this.conversationContext}
-            key={channel.getChannelKey()}
-            channel={channel}
-            onClose={() => {
-              this.setState({
-                showChannelSetting: false,
-              });
-            }}
-          ></ChannelSetting>
+          <ErrorBoundary moduleName="频道设置">
+            <ChannelSetting
+              conversationContext={this.conversationContext}
+              key={channel.getChannelKey()}
+              channel={channel}
+              onClose={() => {
+                this.setState({
+                  showChannelSetting: false,
+                });
+              }}
+            ></ChannelSetting>
+          </ErrorBoundary>
         </div>
       </div>
     );
@@ -270,18 +275,20 @@ export default class ChatPage extends Component<any> {
                         </div>
                       </div>
                     ) : (
-                      <ConversationList
-                        select={WKApp.shared.openChannel}
-                        conversations={vm.filteredConversations}
-                        onClearMessages={this.vm.clearMessages.bind(this.vm)}
-                        onClick={(conversation: ConversationWrap) => {
-                          vm.selectedConversation = conversation;
-                          WKApp.endpoints.showConversation(
-                            conversation.channel
-                          );
-                          vm.notifyListener();
-                        }}
-                      ></ConversationList>
+                      <ErrorBoundary moduleName="会话列表">
+                        <ConversationList
+                          select={WKApp.shared.openChannel}
+                          conversations={vm.filteredConversations}
+                          onClearMessages={this.vm.clearMessages.bind(this.vm)}
+                          onClick={(conversation: ConversationWrap) => {
+                            vm.selectedConversation = conversation;
+                            WKApp.endpoints.showConversation(
+                              conversation.channel
+                            );
+                            vm.notifyListener();
+                          }}
+                        ></ConversationList>
+                      </ErrorBoundary>
                     )}
                   </div>
                 </div>
@@ -305,11 +312,13 @@ export default class ChatPage extends Component<any> {
                 width="80%"
                 >
                 <div style={{ marginTop: '30px' }}>
-                <GlobalSearch onClick={(item,type:string)=>{
-                    handleGlobalSearchClick(item,type,()=>{
-                      vm.showGlobalSearch = false
-                    })
-                }}/>
+                  <ErrorBoundary moduleName="搜索">
+                    <GlobalSearch onClick={(item,type:string)=>{
+                        handleGlobalSearchClick(item,type,()=>{
+                          vm.showGlobalSearch = false
+                        })
+                    }}/>
+                  </ErrorBoundary>
                 </div>
               </Modal>
             </div>

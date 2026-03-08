@@ -60,3 +60,6 @@ export { default as SpaceCreate } from "./Components/SpaceCreate"
 export { default as SpaceMembers } from "./Components/SpaceMembers"
 export { default as SpaceSettings } from "./Components/SpaceSettings"
 export * from "./Service/SpaceService"
+
+export { ErrorBoundary, ErrorFallback } from "./Components/ErrorBoundary"
+export type { ErrorBoundaryProps, ErrorFallbackProps } from "./Components/ErrorBoundary"

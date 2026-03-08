@@ -139,12 +139,15 @@ export default class ContactsList extends Component<any, ContactsState> {
     private rebuildIndexFromSpaceMembers(members: SpaceMember[]) {
         const { keyword, currentView } = this.state
 
+        // 过滤掉自己
+        const myUID = WKApp.loginInfo.uid || ""
+        let viewFiltered = members.filter(m => m.uid !== myUID)
+
         // 按 view 过滤
-        let viewFiltered = members
         if (currentView === 'members') {
-            viewFiltered = members.filter(m => m.robot !== 1)
+            viewFiltered = viewFiltered.filter(m => m.robot !== 1)
         } else if (currentView === 'bots') {
-            viewFiltered = members.filter(m => m.robot === 1)
+            viewFiltered = viewFiltered.filter(m => m.robot === 1)
         }
 
         const filtered = viewFiltered.filter((m) => {

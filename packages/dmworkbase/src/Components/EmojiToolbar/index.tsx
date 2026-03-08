@@ -11,7 +11,7 @@ import { LottieSticker } from "../../Messages/LottieSticker";
 
 interface EmojiToolbarProps {
     conversationContext: ConversationContext
-    icon: string
+    icon: string | React.ReactNode
 }
 
 interface EmojiToolbarState {
@@ -39,7 +39,7 @@ export default class EmojiToolbar extends Component<EmojiToolbarProps, EmojiTool
                     animationStart: true
                 })
             }}>
-                <img src={icon}></img>
+                {typeof icon === 'string' ? <img src={icon}></img> : icon}
                 <div onAnimationEnd={() => {
                     // this.setState({
                     //     animationStart: false

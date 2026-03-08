@@ -5,7 +5,7 @@ import Provider from "../../Service/Provider";
 import { ErrorBoundary } from "../../Components/ErrorBoundary";
 
 import { Spin, Modal, Popover } from "@douyinfe/semi-ui";
-import { IconPlus, IconSearch } from "@douyinfe/semi-icons";
+import { Search, Plus } from "lucide-react";
 import { ChatVM, handleGlobalSearchClick } from "./vm";
 import "./index.css";
 import { ConversationWrap } from "../../Service/Model";
@@ -215,7 +215,7 @@ export default class ChatPage extends Component<any> {
                         vm.showGlobalSearch = true;
                       }}
                     >
-                      <IconSearch size="large" />
+                      <Search size={20} color="#666" className="wk-chat-header-icon" />
                     </div>
                     <Popover
                       onClickOutSide={() => {
@@ -241,7 +241,7 @@ export default class ChatPage extends Component<any> {
                           vm.showAddPopover = !vm.showAddPopover;
                         }}
                       >
-                        <IconPlus size="large"></IconPlus>
+                        <Plus size={20} color="#666" className="wk-chat-header-icon" />
                       </div>
                       {/* <Button icon={<IconPlus></IconPlus>} onClick={() => {
                                     vm.showAddPopover = true
@@ -256,7 +256,7 @@ export default class ChatPage extends Component<any> {
                       </div>
                     ) : vm.filteredConversations.length === 0 ? (
                       <div className="wk-chat-empty-guide">
-                        <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+                        <div style={{ fontSize: 28, marginBottom: 12 }}>💬</div>
                         <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>还没有会话</div>
                         <div style={{ fontSize: 13, color: '#999', marginBottom: 24 }}>从通讯录选择联系人开始聊天</div>
                         <div style={{ display: 'flex', gap: 12 }}>
@@ -267,7 +267,7 @@ export default class ChatPage extends Component<any> {
                               }
                             }, "找人聊天");
                           }}>找人聊天</button>
-                          <button className="wk-chat-empty-guide-btn wk-chat-empty-guide-btn-secondary" onClick={() => {
+                          <button className="wk-chat-empty-guide-btn" onClick={() => {
                             const menus = WKApp.shared.chatMenus();
                             const groupMenu = menus.find(m => m.title === "发起群聊");
                             if (groupMenu?.onClick) groupMenu.onClick();

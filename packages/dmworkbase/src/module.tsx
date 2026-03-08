@@ -12,6 +12,7 @@ import {
   Subscriber,
 } from "wukongimjssdk";
 import React, { ElementType } from "react";
+import { Smile, Scissors, ImagePlus, Paperclip } from "lucide-react";
 import { Howl, Howler } from "howler";
 import WKApp, { FriendApply, FriendApplyState, ThemeMode } from "./App";
 import ChannelQRCode from "./Components/ChannelQRCode";
@@ -450,7 +451,7 @@ export default class BaseModule implements IModule {
       return (
         <EmojiToolbar
           conversationContext={ctx}
-          icon={require("./assets/toolbars/func_face_normal.svg").default}
+          icon={<Smile size={20} color="#999" className="wk-toolbar-icon" />}
         ></EmojiToolbar>
       );
     });
@@ -473,7 +474,7 @@ export default class BaseModule implements IModule {
     WKApp.endpoints.registerChatToolbar("chattoolbar.screenshot", (ctx) => {
       return (
         <IconClick
-          icon={require("./assets/toolbars/func_screenshot.svg").default}
+          icon={<Scissors size={20} color="#999" className="wk-toolbar-icon" />}
           onClick={() => {
             if ((window as any).__POWERED_ELECTRON__) {
               (window as any).ipc.send('screenshots-start', {})
@@ -487,7 +488,7 @@ export default class BaseModule implements IModule {
     WKApp.endpoints.registerChatToolbar("chattoolbar.image", (ctx) => {
       return (
         <ImageToolbar
-          icon={require("./assets/toolbars/func_upload_image.svg").default}
+          icon={<ImagePlus size={20} color="#999" className="wk-toolbar-icon" />}
           conversationContext={ctx}
         ></ImageToolbar>
       );
@@ -495,7 +496,7 @@ export default class BaseModule implements IModule {
     WKApp.endpoints.registerChatToolbar("chattoolbar.file", (ctx) => {
       return (
         <FileToolbar
-          icon={require("./assets/toolbars/func_upload_file.svg").default}
+          icon={<Paperclip size={20} color="#999" className="wk-toolbar-icon" />}
           conversationContext={ctx}
         ></FileToolbar>
       );

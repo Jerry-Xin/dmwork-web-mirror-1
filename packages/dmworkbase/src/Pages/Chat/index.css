@@ -36,6 +36,13 @@ body[theme-mode=dark] .wk-chat-search-add  {
     color: white;
 }
 
+.wk-chat-header-icon {
+    transition: color 0.15s;
+}
+.wk-chat-header-icon:hover {
+    color: #333 !important;
+}
+
 .wk-chat-title {
     width: 250px;
     font-size: 16px;
@@ -387,21 +394,16 @@ body[theme-mode=dark] .wk-chat-popover {
 }
 .wk-chat-empty-guide-btn {
     padding: 8px 20px;
-    border-radius: 8px;
-    border: none;
+    border-radius: 20px;
+    border: 1px solid #d9d9d9;
     font-size: 14px;
     cursor: pointer;
-    background: var(--wk-color-theme, #6366F1);
-    color: white;
+    background: #fff;
+    color: #333;
     font-weight: 500;
+    transition: border-color 0.15s, color 0.15s;
 }
 .wk-chat-empty-guide-btn:hover {
-    opacity: 0.9;
-}
-.wk-chat-empty-guide-btn-secondary {
-    background: var(--wk-color-hover, #f0f0f0);
-    color: #333;
-}
-.wk-chat-empty-guide-btn-secondary:hover {
-    background: #e0e0e0;
+    border-color: #5b6abf;
+    color: #5b6abf;
 }

@@ -7,3 +7,10 @@
     width: 20px;
     height: 20px;
 }
+
+.wk-iconclick .wk-toolbar-icon {
+    transition: color 0.15s;
+}
+.wk-iconclick:hover .wk-toolbar-icon {
+    color: #5b6abf !important;
+}

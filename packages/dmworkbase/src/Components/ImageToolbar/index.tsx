@@ -7,7 +7,7 @@ import "./index.css"
 
 interface ImageToolbarProps {
     conversationContext: ConversationContext
-    icon: string
+    icon: string | React.ReactNode
 }
 
 interface ImageToolbarState {
@@ -114,7 +114,7 @@ export default class ImageToolbar extends Component<ImageToolbarProps, ImageTool
             this.chooseFile()
         }}>
                 <div className="wk-imagetoolbar-content-icon">
-                    <img src={icon}></img>
+                    {typeof icon === 'string' ? <img src={icon}></img> : icon}
                     <input onClick={this.onFileClick} onChange={this.onFileChange.bind(this)} ref={(ref) => { this.$fileInput = ref }} type="file" multiple={false} accept="image/*" style={{ display: 'none' }} />
                 </div>
             </div>

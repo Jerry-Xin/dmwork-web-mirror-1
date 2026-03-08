@@ -7,6 +7,13 @@
     height: 20px;
 }
 
+.wk-filetoolbar .wk-toolbar-icon {
+    transition: color 0.15s;
+}
+.wk-filetoolbar:hover .wk-toolbar-icon {
+    color: #5b6abf !important;
+}
+
 .wk-filetoolbar-content-icon {
     width: 100%;
     height: 100%;

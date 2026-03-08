@@ -9,6 +9,13 @@
     height: 20px;
 }
 
+.wk-emojitoolbar .wk-toolbar-icon {
+    transition: color 0.15s;
+}
+.wk-emojitoolbar:hover .wk-toolbar-icon {
+    color: #5b6abf !important;
+}
+
 .wk-emojitoolbar-emojipanel {
     max-width: 460px;
     height: 372px;

@@ -3,7 +3,7 @@ import { Component, ReactNode } from "react";
 import "./index.css"
 
 export interface IconClickProps {
-    icon:string
+    icon:string | React.ReactNode
     onClick?:()=>void
 }
 
@@ -15,7 +15,7 @@ export default class IconClick extends Component<IconClickProps> {
                 onClick()
             }
         }}>
-            <img src={icon}></img>
+            {typeof icon === 'string' ? <img src={icon}></img> : icon}
         </div>
     }
 }

@@ -7,7 +7,7 @@ import "./index.css"
 
 interface FileToolbarProps {
     conversationContext: ConversationContext
-    icon: string
+    icon: string | React.ReactNode
 }
 
 const BLOCKED_EXTENSIONS = [
@@ -134,7 +134,7 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
             <div className="wk-filetoolbar">
                 <div className="wk-filetoolbar-content" onClick={this.chooseFile}>
                     <div className="wk-filetoolbar-content-icon">
-                        <img src={icon} alt="" />
+                        {typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
                         <input
                             onClick={this.onFileClick}
                             onChange={this.onFileChange.bind(this)}

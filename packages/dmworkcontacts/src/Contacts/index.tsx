@@ -6,6 +6,7 @@ import { toSimplized } from "@dmwork/base";
 import { getPinyin } from "@dmwork/base";
 import classnames from "classnames";
 import { Toast } from "@douyinfe/semi-ui";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { Channel, ChannelTypePerson, ChannelTypeGroup, WKSDK,ChannelInfoListener,ChannelInfo } from "wukongimjssdk";
 import { ContactsListManager } from "../Service/ContactsListManager";
 import { Card } from "@dmwork/base/src/Messages/Card";
@@ -301,7 +302,7 @@ export default class ContactsList extends Component<any, ContactsState> {
                     display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: 'pointer', userSelect: 'none',
                     fontSize: 13, color: '#888', fontWeight: 500,
                 }}>
-                    <span style={{ marginRight: 6, fontSize: 10, transition: 'transform 0.2s', transform: botGroupCollapsed ? 'rotate(0deg)' : 'rotate(90deg)', display: 'inline-block' }}>▶</span>
+                    {botGroupCollapsed ? <ChevronRight size={16} color="#999" style={{ marginRight: 6 }} /> : <ChevronDown size={16} color="#999" style={{ marginRight: 6 }} />}
                     🤖 Bot ({items?.length || 0})
                 </div>
             )}
@@ -419,7 +420,7 @@ export default class ContactsList extends Component<any, ContactsState> {
         return (
             <div className="wk-contacts-accordion" key={section}>
                 <div className="wk-contacts-accordion-header" onClick={() => this.toggleSection(section)}>
-                    <span className="wk-contacts-accordion-arrow" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                    <span className="wk-contacts-accordion-arrow">{isExpanded ? <ChevronDown size={16} color="#999" /> : <ChevronRight size={16} color="#999" />}</span>
                     <span className="wk-contacts-accordion-icon">{icon}</span>
                     <span className="wk-contacts-accordion-label">{label}</span>
                     {count > 0 && <span className="wk-contacts-accordion-count">({count})</span>}

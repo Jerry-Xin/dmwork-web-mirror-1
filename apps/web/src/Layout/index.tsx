@@ -8,24 +8,27 @@ import { Notification as NotificationUI, Button } from '@douyinfe/semi-ui';
 import { checkUpdate, installUpdate, UpdateManifest } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
 import { os } from "@tauri-apps/api";
-import { getSid } from "@dmwork/base/src/Utils/search";
+import { getSid, getQueryParam } from "@dmwork/base/src/Utils/search";
 import InviteLanding from "../Components/InviteLanding";
 
 export default class AppLayout extends Component {
     onLogin!: () => void
     componentDidMount() {
         this.onLogin = () => {
-            const sid = getSid()
             Notification.requestPermission() // 请求通知权限
             const basePath = (window.location.pathname.replace(/\/login\/?$/, '').replace(/\/index\.html$/, '') || '/').replace(/\/+$/, '')
+            // 保留原始 sid（如果有），不随机生成新的
+            const existingSid = getQueryParam("sid") || ""
+            const sidParam = existingSid ? `?sid=${existingSid}` : ""
             // 检查是否有待处理的邀请码（验证格式防止 XSS/Open Redirect）
             const pendingInvite = localStorage.getItem("pendingInviteCode");
             if (pendingInvite && /^[a-zA-Z0-9_-]+$/.test(pendingInvite)) {
                 localStorage.removeItem("pendingInviteCode");
-                window.location.href = `${window.location.origin}${basePath}/?invite=${encodeURIComponent(pendingInvite)}&sid=${sid}`
+                const sep = sidParam ? "&" : "?"
+                window.location.href = `${window.location.origin}${basePath}/${sidParam}${sep}invite=${encodeURIComponent(pendingInvite)}`
                 return;
             }
-            window.location.href = `${window.location.origin}${basePath}/?sid=${sid}`
+            window.location.href = `${window.location.origin}${basePath}/${sidParam}`
         }
         WKApp.endpoints.addOnLogin(this.onLogin)
 

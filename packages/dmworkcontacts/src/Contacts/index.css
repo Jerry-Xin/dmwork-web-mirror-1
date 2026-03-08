@@ -245,3 +245,44 @@ body[theme-mode=dark] .wk-contacts-section-item  {
 .wk-contacts-space-dropdown-item-selected {
     background: var(--bg-hover);
 }
+
+/* 字母分组 header */
+.wk-contacts-letter-header {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    background: var(--bg-secondary, var(--wk-color-secondary));
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+/* 右侧字母索引条 */
+.wk-contacts-letter-index {
+    position: sticky;
+    bottom: 0;
+    right: 0;
+    float: right;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 2px;
+    z-index: 2;
+    margin-top: -100%;
+    pointer-events: none;
+}
+.wk-contacts-letter-index-item {
+    font-size: 10px;
+    padding: 1px 4px;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    pointer-events: auto;
+    line-height: 1.4;
+    user-select: none;
+}
+.wk-contacts-letter-index-item:hover,
+.wk-contacts-letter-index-active {
+    color: var(--accent, var(--wk-color-theme, #6366F1));
+    font-weight: 600;
+}

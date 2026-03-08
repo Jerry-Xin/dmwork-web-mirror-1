@@ -7,6 +7,7 @@ import { getPinyin } from "@dmwork/base";
 import classnames from "classnames";
 import { Toast } from "@douyinfe/semi-ui";
 import { ChevronRight, ChevronDown } from "lucide-react";
+import { pinyin } from "pinyin-pro";
 import { Channel, ChannelTypePerson, ChannelTypeGroup, WKSDK,ChannelInfoListener,ChannelInfo } from "wukongimjssdk";
 import { ContactsListManager } from "../Service/ContactsListManager";
 import { Card } from "@dmwork/base/src/Messages/Card";
@@ -26,6 +27,7 @@ export class ContactsState {
     spaceMembers: SpaceMember[] = []
     botDetailUid?: string // Bot 详情弹窗
     botDetailVisible: boolean = false
+    hoveredLetter: string | null = null
     currentView: 'all' | 'members' | 'bots' = 'all'
     botGroupCollapsed: boolean = false
     // 手风琴展开状态
@@ -382,6 +384,29 @@ export default class ContactsList extends Component<any, ContactsState> {
         })
     }
 
+    groupByLetter(items: Contacts[]): Map<string, Contacts[]> {
+        const map = new Map<string, Contacts[]>()
+        for (const item of items) {
+            let name = item.name
+            if (item.remark && item.remark !== "") name = item.remark
+            const firstChar = name[0] || ''
+            const py = pinyin(firstChar, { toneType: 'none' })
+            let letter = py[0]?.toUpperCase() || '#'
+            if (!/[A-Z]/.test(letter)) letter = '#'
+            if (!map.has(letter)) map.set(letter, [])
+            map.get(letter)!.push(item)
+        }
+        // Sort keys: A-Z then #
+        const sorted = new Map<string, Contacts[]>()
+        const keys = Array.from(map.keys()).sort((a, b) => {
+            if (a === '#') return 1
+            if (b === '#') return -1
+            return a.localeCompare(b)
+        })
+        for (const k of keys) sorted.set(k, map.get(k)!)
+        return sorted
+    }
+
     toggleSection = (section: 'members' | 'bots' | 'groups') => {
         const willExpand = this.state.expandedSection !== section
         this.setState({
@@ -426,18 +451,69 @@ export default class ContactsList extends Component<any, ContactsState> {
                     {count > 0 && <span className="wk-contacts-accordion-count">({count})</span>}
                 </div>
                 {isExpanded && (
-                    <div className="wk-contacts-accordion-body">
-                        {items.map((item) => {
+                    <div className="wk-contacts-accordion-body" style={section === 'members' ? { position: 'relative' } : undefined}>
+                        {section === 'members' ? (() => {
+                            const grouped = this.groupByLetter(items)
+                            const letters = Array.from(grouped.keys())
+                            return (
+                                <>
+                                    {letters.map((letter) => (
+                                        <div key={letter}>
+                                            <div id={`contact-letter-${letter}`} className="wk-contacts-letter-header">
+                                                {letter}
+                                            </div>
+                                            {grouped.get(letter)!.map((item) => {
+                                                let name = item.name
+                                                if (item.remark && item.remark !== "") name = item.remark
+                                                return (
+                                                    <div key={item.uid} className="wk-contacts-section-item" onClick={() => {
+                                                        if (item.robot === true && item.uid !== 'botfather') {
+                                                            this.setState({ botDetailUid: item.uid, botDetailVisible: true })
+                                                            return
+                                                        }
+                                                        WKApp.endpoints.showConversation(new Channel(item.uid, ChannelTypePerson))
+                                                    }}>
+                                                        <div className="wk-contacts-section-item-avatar">
+                                                            <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)}></WKAvatar>
+                                                        </div>
+                                                        <div className="wk-contacts-section-item-name">
+                                                            {name}
+                                                            {item.robot === true && <AiBadge />}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ))}
+                                    {letters.length > 1 && (
+                                        <div className="wk-contacts-letter-index">
+                                            {letters.map((letter) => (
+                                                <div
+                                                    key={letter}
+                                                    className={classnames("wk-contacts-letter-index-item", this.state.hoveredLetter === letter && "wk-contacts-letter-index-active")}
+                                                    onMouseEnter={() => this.setState({ hoveredLetter: letter })}
+                                                    onMouseLeave={() => this.setState({ hoveredLetter: null })}
+                                                    onClick={() => {
+                                                        const el = document.getElementById(`contact-letter-${letter}`)
+                                                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                                    }}
+                                                >
+                                                    {letter}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )
+                        })() : items.map((item) => {
                             let name = item.name
                             if (item.remark && item.remark !== "") name = item.remark
-                            const spaceId = WKApp.shared.currentSpaceId
                             return (
                                 <div key={item.uid} className="wk-contacts-section-item" onClick={() => {
                                     if (item.robot === true && item.uid !== 'botfather') {
                                         this.setState({ botDetailUid: item.uid, botDetailVisible: true })
                                         return
                                     }
-                                    // WuKongIM DM 只认裸 uid
                                     WKApp.endpoints.showConversation(new Channel(item.uid, ChannelTypePerson))
                                 }}>
                                     <div className="wk-contacts-section-item-avatar">

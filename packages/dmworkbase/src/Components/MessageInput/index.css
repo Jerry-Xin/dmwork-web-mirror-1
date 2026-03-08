@@ -1,16 +1,12 @@
 
 .wk-messageinput-box {
-    background: #fff;
+    background: var(--input-bg);
     width: 100%;
     height: 100%;
     position: relative;
 
     box-shadow: 0.3rem -0.2rem 0.8rem 0.05rem rgb(114 114 114 / 5%);
     border-left: none;
-}
-
-body[theme-mode=dark] .wk-messageinput-box {
-    background-color: var(--wk-color-secondary);
 }
 
 /* .wk-messageinput-box:hover {
@@ -31,14 +27,14 @@ body[theme-mode=dark] .wk-messageinput-box {
     height: 28px;
     min-width: 28px;
     border-radius: 50%;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     font-size: 16px;
     font-weight: 600;
-    color: #666;
+    color: var(--text-secondary);
     margin-right: 8px;
     margin-top: 2px;
     user-select: none;
@@ -46,22 +42,12 @@ body[theme-mode=dark] .wk-messageinput-box {
 }
 
 .wk-messageinput-menu-btn:hover {
-    background-color: #f0f0f0;
-    border-color: #bbb;
+    background-color: var(--bg-hover);
+    border-color: var(--text-tertiary);
 }
 
 .wk-messageinput-menu-btn:active {
-    background-color: #e0e0e0;
-}
-
-body[theme-mode=dark] .wk-messageinput-menu-btn {
-    border-color: #555;
-    color: #aaa;
-}
-
-body[theme-mode=dark] .wk-messageinput-menu-btn:hover {
-    background-color: #3a3a3a;
-    border-color: #777;
+    background-color: var(--border-color);
 }
 
 .wk-messageinput-input {
@@ -70,16 +56,13 @@ body[theme-mode=dark] .wk-messageinput-menu-btn:hover {
     flex: 1;
     min-width: 0;
     border: none;
-    color: #333;
+    color: var(--text-primary);
     font-size: 14px;
     overflow-y: scroll;
     display: inline-block;
     -webkit-user-modify: read-write-plaintext-only;
     outline: none;
-}
-
-body[theme-mode=dark] .wk-messageinput-input {
-    color: white;
+    background: transparent;
 }
 
 .wk-messageinput-input textarea {
@@ -90,7 +73,7 @@ body[theme-mode=dark] .wk-messageinput-input {
 .wk-messageinput-input:empty:before {
         content: attr(data-placeholder);
         position: absolute;
-        color: #a9a9a9;
+        color: var(--text-tertiary);
 }
 
 .wk-messageinput-bar {
@@ -174,7 +157,7 @@ body[theme-mode=dark] .wk-messageinput-input {
     max-height: 400px;
     overflow-x: hidden;
     bottom: 0;
-    background-color: white;
+    background-color: var(--card-bg);
     width: 100%;
     border-radius: 4px;
 }
@@ -195,7 +178,7 @@ body[theme-mode=dark] .wk-messageinput-input {
 }
 
     .quickReplyItem :hover {
-        background-color: #f4f5f7;
+        background-color: var(--bg-hover);
     }
 
 
@@ -209,7 +192,7 @@ body[theme-mode=dark] .wk-messageinput-input {
 
 .wk-messageinput-reply {
     margin: 10px 10px 0px 10px;
-    background-color: #f5f6f7;
+    background-color: var(--bg-secondary);
     display: flex;
     color: #8f959e;
     align-items: center;
@@ -227,17 +210,10 @@ body[theme-mode=dark] .wk-messageinput-input {
 }
 
 .wk-messageinput-input__control {
-    background-color: white;
-}
-
-body[theme-mode=dark]  .wk-messageinput-input__control {
-    background-color: var(--wk-color-secondary-2);
+    background-color: var(--input-bg);
 }
 
 .wk-messageinput-input__suggestions {
     background-color: var(--wk-color-item);
 }
 
-body[theme-mode=dark] .wk-messageinput-input__input {
-    color: white;
-}

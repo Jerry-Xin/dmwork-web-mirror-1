@@ -10,12 +10,8 @@
     width: 100%;
     cursor: pointer;
     padding: 0px 5px;
-    background-color: white;
+    background-color: var(--sidebar-bg);
     box-sizing: border-box;
-}
-
-body[theme-mode=dark] .wk-conversationlist-item  {
-    background-color: var(--wk-color-secondary-2);
 }
 
 .wk-conversationlist-item-top {
@@ -83,10 +79,7 @@ body[theme-mode=dark] .wk-conversationlist-item  {
     text-overflow: ellipsis;
     width: auto;
     max-width: 80%;
-}
-
-body[theme-mode=dark] .wk-conversationlist-item-name h3 {
-    color: white;
+    color: var(--text-primary);
 }
 
 .wk-conversationlist-item-selected .wk-conversationlist-item-name h3,.wk-conversationlist-item-selected .wk-conversationlist-item-name  {
@@ -94,7 +87,7 @@ body[theme-mode=dark] .wk-conversationlist-item-name h3 {
 }
 
 .wk-conversationlist-item-time {
-    color: #9b9b9b;
+    color: var(--text-tertiary);
     padding-left: 10px;
     flex-shrink: 0;
     font-size: .75rem;

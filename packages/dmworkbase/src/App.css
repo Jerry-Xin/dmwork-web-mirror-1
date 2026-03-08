@@ -24,6 +24,24 @@
 
     --wk-message-item: white;
     --wk-message-color: #0F0F0F;
+
+    /* Dark mode 适配变量 */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #fafafa;
+    --bg-hover: #f0f0f0;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --text-tertiary: #999999;
+    --border-color: #e8e8e8;
+    --border-light: #f0f0f0;
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --sidebar-bg: #ffffff;
+    --topbar-bg: #ffffff;
+    --accent: #5b6abf;
+    --accent-light: #e8eaff;
+    --accent-hover: #4a59ae;
   }
 
   *, *:before, *:after {
@@ -45,6 +63,23 @@
     --semi-color-primary: #6366F1;
     --semi-color-primary-hover: rgb(228, 99, 66,0.5);
 
+    /* Dark mode 适配变量 */
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #242424;
+    --bg-tertiary: #2a2a2a;
+    --bg-hover: #333333;
+    --text-primary: #e0e0e0;
+    --text-secondary: #aaaaaa;
+    --text-tertiary: #888888;
+    --border-color: #333333;
+    --border-light: #2a2a2a;
+    --card-bg: #242424;
+    --input-bg: #2a2a2a;
+    --sidebar-bg: #1e1e1e;
+    --topbar-bg: #1e1e1e;
+    --accent: #7b8adf;
+    --accent-light: #2a2d4a;
+    --accent-hover: #6b7acf;
   }
 
   /* ::-webkit-scrollbar-thumb:window-inactive {

@@ -91,14 +91,14 @@ body[theme-mode=dark] .wk-contacts-section-item  {
 }
 /* 通讯录分组菜单 */
 .wk-contacts-menu {
-    padding: 12px;
+    padding: 8px;
 }
 .wk-contacts-menu-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px;
-    margin-bottom: 8px;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
     background: var(--wk-color-item, #f8f9fa);
     border-radius: 8px;
 }
@@ -116,6 +116,7 @@ body[theme-mode=dark] .wk-contacts-section-item  {
 .wk-contacts-menu-space-name {
     font-size: 15px;
     font-weight: 600;
+    color: var(--text-primary);
 }
 .wk-contacts-menu-list {
     display: flex;
@@ -125,7 +126,7 @@ body[theme-mode=dark] .wk-contacts-section-item  {
 .wk-contacts-menu-item {
     display: flex;
     align-items: center;
-    padding: 12px;
+    padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.15s;
@@ -143,6 +144,7 @@ body[theme-mode=dark] .wk-contacts-section-item  {
     flex: 1;
     font-size: 14px;
     font-weight: 500;
+    color: var(--text-primary);
 }
 .wk-contacts-menu-item-count {
     font-size: 12px;
@@ -170,7 +172,7 @@ body[theme-mode=dark] .wk-contacts-section-item  {
 .wk-contacts-accordion-header {
     display: flex;
     align-items: center;
-    padding: 12px;
+    padding: 8px 12px;
     cursor: pointer;
     user-select: none;
 }
@@ -191,6 +193,7 @@ body[theme-mode=dark] .wk-contacts-section-item  {
     flex: 1;
     font-size: 14px;
     font-weight: 500;
+    color: var(--text-primary);
 }
 .wk-contacts-accordion-count {
     font-size: 12px;
@@ -234,6 +237,7 @@ body[theme-mode=dark] .wk-contacts-section-item  {
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
+    color: var(--text-primary);
 }
 .wk-contacts-space-dropdown-item:hover {
     background: var(--bg-hover);

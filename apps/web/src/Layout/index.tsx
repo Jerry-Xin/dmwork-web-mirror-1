@@ -19,15 +19,32 @@ export default class AppLayout extends Component {
             // 保留原始 sid（如果有），不随机生成新的
             const existingSid = getQueryParam("sid") || ""
             const sidParam = existingSid ? `?sid=${existingSid}` : ""
+
+            const goMain = () => {
+                window.location.href = `${window.location.origin}${basePath}/${sidParam}`
+            }
+
             // 检查是否有待处理的邀请码（验证格式防止 XSS/Open Redirect）
             const pendingInvite = localStorage.getItem("pendingInviteCode");
             if (pendingInvite && /^[a-zA-Z0-9_-]+$/.test(pendingInvite)) {
                 localStorage.removeItem("pendingInviteCode");
-                const sep = sidParam ? "&" : "?"
-                window.location.href = `${window.location.origin}${basePath}/${sidParam}${sep}invite=${encodeURIComponent(pendingInvite)}`
+                // 自动加入 Space，不再跳回邀请页
+                WKApp.apiClient.post(`/space/join`, { invite_code: pendingInvite })
+                    .then((result: any) => {
+                        const spaceId = result?.space_id;
+                        if (spaceId) {
+                            localStorage.setItem('currentSpaceId', spaceId);
+                        }
+                    })
+                    .catch((e: any) => {
+                        console.warn('Auto-join space failed:', e?.msg || e);
+                    })
+                    .finally(() => {
+                        goMain();
+                    });
                 return;
             }
-            window.location.href = `${window.location.origin}${basePath}/${sidParam}`
+            goMain()
         }
         WKApp.endpoints.addOnLogin(this.onLogin)
 

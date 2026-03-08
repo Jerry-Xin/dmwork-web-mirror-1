@@ -58,6 +58,21 @@ class Login extends Component<any, LoginState> {
         }} render={(vm: LoginVM) => {
             return <div className="wk-login">
                 <div className="wk-login-content">
+                    {vm.inviteInfo && (
+                        <div style={{
+                            background: '#f0edff',
+                            borderRadius: '8px',
+                            padding: '12px 16px',
+                            marginBottom: '16px',
+                            textAlign: 'center',
+                            color: '#5b6abf',
+                            fontSize: '14px',
+                            lineHeight: '1.6',
+                        }}>
+                            <div>你被邀请加入 <strong>{vm.inviteInfo.space_name}</strong></div>
+                            <div>{vm.inviteInfo.member_count} 位成员</div>
+                        </div>
+                    )}
                     <div className="wk-login-content-phonelogin" style={{ "display": vm.loginType === LoginType.phone ? "block" : "none" }}>
                         <div className="wk-login-content-logo">
                             <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="logo" />

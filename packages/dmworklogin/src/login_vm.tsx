@@ -61,6 +61,10 @@ export class LoginVM extends ProviderListener {
     forgetConfirmPassword?:string
     forgetLoading: boolean = false
 
+    // ---------- 邀请信息 ----------
+    inviteInfo?: { space_name: string; member_count: number; invite_code: string; space_id: string }
+    inviteLoading: boolean = false
+
     set autoRefresh(v: boolean) {
         this._autoRefresh = v
         this.notifyListener()
@@ -76,6 +80,34 @@ export class LoginVM extends ProviderListener {
 
     didMount(): void {
         this.advance()
+        this.checkInviteParam()
+    }
+
+    private checkInviteParam() {
+        const urlParams = new URLSearchParams(window.location.search)
+        const inviteCode = urlParams.get('invite')
+        if (!inviteCode || !/^[a-zA-Z0-9_-]+$/.test(inviteCode)) return
+
+        // 保存到 localStorage，登录成功后 onLogin 回调会使用
+        localStorage.setItem('pendingInviteCode', inviteCode)
+
+        this.inviteLoading = true
+        this.notifyListener()
+
+        fetch(`${window.location.origin}/api/v1/space/invite/${inviteCode}`)
+            .then(resp => {
+                if (!resp.ok) throw new Error('invalid')
+                return resp.json()
+            })
+            .then(info => {
+                this.inviteInfo = info
+                this.inviteLoading = false
+                this.notifyListener()
+            })
+            .catch(() => {
+                this.inviteLoading = false
+                this.notifyListener()
+            })
     }
 
     didUnMount(): void {

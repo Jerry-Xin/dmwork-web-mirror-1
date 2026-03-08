@@ -82,10 +82,11 @@ export class NewFriendVM extends ProviderListener {
     await WKApp.apiClient.delete(`/user/reddot/friendApply`);
   }
 
-  public async friendRequestCMDListener(message: Message) {
+  friendRequestCMDListener = async (message: Message) => {
     const cmdContent = message.content as CMDContent;
     if (cmdContent.cmd === "friendRequest") {
       this.friendApplys = await this.getFriendApply();
+      this.notifyListener();
     }
   }
 }

@@ -126,6 +126,7 @@ export class ChatVM extends ProviderListener {
         // 监听 Space 切换（来自全局顶栏 SpaceList）
         this.spaceChangedHandler = (_space: any) => {
             WKSDK.shared().conversationManager.conversations = []
+            this.selectedConversation = undefined // 清空右侧聊天窗口
             this.requestConversationList()
         }
         WKApp.mittBus.on('space-changed', this.spaceChangedHandler)

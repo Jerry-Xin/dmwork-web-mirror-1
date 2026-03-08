@@ -113,8 +113,15 @@ export class ChatVM extends ProviderListener {
     private async loadSpaceMembers(spaceId: string) {
         try {
             const members = await SpaceService.shared.getMembers(spaceId, 1, 10000)
+            // Guard against race condition: only update if this space is still selected
+            if (this._selectedSpace?.space_id !== spaceId) {
+                return
+            }
             this._spaceMemberUids = new Set(members.map((m) => m.uid))
         } catch {
+            if (this._selectedSpace?.space_id !== spaceId) {
+                return
+            }
             this._spaceMemberUids = new Set()
         }
         this.notifyListener()

@@ -11,7 +11,7 @@
 .wk-main-content {
     width: calc(100% - var(--sider-width));
     height: 100%;
-    background-color: white;
+    background-color: var(--bg-primary);
 }
 
 /* 全局顶栏 */
@@ -19,8 +19,9 @@
     display: flex;
     align-items: center;
     padding: 10px 16px;
-    border-bottom: 1px solid var(--wk-color-border, #f0f0f0);
+    border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
+    background-color: var(--topbar-bg);
 }
 .wk-global-topbar-space {
     display: flex;
@@ -44,14 +45,15 @@
 .wk-global-topbar-space-name {
     font-size: 16px;
     font-weight: 600;
+    color: var(--text-primary);
 }
 .wk-global-topbar-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
     min-width: 240px;
-    background: var(--wk-color-item, white);
-    border: 1px solid var(--wk-color-border, #e8e8e8);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     z-index: 100;
@@ -70,14 +72,14 @@
     gap: 8px;
 }
 .wk-global-topbar-dropdown-item:hover {
-    background: var(--wk-color-hover, #f5f5f5);
+    background: var(--bg-hover);
 }
 .wk-global-topbar-dropdown-item.selected {
-    background: var(--wk-color-hover, #f0f0ff);
+    background: var(--bg-hover);
 }
 .wk-global-topbar-dropdown-divider {
     height: 1px;
-    background: var(--wk-color-border, #e8e8e8);
+    background: var(--border-color);
     margin: 4px 8px;
 }
 .wk-global-topbar-invite-btn {

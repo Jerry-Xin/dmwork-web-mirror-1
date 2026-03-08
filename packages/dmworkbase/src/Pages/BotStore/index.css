@@ -2,19 +2,19 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #f5f5f5;
+    background: var(--bg-secondary);
 }
 
 .wk-bot-store-header {
     padding: 16px 20px 12px;
-    background: #fff;
-    border-bottom: 1px solid #e8e8e8;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .wk-bot-store-title {
     font-size: 18px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--text-primary);
 }
 
 /* BotFather */
@@ -80,11 +80,11 @@
     text-align: center;
     padding: 10px 0;
     font-size: 13px;
-    color: #999;
+    color: var(--text-tertiary);
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: all 0.2s;
-    background: #fff;
+    background: var(--card-bg);
 }
 
 .wk-bot-tab:first-child {
@@ -96,16 +96,16 @@
 }
 
 .wk-bot-tab.active {
-    color: #5b6abf;
+    color: var(--accent);
     font-weight: 600;
-    border-bottom-color: #5b6abf;
+    border-bottom-color: var(--accent);
 }
 
 /* Bot List */
 .wk-bot-list {
     flex: 1;
     overflow-y: auto;
-    background: #fff;
+    background: var(--card-bg);
     margin: 0 12px 12px;
     border-radius: 0 0 8px 8px;
 }
@@ -114,12 +114,12 @@
     display: flex;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-light);
     transition: background 0.15s;
 }
 
 .wk-bot-card:hover {
-    background: #fafafa;
+    background: var(--bg-hover);
 }
 
 .wk-bot-card:last-child {
@@ -149,7 +149,7 @@
 .wk-bot-card-name {
     font-size: 14px;
     font-weight: 500;
-    color: #1a1a1a;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -157,8 +157,8 @@
 
 .wk-bot-card-badge {
     font-size: 10px;
-    background: #e8eaff;
-    color: #5b6abf;
+    background: var(--accent-light);
+    color: var(--accent);
     padding: 1px 5px;
     border-radius: 3px;
     font-weight: 600;
@@ -166,7 +166,7 @@
 
 .wk-bot-card-desc {
     font-size: 12px;
-    color: #999;
+    color: var(--text-tertiary);
     margin-top: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -175,7 +175,7 @@
 
 .wk-bot-card-creator {
     font-size: 11px;
-    color: #bbb;
+    color: var(--text-tertiary);
     margin-top: 2px;
 }
 
@@ -196,21 +196,21 @@
 }
 
 .wk-bot-btn-chat {
-    background: #5b6abf;
+    background: var(--accent);
     color: #fff;
 }
 
 .wk-bot-btn-chat:hover {
-    background: #4a59ae;
+    background: var(--accent-hover);
 }
 
 .wk-bot-btn-add {
-    background: #f0f0f0;
-    color: #333;
+    background: var(--bg-hover);
+    color: var(--text-primary);
 }
 
 .wk-bot-btn-add:hover {
-    background: #e0e0e0;
+    background: var(--border-color);
 }
 
 .wk-bot-btn-add:disabled {
@@ -229,7 +229,7 @@
 .wk-bot-loading {
     text-align: center;
     padding: 40px 20px;
-    color: #999;
+    color: var(--text-tertiary);
     font-size: 13px;
     line-height: 1.8;
 }

@@ -29,18 +29,14 @@
 .wk-chat-search-add {
     padding: 5px;
     cursor: pointer;
-    color: black;
-}
-
-body[theme-mode=dark] .wk-chat-search-add  {
-    color: white;
+    color: var(--text-primary);
 }
 
 .wk-chat-header-icon {
     transition: color 0.15s;
 }
 .wk-chat-header-icon:hover {
-    color: #333 !important;
+    color: var(--text-primary) !important;
 }
 
 .wk-chat-title {
@@ -49,10 +45,7 @@ body[theme-mode=dark] .wk-chat-search-add  {
     font-weight: 600;
     display: flex;
     align-items: center;
-}
-
-body[theme-mode=dark] .wk-chat-title {
-    color: white;
+    color: var(--text-primary);
 }
 
 .wk-chat-conversation-list {
@@ -126,7 +119,7 @@ body[theme-mode=dark] .wk-chat-title {
 .wk-chat-conversation-header {
     height: var(--wk-height-chat-conversation-header);
     width: 100%;
-    background-color: white;
+    background-color: var(--topbar-bg);
     display: flex;
     align-items: center;
     box-shadow: 0 1px 1px rgba(114,114,114,0.168627);
@@ -135,10 +128,6 @@ body[theme-mode=dark] .wk-chat-title {
     position: relative;
     cursor: pointer;
     box-sizing: border-box;
-}
-
-body[theme-mode=dark] .wk-chat-conversation-header {
-    background-color: var(--wk-color-secondary);
 }
 
 .wk-chat-conversation-header-left {
@@ -204,10 +193,7 @@ body[theme-mode=dark] .wk-chat-conversation-header {
     margin-left: 10px;
     font-size: 14px;
     font-weight: 600;
-}
-
-body[theme-mode=dark] .wk-chat-conversation-header-channel-info-name  {
-    color: white;
+    color: var(--text-primary);
 }
 
 .wk-chat-conversation-header-content {
@@ -340,8 +326,8 @@ body[theme-mode=dark] .wk-chat-popover {
     top: 100%;
     left: 0;
     min-width: 200px;
-    background: var(--wk-color-item, white);
-    border: 1px solid var(--wk-color-border, #e8e8e8);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     z-index: 100;
@@ -360,14 +346,14 @@ body[theme-mode=dark] .wk-chat-popover {
     box-sizing: border-box;
 }
 .wk-chat-space-dropdown-item:hover {
-    background: var(--wk-color-hover, #f5f5f5);
+    background: var(--bg-hover);
 }
 .wk-chat-space-dropdown-item-selected {
-    background: var(--wk-color-hover, #f0f0ff);
+    background: var(--bg-hover);
 }
 .wk-chat-space-dropdown-divider {
     height: 1px;
-    background: var(--wk-color-border, #e8e8e8);
+    background: var(--border-color);
     margin: 4px 8px;
 }
 .wk-chat-space-invite-btn {
@@ -395,15 +381,15 @@ body[theme-mode=dark] .wk-chat-popover {
 .wk-chat-empty-guide-btn {
     padding: 8px 20px;
     border-radius: 20px;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--border-color);
     font-size: 14px;
     cursor: pointer;
-    background: #fff;
-    color: #333;
+    background: var(--card-bg);
+    color: var(--text-primary);
     font-weight: 500;
     transition: border-color 0.15s, color 0.15s;
 }
 .wk-chat-empty-guide-btn:hover {
-    border-color: #5b6abf;
-    color: #5b6abf;
+    border-color: var(--accent);
+    color: var(--accent);
 }

@@ -1,5 +1,38 @@
 /**
 * =====================================
+* Dark Mode CSS Variables
+**/
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-hover: #f0f0f0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666;
+  --text-tertiary: #999;
+  --border-color: #e8e8e8;
+  --card-bg: #ffffff;
+  --sidebar-bg: #ffffff;
+  --topbar-bg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #242424;
+    --bg-hover: #333;
+    --text-primary: #e0e0e0;
+    --text-secondary: #aaa;
+    --text-tertiary: #888;
+    --border-color: #333;
+    --card-bg: #242424;
+    --sidebar-bg: #1e1e1e;
+    --topbar-bg: #1e1e1e;
+  }
+}
+
+/**
+* =====================================
 * 滚动条美化
 **/
 

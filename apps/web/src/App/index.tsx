@@ -2,6 +2,7 @@ import { ChatPage, EndpointCategory, WKApp, Menus } from '@dmwork/base';
 import { ContactsList } from '@dmwork/contacts';
 import BotStore from '@dmwork/base/src/Pages/BotStore';
 import React from 'react';
+import { MessageSquare, Users, Bot } from 'lucide-react';
 import './index.css';
 import AppLayout from '../Layout';
 import { WKSDK } from 'wukongimjssdk';
@@ -26,8 +27,8 @@ async function registerMenus() {
 
   WKApp.menus.register("chat", (_context) => {
     const m = new Menus("chat", "/", "会话",
-      <img alt='会话' src={require("./assets/HomeTab.svg").default}></img>,
-      <img alt='会话' src={require("./assets/HomeTabSelected.svg").default}></img>)
+      <MessageSquare size={24} strokeWidth={1.5} color='#999' />,
+      <MessageSquare size={24} strokeWidth={2} color='#5b6abf' fill='#5b6abf' />)
     let badge = 0;
 
     for (const conversation of WKSDK.shared().conversationManager.conversations) {
@@ -59,16 +60,16 @@ async function registerMenus() {
 
   WKApp.menus.register("contacts", (param) => {
     const m = new Menus("contacts", "/contacts", "通讯录",
-      <img alt='通讯录' src={require("./assets/ContactsTab.svg").default}></img>,
-      <img alt='通讯录' src={require("./assets/ContactsTabSelected.svg").default} ></img>)
+      <Users size={24} strokeWidth={1.5} color='#999' />,
+      <Users size={24} strokeWidth={2} color='#5b6abf' fill='#5b6abf' />)
     m.badge = WKApp.shared.getFriendApplysUnreadCount();
     return m
   }, 4000)
 
   WKApp.menus.register("bots", (_param) => {
     return new Menus("bots", "/bots", "Bot",
-      <span style={{ fontSize: 20 }}>🤖</span>,
-      <span style={{ fontSize: 20, filter: 'brightness(1.2)' }}>🤖</span>)
+      <Bot size={24} strokeWidth={1.5} color='#999' />,
+      <Bot size={24} strokeWidth={2} color='#5b6abf' fill='#5b6abf' />)
   }, 3000)
 
   WKApp.route.register("/", () => {

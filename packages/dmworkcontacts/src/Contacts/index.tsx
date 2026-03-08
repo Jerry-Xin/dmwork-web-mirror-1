@@ -319,7 +319,9 @@ export default class ContactsList extends Component<any, ContactsState> {
                                 return
                             }
                             const spaceId = WKApp.shared.currentSpaceId
-                            const channelId = spaceId ? `s${spaceId}_${item.uid}` : item.uid
+                            // 先检查是否有裸 UID 的旧会话，避免创建重复
+                            const bareConv = WKSDK.shared().conversationManager.findConversation(new Channel(item.uid, ChannelTypePerson))
+                            const channelId = bareConv ? item.uid : (spaceId ? `s${spaceId}_${item.uid}` : item.uid)
                             const channel = new Channel(channelId, ChannelTypePerson)
                             WKApp.endpoints.showConversation(channel)
                             this.setState({})

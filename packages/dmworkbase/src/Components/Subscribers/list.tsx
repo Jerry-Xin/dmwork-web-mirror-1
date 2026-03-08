@@ -130,17 +130,10 @@ export class SubscriberList extends Component<
   checkItem(item: Subscriber) {
     const { selectedList } = this.state;
     const { onSelect } = this.props;
-    let newSelectedList = selectedList;
-    let found = -1;
-    for (let index = 0; index < newSelectedList.length; index++) {
-      const selected = newSelectedList[index];
-      if (selected.uid === item.uid) {
-        found = index;
-        break;
-      }
-    }
+    const found = selectedList.findIndex((selected) => selected.uid === item.uid);
+    let newSelectedList;
     if (found >= 0) {
-      newSelectedList.splice(found, 1);
+      newSelectedList = [...selectedList.slice(0, found), ...selectedList.slice(found + 1)];
     } else {
       newSelectedList = [item, ...selectedList];
     }

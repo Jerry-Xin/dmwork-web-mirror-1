@@ -91,17 +91,10 @@ export default class IndexTable extends Component<
   checkItem(item: IndexTableItem) {
     const { selectedList } = this.state;
     const { onSelect } = this.props;
-    let newSelectedList = selectedList;
-    let found = -1;
-    for (let index = 0; index < newSelectedList.length; index++) {
-      const selected = newSelectedList[index];
-      if (selected.id === item.id) {
-        found = index;
-        break;
-      }
-    }
+    const found = selectedList.findIndex((selected) => selected.id === item.id);
+    let newSelectedList;
     if (found >= 0) {
-      newSelectedList.splice(found, 1);
+      newSelectedList = [...selectedList.slice(0, found), ...selectedList.slice(found + 1)];
     } else {
       newSelectedList = [item, ...selectedList];
     }

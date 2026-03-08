@@ -7,7 +7,7 @@ import { getPinyin } from "@dmwork/base";
 import classnames from "classnames";
 import { Toast } from "@douyinfe/semi-ui";
 import { ChevronRight, ChevronDown } from "lucide-react";
-import { pinyin } from "pinyin-pro";
+
 import { Channel, ChannelTypePerson, ChannelTypeGroup, WKSDK,ChannelInfoListener,ChannelInfo } from "wukongimjssdk";
 import { ContactsListManager } from "../Service/ContactsListManager";
 import { Card } from "@dmwork/base/src/Messages/Card";
@@ -390,8 +390,8 @@ export default class ContactsList extends Component<any, ContactsState> {
             let name = (item.name || '').replace(/\*\*/g, '')
             if (item.remark && item.remark !== "") name = item.remark
             const firstChar = name[0] || ''
-            const py = pinyin(firstChar, { toneType: 'none' })
-            let letter = py[0]?.toUpperCase() || '#'
+            const py = getPinyin(toSimplized(firstChar)).toUpperCase()
+            let letter = (py && py[0]) || '#'
             if (!/[A-Z]/.test(letter)) letter = '#'
             if (!map.has(letter)) map.set(letter, [])
             map.get(letter)!.push(item)

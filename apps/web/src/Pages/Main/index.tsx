@@ -115,6 +115,9 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                 visible={this.state.showSpaceCreate}
                 onClose={() => {
                     this.setState({ showSpaceCreate: false });
+                }}
+                onSuccess={() => {
+                    this.setState({ showSpaceCreate: false });
                     // 刷新 Space 列表
                     SpaceService.shared.getMySpaces().then(spaces => {
                         this.setState({ allSpaces: spaces });

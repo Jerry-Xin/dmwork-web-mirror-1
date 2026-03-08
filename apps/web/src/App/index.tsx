@@ -1,5 +1,6 @@
 import { ChatPage, EndpointCategory, WKApp, Menus } from '@dmwork/base';
 import { ContactsList } from '@dmwork/contacts';
+import BotStore from '@dmwork/base/src/Pages/BotStore';
 import React from 'react';
 import './index.css';
 import AppLayout from '../Layout';
@@ -64,12 +65,22 @@ async function registerMenus() {
     return m
   }, 4000)
 
+  WKApp.menus.register("bots", (_param) => {
+    return new Menus("bots", "/bots", "Bot",
+      <span style={{ fontSize: 20 }}>🤖</span>,
+      <span style={{ fontSize: 20, filter: 'brightness(1.2)' }}>🤖</span>)
+  }, 3000)
+
   WKApp.route.register("/", () => {
     return <ChatPage></ChatPage>
   })
 
   WKApp.route.register("/contacts", () => {
     return <ContactsList></ContactsList>
+  })
+
+  WKApp.route.register("/bots", () => {
+    return <BotStore />
   })
 
 }

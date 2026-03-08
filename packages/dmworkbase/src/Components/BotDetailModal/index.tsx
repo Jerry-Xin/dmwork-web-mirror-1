@@ -145,19 +145,20 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                         <div className="wk-bot-detail-header">
                             <WKAvatar channel={new Channel(uid, ChannelTypePerson)} size={64} />
                             <div className="wk-bot-detail-name">
-                                {name} <AiBadge />
+                                {name.replace(/\*\*/g, '')} <AiBadge />
                             </div>
                             <div className="wk-bot-detail-id">@{username}</div>
-                            {creatorName && (
-                                <div className="wk-bot-detail-creator">
-                                    由 {creatorName} 创建
-                                </div>
-                            )}
                         </div>
                         <div className="wk-bot-detail-desc">
                             <div className="wk-bot-detail-label">简介</div>
-                            <div>{description}</div>
+                            <div>{description.replace(/\*\*/g, '')}</div>
                         </div>
+                        {creatorName && (
+                            <div className="wk-bot-detail-desc">
+                                <div className="wk-bot-detail-label">创建者</div>
+                                <div>{creatorName}</div>
+                            </div>
+                        )}
                         {commands.length > 0 && (
                             <div className="wk-bot-detail-commands">
                                 <div className="wk-bot-detail-label">命令</div>

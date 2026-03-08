@@ -85,6 +85,7 @@ interface EmojiPanelState {
     emojis: Emoji[]
     category: string
     stickers: any[]
+    stickerCategories: any[]
 }
 
 interface EmojiPanelProps {
@@ -92,7 +93,6 @@ interface EmojiPanelProps {
     onSticker?: (sticker: any) => void
 }
 
-let stickerCategories = new Array<any>()
 export class EmojiPanel extends Component<EmojiPanelProps, EmojiPanelState> {
     emojiService: EmojiService
 
@@ -102,7 +102,8 @@ export class EmojiPanel extends Component<EmojiPanelProps, EmojiPanelState> {
         this.state = {
             emojis: [],
             category: "emoji",
-            stickers: []
+            stickers: [],
+            stickerCategories: []
         }
     }
 
@@ -114,10 +115,9 @@ export class EmojiPanel extends Component<EmojiPanelProps, EmojiPanelState> {
     }
 
     requestStickerCategory() {
-        if (!stickerCategories || stickerCategories.length === 0) {
+        if (!this.state.stickerCategories || this.state.stickerCategories.length === 0) {
             WKApp.dataSource.commonDataSource.userStickerCategory().then((result) => {
-                stickerCategories = result
-                this.setState({})
+                this.setState({ stickerCategories: result })
             })
         }
     }
@@ -130,7 +130,7 @@ export class EmojiPanel extends Component<EmojiPanelProps, EmojiPanelState> {
     }
 
     render(): React.ReactNode {
-        const { emojis, category, stickers } = this.state
+        const { emojis, category, stickers, stickerCategories } = this.state
         const { onEmoji, onSticker } = this.props
         return <div className="wk-emojipanel">
             <div className={classNames("wk-emojipanel-content", category !== "emoji" ? "wk-emojipanel-content-sticker" : undefined)}>

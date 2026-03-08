@@ -75,11 +75,20 @@ contextBridge.exposeInMainWorld("electronNotification", {
   close: (tag: string) => ipcRenderer.invoke('close-native-notification', tag),
   closeAll: () => ipcRenderer.invoke('close-all-native-notifications'),
   onClicked: (callback: (data: any) => void) => {
-    console.log("onClicked");
-    ipcRenderer.on('notification-clicked', (event, data) => callback(data));
+    // Remove existing listeners to prevent accumulation and memory leaks
+    ipcRenderer.removeAllListeners('notification-clicked');
+    const handler = (_event: Electron.IpcRendererEvent, data: any) => callback(data);
+    ipcRenderer.on('notification-clicked', handler);
+    // Return cleanup function for proper resource management
+    return () => ipcRenderer.removeListener('notification-clicked', handler);
   },
   onActionClicked: (callback: (data: any) => void) => {
-    ipcRenderer.on('notification-action-clicked', (event, data) => callback(data));
+    // Remove existing listeners to prevent accumulation and memory leaks
+    ipcRenderer.removeAllListeners('notification-action-clicked');
+    const handler = (_event: Electron.IpcRendererEvent, data: any) => callback(data);
+    ipcRenderer.on('notification-action-clicked', handler);
+    // Return cleanup function for proper resource management
+    return () => ipcRenderer.removeListener('notification-action-clicked', handler);
   },
   // Test notification icon
   testNotificationIcon: () => ipcRenderer.invoke('test-notification-icon'),

@@ -130,10 +130,6 @@ export default class BotStore extends Component<{}, BotStoreState> {
 
         return (
             <div className="wk-bot-store">
-                <div className="wk-bot-store-header">
-                    <span className="wk-bot-store-title">🤖 Bot</span>
-                </div>
-
                 {/* BotFather 固定置顶 */}
                 <div className="wk-bot-father" onClick={this.handleBotFatherChat}>
                     <div className="wk-bot-father-avatar">⚙️</div>

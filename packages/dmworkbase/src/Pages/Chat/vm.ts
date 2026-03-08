@@ -162,6 +162,14 @@ export class ChatVM extends ProviderListener {
                 this.conversations = [new ConversationWrap(conversation), ...this.conversations]
                 this.notifyListener()
             } else if (action === ConversationAction.update) {
+                // Space 过滤：忽略不属于当前 Space 的会话更新
+                const currentSpaceId = WKApp.shared.currentSpaceId
+                if (currentSpaceId && conversation.channel?.channelID) {
+                    const cid = conversation.channel.channelID
+                    if (cid.startsWith("s") && !cid.startsWith(`s${currentSpaceId}_`)) {
+                        return
+                    }
+                }
                 const existConversation = this.findConversation(conversation.channel)
                 if (existConversation) {
                     existConversation.conversation = conversation

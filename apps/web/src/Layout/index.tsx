@@ -7,7 +7,7 @@ import { Notification as NotificationUI, Button } from '@douyinfe/semi-ui';
 import { checkUpdate, installUpdate, UpdateManifest } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
 import { os } from "@tauri-apps/api";
-import { getSid, getQueryParam } from "@dmwork/base/src/Utils/search";
+import { getSid, getQueryParam } from "@dmwork/base";
 import InviteLanding from "../Components/InviteLanding";
 
 export default class AppLayout extends Component {

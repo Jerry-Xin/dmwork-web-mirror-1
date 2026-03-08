@@ -3,9 +3,8 @@ import React, { Component } from "react";
 import "./index.css"
 import MainVM from "./vm";
 import { TabNormalScreen } from "./tab_normal_screen";
-import { Space, SpaceService } from "@dmwork/base/src/Service/SpaceService";
-import SpaceCreate from "@dmwork/base/src/Components/SpaceCreate";
-import ConnectionStatus from "@dmwork/base/src/Components/ConnectionStatus";
+import { Space, SpaceService } from "@dmwork/base";
+import { SpaceCreate, ConnectionStatus } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
 import { IconSearch } from "@douyinfe/semi-icons";
 import classNames from "classnames";

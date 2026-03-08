@@ -1,6 +1,6 @@
 import { ChatPage, EndpointCategory, WKApp, Menus } from '@dmwork/base';
 import { ContactsList } from '@dmwork/contacts';
-import BotStore from '@dmwork/base/src/Pages/BotStore';
+import { BotStore } from '@dmwork/base';
 import React from 'react';
 import { MessageSquare, Users, Bot } from 'lucide-react';
 import './index.css';

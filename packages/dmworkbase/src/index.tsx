@@ -63,3 +63,5 @@ export * from "./Service/SpaceService"
 
 export { ErrorBoundary, ErrorFallback } from "./Components/ErrorBoundary"
 export type { ErrorBoundaryProps, ErrorFallbackProps } from "./Components/ErrorBoundary"
+export { default as ConnectionStatus } from "./Components/ConnectionStatus"
+export { default as BotStore } from "./Pages/BotStore"

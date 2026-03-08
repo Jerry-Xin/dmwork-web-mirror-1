@@ -17,7 +17,7 @@ export class ScreenshotContent extends MessageContent {
         } else {
             let channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(this.fromUID, ChannelTypePerson))
             if (channelInfo) {
-                name = channelInfo?.orgData.displayName
+                name = channelInfo?.orgData?.displayName
             } else {
                 name = this.fromName
             }

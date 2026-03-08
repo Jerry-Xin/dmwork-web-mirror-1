@@ -15,7 +15,7 @@ export class ApproveGroupMemberCell extends MessageCell {
     }
 
     async goApproval(message: MessageWrap) {
-        let inviteNo = message.content["content"]["invite_no"]
+        let inviteNo = message.content["content"]?.["invite_no"]
         const resp = await WKApp.apiClient.get(`groups/${message.channel.channelID}/member/h5confirm`, {
             param: { invite_no: inviteNo || '' },
         });

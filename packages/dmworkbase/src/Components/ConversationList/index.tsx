@@ -256,12 +256,12 @@ export default class ConversationList extends Component<ConversationListProps, C
             }} menus={[
                 {
                     title: selectConversationWrap?.channelInfo?.top ? "取消置顶" : "置顶", onClick: () => {
-                        this.onTop(selectConversationWrap?.channelInfo!)
+                        if (selectConversationWrap?.channelInfo) this.onTop(selectConversationWrap.channelInfo)
                     }
                 },
                 {
                     title: selectConversationWrap?.channelInfo?.mute ? "关闭免打扰" : "开启免打扰", onClick: () => {
-                        this.onMute(selectConversationWrap?.channelInfo!)
+                        if (selectConversationWrap?.channelInfo) this.onMute(selectConversationWrap.channelInfo)
                     }
                 },
                 {

@@ -31,8 +31,17 @@ export default class BotStore extends Component<{}, BotStoreState> {
         applyingUid: "",
     }
 
+    private handleSpaceChanged = () => {
+        this.loadData()
+    }
+
     componentDidMount() {
         this.loadData()
+        WKApp.mittBus.on('space-changed', this.handleSpaceChanged)
+    }
+
+    componentWillUnmount() {
+        WKApp.mittBus.off('space-changed', this.handleSpaceChanged)
     }
 
     async loadData() {

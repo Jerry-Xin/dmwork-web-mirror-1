@@ -318,11 +318,8 @@ export default class ContactsList extends Component<any, ContactsState> {
                                 this.setState({ botDetailUid: item.uid, botDetailVisible: true })
                                 return
                             }
-                            const spaceId = WKApp.shared.currentSpaceId
-                            // 先检查是否有裸 UID 的旧会话，避免创建重复
-                            const bareConv = WKSDK.shared().conversationManager.findConversation(new Channel(item.uid, ChannelTypePerson))
-                            const channelId = bareConv ? item.uid : (spaceId ? `s${spaceId}_${item.uid}` : item.uid)
-                            const channel = new Channel(channelId, ChannelTypePerson)
+                            // WuKongIM DM 只认裸 uid，不加 Space 前缀
+                            const channel = new Channel(item.uid, ChannelTypePerson)
                             WKApp.endpoints.showConversation(channel)
                             this.setState({})
                         }} onContextMenu={(e) => {
@@ -439,8 +436,8 @@ export default class ContactsList extends Component<any, ContactsState> {
                                         this.setState({ botDetailUid: item.uid, botDetailVisible: true })
                                         return
                                     }
-                                    const channelId = spaceId ? `s${spaceId}_${item.uid}` : item.uid
-                                    WKApp.endpoints.showConversation(new Channel(channelId, ChannelTypePerson))
+                                    // WuKongIM DM 只认裸 uid
+                                    WKApp.endpoints.showConversation(new Channel(item.uid, ChannelTypePerson))
                                 }}>
                                     <div className="wk-contacts-section-item-avatar">
                                         <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)}></WKAvatar>

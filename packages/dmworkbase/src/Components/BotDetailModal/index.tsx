@@ -95,9 +95,8 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
 
     handleChat = () => {
         const { uid, onChat, onClose } = this.props;
-        const spaceId = WKApp.shared.currentSpaceId;
-        const channelId = spaceId ? `s${spaceId}_${uid}` : uid;
-        onChat(new Channel(channelId, ChannelTypePerson));
+        // WuKongIM DM 只认裸 uid
+        onChat(new Channel(uid, ChannelTypePerson));
         onClose();
     };
 

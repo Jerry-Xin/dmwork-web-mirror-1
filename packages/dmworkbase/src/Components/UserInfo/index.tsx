@@ -37,8 +37,8 @@ export default class UserInfo extends Component<UserInfoProps> {
         if (spaceId) {
             content = <Button theme='solid' type="primary" onClick={() => {
                 WKApp.shared.baseContext.hideUserInfo()
-                const channelId = `s${spaceId}_${vm.uid}`
-                WKApp.endpoints.showConversation(new Channel(channelId, ChannelTypePerson))
+                // WuKongIM DM 只认裸 uid
+                WKApp.endpoints.showConversation(new Channel(vm.uid, ChannelTypePerson))
             }}>发送消息</Button>
         } else if (vm.relation() === UserRelation.friend) {
             content = <Button theme='solid' type="primary" onClick={() => {

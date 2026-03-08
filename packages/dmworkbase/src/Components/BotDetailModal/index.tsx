@@ -105,7 +105,7 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
         this.setState({ applying: true });
         try {
             await WKApp.apiClient.post("friend/apply", {
-                body: { to_uid: uid, remark: "" },
+                to_uid: uid, remark: "",
             });
             Toast.success("好友申请已发送");
             // Bot auto_approve=1 时会自动通过，刷新状态

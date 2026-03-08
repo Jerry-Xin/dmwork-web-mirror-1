@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { WKApp, WKBase, Provider, ErrorBoundary } from "@dmwork/base"
 import { listen } from '@tauri-apps/api/event'
-// import Provider from "limbase/src/Service/Provider";
 import { MainPage } from "../Pages/Main";
 import SpaceGate from "../Components/SpaceGate";
 import { Notification as NotificationUI, Button } from '@douyinfe/semi-ui';

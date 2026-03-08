@@ -30,17 +30,6 @@ export default class ContactsModule implements IModule {
       }
     );
 
-    // 获取好友未申请添加数量
-    // let unreadCount = 0;
-    // if(WKApp.loginInfo.isLogined()){
-    //   WKApp.apiClient.get(`/user/reddot/friendApply`).then(res=>{
-    //     unreadCount = res.count;
-    //     console.log('====', unreadCount)
-    //     WKApp.mittBus.emit('friend-applys-unread-count', unreadCount)
-    //     WKApp.menus.refresh();
-    //   })
-    // }
-
     WKApp.endpoints.registerContactsHeader("friends.new", (param: any) => {
       return (
         <IconListItem
@@ -104,7 +93,6 @@ export default class ContactsModule implements IModule {
         },
       };
     });
-    // this.registerOrganizational();
 
     WKApp.endpoints.registerOrganizationalTool(
       "contacts.organizational.group.add",

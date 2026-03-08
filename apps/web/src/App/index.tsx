@@ -46,11 +46,8 @@ async function registerMenus() {
     return m
   }, 1000)
 
-  // 获取好友未申请添加数量
-  // let unreadCount = 0;
   if (WKApp.loginInfo.isLogined()) {
     WKApp.apiClient.get(`/user/reddot/friendApply`).then(res => {
-      // unreadCount = res.count;
       WKApp.mittBus.emit('friend-applys-unread-count', res.count)
       WKApp.loginInfo.setStorageItem(`${WKApp.loginInfo.uid}-friend-applys-unread-count`, res.count)
       WKApp.menus.refresh();

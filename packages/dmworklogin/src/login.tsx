@@ -310,17 +310,6 @@ class Login extends Component<any, LoginState> {
                         </div>
 
                     </div>
-
-                    {/* <div className="wk-login-footer">
-                        <ul>
-                            <li>注册DMWork</li>
-                            <li>忘记密码</li>
-                            <li>隐私政策</li>
-                            <li>用户协议</li>
-                            <li> © 上海信必达网络科技有限公司</li>
-                        </ul>
-
-                    </div> */}
                 </div>
 
 

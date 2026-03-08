@@ -4,6 +4,7 @@ import "./index.css"
 import MainVM from "./vm";
 import { TabNormalScreen } from "./tab_normal_screen";
 import { Space, SpaceService } from "@dmwork/base/src/Service/SpaceService";
+import SpaceCreate from "@dmwork/base/src/Components/SpaceCreate";
 import { Toast } from "@douyinfe/semi-ui";
 import { IconSearch } from "@douyinfe/semi-icons";
 import classNames from "classnames";
@@ -18,6 +19,7 @@ export interface MainContentLeftState {
 interface MainContentLeftFullState {
     allSpaces: Space[];
     showSpaceDropdown: boolean;
+showSpaceCreate: boolean;
 }
 
 export class MainContentLeft extends Component<MainContentLeftProps, MainContentLeftFullState>{
@@ -26,6 +28,7 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
         this.state = {
             allSpaces: [],
             showSpaceDropdown: false,
+            showSpaceCreate: false,
         }
     }
 
@@ -91,7 +94,7 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                                 );
                             })}
                             <div className="wk-global-topbar-dropdown-divider"></div>
-                            <div className="wk-global-topbar-dropdown-item" onClick={() => this.setState({ showSpaceDropdown: false })}>
+                            <div className="wk-global-topbar-dropdown-item" onClick={() => this.setState({ showSpaceDropdown: false, showSpaceCreate: true })}>
                                 <span className="wk-global-topbar-space-icon" style={{ backgroundColor: '#e0e0e0', color: '#666', width: 24, height: 24, fontSize: 14 }}>+</span>
                                 <span style={{ flex: 1, color: '#5b6abf' }}>加入 / 创建 Space</span>
                             </div>
@@ -108,6 +111,16 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                     </div>
                 })}
             </div>
+            <SpaceCreate
+                visible={this.state.showSpaceCreate}
+                onClose={() => {
+                    this.setState({ showSpaceCreate: false });
+                    // 刷新 Space 列表
+                    SpaceService.shared.getMySpaces().then(spaces => {
+                        this.setState({ allSpaces: spaces });
+                    }).catch(() => {});
+                }}
+            />
         </div>
     }
 }

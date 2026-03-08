@@ -20,6 +20,14 @@ const ALLOWED_INVOKE_CHANNELS = [
 const ALLOWED_RECEIVE_CHANNELS = [
   "notification-clicked",
   "notification-action-clicked",
+  "screenshots-ok",
+  "deep-link",
+  "show-conversations",
+  "update-error",
+  "update-available",
+  "update-not-available",
+  "download-progress",
+  "update-downloaded",
 ];
 
 contextBridge.exposeInMainWorld("__POWERED_ELECTRON__", true);

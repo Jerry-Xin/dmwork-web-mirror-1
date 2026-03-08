@@ -106,7 +106,7 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             const resp = await fetch(`${WKApp.apiClient.config.apiURL}user/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+                body: JSON.stringify({ username: loginUsername, password: loginPassword, flag: 1 }),
             });
             const data = await resp.json();
             if (!resp.ok) { Toast.error(data.msg || "登录失败"); this.safeSetState({ loginLoading: false }); return; }
@@ -146,7 +146,7 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             const loginResp = await fetch(`${WKApp.apiClient.config.apiURL}user/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: regUsername, password: regPassword }),
+                body: JSON.stringify({ username: regUsername, password: regPassword, flag: 1 }),
             });
             const loginData = await loginResp.json();
             if (!loginResp.ok) { Toast.error("注册成功但登录失败"); this.safeSetState({ regLoading: false }); return; }

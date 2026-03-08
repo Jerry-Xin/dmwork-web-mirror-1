@@ -53,6 +53,13 @@
     height: 44px !important;
     font-size: 16px !important;
     border-radius: 8px !important;
+    background-color: #5b6abf !important;
+    border-color: #5b6abf !important;
+}
+
+.invite-landing-btn:hover {
+    background-color: #4a59ae !important;
+    border-color: #4a59ae !important;
 }
 
 .invite-landing-error {
@@ -61,9 +68,8 @@
     margin-bottom: 24px;
 }
 
-.invite-landing-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
+.invite-landing-hint {
+    font-size: 15px;
+    color: #888;
+    margin-bottom: 20px;
 }

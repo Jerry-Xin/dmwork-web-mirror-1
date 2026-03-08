@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { WKApp } from "@dmwork/base";
-import { Button, Input, Spin, Toast, Divider } from "@douyinfe/semi-ui";
+import { Button, Spin, Toast } from "@douyinfe/semi-ui";
 import "./index.css";
 
 interface InviteLandingProps {
@@ -19,26 +19,15 @@ interface InviteLandingState {
     info?: InviteInfo;
     error?: string;
     joining: boolean;
-    // login form
-    loginUsername: string;
-    loginPassword: string;
-    loginLoading: boolean;
-    // register form
-    regUsername: string;
-    regPassword: string;
-    regLoading: boolean;
 }
 
 export default class InviteLanding extends Component<InviteLandingProps, InviteLandingState> {
     state: InviteLandingState = {
-        loading: true, joining: false,
-        loginUsername: '', loginPassword: '', loginLoading: false,
-        regUsername: '', regPassword: '', regLoading: false,
+        loading: true,
+        joining: false,
     };
 
     private isUnmounted = false;
-    private loginInProgress = false;
-    private registerInProgress = false;
     private joinInProgress = false;
     private redirecting = false;
 
@@ -101,92 +90,12 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
         }
     }
 
-    async handleLogin() {
-        if (this.loginInProgress) return;
-        this.loginInProgress = true;
-        const { loginUsername, loginPassword } = this.state;
-        if (!loginUsername || !loginPassword) { Toast.warning("请输入用户名和密码"); this.loginInProgress = false; return; }
-        this.safeSetState({ loginLoading: true });
-        try {
-            const resp = await fetch(`${WKApp.apiClient.config.apiURL}user/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: loginUsername, password: loginPassword, flag: 1 }),
-            });
-            const data = await resp.json();
-            if (!resp.ok) { Toast.error(data.msg || "登录失败"); this.safeSetState({ loginLoading: false }); return; }
-            // Save login info
-            WKApp.loginInfo.uid = data.uid;
-            WKApp.loginInfo.token = data.token;
-            WKApp.loginInfo.name = data.name;
-            WKApp.loginInfo.shortNo = data.short_no;
-            WKApp.loginInfo.save();
-            Toast.success("登录成功");
-            // Join space then reload
-            await this.joinAfterAuth();
-        } catch (e) {
-            Toast.error("网络错误");
-            this.safeSetState({ loginLoading: false });
-        } finally {
-            this.loginInProgress = false;
-        }
-    }
-
-    async handleRegister() {
-        if (this.registerInProgress) return;
-        this.registerInProgress = true;
-        const { regUsername, regPassword } = this.state;
-        if (!regUsername || !regPassword) { Toast.warning("请输入用户名和密码"); this.registerInProgress = false; return; }
-        this.safeSetState({ regLoading: true });
-        try {
-            // Register using usernameregister API (no code required)
-            const regResp = await fetch(`${WKApp.apiClient.config.apiURL}user/usernameregister`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: regUsername, name: regUsername, password: regPassword, flag: 1 }),
-            });
-            const regData = await regResp.json();
-            if (!regResp.ok) { Toast.error(regData.msg || "注册失败"); this.safeSetState({ regLoading: false }); return; }
-            // 注册响应已包含 token，直接使用，不要再调 login（避免 token 竞态）
-            const userData = regData.data || regData;
-            WKApp.loginInfo.uid = userData.uid;
-            WKApp.loginInfo.token = userData.token;
-            WKApp.loginInfo.name = userData.name;
-            WKApp.loginInfo.shortNo = userData.short_no;
-            WKApp.loginInfo.save();
-            Toast.success("注册成功");
-            await this.joinAfterAuth();
-        } catch (e) {
-            Toast.error("网络错误");
-            this.safeSetState({ regLoading: false });
-        } finally {
-            this.registerInProgress = false;
-        }
-    }
-
-    async joinAfterAuth() {
-        try {
-            // Use raw fetch with token since WKApp.apiClient may not have updated token yet
-            const resp = await fetch(`${WKApp.apiClient.config.apiURL}space/join`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'token': WKApp.loginInfo.token || '' },
-                body: JSON.stringify({ invite_code: this.props.inviteCode }),
-            });
-            if (!resp.ok) {
-                Toast.error("加入 Space 失败");
-                return;
-            }
-        } catch (e) {
-            Toast.error("网络错误，加入失败");
-            return;
-        }
-        // 设置 currentSpaceId，避免刷新后 SpaceGate 竞态导致选择器不显示
-        const spaceId = this.state.info?.space_id;
-        if (spaceId) {
-            localStorage.setItem('currentSpaceId', spaceId);
-            WKApp.shared.currentSpaceId = spaceId;
-        }
-        this.redirectToClean();
+    handleGoLogin() {
+        // 保存邀请码到 localStorage，登录成功后 onLogin 回调会读取并跳转回来
+        localStorage.setItem("pendingInviteCode", this.props.inviteCode);
+        // 跳转到登录页
+        const basePath = window.location.pathname.replace(/\/+$/, '') || '/';
+        window.location.href = `${window.location.origin}${basePath}/login`;
     }
 
     render() {
@@ -232,28 +141,11 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
                         </Button>
                     ) : (
                         <>
-                            <Divider>已有账号？</Divider>
-                            <div className="invite-landing-form">
-                                <Input placeholder="用户名" value={this.state.loginUsername}
-                                    onChange={v => this.setState({ loginUsername: v })} />
-                                <Input placeholder="密码" type="password" value={this.state.loginPassword}
-                                    onChange={v => this.setState({ loginPassword: v })} />
-                                <Button type="primary" size="large" loading={this.state.loginLoading}
-                                    className="invite-landing-btn" onClick={() => this.handleLogin()}>
-                                    登录并加入
-                                </Button>
-                            </div>
-                            <Divider>新用户</Divider>
-                            <div className="invite-landing-form">
-                                <Input placeholder="用户名" value={this.state.regUsername}
-                                    onChange={v => this.setState({ regUsername: v })} />
-                                <Input placeholder="密码" type="password" value={this.state.regPassword}
-                                    onChange={v => this.setState({ regPassword: v })} />
-                                <Button type="secondary" size="large" loading={this.state.regLoading}
-                                    className="invite-landing-btn" onClick={() => this.handleRegister()}>
-                                    注册并加入
-                                </Button>
-                            </div>
+                            <div className="invite-landing-hint">登录或注册后加入该团队</div>
+                            <Button type="primary" size="large"
+                                className="invite-landing-btn" onClick={() => this.handleGoLogin()}>
+                                去登录
+                            </Button>
                         </>
                     )}
                 </div>

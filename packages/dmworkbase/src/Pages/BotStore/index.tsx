@@ -49,7 +49,7 @@ export default class BotStore extends Component<{}, BotStoreState> {
         try {
             const spaceId = WKApp.shared.currentSpaceId
             const [myRes, spaceRes] = await Promise.all([
-                WKApp.apiClient.get("/robot/my_bots"),
+                WKApp.apiClient.get("/robot/my_bots", spaceId ? { param: { space_id: spaceId } } : undefined),
                 spaceId ? WKApp.apiClient.get(`/robot/space_bots`, { param: { space_id: spaceId } }) : Promise.resolve([]),
             ])
             this.setState({

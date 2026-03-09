@@ -91,11 +91,12 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
     }
 
     handleGoLogin() {
-        // 保存邀请码到 localStorage，登录成功后 onLogin 回调会读取并跳转回来
+        // 保存邀请码到 localStorage，登录成功后 onLogin 回调会读取并自动加入
         localStorage.setItem("pendingInviteCode", this.props.inviteCode);
-        // 跳转到登录页
-        const basePath = window.location.pathname.replace(/\/+$/, '') || '/';
-        window.location.href = `${window.location.origin}${basePath}/login`;
+        // 跳转到登录页：去掉 invite 参数，让 Layout 走正常登录流程
+        const url = new URL(window.location.href);
+        url.searchParams.delete("invite");
+        window.location.href = url.toString();
     }
 
     render() {

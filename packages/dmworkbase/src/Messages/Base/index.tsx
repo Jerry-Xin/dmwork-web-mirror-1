@@ -172,7 +172,19 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
             case MessageReasonCode.reasonNotAllowSend:
             case MessageReasonCode.reasonNotInWhitelist:
             case MessageReasonCode.reasonInBlacklist:
-                return "你已被禁言或全员禁言"
+                {
+                    const { context } = this.props
+                    if (context) {
+                        const ch = context.channel()
+                        if (ch && ch.channelType === ChannelTypePerson) {
+                            const chInfo = WKSDK.shared().channelManager.getChannelInfo(ch)
+                            if (chInfo?.orgData?.robot === 1) {
+                                return "请先添加好友后再与该机器人对话"
+                            }
+                        }
+                    }
+                    return "你已被禁言或全员禁言"
+                }
             case MessageReasonCode.reasonSystemError:
                 return "系统错误"
         }

@@ -39,9 +39,11 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
             const savedSpaceId = localStorage.getItem("currentSpaceId")
             if (savedSpaceId && spaces.find(s => s.space_id === savedSpaceId)) {
                 WKApp.shared.currentSpaceId = savedSpaceId
-            } else if (spaces.length > 0 && !WKApp.shared.currentSpaceId) {
+            } else if (spaces.length > 0) {
+                // savedSpaceId 不在列表中或 currentSpaceId 为空，fallback 到第一个
                 WKApp.shared.currentSpaceId = spaces[0].space_id
                 localStorage.setItem("currentSpaceId", spaces[0].space_id)
+                this.forceUpdate()
             }
         }).catch(() => {});
     }

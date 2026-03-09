@@ -327,7 +327,11 @@ export class LoginVM extends ProviderListener {
         loginInfo.sex = data.sex ?? 0
         loginInfo.save()
 
-        WKApp.endpoints.callOnLogin()
+        try {
+            WKApp.endpoints.callOnLogin()
+        } catch (e) {
+            console.warn('callOnLogin error suppressed:', e)
+        }
     }
 
     requestUUID() {

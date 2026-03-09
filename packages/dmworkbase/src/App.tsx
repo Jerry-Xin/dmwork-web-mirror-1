@@ -449,7 +449,7 @@ export default class WKApp extends ProviderListener {
       }
       return WKApp.dataSource.commonDataSource.getImageURL(logo);
     }
-    const baseURL = WKApp.apiClient.config.apiURL;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     if (channel.channelType === ChannelTypePerson) {
       // 从 Space channel_id 中提取真实 uid
       let uid = channel.channelID;
@@ -458,9 +458,9 @@ export default class WKApp extends ProviderListener {
         uid = uid.substring(spaceId.length + 2);
       }
       if (!uid) uid = channel.channelID; // fallback
-      return `${baseURL}users/${uid}/avatar?v=${avatarTag}`;
+      return `${origin}/file/users/${uid}/avatar?v=${avatarTag}`;
     } else if (channel.channelType === ChannelTypeGroup) {
-      return `${baseURL}groups/${channel.channelID}/avatar?v=${avatarTag}`;
+      return `${origin}/file/groups/${channel.channelID}/avatar?v=${avatarTag}`;
     }
     return "";
   }
@@ -471,8 +471,8 @@ export default class WKApp extends ProviderListener {
   }
 
   avatarOrg(orgID: string) {
-    const baseURL = WKApp.apiClient.config.apiURL;
-    return `${baseURL}organizations/${orgID}/logo`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/file/organizations/${orgID}/logo`;
   }
 
   // 我的用户头像发送改变

@@ -137,8 +137,12 @@ export class ChatVM extends ProviderListener {
                 WKApp.shared.currentSpaceId = _space.space_id
             }
             WKSDK.shared().conversationManager.conversations = []
-            this.selectedConversation = undefined // 清空右侧聊天窗口
+            this.selectedConversation = undefined // 清空选中的会话
             WKApp.shared.openChannel = undefined // 清空全局打开的频道
+            this._showChannelSetting = false // 关闭频道设置面板
+            // 强制关闭右侧聊天窗口，防止跨 Space 消息污染
+            WKApp.routeRight.popToRoot()
+            WKApp.shared.notifyListener()
             this.requestConversationList()
         }
         WKApp.mittBus.on('space-changed', this.spaceChangedHandler)

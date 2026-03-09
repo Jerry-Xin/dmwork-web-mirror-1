@@ -238,13 +238,7 @@ export class CommonDataSource implements ICommonDataSource {
             const origin = typeof window !== 'undefined' ? window.location.origin : ''
             return `${origin}/${path.replace(/^file\/preview\//, "file/")}`
         }
-        // Avatar and other MinIO-stored paths use public MinIO URL (no auth needed)
-        // Includes: groups/xxx/avatar, users/xxx/avatar, etc.
-        if (/^(groups|users|chat|common)\//.test(path)) {
-            const origin = typeof window !== 'undefined' ? window.location.origin : ''
-            return `${origin}/file/${path}`
-        }
-        // All other paths go through API
+        // All other paths go through API (e.g. users/xxx/avatar)
         const baseURL = WKApp.apiClient.config.apiURL
         return `${baseURL}${path}`
     }
@@ -258,10 +252,6 @@ export class CommonDataSource implements ICommonDataSource {
         if (path.startsWith('file/preview/')) {
             const origin = typeof window !== 'undefined' ? window.location.origin : ''
             return `${origin}/${path.replace(/^file\/preview\//, "file/")}`
-        }
-        if (/^(groups|users|chat|common)\//.test(path)) {
-            const origin = typeof window !== 'undefined' ? window.location.origin : ''
-            return `${origin}/file/${path}`
         }
         const baseURL = WKApp.apiClient.config.apiURL
         return `${baseURL}${path}`

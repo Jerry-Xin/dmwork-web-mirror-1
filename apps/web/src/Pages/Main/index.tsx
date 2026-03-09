@@ -94,8 +94,26 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                                                 const detail = await WKApp.apiClient.get(`/space/${space.space_id}`);
                                                 if (detail.invite_code) {
                                                     const link = `${window.location.origin}${window.location.pathname}?invite=${detail.invite_code}`;
-                                                    await navigator.clipboard.writeText(link);
-                                                    Toast.success("邀请链接已复制");
+                                                    let copied = false;
+                                                    try {
+                                                        await navigator.clipboard.writeText(link);
+                                                        copied = true;
+                                                    } catch {
+                                                        // iOS Safari: clipboard API fails outside synchronous click handler
+                                                        const textarea = document.createElement("textarea");
+                                                        textarea.value = link;
+                                                        textarea.style.position = "fixed";
+                                                        textarea.style.opacity = "0";
+                                                        document.body.appendChild(textarea);
+                                                        textarea.select();
+                                                        copied = document.execCommand("copy");
+                                                        document.body.removeChild(textarea);
+                                                    }
+                                                    if (copied) {
+                                                        Toast.success("邀请链接已复制");
+                                                    } else {
+                                                        Toast.error("复制失败，请手动复制");
+                                                    }
                                                 } else { Toast.warning("该 Space 暂无邀请码"); }
                                             } catch { Toast.error("获取邀请码失败"); }
                                         }}>🔗</span>

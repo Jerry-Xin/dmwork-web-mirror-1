@@ -114,6 +114,10 @@ export default class AppLayout extends Component {
         const urlParams = new URLSearchParams(window.location.search);
         const inviteCode = urlParams.get("invite");
         if (inviteCode) {
+            // 确保登录信息已加载（Provider 未初始化时 token 为空）
+            if (!WKApp.loginInfo.token) {
+                WKApp.loginInfo.load();
+            }
             return <InviteLanding inviteCode={inviteCode} />;
         }
 

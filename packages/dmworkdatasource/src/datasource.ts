@@ -233,10 +233,14 @@ export class CommonDataSource implements ICommonDataSource {
                 return path
             }
         }
+        // file/preview/* paths use public MinIO URL (no auth needed)
+        if (path.startsWith('file/preview/')) {
+            const origin = typeof window !== 'undefined' ? window.location.origin : ''
+            return `${origin}/${path.replace(/^file\/preview\//, "file/")}`
+        }
+        // All other paths go through API (e.g. users/xxx/avatar)
         const baseURL = WKApp.apiClient.config.apiURL
-        const origin = new URL(baseURL).origin
-        const cleanPath = path.replace(/^file\/preview\//, "file/")
-        return `${origin}/${cleanPath}`
+        return `${baseURL}${path}`
     }
     getFileURL(path: string): string {
         if (path && path.length > 4) {
@@ -245,10 +249,12 @@ export class CommonDataSource implements ICommonDataSource {
                 return path
             }
         }
+        if (path.startsWith('file/preview/')) {
+            const origin = typeof window !== 'undefined' ? window.location.origin : ''
+            return `${origin}/${path.replace(/^file\/preview\//, "file/")}`
+        }
         const baseURL = WKApp.apiClient.config.apiURL
-        const origin = new URL(baseURL).origin
-        const cleanPath = path.replace(/^file\/preview\//, "file/")
-        return `${origin}/${cleanPath}`
+        return `${baseURL}${path}`
     }
 
 

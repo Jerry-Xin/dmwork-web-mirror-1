@@ -46,7 +46,6 @@ export class LoginVM extends ProviderListener {
 
     // ---------- 邮箱注册方式 ----------
     registerEmail?:string
-    registerEmailCode?:string
     registerEmailPassword?:string
     registerEmailConfirmPassword?:string
     registerEmailName?:string
@@ -255,12 +254,12 @@ export class LoginVM extends ProviderListener {
         })
     }
 
-    async requestEmailRegister(email: string, code: string, password: string, name: string) {
+    async requestEmailRegister(email: string, password: string, name: string) {
         this.registerLoading = true
         this.notifyListener()
         const device = this.getDevice()
         return WKApp.apiClient.post('user/emailregister', {
-            email, code, password, name, flag: 1, device,
+            email, password, name, flag: 1, device,
         }).then((result) => {
             // emailregister wraps response in {data: ...}
             this.loginSuccess(result)

@@ -147,20 +147,6 @@ class Login extends Component<any, LoginState> {
                             <input type="email" name="reg-email" autoComplete="email" placeholder="邮箱" onChange={(v) => {
                                 vm.registerEmail = v.target.value
                             }}></input>
-                            <div className="wk-login-content-form-code-row">
-                                <input type="text" name="reg-code" autoComplete="one-time-code" placeholder="验证码" onChange={(v) => {
-                                    vm.registerEmailCode = v.target.value
-                                }}></input>
-                                <Button className="wk-login-content-form-code-btn" disabled={vm.emailCodeCountdown > 0 || vm.emailCodeSending} loading={vm.emailCodeSending} onClick={() => {
-                                    if (!vm.registerEmail || !isValidEmail(vm.registerEmail)) {
-                                        Toast.error("请输入正确的邮箱地址！")
-                                        return
-                                    }
-                                    vm.requestEmailSendCode(vm.registerEmail, 0).catch((err) => {
-                                        Toast.error(sanitizeErrorMessage(err.msg))
-                                    })
-                                }}>{vm.emailCodeCountdown > 0 ? `${vm.emailCodeCountdown}s` : '发送验证码'}</Button>
-                            </div>
                             <input type="text" name="reg-name" autoComplete="name" placeholder="昵称" onChange={(v) => {
                                 vm.registerEmailName = v.target.value
                             }}></input>
@@ -178,10 +164,6 @@ class Login extends Component<any, LoginState> {
                                         Toast.error("请输入正确的邮箱地址！")
                                         return
                                     }
-                                    if (!vm.registerEmailCode) {
-                                        Toast.error("验证码不能为空！")
-                                        return
-                                    }
                                     if (!vm.registerEmailName) {
                                         Toast.error("昵称不能为空！")
                                         return
@@ -195,7 +177,7 @@ class Login extends Component<any, LoginState> {
                                         Toast.error("两次密码输入不一致！")
                                         return
                                     }
-                                    vm.requestEmailRegister(vm.registerEmail, vm.registerEmailCode, vm.registerEmailPassword, vm.registerEmailName).catch((err) => {
+                                    vm.requestEmailRegister(vm.registerEmail, vm.registerEmailPassword, vm.registerEmailName).catch((err) => {
                                         Toast.error(sanitizeErrorMessage(err.msg))
                                     })
                                 }}>注册</Button>

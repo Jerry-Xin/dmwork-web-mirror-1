@@ -89,6 +89,12 @@ class Login extends Component<any, LoginState> {
                             }}></input>
                             <div className="wk-login-content-form-buttons">
                                 <Button loading={vm.loginLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
+                                    // 兼容移动端自动填充不触发 onChange
+                                    const usernameEl = document.querySelector<HTMLInputElement>('input[name="username"]')
+                                    const passwordEl = document.querySelector<HTMLInputElement>('input[name="password"]')
+                                    if (usernameEl?.value && !vm.username) vm.username = usernameEl.value
+                                    if (passwordEl?.value && !vm.password) vm.password = passwordEl.value
+
                                     if (!vm.username) {
                                         Toast.error("邮箱或用户名不能为空！")
                                         return

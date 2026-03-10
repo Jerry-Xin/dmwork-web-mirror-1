@@ -40,7 +40,7 @@ export default class AppLayout extends Component {
                         const msg = e?.msg || '';
                         if (msg.includes('已满') || msg.includes('SPACE_FULL')) {
                             // 满员：不清 pendingInviteCode，留重试机会
-                            alert('空间已满，请稍后重试');
+                            import('@douyinfe/semi-ui').then(({ Toast }) => Toast.error('空间已满，无法加入'));
                         } else if (msg.includes('已是成员') || msg.includes('already')) {
                             // 已是成员：静默处理
                             localStorage.removeItem("pendingInviteCode");

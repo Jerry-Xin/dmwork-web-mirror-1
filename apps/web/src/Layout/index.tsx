@@ -27,17 +27,29 @@ export default class AppLayout extends Component {
             // 检查是否有待处理的邀请码（验证格式防止 XSS/Open Redirect）
             const pendingInvite = localStorage.getItem("pendingInviteCode");
             if (pendingInvite && /^[a-zA-Z0-9_-]+$/.test(pendingInvite)) {
-                localStorage.removeItem("pendingInviteCode");
                 // 自动加入 Space，不再跳回邀请页
                 WKApp.apiClient.post(`/space/join`, { invite_code: pendingInvite })
                     .then((result: any) => {
+                        localStorage.removeItem("pendingInviteCode");
                         const spaceId = result?.space_id;
                         if (spaceId) {
                             localStorage.setItem('currentSpaceId', spaceId);
                         }
                     })
                     .catch((e: any) => {
-                        console.warn('Auto-join space failed:', e?.msg || e);
+                        const msg = e?.msg || '';
+                        if (msg.includes('已满') || msg.includes('SPACE_FULL')) {
+                            // 满员：不清 pendingInviteCode，留重试机会
+                            alert('空间已满，请稍后重试');
+                        } else if (msg.includes('已是成员') || msg.includes('already')) {
+                            // 已是成员：静默处理
+                            localStorage.removeItem("pendingInviteCode");
+                            if (e?.space_id) localStorage.setItem('currentSpaceId', e.space_id);
+                        } else {
+                            // 邀请码无效/过期
+                            localStorage.removeItem("pendingInviteCode");
+                            console.warn('Auto-join space failed:', msg);
+                        }
                     })
                     .finally(() => {
                         goMain();

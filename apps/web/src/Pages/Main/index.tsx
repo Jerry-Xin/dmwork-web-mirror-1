@@ -44,6 +44,12 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                 WKApp.shared.currentSpaceId = spaces[0].space_id
                 localStorage.setItem("currentSpaceId", spaces[0].space_id)
                 this.forceUpdate()
+            } else {
+                // 无 Space：清除状态，回到 SpaceGate 引导页
+                WKApp.shared.currentSpaceId = ''
+                WKApp.shared.spaceChecked = false
+                localStorage.removeItem("currentSpaceId")
+                try { WKApp.shared.notifyListener(); } catch (_) {}
             }
         }).catch(() => {});
     }

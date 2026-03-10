@@ -166,6 +166,16 @@ class Login extends Component<any, LoginState> {
                             }}></input>
                             <div className="wk-login-content-form-buttons">
                                 <Button loading={vm.registerLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
+                                    // 兼容移动端自动填充不触发 onChange
+                                    const regEmailEl = document.querySelector<HTMLInputElement>('input[name="reg-email"]')
+                                    const regNameEl = document.querySelector<HTMLInputElement>('input[name="reg-name"]')
+                                    const regPwdEl = document.querySelector<HTMLInputElement>('input[name="reg-password"]')
+                                    const regConfirmEl = document.querySelector<HTMLInputElement>('input[name="reg-confirm-password"]')
+                                    if (regEmailEl?.value && !vm.registerEmail) vm.registerEmail = regEmailEl.value
+                                    if (regNameEl?.value && !vm.registerEmailName) vm.registerEmailName = regNameEl.value
+                                    if (regPwdEl?.value && !vm.registerEmailPassword) vm.registerEmailPassword = regPwdEl.value
+                                    if (regConfirmEl?.value && !vm.registerEmailConfirmPassword) vm.registerEmailConfirmPassword = regConfirmEl.value
+
                                     if (!vm.registerEmail || !isValidEmail(vm.registerEmail)) {
                                         Toast.error("请输入正确的邮箱地址！")
                                         return

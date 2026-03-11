@@ -14,7 +14,7 @@ export default class AppLayout extends Component {
     onLogin!: () => void
     componentDidMount() {
         this.onLogin = () => {
-            Notification.requestPermission() // 请求通知权限
+            try { Notification.requestPermission() } catch(_) {} // 请求通知权限（iOS 不支持，忽略错误）
             const basePath = (window.location.pathname.replace(/\/login\/?$/, '').replace(/\/index\.html$/, '') || '/').replace(/\/+$/, '')
             // 保留原始 sid（如果有），不随机生成新的
             const existingSid = getQueryParam("sid") || ""

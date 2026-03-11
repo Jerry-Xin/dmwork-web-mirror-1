@@ -255,26 +255,21 @@ body[theme-mode=dark] .wk-contacts-section-item  {
     font-weight: 600;
     color: var(--text-tertiary);
     background: var(--bg-secondary, var(--wk-color-secondary));
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    contain: layout;
 }
 
 /* 右侧字母索引条 */
 .wk-contacts-letter-index {
-    position: sticky;
-    bottom: 0;
+    position: absolute;
+    top: 0;
     right: 0;
-    float: right;
+    bottom: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     padding: 4px 2px;
     z-index: 2;
-    margin-top: -100%;
     pointer-events: none;
-    contain: layout;
 }
 .wk-contacts-letter-index-item {
     font-size: 10px;

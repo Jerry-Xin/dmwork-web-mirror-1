@@ -451,58 +451,39 @@ export default class ContactsList extends Component<any, ContactsState> {
                     {count > 0 && <span className="wk-contacts-accordion-count">({count})</span>}
                 </div>
                 {isExpanded && (
-                    <div className="wk-contacts-accordion-body" style={(section === 'members' || section === 'bots') ? { position: 'relative' } : undefined}>
+                    <div className="wk-contacts-accordion-body">
                         {(section === 'members' || section === 'bots') ? (() => {
-                            const grouped = this.groupByLetter(items)
-                            const letters = Array.from(grouped.keys())
+                            // 按拼音排序，不显示字母分组头和索引条
+                            const sorted = [...items].sort((a, b) => {
+                                const na = (a.remark || a.name || '').replace(/\*\*/g, '')
+                                const nb = (b.remark || b.name || '').replace(/\*\*/g, '')
+                                const pa = getPinyin(toSimplized(na)).toUpperCase()
+                                const pb = getPinyin(toSimplized(nb)).toUpperCase()
+                                return pa.localeCompare(pb)
+                            })
                             return (
                                 <>
-                                    {letters.map((letter) => (
-                                        <div key={letter}>
-                                            <div id={`contact-letter-${letter}`} className="wk-contacts-letter-header">
-                                                {letter}
-                                            </div>
-                                            {grouped.get(letter)!.map((item) => {
-                                                let name = (item.name || '').replace(/\*\*/g, '')
-                                                if (item.remark && item.remark !== "") name = item.remark
-                                                return (
-                                                    <div key={item.uid} className="wk-contacts-section-item" onClick={() => {
-                                                        if (item.robot === true && item.uid !== 'botfather') {
-                                                            this.setState({ botDetailUid: item.uid, botDetailVisible: true })
-                                                            return
-                                                        }
-                                                        WKApp.endpoints.showConversation(new Channel(item.uid, ChannelTypePerson))
-                                                    }}>
-                                                        <div className="wk-contacts-section-item-avatar">
-                                                            <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)}></WKAvatar>
-                                                        </div>
-                                                        <div className="wk-contacts-section-item-name">
-                                                            {name}
-                                                            {item.robot === true && <AiBadge />}
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    ))}
-                                    {letters.length > 1 && (
-                                        <div className="wk-contacts-letter-index">
-                                            {letters.map((letter) => (
-                                                <div
-                                                    key={letter}
-                                                    className={classnames("wk-contacts-letter-index-item", this.state.hoveredLetter === letter && "wk-contacts-letter-index-active")}
-                                                    onMouseEnter={() => this.setState({ hoveredLetter: letter })}
-                                                    onMouseLeave={() => this.setState({ hoveredLetter: null })}
-                                                    onClick={() => {
-                                                        const el = document.getElementById(`contact-letter-${letter}`)
-                                                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                                                    }}
-                                                >
-                                                    {letter}
+                                    {sorted.map((item) => {
+                                        let name = (item.name || '').replace(/\*\*/g, '')
+                                        if (item.remark && item.remark !== "") name = item.remark
+                                        return (
+                                            <div key={item.uid} className="wk-contacts-section-item" onClick={() => {
+                                                if (item.robot === true && item.uid !== 'botfather') {
+                                                    this.setState({ botDetailUid: item.uid, botDetailVisible: true })
+                                                    return
+                                                }
+                                                WKApp.endpoints.showConversation(new Channel(item.uid, ChannelTypePerson))
+                                            }}>
+                                                <div className="wk-contacts-section-item-avatar">
+                                                    <WKAvatar channel={new Channel(item.uid, ChannelTypePerson)}></WKAvatar>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                                <div className="wk-contacts-section-item-name">
+                                                    {name}
+                                                    {item.robot === true && <AiBadge />}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
                                 </>
                             )
                         })() : items.map((item) => {

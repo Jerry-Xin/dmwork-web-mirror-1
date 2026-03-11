@@ -1246,6 +1246,16 @@ export default class ConversationVM extends ProviderListener {
 
     // 发送消息
     async sendMessage(content: MessageContent, channel: Channel): Promise<Message> {
+        // DM 消息注入 space_id，让 BotFather 等 Bot 知道用户当前 Space
+        const spaceId = WKApp.shared.currentSpaceId
+        if (spaceId && channel.channelType === ChannelTypePerson) {
+            const originalEncodeJSON = content.encodeJSON.bind(content)
+            content.encodeJSON = () => {
+                const obj = originalEncodeJSON()
+                obj.space_id = spaceId
+                return obj
+            }
+        }
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
         let setting = new Setting()
         if (channelInfo?.orgData.receipt === 1) {

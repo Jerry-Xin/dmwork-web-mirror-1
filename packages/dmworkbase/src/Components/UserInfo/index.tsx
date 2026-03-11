@@ -49,20 +49,39 @@ export default class UserInfo extends Component<UserInfoProps> {
                 WKApp.endpoints.showConversation(new Channel(vm.uid, ChannelTypePerson))
             }}>发送消息</Button>
         } else if (isBot) {
-            // Bot 未加好友：显示添加好友按钮（Bot 自动通过，无需 vercode）
-            content = <Button theme='solid' type="primary" onClick={async () => {
-                try {
-                    await WKApp.dataSource.commonDataSource.friendApply({
-                        uid: vm.uid,
-                        remark: `我想使用${vm.displayName()}`,
-                        vercode: vm.vercode || ""
-                    })
-                    Toast.success("已添加好友")
-                    WKApp.shared.baseContext.hideUserInfo()
-                    WKApp.endpoints.showConversation(new Channel(vm.uid, ChannelTypePerson))
-                } catch (err: any) {
-                    Toast.error(err.msg || "添加好友失败")
-                }
+            // Bot 未加好友：走好友申请流程（BotFather 通知创建者审核）
+            content = <Button theme='solid' type="primary" onClick={() => {
+                let msg = `我想使用${vm.displayName()}`
+                var finishButtonContext: FinishButtonContext
+                context.push(<FriendApplyUI placeholder={msg} onMessage={(m) => {
+                    msg = m
+                    if (!m || m === "") {
+                        finishButtonContext.disable(true)
+                    } else {
+                        finishButtonContext.disable(false)
+                    }
+                }}></FriendApplyUI>, {
+                    title: "申请添加好友",
+                    showFinishButton: true,
+                    onFinishContext: (ctx) => {
+                        finishButtonContext = ctx
+                        finishButtonContext.disable(false)
+                    },
+                    onFinish: async () => {
+                        finishButtonContext.loading(true)
+                        await WKApp.dataSource.commonDataSource.friendApply({
+                            uid: vm.uid,
+                            remark: msg,
+                            vercode: vm.vercode || ""
+                        }).then(() => {
+                            Toast.success("好友申请已发送")
+                            WKApp.shared.baseContext.hideUserInfo()
+                        }).catch((err: any) => {
+                            Toast.error(err.msg || "申请失败")
+                        })
+                        finishButtonContext.loading(false)
+                    }
+                })
             }}>添加好友</Button>
         } else {
             if (!vm.vercode || vm.vercode === "") { // 没有验证码，不显示添加好友按钮

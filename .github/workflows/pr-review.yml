@@ -1,0 +1,20 @@
+name: Auto PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remind review needed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: '📋 **Review Required**\n\n此 PR 需要至少 1 人 review 后再 merge。\n\n- [ ] 功能验证\n- [ ] UI 在移动端正常\n- [ ] 无 console 报错',
+            });

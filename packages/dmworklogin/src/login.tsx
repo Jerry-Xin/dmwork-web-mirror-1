@@ -88,7 +88,9 @@ class Login extends Component<any, LoginState> {
                                 vm.password = v.target.value
                             }}></input>
                             <div className="wk-login-content-form-buttons">
-                                <Button loading={vm.loginLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
+                                <Button loading={vm.loginLoading} className="wk-login-content-form-ok" type='primary' theme='solid' 
+                                    onMouseDown={(e: React.MouseEvent) => { e.preventDefault() }}
+                                    onClick={async () => {
                                     // 兼容移动端自动填充不触发 onChange
                                     const usernameEl = document.querySelector<HTMLInputElement>('input[name="username"]')
                                     const passwordEl = document.querySelector<HTMLInputElement>('input[name="password"]')

@@ -125,7 +125,8 @@ export default class AppLayout extends Component {
         // 邀请链接检测
         const urlParams = new URLSearchParams(window.location.search);
         const inviteCode = urlParams.get("invite");
-        if (inviteCode) {
+        const action = urlParams.get("action");
+        if (inviteCode && action !== "login") {
             // 确保登录信息已加载（邀请页在 Provider 之前渲染）
             if (!WKApp.loginInfo.token) {
                 WKApp.loginInfo.load();

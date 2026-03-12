@@ -137,10 +137,8 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
     handleGoLogin() {
         // 保存邀请码到 localStorage，登录成功后 onLogin 回调会读取并自动加入
         localStorage.setItem("pendingInviteCode", this.props.inviteCode);
-        // 跳转到登录页：去掉 invite 参数，让 Layout 走正常登录流程
-        const url = new URL(window.location.href);
-        url.searchParams.delete("invite");
-        window.location.href = url.toString();
+        // 跳转到登录页，保留 invite 参数让登录页显示注册入口
+        window.location.href = `${window.location.origin}/web/?invite=${encodeURIComponent(this.props.inviteCode)}`;
     }
 
     render() {

@@ -5,12 +5,12 @@
 
 /* ---- Semi Design token overrides for login page ---- */
 .wk-login {
-    --semi-color-primary: var(--wk-color-theme, #6366F1);
+    --semi-color-primary: var(--wk-color-theme, #7C5CFC);
     /* fallback for Safari < 16.4 / Chrome < 111 */
     --semi-color-primary-hover: #5254d4;
-    --semi-color-primary-hover: color-mix(in srgb, var(--wk-color-theme, #6366F1) 85%, black);
+    --semi-color-primary-hover: color-mix(in srgb, var(--wk-color-theme, #7C5CFC) 85%, black);
     --semi-color-primary-active: #4446c0;
-    --semi-color-primary-active: color-mix(in srgb, var(--wk-color-theme, #6366F1) 75%, black);
+    --semi-color-primary-active: color-mix(in srgb, var(--wk-color-theme, #7C5CFC) 75%, black);
 
     display: flex;
     min-height: 100vh;
@@ -32,7 +32,7 @@
     min-height: 100vh;
     padding: 60px 64px;
     box-sizing: border-box;
-    background: linear-gradient(135deg, var(--wk-color-theme, #3370ff) 0%, #5b8cff 60%, #8ab4ff 100%);
+    background: var(--wk-brand-gradient, linear-gradient(135deg, #7C5CFC, #00D4AA));
     position: relative;
     overflow: hidden;
 }
@@ -293,7 +293,7 @@
 }
 
 .wk-login-content-form input:focus {
-    border-color: var(--wk-color-theme, #3370ff);
+    border-color: var(--wk-color-theme, #7C5CFC);
     box-shadow: 0 0 0 3px rgba(51, 112, 255, 0.12);
     background: var(--semi-color-bg-0, #fff);
 }
@@ -347,11 +347,11 @@
 }
 
 .wk-login-content-form-scanlogin:hover {
-    color: var(--wk-color-theme, #3370ff);
+    color: var(--wk-color-theme, #7C5CFC);
 }
 
 .wk-login-content-form-switch {
-    color: var(--wk-color-theme, #3370ff);
+    color: var(--wk-color-theme, #7C5CFC);
     font-size: 14px;
     cursor: pointer;
     font-weight: 500;
@@ -432,7 +432,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--wk-color-theme, #6366F1);
+    color: var(--wk-color-theme, #7C5CFC);
     box-shadow: 0 2px 6px rgba(99, 102, 241, 0.08);
     flex-shrink: 0;
 }
@@ -584,7 +584,7 @@
     height: 22px;
     padding: 0;
     margin: 0 10px 0 0;
-    background: var(--wk-color-theme, #3370ff);
+    background: var(--wk-color-theme, #7C5CFC);
     border-radius: 50%;
     font-size: 12px;
     color: #fff;
@@ -627,9 +627,9 @@
 
 .wk-login-footer-buttons button {
     background-color: transparent;
-    color: var(--wk-color-theme, #3370ff);
+    color: var(--wk-color-theme, #7C5CFC);
     outline: none !important;
-    border: 1.5px solid var(--wk-color-theme, #3370ff);
+    border: 1.5px solid var(--wk-color-theme, #7C5CFC);
     border-radius: 8px;
     height: 40px;
     display: flex;
@@ -671,8 +671,8 @@
     flex-shrink: 0;
     font-size: 13px !important;
     border-radius: 10px !important;
-    color: var(--wk-color-theme, #3370ff) !important;
-    border-color: var(--wk-color-theme, #3370ff) !important;
+    color: var(--wk-color-theme, #7C5CFC) !important;
+    border-color: var(--wk-color-theme, #7C5CFC) !important;
 }
 
 /* ---- Invite banner ---- */
@@ -683,7 +683,7 @@
     padding: 12px 16px;
     margin-bottom: 20px;
     text-align: center;
-    color: #3370ff;
+    color: var(--wk-color-theme, #7C5CFC);
     font-size: 14px;
     line-height: 1.6;
 }
@@ -703,8 +703,8 @@
     gap: 6px;
     padding: 8px 18px;
     background: transparent;
-    color: var(--wk-color-theme, #3370ff) !important;
-    border: 1.5px solid var(--wk-color-theme, #3370ff);
+    color: var(--wk-color-theme, #7C5CFC) !important;
+    border: 1.5px solid var(--wk-color-theme, #7C5CFC);
     border-radius: 20px;
     font-size: 13px;
     text-decoration: none;

@@ -34,17 +34,35 @@ export default class UserInfo extends Component<UserInfoProps> {
         let content = <></>
         // Space 模式：成员间可直接发消息，无需好友关系
         const spaceId = WKApp.shared.currentSpaceId;
+        const isBot = vm.channelInfo?.orgData?.robot === 1;
+        const isFriend = vm.relation() === UserRelation.friend;
+
         if (spaceId) {
             content = <Button theme='solid' type="primary" onClick={() => {
                 WKApp.shared.baseContext.hideUserInfo()
                 // WuKongIM DM 只认裸 uid
                 WKApp.endpoints.showConversation(new Channel(vm.uid, ChannelTypePerson))
             }}>发送消息</Button>
-        } else if (vm.relation() === UserRelation.friend) {
+        } else if (isFriend) {
             content = <Button theme='solid' type="primary" onClick={() => {
                 WKApp.shared.baseContext.hideUserInfo()
                 WKApp.endpoints.showConversation(new Channel(vm.uid, ChannelTypePerson))
             }}>发送消息</Button>
+        } else if (isBot) {
+            // Bot 未添加好友时，直接显示添加好友按钮（无需 vercode）
+            content = <Button onClick={async () => {
+                try {
+                    await WKApp.apiClient.post("friend/apply", {
+                        to_uid: vm.uid,
+                        remark: "",
+                    });
+                    Toast.success("好友申请已发送");
+                    // Bot auto_approve=1 时会自动通过，刷新用户信息
+                    setTimeout(() => vm.reloadChannelInfo(), 500);
+                } catch (err: any) {
+                    Toast.error(err.msg || "申请失败");
+                }
+            }}>添加好友</Button>
         } else {
             if (!vm.vercode || vm.vercode === "") { // 没有验证码，不显示添加好友按钮
                 return undefined

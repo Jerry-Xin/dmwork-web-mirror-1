@@ -18,7 +18,7 @@
     position: absolute;
     top: 0;
     left: 0;
-    overflow: hidden;
+    overflow-y: auto;
     background-color: var(--semi-color-bg-1, #f5f6fa);
 }
 
@@ -314,12 +314,12 @@
     margin-top: 20px;
 }
 
-.wk-login-content-form-ok {
-    width: 100% !important;
-    border-radius: 10px !important;
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    height: 46px !important;
+.wk-login-panel .wk-login-content-form-ok.semi-button {
+    width: 100%;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    height: 46px;
     letter-spacing: 0.3px;
 }
 
@@ -664,26 +664,24 @@
     margin-bottom: 0 !important;
 }
 
-.wk-login-content-form-code-btn {
+.wk-login-panel .wk-login-content-form-code-btn.semi-button {
     min-width: 96px;
     white-space: nowrap;
-    height: 46px !important;
+    height: 46px;
     flex-shrink: 0;
-    font-size: 13px !important;
-    border-radius: 10px !important;
-    color: var(--wk-color-theme, #7C5CFC) !important;
-    border-color: var(--wk-color-theme, #7C5CFC) !important;
+    font-size: 13px;
+    border-radius: 10px;
 }
 
 /* ---- Invite banner ---- */
 .wk-login-invite-banner {
-    background: #f0f4ff;
-    border: 1px solid #d0deff;
+    background: var(--semi-color-primary-light-default, rgba(124, 92, 252, 0.06));
+    border: 1px solid var(--semi-color-primary-light-hover, rgba(124, 92, 252, 0.15));
     border-radius: 10px;
     padding: 12px 16px;
     margin-bottom: 20px;
     text-align: center;
-    color: var(--wk-color-theme, #7C5CFC);
+    color: var(--semi-color-primary, var(--wk-color-theme, #7C5CFC));
     font-size: 14px;
     line-height: 1.6;
 }
@@ -739,7 +737,7 @@
     }
 
     .wk-login-panel {
-        width: 100%;
+        width: 100% !important;
         min-height: 100vh;
         padding: 40px 24px;
     }

@@ -92,8 +92,6 @@ class Login extends Component<any, LoginState> {
                         <span className="wk-login-brand-logo-name">{WKApp.config.appName || 'DMWork'}</span>
                     </div>
                     <div className="wk-login-brand-inner">
-                        <div className="wk-login-brand-logo">
-                        </div>
                         <div className="wk-login-brand-headline">
                             AI Agent 时代的<br />即时通讯平台
                         </div>

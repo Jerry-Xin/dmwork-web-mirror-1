@@ -93,14 +93,14 @@
 .wk-login-brand-logo-name {
     font-size: 24px;
     font-weight: 700;
-    color: #fff;
+    color: var(--wk-text-inverse, #fff);
     letter-spacing: 0.5px;
 }
 
 .wk-login-brand-headline {
     font-size: 40px;
     font-weight: 700;
-    color: #fff;
+    color: var(--wk-text-inverse, #fff);
     line-height: 1.25;
     margin-bottom: 12px;
 }
@@ -204,7 +204,7 @@
     border-radius: 12px 12px 12px 2px;
     padding: 9px 14px;
     font-size: 13px;
-    color: #fff;
+    color: var(--wk-text-inverse, #fff);
     line-height: 1.5;
 }
 
@@ -294,7 +294,7 @@
 
 .wk-login-content-form input:focus {
     border-color: var(--wk-color-theme, #7C5CFC);
-    box-shadow: 0 0 0 3px rgba(51, 112, 255, 0.12);
+    box-shadow: 0 0 0 3px var(--wk-brand-glow, rgba(124, 92, 252, 0.12));
     background: var(--semi-color-bg-0, #fff);
 }
 
@@ -587,7 +587,7 @@
     background: var(--wk-color-theme, #7C5CFC);
     border-radius: 50%;
     font-size: 12px;
-    color: #fff;
+    color: var(--wk-text-inverse, #fff);
     flex-shrink: 0;
 }
 

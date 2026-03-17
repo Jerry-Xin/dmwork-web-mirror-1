@@ -1,6 +1,6 @@
 import WKSDK from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
-import { Channel, ChannelInfo, ChannelTypePerson } from "wukongimjssdk";
+import { Channel, ChannelInfo, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
 import React, { Component } from "react";
 import { Modal } from "@douyinfe/semi-ui";
 import { ConversationWrap, MessageWrap } from "../../Service/Model";
@@ -26,9 +26,11 @@ export interface ConversationListProps {
     onClearMessages?: (channel: Channel) => void
 }
 
+type ConvFilter = 'all' | 'human' | 'ai' | 'group'
+
 export interface ConversationListState {
     selectConversationWrap?: ConversationWrap
-
+    filter: ConvFilter
 }
 
 export default class ConversationList extends Component<ConversationListProps, ConversationListState>{
@@ -39,6 +41,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         super(props)
 
         this.state = {
+            filter: 'all',
         }
     }
 
@@ -241,15 +244,63 @@ export default class ConversationList extends Component<ConversationListProps, C
         }
     }
 
+    filterConversation(conv: ConversationWrap): boolean {
+        const { filter } = this.state
+        if (filter === 'all') return true
+        const channelInfo = conv.channelInfo
+        if (filter === 'group') return conv.channel.channelType === ChannelTypeGroup
+        if (filter === 'ai') {
+            if (conv.channel.channelType !== ChannelTypePerson) return false
+            return channelInfo?.orgData?.robot === 1
+        }
+        if (filter === 'human') {
+            if (conv.channel.channelType !== ChannelTypePerson) return false
+            return !channelInfo || channelInfo?.orgData?.robot !== 1
+        }
+        return true
+    }
+
     render() {
         const { conversations, select } = this.props
-        const { selectConversationWrap } = this.state
+        const { selectConversationWrap, filter } = this.state
+
+        const filtered = conversations?.filter(c => this.filterConversation(c)) ?? []
+        const pinned = filtered.filter(c => c.channelInfo?.top)
+        const recent = filtered.filter(c => !c.channelInfo?.top)
+
+        const filters: { key: ConvFilter; label: string }[] = [
+            { key: 'all', label: '全部' },
+            { key: 'human', label: '人类' },
+            { key: 'ai', label: 'AI' },
+            { key: 'group', label: '群组' },
+        ]
+
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
-            {
-                conversations && conversations.map((conversationWrap) => {
-                    return this.conversationItem(conversationWrap)
-                })
-            }
+            {/* Filter chips */}
+            <div className="wk-conv-filters">
+                {filters.map(f => (
+                    <button
+                        key={f.key}
+                        className={classNames('wk-conv-filter-chip', filter === f.key ? 'wk-conv-filter-chip-active' : undefined)}
+                        onClick={() => this.setState({ filter: f.key })}
+                    >
+                        {f.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* 置顶区 */}
+            {pinned.length > 0 && <>
+                <div className="wk-conv-section">📌 置顶</div>
+                {pinned.map(c => this.conversationItem(c))}
+            </>}
+
+            {/* 最近 */}
+            {recent.length > 0 && <>
+                {pinned.length > 0 && <div className="wk-conv-section">最近</div>}
+                {recent.map(c => this.conversationItem(c))}
+            </>}
+        
 
             <ContextMenus onContext={(ctx) => {
                 this.contextMenusContext = ctx

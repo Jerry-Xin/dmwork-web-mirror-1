@@ -75,6 +75,10 @@ border-radius: var(--wk-r-xl);
 | 成功色 | `--wk-color-success` |
 | 警告色 | `--wk-color-warning` |
 | 错误色 | `--wk-color-error` |
+| 微妙边框 | `--wk-border-subtle` |
+| 强调边框 | `--wk-border-strong` |
+| AI 光晕 | `--wk-ai-glow` |
+| 品牌柔和渐变 | `--wk-brand-gradient-subtle` |
 
 ### 间距档位（4px 栅格）
 ```
@@ -186,6 +190,8 @@ AI 消息（面板）：
 ### 每次修改 CSS/TSX 后
 ```bash
 # 1. 截图确认整体效果
+# debug.js 是本地开发工具，不在 repo 中
+# 初始化方式见 ONBOARDING.md
 node scripts/debug.js screenshot
 
 # 2. 如有样式问题，inspect 具体元素

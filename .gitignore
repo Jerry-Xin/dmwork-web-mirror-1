@@ -38,3 +38,5 @@ out-election/
 dist-ele/
 icon.icns
 icons.iconset
+.debug-screenshots/
+scripts/debug.js

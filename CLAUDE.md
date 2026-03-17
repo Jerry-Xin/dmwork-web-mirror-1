@@ -185,6 +185,41 @@ AI 消息（面板）：
 
 ---
 
+## Pre-commit 交叉 Review（必须执行）
+
+### Commit 前流程
+
+```bash
+# 1. 生成 diff
+bash scripts/review.sh
+
+# 2. 用 Opus 子任务做交叉 review（Sonnet 写代码，Opus 来审）
+# 子任务 prompt 模板：
+# "Review the following diff for the dmwork-web project.
+#  Check for: hardcoded colors/spacing/radius, !important abuse,
+#  unrelated files mixed in, Semi Design token violations, dead code.
+#  Output a numbered list of issues, severity (blocking/minor), and fix suggestion.
+#  Diff: [paste /tmp/review-diff.txt content]"
+
+# 3. 根据 Opus 反馈修复 blocking 问题
+
+# 4. 确认 changed files 数量合理
+git diff --stat origin/main...HEAD
+# 如果改动超过预期文件数，停下来检查原因
+
+# 5. 截图确认视觉没有回退
+node scripts/debug.js screenshot
+```
+
+### 交叉 Review 要点
+- **颜色**：是否有硬编码 hex/rgba（品牌区白色半透明除外）
+- **间距/圆角**：是否用了 `--wk-sp-*` 和 `--wk-r-*` token
+- **!important**：是否可以用更高优先级选择器替代
+- **无关文件**：`.planning/`、`scripts/debug.js`、本地配置不能进 PR
+- **Semi token**：颜色是否优先用 `--semi-color-*`
+
+---
+
 ## 调试规则（必须执行）
 
 ### 每次修改 CSS/TSX 后

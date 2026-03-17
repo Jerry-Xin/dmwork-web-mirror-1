@@ -97,13 +97,13 @@ export const typography = {
   weights: {
     regular: 400,
     medium:  500,
-    semibold:600,
+    semibold: 600,
     bold:    700,
   },
   lineHeights: {
     tight:  1.25,
     normal: 1.5,
-    relaxed:1.65,
+    relaxed: 1.65,
     code:   1.6,
   },
 } as const

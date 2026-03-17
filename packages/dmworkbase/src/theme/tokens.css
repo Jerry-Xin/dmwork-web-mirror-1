@@ -61,7 +61,7 @@
      ============================================================ */
   --wk-nav-w:      60px;
   --wk-sidebar-w:  280px;
-  --wk-task-rail-w:320px;
+  --wk-task-rail-w: 320px;
 
   /* ============================================================
      Semantic Colors
@@ -137,10 +137,12 @@
   --wk-border-glow:    rgba(124, 92, 252, 0.2);
 
   /* Semi Design token 对齐 */
-  --semi-color-bg-0:   var(--wk-bg-base);
-  --semi-color-bg-1:   var(--wk-bg-surface);
-  --semi-color-text-0: var(--wk-text-primary);
-  --semi-color-text-1: var(--wk-text-secondary);
-  --semi-color-text-2: var(--wk-text-tertiary);
-  --semi-color-border: var(--wk-border-default);
+  --semi-color-primary:       var(--wk-brand-primary);
+  --semi-color-primary-hover: var(--wk-brand-primary-hover);
+  --semi-color-bg-0:          var(--wk-bg-base);
+  --semi-color-bg-1:          var(--wk-bg-surface);
+  --semi-color-text-0:        var(--wk-text-primary);
+  --semi-color-text-1:        var(--wk-text-secondary);
+  --semi-color-text-2:        var(--wk-text-tertiary);
+  --semi-color-border:        var(--wk-border-default);
 }

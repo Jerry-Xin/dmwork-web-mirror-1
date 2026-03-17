@@ -160,7 +160,7 @@ export default class ConversationList extends Component<ConversationListProps, C
             if (onClick) {
                 onClick(conversationWrap)
             }
-        }} className={classNames("wk-conversationlist-item", channelInfo?.top ? "wk-conversationlist-item-top" : undefined)} onContextMenu={(e) => {
+        }} className={classNames("wk-conversationlist-item", channelInfo?.top ? "wk-conversationlist-item-top" : undefined, conversationWrap.unread > 0 ? "wk-conversationlist-item-unread" : undefined)} onContextMenu={(e) => {
             this._handleContextMenu(conversationWrap, e)
         }}>
             <div className={classNames("wk-conversationlist-item-content", selected ? "wk-conversationlist-item-selected" : undefined)}>
@@ -214,7 +214,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                         </div>
                         <div className="wk-conversationlist-item-reddot">
                             {
-                                conversationWrap.unread > 0 ? <Badge style={channelInfo?.mute ? { "border": "none", "backgroundColor": "rgb(200,200,200)" } : { border: "none" }} count={conversationWrap.unread} type='danger'></Badge> : undefined
+                                conversationWrap.unread > 0 ? <Badge style={channelInfo?.mute ? { "border": "none", "backgroundColor": "var(--semi-color-text-2)" } : { "border": "none", "backgroundColor": "var(--wk-brand-primary)" }} count={conversationWrap.unread} type='danger'></Badge> : undefined
                             }
                         </div>
                     </div>

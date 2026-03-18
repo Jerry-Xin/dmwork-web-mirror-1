@@ -25,6 +25,8 @@
 .wk-layout-content-left {
     width: var( --wk-width-layout-content-left);
     height: 100%;
+    border-right: 1px solid var(--wk-border-subtle);
+    flex-shrink: 0;
 }
 
 .wk-layout-content-right {

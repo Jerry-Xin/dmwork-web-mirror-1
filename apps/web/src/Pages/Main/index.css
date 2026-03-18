@@ -14,82 +14,109 @@
     background-color: var(--bg-primary);
 }
 
-/* 全局顶栏 */
+/* 全局顶栏 — Space 切换区，低调嵌入 sidebar 顶部 */
 .wk-global-topbar {
     display: flex;
     align-items: center;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border-color);
+    padding: var(--wk-sp-2) var(--wk-sp-3);
     flex-shrink: 0;
-    background-color: var(--topbar-bg);
+    background-color: transparent;
+    border-bottom: 1px solid var(--wk-border-subtle);
+    height: 44px;
+    box-sizing: border-box;
 }
+
 .wk-global-topbar-space {
     display: flex;
     align-items: center;
     cursor: pointer;
     flex: 1;
+    min-width: 0;
     position: relative;
+    gap: var(--wk-sp-2);
+    padding: var(--wk-sp-1) var(--wk-sp-2);
+    border-radius: var(--wk-r-sm);
+    transition: background var(--wk-dur) var(--wk-ease);
 }
+
+.wk-global-topbar-space:hover {
+    background: var(--wk-bg-hover);
+}
+
 .wk-global-topbar-space-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--wk-r-xs);
     color: white;
-    font-size: 14px;
-    font-weight: 600;
-    margin-right: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
 }
+
 .wk-global-topbar-space-name {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--wk-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
 .wk-global-topbar-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 4px);
     left: 0;
-    min-width: 240px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    min-width: 220px;
+    background: var(--wk-bg-surface);
+    border: 1px solid var(--wk-border-default);
+    border-radius: var(--wk-r-md);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--wk-text-primary) 8%, transparent);
     z-index: 100;
-    padding: 4px;
-    margin-top: 4px;
+    padding: var(--wk-sp-1);
 }
+
 .wk-global-topbar-dropdown-item {
     display: flex;
     align-items: center;
-    padding: 6px 8px;
-    border-radius: 6px;
+    padding: var(--wk-sp-1) var(--wk-sp-2);
+    border-radius: var(--wk-r-sm);
     cursor: pointer;
-    font-size: 14px;
-    height: 40px;
+    font-size: 13px;
+    height: 36px;
     box-sizing: border-box;
-    gap: 8px;
+    gap: var(--wk-sp-2);
+    color: var(--wk-text-primary);
+    transition: background var(--wk-dur) var(--wk-ease);
 }
+
 .wk-global-topbar-dropdown-item:hover {
-    background: var(--bg-hover);
+    background: var(--wk-bg-hover);
 }
+
 .wk-global-topbar-dropdown-item.selected {
-    background: var(--bg-hover);
+    background: color-mix(in srgb, var(--wk-brand-primary) 8%, transparent);
+    color: var(--wk-text-accent);
 }
+
 .wk-global-topbar-dropdown-divider {
     height: 1px;
-    background: var(--border-color);
-    margin: 4px 8px;
+    background: var(--wk-border-subtle);
+    margin: var(--wk-sp-1) var(--wk-sp-2);
 }
+
 .wk-global-topbar-invite-btn {
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     padding: 2px 4px;
-    border-radius: 4px;
-    opacity: 0.5;
-    transition: opacity 0.15s;
+    border-radius: var(--wk-r-xs);
+    color: var(--wk-text-tertiary);
+    opacity: 0.6;
+    transition: opacity var(--wk-dur);
 }
+
 .wk-global-topbar-invite-btn:hover {
     opacity: 1;
 }

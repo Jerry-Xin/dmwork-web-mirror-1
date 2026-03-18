@@ -82,12 +82,12 @@
    项目通过 body[theme-mode=dark] 切换暗色，无属性时为亮色
    ============================================================ */
 :root {
-  --wk-bg-deep:     #F7F8FA;
-  --wk-bg-base:     #FFFFFF;
-  --wk-bg-surface:  #F0F1F5;
-  --wk-bg-elevated: #EAEBF0;
-  --wk-bg-hover:    #E2E3EA;
-  --wk-bg-active:   #D8DAE5;
+  --wk-bg-deep:     #F0F1F5;
+  --wk-bg-base:     #F7F8FA;
+  --wk-bg-surface:  #FFFFFF;
+  --wk-bg-elevated: #F0F1F5;
+  --wk-bg-hover:    #EAEBF0;
+  --wk-bg-active:   #E2E3EA;
 
   --wk-text-primary:   #111318;
   --wk-text-secondary: #5C6070;

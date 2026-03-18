@@ -54,8 +54,8 @@ export default class MessageHead extends Component<MessageHeadProps> {
         const isBot = channelInfo?.orgData?.robot === 1
         return <>
            {
-                this.needTitle()?( <div className="textTitle" style={{color:getTitleColor(channelInfo?.orgData.displayName), display:'flex', alignItems:'center', gap: 4}}>
-                <span>{channelInfo?.orgData.displayName}</span>
+                this.needTitle()?( <div className="textTitle" style={{color:getTitleColor(channelInfo?.orgData?.displayName), display:'flex', alignItems:'center', gap: 4}}>
+                <span>{channelInfo?.orgData?.displayName}</span>
                 {isGroupMsg && isBot && <AiBadge size="small" />}
             </div>):null
            }

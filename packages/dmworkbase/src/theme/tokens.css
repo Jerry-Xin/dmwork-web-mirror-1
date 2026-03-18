@@ -78,52 +78,16 @@
 }
 
 /* ============================================================
-   Dark Theme (default)
+   Light Theme (default — 与项目 ThemeMode.light 对齐)
+   项目通过 body[theme-mode=dark] 切换暗色，无属性时为亮色
    ============================================================ */
-:root,
-[data-theme="dark"] {
-  /* Background layers 深→浅 */
-  --wk-bg-deep:     #111318;
-  --wk-bg-base:     #171921;
-  --wk-bg-surface:  #1E212B;
-  --wk-bg-elevated: #262A36;
-  --wk-bg-hover:    #2E3240;
-  --wk-bg-active:   #363B4A;
-
-  /* Text */
-  --wk-text-primary:   #E4E6ED;
-  --wk-text-secondary: #9CA1B3;
-  --wk-text-tertiary:  #7A7F96;
-  --wk-text-accent:    #B0A4FF;
-  --wk-text-inverse:   #111318;
-
-  /* Border */
-  --wk-border-subtle:  rgba(255, 255, 255, 0.04);
-  --wk-border-default: rgba(255, 255, 255, 0.07);
-  --wk-border-strong:  rgba(255, 255, 255, 0.12);
-  --wk-border-glow:    rgba(124, 92, 252, 0.2);
-
-  /* Semi Design token 对齐（让 Semi 组件跟随主题） */
-  --semi-color-primary:       var(--wk-brand-primary);
-  --semi-color-primary-hover: var(--wk-brand-primary-hover);
-  --semi-color-bg-0:          var(--wk-bg-surface);
-  --semi-color-bg-1:          var(--wk-bg-elevated);
-  --semi-color-text-0:        var(--wk-text-primary);
-  --semi-color-text-1:        var(--wk-text-secondary);
-  --semi-color-text-2:        var(--wk-text-tertiary);
-  --semi-color-border:        var(--wk-border-default);
-}
-
-/* ============================================================
-   Light Theme
-   ============================================================ */
-[data-theme="light"] {
-  --wk-bg-deep:     #F7F8FA;
-  --wk-bg-base:     #FFFFFF;
-  --wk-bg-surface:  #F0F1F5;
-  --wk-bg-elevated: #EAEBF0;
-  --wk-bg-hover:    #E2E3EA;
-  --wk-bg-active:   #D8DAE5;
+:root {
+  --wk-bg-deep:     #F0F1F5;
+  --wk-bg-base:     #F7F8FA;
+  --wk-bg-surface:  #FFFFFF;
+  --wk-bg-elevated: #F0F1F5;
+  --wk-bg-hover:    #EAEBF0;
+  --wk-bg-active:   #E2E3EA;
 
   --wk-text-primary:   #111318;
   --wk-text-secondary: #5C6070;
@@ -141,6 +105,39 @@
   --semi-color-primary-hover: var(--wk-brand-primary-hover);
   --semi-color-bg-0:          var(--wk-bg-base);
   --semi-color-bg-1:          var(--wk-bg-surface);
+  --semi-color-text-0:        var(--wk-text-primary);
+  --semi-color-text-1:        var(--wk-text-secondary);
+  --semi-color-text-2:        var(--wk-text-tertiary);
+  --semi-color-border:        var(--wk-border-default);
+}
+
+/* ============================================================
+   Dark Theme — body[theme-mode=dark]（与项目 ThemeMode.dark 对齐）
+   ============================================================ */
+body[theme-mode=dark] {
+  --wk-bg-deep:     #111318;
+  --wk-bg-base:     #171921;
+  --wk-bg-surface:  #1E212B;
+  --wk-bg-elevated: #262A36;
+  --wk-bg-hover:    #2E3240;
+  --wk-bg-active:   #363B4A;
+
+  --wk-text-primary:   #E4E6ED;
+  --wk-text-secondary: #9CA1B3;
+  --wk-text-tertiary:  #7A7F96;
+  --wk-text-accent:    #B0A4FF;
+  --wk-text-inverse:   #111318;
+
+  --wk-border-subtle:  rgba(255, 255, 255, 0.04);
+  --wk-border-default: rgba(255, 255, 255, 0.07);
+  --wk-border-strong:  rgba(255, 255, 255, 0.12);
+  --wk-border-glow:    rgba(124, 92, 252, 0.2);
+
+  /* Semi Design token 对齐 */
+  --semi-color-primary:       var(--wk-brand-primary);
+  --semi-color-primary-hover: var(--wk-brand-primary-hover);
+  --semi-color-bg-0:          var(--wk-bg-surface);
+  --semi-color-bg-1:          var(--wk-bg-elevated);
   --semi-color-text-0:        var(--wk-text-primary);
   --semi-color-text-1:        var(--wk-text-secondary);
   --semi-color-text-2:        var(--wk-text-tertiary);

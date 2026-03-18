@@ -61,7 +61,7 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
         const currentSpace = allSpaces.find(s => s.space_id === currentSpaceId);
         const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
 
-        return <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+        return <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', borderRight: '1px solid var(--wk-border-default)' }}>
             {/* 全局顶栏 */}
             <div className="wk-global-topbar">
                 <div className="wk-global-topbar-space" style={{ position: 'relative' }}

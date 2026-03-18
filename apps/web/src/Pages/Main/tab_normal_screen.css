@@ -4,7 +4,7 @@
 .wk-main-sider {
     width: var(--sider-width);
     height: 100%;
-    background-color: var(--wk-color-secondary);
+    background-color: var(--wk-bg-deep);
 }
 
 

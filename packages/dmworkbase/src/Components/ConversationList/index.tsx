@@ -251,11 +251,15 @@ export default class ConversationList extends Component<ConversationListProps, C
         if (filter === 'group') return conv.channel.channelType === ChannelTypeGroup
         if (filter === 'ai') {
             if (conv.channel.channelType !== ChannelTypePerson) return false
-            return channelInfo?.orgData?.robot === 1
+            // channelInfo 未加载时隐藏，等 channelInfoListener 触发重渲后再显示
+            if (!channelInfo) return false
+            return channelInfo.orgData?.robot === 1
         }
         if (filter === 'human') {
             if (conv.channel.channelType !== ChannelTypePerson) return false
-            return !channelInfo || channelInfo?.orgData?.robot !== 1
+            // channelInfo 未加载时暂时归入 human，channelInfoListener 更新后自动修正
+            if (!channelInfo) return true
+            return channelInfo.orgData?.robot !== 1
         }
         return true
     }

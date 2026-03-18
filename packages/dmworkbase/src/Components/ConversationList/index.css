@@ -3,6 +3,7 @@
     height: 100%;
     overflow-y: auto;
     padding: 0 var(--wk-sp-2);
+    background: var(--wk-bg-base);
 }
 
 /* ── Filter chips ── */

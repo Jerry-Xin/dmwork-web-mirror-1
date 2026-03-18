@@ -12,7 +12,6 @@
 .wk-chat-content-left {
     width: var(--wk-wdith-conversation-list);
     height: 100%;
-    border-right: 1px solid var(--wk-border-default);
     display: flex;
     flex-direction: column;
 }

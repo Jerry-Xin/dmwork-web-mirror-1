@@ -119,8 +119,8 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             }
             // 跳转回主界面，带上正确的 sid
             const sid = this.findSid();
-            const basePath = window.location.pathname.replace(/\/+$/, '') || '/web';
-            window.location.href = `${window.location.origin}${basePath}${sid ? `?sid=${sid}` : ''}`;
+            const basePath = window.location.pathname.replace(/\/+$/, '');
+            window.location.href = `${window.location.origin}${basePath}/${sid ? `?sid=${sid}` : ''}`;
         } catch (e: any) {
             const msg = e?.message || "";
             if (msg.includes("已满") || msg.includes("SPACE_FULL")) {
@@ -139,7 +139,9 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
         localStorage.setItem("pendingInviteCode", this.props.inviteCode);
         // 跳转到登录页，保留 invite 参数让登录页显示注册入口
         // 添加 action=login 参数让 Layout 跳过 InviteLanding 渲染
-        window.location.href = `${window.location.origin}/web/?invite=${encodeURIComponent(this.props.inviteCode)}&action=login`;
+        // 使用动态 basePath，避免硬编码 /web 导致部署路径不匹配
+        const basePath = window.location.pathname.replace(/\/+$/, '');
+        window.location.href = `${window.location.origin}${basePath}/?invite=${encodeURIComponent(this.props.inviteCode)}&action=login`;
     }
 
     render() {

@@ -119,8 +119,9 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             }
             // 跳转回主界面，带上正确的 sid
             const sid = this.findSid();
+            // pathname 在邀请页是 /web/（query param 形式），去掉尾部斜杠后即为 basePath
             const basePath = window.location.pathname.replace(/\/+$/, '');
-            window.location.href = `${window.location.origin}${basePath}/${sid ? `?sid=${sid}` : ''}`;
+            window.location.href = `${window.location.origin}${basePath}${sid ? `?sid=${sid}` : '/'}`;
         } catch (e: any) {
             const msg = e?.message || "";
             if (msg.includes("已满") || msg.includes("SPACE_FULL")) {

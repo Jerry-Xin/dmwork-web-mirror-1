@@ -1004,10 +1004,35 @@ export default class ConversationVM extends ProviderListener {
         })
     }
 
+    // 系统 Bot 列表：这些 Bot 在所有 Space 可见，但聊天历史需按 Space 过滤
+    private static readonly SYSTEM_BOTS = new Set(["botfather"])
+
+    // 过滤系统 Bot（如 BotFather）的消息：只显示属于当前 Space 的消息
+    // 规则：payload 有 space_id 且匹配当前 Space → 显示
+    //       payload 有 space_id 且不匹配 → 隐藏
+    //       payload 无 space_id（历史消息）→ 所有 Space 都显示（向前兼容）
+    filterSystemBotMessages(messages: MessageWrap[]): MessageWrap[] {
+        if (!ConversationVM.SYSTEM_BOTS.has(this.channel.channelID)) {
+            return messages
+        }
+        const currentSpaceId = WKApp.shared.currentSpaceId
+        if (!currentSpaceId) {
+            return messages // 无 Space 上下文，不过滤
+        }
+        return messages.filter((m) => {
+            const msgSpaceId = m.message?.content?.contentObj?.space_id
+            if (!msgSpaceId) {
+                return true // 无 space_id 的历史消息：所有 Space 可见
+            }
+            return msgSpaceId === currentSpaceId
+        })
+    }
+
     // 刷新消息列表
     refreshMessages(messages: MessageWrap[], callback?: () => void) {
         let newMessages = messages
         this.distinctMessages(newMessages)
+        newMessages = this.filterSystemBotMessages(newMessages)
         newMessages = this.deduplicateSystemTips(newMessages)
         newMessages = this.insertTimeOrHistorySplit(newMessages)
         for (let i = 0; i < newMessages.length; i++) {

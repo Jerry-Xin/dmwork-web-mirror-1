@@ -118,11 +118,10 @@
     margin-right: var(--wk-sp-3);
 }
 
-.wk-contacts-section-item-avatar img,
-.wk-contacts-section-item-avatar > * {
-    width: 32px !important;
-    height: 32px !important;
-    border-radius: 50% !important;
+.wk-contacts-section-item-avatar .wk-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
 }
 
 .wk-contacts-section-item-name {

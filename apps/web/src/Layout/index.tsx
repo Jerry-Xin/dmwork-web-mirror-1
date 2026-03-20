@@ -20,6 +20,7 @@ export default class AppLayout extends Component<{}, AppLayoutState> {
 
     onLogin!: () => void
     onNeedJoinSpace!: () => void
+    private _spaceChecked = false; // 冷启动 Space 检测只跑一次
 
     componentDidMount() {
         // Wave 2: 无 Space 时触发 JoinSpacePage 覆盖层
@@ -27,6 +28,11 @@ export default class AppLayout extends Component<{}, AppLayoutState> {
             this.setState({ showJoinSpace: true });
         };
         WKApp.endpoints.addOnNeedJoinSpace(this.onNeedJoinSpace);
+
+        // T5: 冷启动已登录检测 — 用户直接打开 App 恢复登录态时，检查是否有 Space
+        if (WKApp.shared.isLogined()) {
+            this.checkSpaceOnColdStart();
+        }
 
         this.onLogin = () => {
             try { Notification.requestPermission() } catch(_) {} // 请求通知权限（iOS 不支持，忽略错误）
@@ -82,6 +88,30 @@ export default class AppLayout extends Component<{}, AppLayoutState> {
     componentWillUnmount() {
         WKApp.endpoints.removeOnLogin(this.onLogin);
         WKApp.endpoints.removeOnNeedJoinSpace(this.onNeedJoinSpace);
+    }
+
+    /**
+     * T5 — 冷启动 Space 检测
+     * 用户直接打开 App（已有 token，不走 loginSuccess）时，检查是否有 Space。
+     * - 有 Space → 不干预，正常走 SpaceGate / MainPage 原有逻辑
+     * - 无 Space → 触发 onNeedJoinSpace() 显示 JoinSpacePage
+     * 只执行一次，避免多次 render 重复触发。
+     */
+    private async checkSpaceOnColdStart() {
+        if (this._spaceChecked) return;
+        this._spaceChecked = true;
+
+        try {
+            const result = await WKApp.apiClient.get('space/my');
+            const spaces = Array.isArray(result) ? result : (result?.data ?? []);
+            if (spaces.length === 0) {
+                WKApp.endpoints.onNeedJoinSpace();
+            }
+            // 有 Space：不干预，原有 SpaceGate 逻辑会继续处理
+        } catch (e) {
+            // 网络失败：静默降级，让原有流程继续
+            console.warn('T5 space/my check failed, skipping:', e);
+        }
     }
 
     async tauriCheckUpdate() {

@@ -1,4 +1,5 @@
 import { MessageContent, WKSDK, Task, TaskStatus } from "wukongimjssdk";
+import { Toast } from "@douyinfe/semi-ui";
 import React from "react";
 import WKApp from "../../App";
 import MessageBase from "../Base";
@@ -178,7 +179,11 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
                         gap: 6,
                         cursor: "pointer",
                     }} onClick={() => {
-                        this._task?.restart()
+                        if (!this._task) {
+                            Toast.warning('上传任务已失效，请重新发送文件')
+                            return
+                        }
+                        this._task.restart()
                     }}>
                         <span style={{ color: "#fff", fontSize: 22 }}>⚠️</span>
                         <span style={{ color: "#fff", fontSize: 11 }}>上传失败，点击重试</span>

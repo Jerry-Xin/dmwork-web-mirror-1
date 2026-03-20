@@ -5,6 +5,7 @@ import MessageBase from "../Base"
 import WKApp from "../../App"
 import { FileContent } from "./FileContent"
 import { WKSDK, Task, TaskStatus } from "wukongimjssdk"
+import { Toast } from "@douyinfe/semi-ui"
 
 export { FileContent } from "./FileContent"
 
@@ -233,7 +234,11 @@ export class FileCell extends MessageCell<any, FileCellState> {
                         </div>
                         <div className="wk-message-file-actions">
                             <div className="wk-message-file-action" title="重试" onClick={() => {
-                                this._task?.restart()
+                                if (!this._task) {
+                                    Toast.warning('上传任务已失效，请重新发送文件')
+                                    return
+                                }
+                                this._task.restart()
                             }}>
                                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="1 4 1 10 7 10" />

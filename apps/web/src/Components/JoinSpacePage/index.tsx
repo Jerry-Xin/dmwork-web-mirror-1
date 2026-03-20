@@ -19,7 +19,7 @@ interface JoinSpacePageProps {
     onSuccess: () => void;
 }
 
-const ACCENT = "#5b6abf";
+const ACCENT = "var(--wk-color-primary, #5b6abf)";
 
 export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
     const [view, setView] = useState<View>("home");

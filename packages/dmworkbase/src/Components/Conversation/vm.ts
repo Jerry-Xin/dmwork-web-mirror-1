@@ -452,7 +452,7 @@ export default class ConversationVM extends ProviderListener {
         })
 
         // 订阅 task 上传失败事件（module.tsx 全局触发，这里仅处理当前 channel）
-        ;(WKApp.mittBus as any).on("task-upload-failed", this._taskUploadFailedHandler)
+        WKApp.mittBus.on("task-upload-failed", this._taskUploadFailedHandler)
 
     }
     // task 上传失败通知处理器（module.tsx 的全局订阅 emit，这里接收并刷新 UI）
@@ -474,7 +474,7 @@ export default class ConversationVM extends ProviderListener {
         WKSDK.shared().channelManager.removeSubscriberChangeListener(this.subscriberChangeListener)
         this.pendingMessages = [] // 清理缓冲区
 
-        ;(WKApp.mittBus as any).off("task-upload-failed", this._taskUploadFailedHandler)
+        WKApp.mittBus.off("task-upload-failed", this._taskUploadFailedHandler)
     }
 
     // 加载频道信息完成

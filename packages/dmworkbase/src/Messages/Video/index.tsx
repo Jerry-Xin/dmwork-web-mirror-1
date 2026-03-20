@@ -35,7 +35,7 @@ export class VideoContent extends MessageContent {
 
 interface VideoCellState {
     playProgress: number    // 播放进度（秒）
-    uploadProgress: number  // 上传进度 0~1
+    uploadProgress: number  // 上传进度 0~100 整数百分比
     uploadStatus: TaskStatus | null
 }
 

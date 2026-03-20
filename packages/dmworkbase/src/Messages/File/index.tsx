@@ -74,7 +74,7 @@ const SMALL_FILE_THRESHOLD = 1024 * 1024 // 1MB 以下不显示进度条
 
 interface FileCellState {
     downloading: boolean
-    uploadProgress: number       // 0~1
+    uploadProgress: number       // 0~100 整数百分比
     uploadStatus: TaskStatus | null
 }
 

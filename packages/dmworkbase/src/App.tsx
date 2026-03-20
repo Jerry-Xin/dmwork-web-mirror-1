@@ -1,4 +1,11 @@
-import mitt from "mitt";
+import mitt, { Emitter } from "mitt";
+
+/** mittBus 全局事件类型表 */
+export type MittEvents = {
+  'friend-applys-unread-count': number;
+  'space-changed': unknown;
+  'task-upload-failed': { channelKey: string };
+};
 import { EndpointCommon } from "./EndpointCommon";
 import APIClient from "./Service/APIClient";
 import MenusManager from "./Service/Menus";
@@ -229,7 +236,7 @@ export default class WKApp extends ProviderListener {
   static sectionManager: SectionManager = new SectionManager(); // section管理
   static dataSource: DataSource = new DataSource(); // 数据源
   static endpointManager: EndpointManager = EndpointManager.shared; // 端点管理
-  static mittBus = mitt();
+  static mittBus: Emitter<MittEvents> = mitt<MittEvents>();
   private messageDeleteListeners: MessageDeleteListener[] =
     new Array<MessageDeleteListener>(); // 消息删除监听
 

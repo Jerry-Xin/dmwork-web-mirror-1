@@ -67,6 +67,9 @@ export class MediaMessageUploadTask extends MessageTask {
                 mediaContent.remoteUrl = resp.data.path
                 this.status = TaskStatus.success
                 this.update()
+            } else {
+                this.status = TaskStatus.fail
+                this.update()
             }
         }
     }

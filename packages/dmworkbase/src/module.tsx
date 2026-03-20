@@ -426,7 +426,7 @@ export default class BaseModule implements IModule {
       if (idx !== -1) {
         // 先标记失败状态，再移除，避免消息直接消失
         sending[idx].status = MessageStatus.Fail;
-        sending.splice(idx, 1);
+        // 只标记失败，不从队列移出，消息留在列表显示失败态
         // 通过 mittBus 通知对应 ConversationVM 刷新
         WKApp.mittBus.emit("task-upload-failed", { channelKey });
       }

@@ -27,6 +27,7 @@ WKApp.apiClient.config.tokenCallback = ()=> {
   return WKApp.loginInfo.token
 }
 WKApp.config.appVersion = `${process.env.REACT_APP_VERSION || "0.0.0"}`
+WKApp.config.appName = "Octo"
 
 WKApp.loginInfo.load() // 加载登录信息
 

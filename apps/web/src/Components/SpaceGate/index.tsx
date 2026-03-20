@@ -127,7 +127,7 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
                     minWidth: 360, maxWidth: 420, color: "#333333",
                 }}>
                     <div style={{ fontSize: 32, marginBottom: 8 }}>👋</div>
-                    <h2 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 8px" }}>欢迎使用 DMWork！</h2>
+                    <h2 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 8px" }}>欢迎使用 {WKApp.config.appName}！</h2>
                     <p style={{ color: "#888", fontSize: 14, marginBottom: 32 }}>加入团队或创建新的工作空间</p>
 
                     {!showInviteInput ? (

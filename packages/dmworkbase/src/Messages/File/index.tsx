@@ -216,15 +216,20 @@ export class FileCell extends MessageCell<any, FileCellState> {
                 <MessageBase context={context} message={message}>
                     <div className="wk-message-file wk-message-file--failed">
                         <div className="wk-message-file-icon" style={{ backgroundColor: "#EF4444" }}>
-                            <span className="wk-message-file-icon-label">!</span>
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
                         </div>
                         <div className="wk-message-file-info">
                             <div className="wk-message-file-name" title={content.name}>
                                 {content.name || "上传失败"}
                             </div>
                             <div className="wk-message-file-meta">
-                                <span style={{ color: "#EF4444" }}>上传失败</span>
+                                <span className="wk-message-file-failed-text">上传失败</span>
                             </div>
+                            <div className="wk-message-file-retry-hint">点击图标重试</div>
                         </div>
                         <div className="wk-message-file-actions">
                             <div className="wk-message-file-action" title="重试" onClick={() => {

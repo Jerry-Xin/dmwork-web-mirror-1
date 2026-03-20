@@ -1,0 +1,139 @@
+/* JoinSpacePage — 全屏覆盖层，风格与 InviteLanding 保持一致 */
+
+.wk-join-space {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.wk-join-space-card {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    padding: 48px 40px 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    min-width: 340px;
+    max-width: 420px;
+    width: 100%;
+    color: #333;
+}
+
+/* emoji 大图标（首页欢迎） */
+.wk-join-space-emoji {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+/* Space 首字母彩色图标（确认页） */
+.wk-join-space-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 auto 20px;
+}
+
+.wk-join-space-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 8px;
+}
+
+.wk-join-space-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.wk-join-space-subtitle {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.wk-join-space-members {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 28px;
+}
+
+/* 操作按钮区 */
+.wk-join-space-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.wk-join-space-btn {
+    width: 100% !important;
+    height: 44px !important;
+    font-size: 15px !important;
+    border-radius: 8px !important;
+}
+
+.wk-join-space-btn.wk-join-space-btn--full {
+    margin-top: 16px;
+}
+
+/* Primary 按钮颜色统一 */
+.wk-join-space-btn.semi-button-primary {
+    background-color: #5b6abf !important;
+    border-color: #5b6abf !important;
+    color: #fff !important;
+}
+
+.wk-join-space-btn.semi-button-primary:hover {
+    background-color: #4a59ae !important;
+    border-color: #4a59ae !important;
+}
+
+/* 输入框 */
+.wk-join-space-input {
+    margin-top: 20px;
+    margin-bottom: 4px;
+}
+
+/* 返回链接（顶部） */
+.wk-join-space-back {
+    display: inline-flex;
+    align-items: center;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 13px;
+    color: #888;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: color 0.15s;
+}
+
+.wk-join-space-back:hover {
+    color: #5b6abf;
+}
+
+/* 返回链接（确认页底部） */
+.wk-join-space-back--bottom {
+    margin-top: 12px;
+    margin-bottom: 0;
+    font-size: 13px;
+}
+
+/* 移动端适配 */
+@media (max-width: 480px) {
+    .wk-join-space-card {
+        min-width: unset;
+        margin: 16px;
+        padding: 36px 24px 32px;
+    }
+}

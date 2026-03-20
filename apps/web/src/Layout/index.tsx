@@ -9,10 +9,25 @@ import { relaunch } from '@tauri-apps/api/process'
 import { os } from "@tauri-apps/api";
 import { getSid, getQueryParam } from "@dmwork/base";
 import InviteLanding from "../Components/InviteLanding";
+import JoinSpacePage from "../Components/JoinSpacePage";
 
-export default class AppLayout extends Component {
+interface AppLayoutState {
+    showJoinSpace: boolean;
+}
+
+export default class AppLayout extends Component<{}, AppLayoutState> {
+    state: AppLayoutState = { showJoinSpace: false };
+
     onLogin!: () => void
+    onNeedJoinSpace!: () => void
+
     componentDidMount() {
+        // Wave 2: 无 Space 时触发 JoinSpacePage 覆盖层
+        this.onNeedJoinSpace = () => {
+            this.setState({ showJoinSpace: true });
+        };
+        WKApp.endpoints.addOnNeedJoinSpace(this.onNeedJoinSpace);
+
         this.onLogin = () => {
             try { Notification.requestPermission() } catch(_) {} // 请求通知权限（iOS 不支持，忽略错误）
             const basePath = (window.location.pathname.replace(/\/login\/?$/, '').replace(/\/index\.html$/, '') || '/').replace(/\/+$/, '')
@@ -65,7 +80,8 @@ export default class AppLayout extends Component {
     }
 
     componentWillUnmount() {
-        WKApp.endpoints.removeOnLogin(this.onLogin)
+        WKApp.endpoints.removeOnLogin(this.onLogin);
+        WKApp.endpoints.removeOnNeedJoinSpace(this.onNeedJoinSpace);
     }
 
     async tauriCheckUpdate() {
@@ -122,6 +138,22 @@ export default class AppLayout extends Component {
     }
 
     render() {
+        // Wave 2: 无 Space 引导页（覆盖主界面）
+        if (this.state.showJoinSpace) {
+            return (
+                <JoinSpacePage
+                    onSuccess={() => {
+                        this.setState({ showJoinSpace: false });
+                        try {
+                            WKApp.endpoints.callOnLogin();
+                        } catch (e) {
+                            console.warn("callOnLogin error suppressed:", e);
+                        }
+                    }}
+                />
+            );
+        }
+
         // 邀请链接检测
         const urlParams = new URLSearchParams(window.location.search);
         const inviteCode = urlParams.get("invite");

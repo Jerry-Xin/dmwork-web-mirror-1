@@ -339,7 +339,7 @@ export class LoginVM extends ProviderListener {
         }
 
         // 无邀请码：先检查用户是否已有 Space，决定走正常流程还是引导页
-        this.checkSpaceAndLogin(data.token)
+        this.checkSpaceAndLogin()
     }
 
     /**
@@ -347,15 +347,8 @@ export class LoginVM extends ProviderListener {
      * - 有 Space → 正常调 callOnLogin()
      * - 无 Space（空数组）→ 调 onNeedJoinSpace() 引导用户加入 Space（Wave 2 提供路由）
      */
-    private checkSpaceAndLogin(token: string) {
-        const apiUrl = WKApp.apiClient.config.apiURL?.replace(/\/+$/, '');
-        fetch(`${apiUrl}/space/my`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'token': token },
-        }).then(resp => {
-            if (!resp.ok) throw new Error('space/my request failed')
-            return resp.json()
-        }).then((result: any) => {
+    private checkSpaceAndLogin() {
+        WKApp.apiClient.get('space/my').then((result: any) => {
             const spaces = Array.isArray(result) ? result : (result?.data ?? []);
             if (spaces.length === 0) {
                 // 无 Space，走引导流程

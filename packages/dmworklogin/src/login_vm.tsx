@@ -93,12 +93,8 @@ export class LoginVM extends ProviderListener {
         this.inviteLoading = true
         this.notifyListener()
 
-        fetch(`${window.location.origin}/api/v1/space/invite/${inviteCode}`)
-            .then(resp => {
-                if (!resp.ok) throw new Error('invalid')
-                return resp.json()
-            })
-            .then(info => {
+        WKApp.apiClient.get(`space/invite/${inviteCode}`)
+            .then((info: any) => {
                 this.inviteInfo = info
                 this.inviteLoading = false
                 this.notifyListener()

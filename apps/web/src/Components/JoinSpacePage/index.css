@@ -88,14 +88,14 @@
 
 /* Primary 按钮颜色统一 */
 .wk-join-space-btn.semi-button-primary {
-    background-color: #5b6abf !important;
-    border-color: #5b6abf !important;
+    background-color: var(--wk-color-primary, #5b6abf) !important;
+    border-color: var(--wk-color-primary, #5b6abf) !important;
     color: #fff !important;
 }
 
 .wk-join-space-btn.semi-button-primary:hover {
-    background-color: #4a59ae !important;
-    border-color: #4a59ae !important;
+    background-color: var(--wk-color-primary-hover, #4a59ae) !important;
+    border-color: var(--wk-color-primary-hover, #4a59ae) !important;
 }
 
 /* 输入框 */

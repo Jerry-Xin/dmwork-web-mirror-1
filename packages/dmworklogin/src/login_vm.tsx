@@ -327,32 +327,18 @@ export class LoginVM extends ProviderListener {
         loginInfo.save()
 
         // 登录/注册成功后，检查是否有待处理的邀请码（来自邀请链接）
-        // 有邀请码的流程走原来逻辑，不走 Space 引导
+        // 有邀请码：直接 callOnLogin()，邀请码加入逻辑统一由 Layout/onLogin 处理，避免重复执行
         const pendingInvite = localStorage.getItem("pendingInviteCode");
         if (pendingInvite && /^[a-zA-Z0-9_-]+$/.test(pendingInvite)) {
-            const apiUrl = WKApp.apiClient.config.apiURL?.replace(/\/+$/, '');
-            fetch(`${apiUrl}/space/join`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'token': data.token },
-                body: JSON.stringify({ invite_code: pendingInvite }),
-            }).then(resp => resp.json()).then(result => {
-                localStorage.removeItem("pendingInviteCode");
-                if (result?.space_id) {
-                    localStorage.setItem('currentSpaceId', result.space_id);
-                }
-            }).catch(() => {
-                localStorage.removeItem("pendingInviteCode");
-            }).finally(() => {
-                try {
-                    WKApp.endpoints.callOnLogin()
-                } catch (e) {
-                    console.warn('callOnLogin error suppressed:', e)
-                }
-            });
+            try {
+                WKApp.endpoints.callOnLogin()
+            } catch (e) {
+                console.warn('callOnLogin error suppressed:', e)
+            }
             return;
         }
 
-        // 无邀请码：先检查用户是否已有 Space
+        // 无邀请码：先检查用户是否已有 Space，决定走正常流程还是引导页
         this.checkSpaceAndLogin(data.token)
     }
 

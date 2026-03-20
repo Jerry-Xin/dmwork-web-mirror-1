@@ -256,18 +256,12 @@ export class EndpointCommon {
   }
 
   callOnLogin() {
-    const len = this._onLogins.length;
-    for (let i = 0; i < len; i++) {
-      this._onLogins[i]();
-    }
+    [...this._onLogins].forEach(fn => fn());
   }
 
   /** 触发"需要加入 Space"引导，Wave 2 注册路由回调后生效 */
   onNeedJoinSpace() {
-    const len = this._onNeedJoinSpaces.length;
-    for (let i = 0; i < len; i++) {
-      this._onNeedJoinSpaces[i]();
-    }
+    [...this._onNeedJoinSpaces].forEach(fn => fn());
   }
 }
 

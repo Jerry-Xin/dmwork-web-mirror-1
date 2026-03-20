@@ -201,52 +201,53 @@ export class MainPage extends Component {
                     context.popToRoot()
                 }
             }} contentRight={<div className="wk-chat-empty-hologram">
-                <svg width="260" height="230" viewBox="0 0 300 260">
+                <svg width="280" height="220" viewBox="0 0 320 250">
                     <defs>
-                        <linearGradient id="holo-b1" x1="0%" y1="100%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#7C5CFC" stopOpacity="0.04"/>
-                            <stop offset="100%" stopColor="#00D4AA" stopOpacity="0.03"/>
+                        <linearGradient id="es-a1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#7C5CFC" stopOpacity="0.06"/>
+                            <stop offset="100%" stopColor="#00D4AA" stopOpacity="0.04"/>
                         </linearGradient>
+                        <linearGradient id="es-a2" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#7C5CFC"/>
+                            <stop offset="100%" stopColor="#00D4AA"/>
+                        </linearGradient>
+                        <radialGradient id="es-a3" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stopColor="#7C5CFC" stopOpacity="0.1"/>
+                            <stop offset="100%" stopColor="#7C5CFC" stopOpacity="0"/>
+                        </radialGradient>
                     </defs>
-                    {/* 基座 */}
-                    <ellipse cx="150" cy="225" rx="85" ry="14" fill="none" stroke="#9498A8" strokeWidth="0.8" opacity="0.2"/>
-                    <ellipse cx="150" cy="225" rx="62" ry="10" fill="none" stroke="#9498A8" strokeWidth="0.5" opacity="0.12"/>
-                    {/* 光锥 */}
-                    <path d="M78,225 L110,45 L190,45 L222,225" fill="url(#holo-b1)" opacity="0.6"/>
-                    <line x1="78" y1="225" x2="110" y2="45" stroke="#7C5CFC" strokeWidth="0.4" opacity="0.1"/>
-                    <line x1="222" y1="225" x2="190" y2="45" stroke="#00D4AA" strokeWidth="0.4" opacity="0.1"/>
-                    {/* 气泡 层1 */}
-                    <g className="wk-hologram-float1">
-                        <rect x="115" y="55" width="60" height="20" rx="5" fill="white" stroke="#7C5CFC" strokeWidth="1.1" opacity="0.7"/>
-                        <line x1="124" y1="65" x2="162" y2="65" stroke="#7C5CFC" strokeWidth="1.5" strokeLinecap="round" opacity="0.28"/>
-                    </g>
-                    <g className="wk-hologram-float2">
-                        <rect x="98" y="90" width="50" height="18" rx="9" fill="white" stroke="#00D4AA" strokeWidth="1" opacity="0.6"/>
-                        <line x1="108" y1="99" x2="136" y2="99" stroke="#00D4AA" strokeWidth="1.3" strokeLinecap="round" opacity="0.25"/>
-                    </g>
-                    <g className="wk-hologram-float1">
-                        <rect x="135" y="122" width="65" height="20" rx="5" fill="white" stroke="#7C5CFC" strokeWidth="1" opacity="0.55"/>
-                        <line x1="144" y1="132" x2="186" y2="132" stroke="#7C5CFC" strokeWidth="1.3" strokeLinecap="round" opacity="0.22"/>
-                    </g>
-                    <g className="wk-hologram-float2">
-                        <rect x="92" y="155" width="55" height="18" rx="9" fill="white" stroke="#00D4AA" strokeWidth="0.9" opacity="0.45"/>
-                        <line x1="102" y1="164" x2="134" y2="164" stroke="#00D4AA" strokeWidth="1.2" strokeLinecap="round" opacity="0.18"/>
-                    </g>
-                    <g className="wk-hologram-float1">
-                        <rect x="142" y="183" width="48" height="16" rx="4.5" fill="white" stroke="#7C5CFC" strokeWidth="0.8" opacity="0.35"/>
-                        <line x1="150" y1="191" x2="180" y2="191" stroke="#7C5CFC" strokeWidth="1" strokeLinecap="round" opacity="0.15"/>
-                    </g>
-                    {/* 扫描线 */}
-                    <line x1="88" y1="115" x2="212" y2="115" stroke="#7C5CFC" strokeWidth="0.3" opacity="0.08"/>
-                    <line x1="85" y1="150" x2="215" y2="150" stroke="#00D4AA" strokeWidth="0.3" opacity="0.08"/>
-                    {/* 光粒子 */}
-                    <circle cx="125" cy="78" r="1.2" fill="#7C5CFC" opacity="0.2" className="wk-hologram-pulse"/>
-                    <circle cx="170" cy="110" r="1" fill="#00D4AA" opacity="0.18" className="wk-hologram-pulse"/>
-                    <circle cx="112" cy="145" r="1" fill="#7C5CFC" opacity="0.15" className="wk-hologram-pulse"/>
-                    <circle cx="180" cy="172" r="1" fill="#00D4AA" opacity="0.12" className="wk-hologram-pulse"/>
+                    <circle cx="160" cy="125" r="100" fill="url(#es-a1)"/>
+                    {/* 左侧人节点 */}
+                    <circle cx="55" cy="70" r="16" fill="white" stroke="#00D4AA" strokeWidth="1.5" opacity="0.65"/>
+                    <circle cx="55" cy="70" r="5" fill="#00D4AA" opacity="0.25"/>
+                    <circle cx="40" cy="130" r="12" fill="white" stroke="#00D4AA" strokeWidth="1.2" opacity="0.45"/>
+                    <circle cx="40" cy="130" r="3.5" fill="#00D4AA" opacity="0.18"/>
+                    <circle cx="65" cy="180" r="13" fill="white" stroke="#00D4AA" strokeWidth="1.3" opacity="0.5"/>
+                    <circle cx="65" cy="180" r="4" fill="#00D4AA" opacity="0.2"/>
+                    {/* 右侧AI节点 */}
+                    <rect x="245" y="55" width="30" height="30" rx="7" fill="white" stroke="#7C5CFC" strokeWidth="1.5" opacity="0.65"/>
+                    <circle cx="260" cy="70" r="5" fill="#7C5CFC" opacity="0.25"/>
+                    <rect x="255" y="118" width="26" height="26" rx="6" fill="white" stroke="#7C5CFC" strokeWidth="1.2" opacity="0.45"/>
+                    <circle cx="268" cy="131" r="3.5" fill="#7C5CFC" opacity="0.18"/>
+                    <rect x="240" y="172" width="28" height="28" rx="6.5" fill="white" stroke="#7C5CFC" strokeWidth="1.3" opacity="0.5"/>
+                    <circle cx="254" cy="186" r="4" fill="#7C5CFC" opacity="0.2"/>
+                    {/* 中心光核 */}
+                    <circle cx="160" cy="125" r="26" fill="url(#es-a3)"/>
+                    <circle cx="160" cy="125" r="14" fill="white" stroke="url(#es-a2)" strokeWidth="1.8" opacity="0.75"/>
+                    <circle cx="160" cy="125" r="5" fill="url(#es-a2)" opacity="0.35" className="wk-hologram-pulse"/>
+                    {/* 脉冲连线 */}
+                    <line x1="71" y1="72" x2="146" y2="122" stroke="#00D4AA" strokeWidth="1" strokeDasharray="4,6" opacity="0.3" className="wk-hologram-dash"/>
+                    <line x1="52" y1="130" x2="146" y2="126" stroke="#00D4AA" strokeWidth="0.8" strokeDasharray="4,6" opacity="0.22" className="wk-hologram-dash"/>
+                    <line x1="78" y1="178" x2="148" y2="130" stroke="#00D4AA" strokeWidth="0.8" strokeDasharray="4,6" opacity="0.18" className="wk-hologram-dash"/>
+                    <line x1="245" y1="70" x2="174" y2="122" stroke="#7C5CFC" strokeWidth="1" strokeDasharray="4,6" opacity="0.3" className="wk-hologram-dash"/>
+                    <line x1="255" y1="131" x2="174" y2="126" stroke="#7C5CFC" strokeWidth="0.8" strokeDasharray="4,6" opacity="0.22" className="wk-hologram-dash"/>
+                    <line x1="240" y1="186" x2="172" y2="130" stroke="#7C5CFC" strokeWidth="0.8" strokeDasharray="4,6" opacity="0.18" className="wk-hologram-dash"/>
+                    {/* 脉冲光点 */}
+                    <circle cx="108" cy="98" r="2" fill="#00D4AA" opacity="0.4" className="wk-hologram-pulse"/>
+                    <circle cx="210" cy="98" r="2" fill="#7C5CFC" opacity="0.4" className="wk-hologram-pulse"/>
                 </svg>
-                <div className="empty-text">全息对话等待中</div>
-                <div className="empty-hint">选择会话启动投影 ◈</div>
+                <div className="empty-text">选择对话，激活连接</div>
+                <div className="empty-hint">人与 AI 在这里汇聚 ✦</div>
             </div>} />
         }}>
 

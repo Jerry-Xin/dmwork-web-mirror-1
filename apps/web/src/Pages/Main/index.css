@@ -175,3 +175,11 @@
 .wk-hologram-float2 {
     animation: wk-hologram-float2 3.5s ease-in-out infinite 0.5s;
 }
+
+@keyframes wk-hologram-dash {
+    to { stroke-dashoffset: -20; }
+}
+
+.wk-hologram-dash {
+    animation: wk-hologram-dash 2s linear infinite;
+}

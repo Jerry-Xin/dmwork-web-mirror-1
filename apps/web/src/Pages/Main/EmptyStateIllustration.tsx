@@ -21,22 +21,22 @@ export const EmptyStateIllustration: React.FC = () => {
                 </defs>
                 <circle cx="160" cy="125" r="100" fill="url(#es-a1)"/>
                 {/* 左侧人节点 */}
-                <circle cx="55" cy="70" r="16" fill="var(--wk-bg-card, white)" stroke="#00D4AA" strokeWidth="1.5" opacity="0.65"/>
+                <circle cx="55" cy="70" r="16" fill="var(--wk-bg-elevated, white)" stroke="#00D4AA" strokeWidth="1.5" opacity="0.65"/>
                 <circle cx="55" cy="70" r="5" fill="#00D4AA" opacity="0.25"/>
-                <circle cx="40" cy="130" r="12" fill="var(--wk-bg-card, white)" stroke="#00D4AA" strokeWidth="1.2" opacity="0.45"/>
+                <circle cx="40" cy="130" r="12" fill="var(--wk-bg-elevated, white)" stroke="#00D4AA" strokeWidth="1.2" opacity="0.45"/>
                 <circle cx="40" cy="130" r="3.5" fill="#00D4AA" opacity="0.18"/>
-                <circle cx="65" cy="180" r="13" fill="var(--wk-bg-card, white)" stroke="#00D4AA" strokeWidth="1.3" opacity="0.5"/>
+                <circle cx="65" cy="180" r="13" fill="var(--wk-bg-elevated, white)" stroke="#00D4AA" strokeWidth="1.3" opacity="0.5"/>
                 <circle cx="65" cy="180" r="4" fill="#00D4AA" opacity="0.2"/>
                 {/* 右侧AI节点 */}
-                <rect x="245" y="55" width="30" height="30" rx="7" fill="var(--wk-bg-card, white)" stroke="#7C5CFC" strokeWidth="1.5" opacity="0.65"/>
+                <rect x="245" y="55" width="30" height="30" rx="7" fill="var(--wk-bg-elevated, white)" stroke="#7C5CFC" strokeWidth="1.5" opacity="0.65"/>
                 <circle cx="260" cy="70" r="5" fill="#7C5CFC" opacity="0.25"/>
-                <rect x="255" y="118" width="26" height="26" rx="6" fill="var(--wk-bg-card, white)" stroke="#7C5CFC" strokeWidth="1.2" opacity="0.45"/>
+                <rect x="255" y="118" width="26" height="26" rx="6" fill="var(--wk-bg-elevated, white)" stroke="#7C5CFC" strokeWidth="1.2" opacity="0.45"/>
                 <circle cx="268" cy="131" r="3.5" fill="#7C5CFC" opacity="0.18"/>
-                <rect x="240" y="172" width="28" height="28" rx="6.5" fill="var(--wk-bg-card, white)" stroke="#7C5CFC" strokeWidth="1.3" opacity="0.5"/>
+                <rect x="240" y="172" width="28" height="28" rx="6.5" fill="var(--wk-bg-elevated, white)" stroke="#7C5CFC" strokeWidth="1.3" opacity="0.5"/>
                 <circle cx="254" cy="186" r="4" fill="#7C5CFC" opacity="0.2"/>
                 {/* 中心光核 */}
                 <circle cx="160" cy="125" r="26" fill="url(#es-a3)"/>
-                <circle cx="160" cy="125" r="14" fill="var(--wk-bg-card, white)" stroke="url(#es-a2)" strokeWidth="1.8" opacity="0.75"/>
+                <circle cx="160" cy="125" r="14" fill="var(--wk-bg-elevated, white)" stroke="url(#es-a2)" strokeWidth="1.8" opacity="0.75"/>
                 <circle cx="160" cy="125" r="5" fill="url(#es-a2)" opacity="0.35" className="wk-hologram-pulse"/>
                 {/* 脉冲连线 */}
                 <line x1="71" y1="72" x2="146" y2="122" stroke="#00D4AA" strokeWidth="1" strokeDasharray="4,6" opacity="0.3" className="wk-hologram-dash"/>

@@ -56,7 +56,14 @@ interface ImageCellState {
     uploadStatus: TaskStatus | null
 }
 
+/** task 自身支持的重试接口（MediaMessageUploadTask 实现） */
+interface RestartableTask extends Task {
+    restart(): Promise<void>;
+}
+
 export class ImageCell extends MessageCell<any, ImageCellState> {
+    private _task?: RestartableTask
+
     private _taskListener = (task: Task) => {
         const { message } = this.props
         if (task.id !== message.clientMsgNo) return
@@ -74,12 +81,13 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
 
     componentDidMount() {
         const { message } = this.props
-        const taskMgr = WKSDK.shared().taskManager as any
-        const task: Task | undefined = taskMgr.taskMap?.get(message.clientMsgNo)
-        if (task) {
-            this.setState({ uploadProgress: task.progress(), uploadStatus: task.status })
-        }
         WKSDK.shared().taskManager.addListener(this._taskListener)
+        const found = ((WKSDK.shared().taskManager as any).taskMap as Map<string, Task> | undefined)
+            ?.get(message.clientMsgNo) as RestartableTask | undefined
+        if (found) {
+            this._task = found
+            this.setState({ uploadProgress: found.progress(), uploadStatus: found.status })
+        }
     }
 
     componentWillUnmount() {
@@ -178,9 +186,7 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
                             cursor: "pointer",
                         }} onClick={(e) => {
                             e.stopPropagation()
-                            const taskMgr = WKSDK.shared().taskManager as any
-                            const task: Task | undefined = taskMgr.taskMap?.get(message.clientMsgNo)
-                            task?.start()
+                            this._task?.restart()
                         }}>
                             <span style={{ color: "#fff", fontSize: 22 }}>⚠️</span>
                             <span style={{ color: "#fff", fontSize: 11 }}>上传失败，点击重试</span>

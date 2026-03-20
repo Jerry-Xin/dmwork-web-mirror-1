@@ -99,4 +99,12 @@ export class MediaMessageUploadTask extends MessageTask {
         return this._progress ?? 0
     }
 
+    /** 重试上传：重置状态和进度后重新调 start() */
+    async restart(): Promise<void> {
+        this.status = TaskStatus.processing
+        this._progress = 0
+        this.update()
+        await this.start()
+    }
+
 }

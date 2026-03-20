@@ -72,6 +72,11 @@ function isSafeURL(url: string): boolean {
 
 const SMALL_FILE_THRESHOLD = 1024 * 1024 // 1MB 以下不显示进度条
 
+/** task 自身支持的重试接口（MediaMessageUploadTask 实现） */
+interface RestartableTask extends Task {
+    restart(): Promise<void>;
+}
+
 interface FileCellState {
     downloading: boolean
     uploadProgress: number       // 0~100 整数百分比
@@ -79,6 +84,8 @@ interface FileCellState {
 }
 
 export class FileCell extends MessageCell<any, FileCellState> {
+    private _task?: RestartableTask
+
     private _taskListener = (task: Task) => {
         const { message } = this.props
         if (task.id !== message.clientMsgNo) return
@@ -102,13 +109,15 @@ export class FileCell extends MessageCell<any, FileCellState> {
         const content = message.content as FileContent
         // 小文件不显示进度，跳过订阅
         if (content.size >= SMALL_FILE_THRESHOLD) {
-            // 拿初始 task 状态（taskMap 为 private，用 any 访问）
-            const taskMgr = WKSDK.shared().taskManager as any
-            const task: Task | undefined = taskMgr.taskMap?.get(message.clientMsgNo)
-            if (task) {
-                this.setState({ uploadProgress: task.progress(), uploadStatus: task.status })
-            }
+            // taskManager 通过 addListener 订阅；初始 task 状态通过首次回调获取
             WKSDK.shared().taskManager.addListener(this._taskListener)
+            // 存 task 引用供重试使用（addTask 时 task 已调 start，此处仅读取）
+            const allListeners = (WKSDK.shared().taskManager as any).taskMap as Map<string, Task> | undefined
+            const found = allListeners?.get(message.clientMsgNo) as RestartableTask | undefined
+            if (found) {
+                this._task = found
+                this.setState({ uploadProgress: found.progress(), uploadStatus: found.status })
+            }
         }
     }
 
@@ -219,9 +228,7 @@ export class FileCell extends MessageCell<any, FileCellState> {
                         </div>
                         <div className="wk-message-file-actions">
                             <div className="wk-message-file-action" title="重试" onClick={() => {
-                                const taskMgr = WKSDK.shared().taskManager as any
-                                const task: Task | undefined = taskMgr.taskMap?.get(message.clientMsgNo)
-                                task?.start()
+                                this._task?.restart()
                             }}>
                                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="1 4 1 10 7 10" />

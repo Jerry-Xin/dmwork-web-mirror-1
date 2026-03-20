@@ -18,6 +18,7 @@ export class ShowConversationOptions {
 
 export class EndpointCommon {
   private _onLogins: VoidFunction[] = []; // 登录成功
+  private _onNeedJoinSpaces: VoidFunction[] = []; // 需要加入 Space 引导
 
   constructor() {
     this.registerShowConversation();
@@ -32,6 +33,21 @@ export class EndpointCommon {
     for (let i = 0; i < len; i++) {
       if (v === this._onLogins[i]) {
         this._onLogins.splice(i, 1);
+        return;
+      }
+    }
+  }
+
+  /** 注册"无 Space 时需要引导加入"回调 */
+  addOnNeedJoinSpace(v: VoidFunction) {
+    this._onNeedJoinSpaces.push(v);
+  }
+
+  removeOnNeedJoinSpace(v: VoidFunction) {
+    const len = this._onNeedJoinSpaces.length;
+    for (let i = 0; i < len; i++) {
+      if (v === this._onNeedJoinSpaces[i]) {
+        this._onNeedJoinSpaces.splice(i, 1);
         return;
       }
     }
@@ -240,10 +256,12 @@ export class EndpointCommon {
   }
 
   callOnLogin() {
-    const len = this._onLogins.length;
-    for (let i = 0; i < len; i++) {
-      this._onLogins[i]();
-    }
+    [...this._onLogins].forEach(fn => fn());
+  }
+
+  /** 触发"需要加入 Space"引导，Wave 2 注册路由回调后生效 */
+  onNeedJoinSpace() {
+    [...this._onNeedJoinSpaces].forEach(fn => fn());
   }
 }
 

@@ -185,13 +185,11 @@ class Login extends Component<any, LoginState> {
                                     }}>
                                         扫码登录
                                     </div>
-                                    {vm.inviteInfo && (
-                                        <div className="wk-login-content-form-switch" onClick={() => {
+                                    <div className="wk-login-content-form-switch" onClick={() => {
                                             vm.loginType = LoginType.register
                                         }}>
                                             没有账号？注册
                                         </div>
-                                    )}
                                     <div className="wk-login-content-form-switch" onClick={() => {
                                         vm.loginType = LoginType.forgetPassword
                                     }}>

@@ -93,12 +93,8 @@ export class LoginVM extends ProviderListener {
         this.inviteLoading = true
         this.notifyListener()
 
-        fetch(`${window.location.origin}/api/v1/space/invite/${inviteCode}`)
-            .then(resp => {
-                if (!resp.ok) throw new Error('invalid')
-                return resp.json()
-            })
-            .then(info => {
+        WKApp.apiClient.get(`space/invite/${inviteCode}`)
+            .then((info: any) => {
                 this.inviteInfo = info
                 this.inviteLoading = false
                 this.notifyListener()
@@ -327,28 +323,53 @@ export class LoginVM extends ProviderListener {
         loginInfo.save()
 
         // 登录/注册成功后，检查是否有待处理的邀请码（来自邀请链接）
+        // 有邀请码：直接 callOnLogin()，邀请码加入逻辑统一由 Layout/onLogin 处理，避免重复执行
         const pendingInvite = localStorage.getItem("pendingInviteCode");
         if (pendingInvite && /^[a-zA-Z0-9_-]+$/.test(pendingInvite)) {
-            const apiUrl = WKApp.apiClient.config.apiURL?.replace(/\/+$/, '');
-            fetch(`${apiUrl}/space/join`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'token': data.token },
-                body: JSON.stringify({ invite_code: pendingInvite }),
-            }).then(resp => resp.json()).then(result => {
-                localStorage.removeItem("pendingInviteCode");
-                if (result?.space_id) {
-                    localStorage.setItem('currentSpaceId', result.space_id);
-                }
-            }).catch(() => {
-                localStorage.removeItem("pendingInviteCode");
-            });
+            try {
+                WKApp.endpoints.callOnLogin()
+            } catch (e) {
+                console.warn('callOnLogin error suppressed:', e)
+            }
+            return;
         }
 
-        try {
-            WKApp.endpoints.callOnLogin()
-        } catch (e) {
-            console.warn('callOnLogin error suppressed:', e)
-        }
+        // 无邀请码：先检查用户是否已有 Space，决定走正常流程还是引导页
+        this.checkSpaceAndLogin()
+    }
+
+    /**
+     * 检查用户是否已有 Space，决定后续跳转：
+     * - 有 Space → 正常调 callOnLogin()
+     * - 无 Space（空数组）→ 调 onNeedJoinSpace() 引导用户加入 Space（Wave 2 提供路由）
+     */
+    private checkSpaceAndLogin() {
+        WKApp.apiClient.get('space/my').then((result: any) => {
+            const spaces = Array.isArray(result) ? result : (result?.data ?? []);
+            if (spaces.length === 0) {
+                // 无 Space，走引导流程
+                try {
+                    WKApp.endpoints.onNeedJoinSpace()
+                } catch (e) {
+                    console.warn('onNeedJoinSpace error suppressed:', e)
+                }
+            } else {
+                // 有 Space，正常登录
+                try {
+                    WKApp.endpoints.callOnLogin()
+                } catch (e) {
+                    console.warn('callOnLogin error suppressed:', e)
+                }
+            }
+        }).catch(() => {
+            // 请求失败时降级走正常登录流程，避免卡死
+            console.warn('space/my check failed, falling back to normal login')
+            try {
+                WKApp.endpoints.callOnLogin()
+            } catch (e) {
+                console.warn('callOnLogin error suppressed:', e)
+            }
+        });
     }
 
     requestUUID() {

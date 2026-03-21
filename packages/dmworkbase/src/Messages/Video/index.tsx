@@ -1,9 +1,12 @@
 import { MessageContent, WKSDK, Task, TaskStatus } from "wukongimjssdk";
+import { Toast } from "@douyinfe/semi-ui";
 import React from "react";
 import WKApp from "../../App";
 import MessageBase from "../Base";
 import { MessageCell } from "../MessageCell";
 import "./index.css"
+
+const SMALL_FILE_THRESHOLD = 1024 * 1024 // 1MB 以下不显示进度覆盖层
 
 export class VideoContent extends MessageContent {
     url!: string  // 小视频下载地址
@@ -33,6 +36,11 @@ export class VideoContent extends MessageContent {
 
 }
 
+/** task 自身支持的重试接口（MediaMessageUploadTask 实现） */
+interface RestartableTask extends Task {
+    restart(): Promise<void>;
+}
+
 interface VideoCellState {
     playProgress: number    // 播放进度（秒）
     uploadProgress: number  // 上传进度 0~100 整数百分比
@@ -40,6 +48,8 @@ interface VideoCellState {
 }
 
 export class VideoCell extends MessageCell<any, VideoCellState> {
+    private _task?: RestartableTask
+
     private _taskListener = (task: Task) => {
         const { message } = this.props
         if (task.id !== message.clientMsgNo) return
@@ -57,12 +67,16 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
 
     componentDidMount() {
         const { message } = this.props
-        const taskMgr = WKSDK.shared().taskManager as any
-        const task: Task | undefined = taskMgr.taskMap?.get(message.clientMsgNo)
-        if (task) {
-            this.setState({ uploadProgress: task.progress(), uploadStatus: task.status })
-        }
+        // 小文件（<1MB）不显示进度，跳过订阅
+        const fileSize = (message.content as any).file?.size ?? 0
+        if (fileSize < SMALL_FILE_THRESHOLD) return
         WKSDK.shared().taskManager.addListener(this._taskListener)
+        const found = ((WKSDK.shared().taskManager as any).taskMap as Map<string, Task> | undefined)
+            ?.get(message.clientMsgNo) as RestartableTask | undefined
+        if (found) {
+            this._task = found
+            this.setState({ uploadProgress: found.progress(), uploadStatus: found.status })
+        }
     }
 
     componentWillUnmount() {
@@ -169,10 +183,13 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
                         alignItems: "center", justifyContent: "center",
                         gap: 6,
                         cursor: "pointer",
-                    }} onClick={() => {
-                        const taskMgr = WKSDK.shared().taskManager as any
-                        const task: Task | undefined = taskMgr.taskMap?.get(message.clientMsgNo)
-                        task?.start()
+                    }} onClick={(e) => {
+                        e.stopPropagation()
+                        if (!this._task) {
+                            Toast.warning('上传任务已失效，请重新发送文件')
+                            return
+                        }
+                        this._task.restart()
                     }}>
                         <span style={{ color: "#fff", fontSize: 22 }}>⚠️</span>
                         <span style={{ color: "#fff", fontSize: 11 }}>上传失败，点击重试</span>

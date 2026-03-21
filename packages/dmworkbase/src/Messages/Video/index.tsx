@@ -1,12 +1,12 @@
 import { MessageContent, WKSDK, Task, TaskStatus } from "wukongimjssdk";
 import { Toast } from "@douyinfe/semi-ui";
-
-const SMALL_FILE_THRESHOLD = 1024 * 1024 // 1MB 以下不显示进度覆盖层
 import React from "react";
 import WKApp from "../../App";
 import MessageBase from "../Base";
 import { MessageCell } from "../MessageCell";
 import "./index.css"
+
+const SMALL_FILE_THRESHOLD = 1024 * 1024 // 1MB 以下不显示进度覆盖层
 
 export class VideoContent extends MessageContent {
     url!: string  // 小视频下载地址

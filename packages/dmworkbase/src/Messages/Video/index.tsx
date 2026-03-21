@@ -183,7 +183,8 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
                         alignItems: "center", justifyContent: "center",
                         gap: 6,
                         cursor: "pointer",
-                    }} onClick={() => {
+                    }} onClick={(e) => {
+                        e.stopPropagation()
                         if (!this._task) {
                             Toast.warning('上传任务已失效，请重新发送文件')
                             return

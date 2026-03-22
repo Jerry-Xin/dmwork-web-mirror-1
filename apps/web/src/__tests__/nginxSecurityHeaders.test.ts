@@ -40,6 +40,10 @@ describe('Nginx Security Headers', () => {
     expect(nginxConfig).toMatch(/frame-ancestors\s+'self'/);
   });
 
+  it('should have worker-src directive to allow blob Workers (AMR voice decoding)', () => {
+    expect(nginxConfig).toMatch(/worker-src\s+'self'\s+blob:/);
+  });
+
   it('should have HSTS header available (commented for manual enable)', () => {
     expect(nginxConfig).toContain('Strict-Transport-Security');
   });

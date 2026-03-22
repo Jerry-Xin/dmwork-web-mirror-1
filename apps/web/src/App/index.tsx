@@ -5,7 +5,7 @@ import React from 'react';
 import { MessageSquare, Users, Bot } from 'lucide-react';
 import './index.css';
 import AppLayout from '../Layout';
-import { WKSDK } from 'wukongimjssdk';
+import { ChannelTypePerson, WKSDK } from 'wukongimjssdk';
 function App() {
   registerMenus()
   return (
@@ -30,11 +30,19 @@ async function registerMenus() {
       <MessageSquare size={24} strokeWidth={1.5} color='#999' />,
       <MessageSquare size={24} strokeWidth={2} color='#5b6abf' fill='#5b6abf' />)
     let badge = 0;
+    const currentSpaceId = WKApp.shared.currentSpaceId
 
     for (const conversation of WKSDK.shared().conversationManager.conversations) {
       const channelInfo = WKSDK.shared().channelManager.getChannelInfo(conversation.channel)
       if (channelInfo?.mute) {
         continue
+      }
+      // Space 过滤：私聊(Person)始终计入，群聊只计入当前 Space 的
+      if (currentSpaceId && conversation.channel.channelType !== ChannelTypePerson) {
+        const cid = conversation.channel.channelID
+        if (cid.startsWith("s") && !cid.startsWith(`s${currentSpaceId}_`)) {
+          continue
+        }
       }
       badge += conversation.unread
     }

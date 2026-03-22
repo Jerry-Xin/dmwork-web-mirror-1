@@ -215,9 +215,17 @@ export default class DataSourceModule implements IModule {
             const syncUrl = spaceId ? `conversation/sync?space_id=${encodeURIComponent(spaceId)}` : "conversation/sync"
             resp = await WKApp.apiClient.post(syncUrl, { "msg_count": 1 })
             if (resp) {
+                // 清空旧缓存，用本次 sync 响应重建 channelID→spaceID 映射
+                WKApp.shared.channelSpaceMap.clear()
                 resp.conversations.forEach((conversationMap: any) => {
                     let model = Convert.toConversation(conversationMap);
                     conversations.push(model);
+                    // 填充 channelSpaceMap 缓存
+                    const sid = conversationMap["space_id"]
+                    if (sid) {
+                        const key = `${conversationMap["channel_id"]}_${conversationMap["channel_type"]}`
+                        WKApp.shared.channelSpaceMap.set(key, sid)
+                    }
                 });
                 const users = resp.users
                 if (users && users.length > 0) {

@@ -1,4 +1,4 @@
-import WKSDK, { MessageContentType, ChannelTypePerson } from "wukongimjssdk";
+import WKSDK, { MessageContentType, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ConnectStatus, ConnectStatusListener } from "wukongimjssdk";
 import { ConversationAction, ConversationListener } from "wukongimjssdk";
@@ -127,6 +127,43 @@ export class ChatVM extends ProviderListener {
         this.notifyListener()
     }
 
+    /**
+     * 判断实时推送的会话是否不属于当前 Space，应跳过。
+     * - Person channel（私聊）永远不过滤
+     * - 有 Space 前缀的 channel → 前缀匹配
+     * - 群聊（无前缀）→ 查 channelSpaceMap 缓存
+     * - 缓存未命中 → fail-open（放行）
+     */
+    private shouldSkipForSpace(conversation: Conversation): boolean {
+        const currentSpaceId = WKApp.shared.currentSpaceId
+        if (!currentSpaceId) return false
+
+        const channel = conversation.channel
+        if (!channel?.channelID) return false
+
+        // 私聊永远不过滤
+        if (channel.channelType === ChannelTypePerson) return false
+
+        const cid = channel.channelID
+
+        // 有 Space 前缀的 channel（私聊在 Space 内的 s{spaceId}_{uid} 格式）
+        if (cid.startsWith("s")) {
+            return !cid.startsWith(`s${currentSpaceId}_`)
+        }
+
+        // 群聊：查 channelSpaceMap 缓存
+        if (channel.channelType === ChannelTypeGroup) {
+            const key = `${cid}_${channel.channelType}`
+            const cachedSpaceId = WKApp.shared.channelSpaceMap.get(key)
+            if (cachedSpaceId && cachedSpaceId !== currentSpaceId) {
+                return true // 属于其他 Space → 跳过
+            }
+            // 缓存未命中或匹配 → 放行
+        }
+
+        return false
+    }
+
     private spaceChangedHandler?: (space: any) => void
 
     didMount(): void {
@@ -172,15 +209,9 @@ export class ChatVM extends ProviderListener {
                 WKSDK.shared().channelManager.fetchChannelInfo(conversation.channel)
             }
             if (action === ConversationAction.add) {
-                // Space 过滤：只添加属于当前 Space 的会话（或无 Space 前缀的旧会话）
-                const currentSpaceId = WKApp.shared.currentSpaceId
-                if (currentSpaceId && conversation.channel.channelID) {
-                    const prefix = `s${currentSpaceId}_`
-                    const cid = conversation.channel.channelID
-                    // 有 Space 前缀但不属于当前 Space → 跳过
-                    if (cid.startsWith("s") && !cid.startsWith(prefix)) {
-                        return
-                    }
+                // Space 过滤：只添加属于当前 Space 的会话
+                if (this.shouldSkipForSpace(conversation)) {
+                    return
                 }
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType === MessageContentType.text) {
                     conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage?.content.text)
@@ -189,12 +220,8 @@ export class ChatVM extends ProviderListener {
                 this.notifyListener()
             } else if (action === ConversationAction.update) {
                 // Space 过滤：忽略不属于当前 Space 的会话更新
-                const currentSpaceId = WKApp.shared.currentSpaceId
-                if (currentSpaceId && conversation.channel?.channelID) {
-                    const cid = conversation.channel.channelID
-                    if (cid.startsWith("s") && !cid.startsWith(`s${currentSpaceId}_`)) {
-                        return
-                    }
+                if (this.shouldSkipForSpace(conversation)) {
+                    return
                 }
                 const existConversation = this.findConversation(conversation.channel)
                 if (existConversation) {

@@ -1,4 +1,41 @@
 import WKApp from "../App"
+import { ChannelTypePerson, ChannelTypeGroup, Channel } from "wukongimjssdk"
+
+/**
+ * 判断一个 channel 是否不属于当前 Space，应从展示/计数中跳过。
+ * - 无 currentSpaceId → 不过滤
+ * - Person channel（私聊）→ 永远不过滤
+ * - 有 Space 前缀（s{spaceId}_）的 channel → 前缀匹配
+ * - 群聊（无前缀）→ 查 channelSpaceMap 缓存
+ * - 缓存未命中 → fail-open（放行）
+ */
+export function shouldSkipChannelForSpace(channel: Channel): boolean {
+    const currentSpaceId = WKApp.shared.currentSpaceId
+    if (!currentSpaceId) return false
+    if (!channel?.channelID) return false
+
+    // 私聊永远不过滤
+    if (channel.channelType === ChannelTypePerson) return false
+
+    const cid = channel.channelID
+
+    // 有 Space 前缀的 channel
+    if (cid.startsWith("s")) {
+        return !cid.startsWith(`s${currentSpaceId}_`)
+    }
+
+    // 群聊：查 channelSpaceMap 缓存
+    if (channel.channelType === ChannelTypeGroup) {
+        const key = `${cid}_${channel.channelType}`
+        const cachedSpaceId = WKApp.shared.channelSpaceMap.get(key)
+        if (cachedSpaceId && cachedSpaceId !== currentSpaceId) {
+            return true // 属于其他 Space → 跳过
+        }
+        // 缓存未命中或匹配 → 放行
+    }
+
+    return false
+}
 
 export interface Space {
     space_id: string

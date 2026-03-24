@@ -1,4 +1,4 @@
-import WKSDK, { MessageContentType, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
+import WKSDK, { MessageContentType } from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ConnectStatus, ConnectStatusListener } from "wukongimjssdk";
 import { ConversationAction, ConversationListener } from "wukongimjssdk";
@@ -8,6 +8,7 @@ import { ConversationWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
 import { animateScroll, scroller } from 'react-scroll';
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
+import { shouldSkipChannelForSpace } from "../../Service/SpaceService";
 import { EndpointID } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import { Space, SpaceService } from "../../Service/SpaceService";
@@ -127,43 +128,6 @@ export class ChatVM extends ProviderListener {
         this.notifyListener()
     }
 
-    /**
-     * 判断实时推送的会话是否不属于当前 Space，应跳过。
-     * - Person channel（私聊）永远不过滤
-     * - 有 Space 前缀的 channel → 前缀匹配
-     * - 群聊（无前缀）→ 查 channelSpaceMap 缓存
-     * - 缓存未命中 → fail-open（放行）
-     */
-    private shouldSkipForSpace(conversation: Conversation): boolean {
-        const currentSpaceId = WKApp.shared.currentSpaceId
-        if (!currentSpaceId) return false
-
-        const channel = conversation.channel
-        if (!channel?.channelID) return false
-
-        // 私聊永远不过滤
-        if (channel.channelType === ChannelTypePerson) return false
-
-        const cid = channel.channelID
-
-        // 有 Space 前缀的 channel（私聊在 Space 内的 s{spaceId}_{uid} 格式）
-        if (cid.startsWith("s")) {
-            return !cid.startsWith(`s${currentSpaceId}_`)
-        }
-
-        // 群聊：查 channelSpaceMap 缓存
-        if (channel.channelType === ChannelTypeGroup) {
-            const key = `${cid}_${channel.channelType}`
-            const cachedSpaceId = WKApp.shared.channelSpaceMap.get(key)
-            if (cachedSpaceId && cachedSpaceId !== currentSpaceId) {
-                return true // 属于其他 Space → 跳过
-            }
-            // 缓存未命中或匹配 → 放行
-        }
-
-        return false
-    }
-
     private spaceChangedHandler?: (space: any) => void
 
     didMount(): void {
@@ -210,7 +174,7 @@ export class ChatVM extends ProviderListener {
             }
             if (action === ConversationAction.add) {
                 // Space 过滤：只添加属于当前 Space 的会话
-                if (this.shouldSkipForSpace(conversation)) {
+                if (shouldSkipChannelForSpace(conversation.channel)) {
                     return
                 }
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType === MessageContentType.text) {
@@ -220,7 +184,7 @@ export class ChatVM extends ProviderListener {
                 this.notifyListener()
             } else if (action === ConversationAction.update) {
                 // Space 过滤：忽略不属于当前 Space 的会话更新
-                if (this.shouldSkipForSpace(conversation)) {
+                if (shouldSkipChannelForSpace(conversation.channel)) {
                     return
                 }
                 const existConversation = this.findConversation(conversation.channel)

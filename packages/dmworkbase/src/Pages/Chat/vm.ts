@@ -402,7 +402,7 @@ export async function handleGlobalSearchClick(item: any, type: string,hideModal?
             const channel = new Channel(item.channel_id, item.channel_type)
             let channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
             if (!channelInfo) {
-                await WKSDK.shared().channelManager.fetchChannelInfo(channel)
+                await WKSDK.shared().channelManager.fetchChannelInfo(channel).catch(() => {})
                 channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
             }
             const relation = channelInfo?.orgData?.follow

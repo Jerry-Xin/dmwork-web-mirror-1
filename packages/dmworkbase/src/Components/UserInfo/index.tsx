@@ -68,6 +68,7 @@ export default class UserInfo extends Component<UserInfoProps> {
                         finishButtonContext.disable(false)
                     },
                     onFinish: async () => {
+                        if (!finishButtonContext) return
                         finishButtonContext.loading(true)
                         await WKApp.dataSource.commonDataSource.friendApply({
                             uid: vm.uid,
@@ -110,6 +111,7 @@ export default class UserInfo extends Component<UserInfoProps> {
                         finishButtonContext.disable(false)
                     },
                     onFinish: async () => {
+                        if (!finishButtonContext) return
                         finishButtonContext.loading(true)
                         await WKApp.dataSource.commonDataSource.friendApply({
                             uid: vm.uid,

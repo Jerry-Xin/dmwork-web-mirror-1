@@ -8,7 +8,7 @@ import { ConversationWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
 import { animateScroll, scroller } from 'react-scroll';
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
-import { EndpointID, UserRelation } from "../../Service/Const";
+import { EndpointID } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import { Space, SpaceService } from "../../Service/SpaceService";
 import { isSafeUrl } from "../../Utils/security";
@@ -398,24 +398,26 @@ export class ChatVM extends ProviderListener {
 export async function handleGlobalSearchClick(item: any, type: string,hideModal?:()=>void) {
     if (type === "contacts") {
         if (item.channel_type === ChannelTypePerson) {
-            // 个人频道/Bot：通过 channelInfo 检查好友关系
-            const channel = new Channel(item.channel_id, item.channel_type)
-            let channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
-            if (!channelInfo) {
-                await WKSDK.shared().channelManager.fetchChannelInfo(channel).catch(() => {})
-                channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
-            }
-            const relation = channelInfo?.orgData?.follow
-            if (relation === UserRelation.friend) {
+            // 个人频道/Bot：通过 users API 检查好友关系
+            try {
+                const resp = await WKApp.apiClient.get(`users/${item.channel_id}`)
+                if (resp.follow === 1) {
+                    if(hideModal){
+                        hideModal()
+                    }
+                    WKApp.endpoints.showConversation(new Channel(item.channel_id, item.channel_type))
+                } else {
+                    if(hideModal){
+                        hideModal()
+                    }
+                    WKApp.shared.baseContext.showUserInfo(item.channel_id, new Channel(item.channel_id, item.channel_type))
+                }
+            } catch {
+                // API 失败时降级到资料页
                 if(hideModal){
                     hideModal()
                 }
-                WKApp.endpoints.showConversation(channel)
-            } else {
-                if(hideModal){
-                    hideModal()
-                }
-                WKApp.shared.baseContext.showUserInfo(item.channel_id, channel)
+                WKApp.shared.baseContext.showUserInfo(item.channel_id, new Channel(item.channel_id, item.channel_type))
             }
         } else {
             // 非个人频道（如群组）直接进入会话

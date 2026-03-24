@@ -1299,7 +1299,7 @@ export default class BaseModule implements IModule {
                 onClick: () => {
                   WKApp.shared.baseContext.showGlobalModal({
                     body: <GlobalSearch channel={channel} onClick={(item: any, type: string) => {
-                      handleGlobalSearchClick(item, type, () => {
+                      void handleGlobalSearchClick(item, type, () => {
                         WKApp.shared.baseContext.hideGlobalModal()
                       })
                     }} />,

@@ -314,7 +314,7 @@ export default class ChatPage extends Component<any> {
                 <div style={{ marginTop: '30px' }}>
                   <ErrorBoundary moduleName="搜索">
                     <GlobalSearch onClick={(item,type:string)=>{
-                        handleGlobalSearchClick(item,type,()=>{
+                        void handleGlobalSearchClick(item,type,()=>{
                           vm.showGlobalSearch = false
                         })
                     }}/>

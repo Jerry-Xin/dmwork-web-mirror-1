@@ -3,6 +3,15 @@ import axios from "axios";
 import { MediaMessageContent } from "wukongimjssdk";
 import {  MessageTask, TaskStatus } from "wukongimjssdk";
 
+interface UploadCredentials {
+    uploadUrl: string
+    downloadUrl: string
+    method: string
+    contentType: string
+    key: string
+    expiredTime: number
+}
+
 export class MediaMessageUploadTask extends MessageTask {
     private _progress?:number
     private controller: AbortController | undefined
@@ -18,16 +27,11 @@ export class MediaMessageUploadTask extends MessageTask {
     async start(): Promise<void> {
         const mediaContent = this.message.content as MediaMessageContent
         if(mediaContent.file) {
-            const param = new FormData();
-            param.append("file", mediaContent.file);
             const fileName = this.getUUID();
-            const ext = mediaContent.extension ?? ""
-            const path = `/${this.message.channel.channelType}/${this.message.channel.channelID}/${fileName}${ext}`
-            const contentDisposition = this.buildContentDisposition(mediaContent.file.name || `${fileName}${ext}`)
-            const uploadURL = await  this.getUploadURL(path, contentDisposition)
-            if(uploadURL) {
-                await this.uploadFile(mediaContent.file,uploadURL)
-
+            const path = `/${this.message.channel.channelType}/${this.message.channel.channelID}/${fileName}${mediaContent.extension??""}`
+            const credentials = await this.getUploadCredentials(mediaContent.file, path)
+            if(credentials) {
+                await this.uploadFile(mediaContent.file, credentials)
             }else{
                 this.status = TaskStatus.fail
                 this.update()
@@ -43,14 +47,12 @@ export class MediaMessageUploadTask extends MessageTask {
         }
     }
 
-   async uploadFile(file:File,uploadURL:string) {
-        const param = new FormData();
-        param.append("file", file);
+    async uploadFile(file: File, credentials: UploadCredentials) {
         // 动态超时：每 MB 预留 10 秒，最低 2 分钟兜底
         const fileSizeMB = file.size / (1024 * 1024);
         const timeoutMs = Math.max(2 * 60 * 1000, fileSizeMB * 10 * 1000);
-        const resp = await axios.post(uploadURL,param,{
-            headers: { "Content-Type": "multipart/form-data" },
+        const resp = await axios.put(credentials.uploadUrl, file, {
+            headers: { "Content-Type": credentials.contentType },
             signal: (this.controller = new AbortController()).signal,
             timeout: timeoutMs,
             onUploadProgress: e => {
@@ -64,38 +66,22 @@ export class MediaMessageUploadTask extends MessageTask {
             this.update()
         })
         if(resp) {
-            if(resp.data.path) {
-                const mediaContent = this.message.content as MediaMessageContent
-                mediaContent.remoteUrl = resp.data.path
-                this.status = TaskStatus.success
-                this.update()
-            } else {
-                this.status = TaskStatus.fail
-                this.update()
-            }
+            const mediaContent = this.message.content as MediaMessageContent
+            mediaContent.remoteUrl = credentials.downloadUrl
+            this.status = TaskStatus.success
+            this.update()
         }
     }
 
-    buildContentDisposition(filename: string): string {
-        const encoded = encodeURIComponent(filename)
-        // RFC 2616 quoted-string: escape \ and "
-        const asciiName = filename
-            .replace(/[^\x20-\x7E]/g, '_')
-            .replace(/\\/g, '\\\\')
-            .replace(/"/g, '\\"')
-        return `attachment; filename="${asciiName}"; filename*=UTF-8''${encoded}`
-    }
-
-    // 获取上传路径
-    async getUploadURL(path:string, contentDisposition?:string) :Promise<string|undefined> {
-       let url = `file/upload?path=${encodeURIComponent(path)}&type=chat`
-       if (contentDisposition) {
-           url += `&contentDisposition=${encodeURIComponent(contentDisposition)}`
-       }
-       const result = await WKApp.apiClient.get(url)
-       if(result) {
-           return result.url
-       }
+    // 获取预签名直传凭证（COS 直传）
+    async getUploadCredentials(file: File, path: string): Promise<UploadCredentials | undefined> {
+        const contentType = file.type || "application/octet-stream"
+        const result = await WKApp.apiClient.get(
+            `file/upload/credentials?path=${encodeURIComponent(path)}&type=chat&filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(contentType)}`
+        )
+        if(result && result.uploadUrl) {
+            return result as UploadCredentials
+        }
     }
 
     suspend(): void {

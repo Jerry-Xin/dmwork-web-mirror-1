@@ -68,7 +68,9 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, isSend, isSt
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[
                     // highlight 先着色，sanitize 最后兜底——白名单 hljs-* class 才真正有效
-                    rehypeHighlight,
+                    // aliases: json5 → json（highlight.js 无内置 json5，语法高度兼容）
+                    // ignoreMissing: 兜底，其他未知语言静默跳过而非抛错
+                    [rehypeHighlight, { aliases: { json5: "json" }, ignoreMissing: true }],
                     [rehypeSanitize, sanitizeSchema],
                 ]}
                 components={{

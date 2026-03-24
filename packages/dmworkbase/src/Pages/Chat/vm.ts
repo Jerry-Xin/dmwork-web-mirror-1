@@ -8,7 +8,7 @@ import { ConversationWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
 import { animateScroll, scroller } from 'react-scroll';
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
-import { EndpointID } from "../../Service/Const";
+import { EndpointID, UserRelation } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import { Space, SpaceService } from "../../Service/SpaceService";
 import { isSafeUrl } from "../../Utils/security";
@@ -397,27 +397,25 @@ export class ChatVM extends ProviderListener {
 // 处理搜索内容点击事件
 export async function handleGlobalSearchClick(item: any, type: string,hideModal?:()=>void) {
     if (type === "contacts") {
-        if (item.channel_type === 1) {
-            // 个人频道/Bot：先检查好友关系
-            try {
-                const resp = await WKApp.apiClient.get('friend/relation', { param: { uid: item.channel_id } })
-                if (resp.is_friend === 1 || resp.follow === 1) {
-                    if(hideModal){
-                        hideModal()
-                    }
-                    WKApp.endpoints.showConversation(new Channel(item.channel_id, item.channel_type))
-                } else {
-                    if(hideModal){
-                        hideModal()
-                    }
-                    WKApp.shared.baseContext.showUserInfo(item.channel_id, new Channel(item.channel_id, item.channel_type))
-                }
-            } catch {
-                // 请求失败时回退到打开资料页
+        if (item.channel_type === ChannelTypePerson) {
+            // 个人频道/Bot：通过 channelInfo 检查好友关系
+            const channel = new Channel(item.channel_id, item.channel_type)
+            let channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
+            if (!channelInfo) {
+                await WKSDK.shared().channelManager.fetchChannelInfo(channel)
+                channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
+            }
+            const relation = channelInfo?.orgData?.follow
+            if (relation === UserRelation.friend) {
                 if(hideModal){
                     hideModal()
                 }
-                WKApp.shared.baseContext.showUserInfo(item.channel_id, new Channel(item.channel_id, item.channel_type))
+                WKApp.endpoints.showConversation(channel)
+            } else {
+                if(hideModal){
+                    hideModal()
+                }
+                WKApp.shared.baseContext.showUserInfo(item.channel_id, channel)
             }
         } else {
             // 非个人频道（如群组）直接进入会话

@@ -257,6 +257,7 @@ export default class WKApp extends ProviderListener {
   isPC = false; // 是否是PC端
   deviceId: string = ""; // 设备ID
   currentSpaceId: string = ""; // 当前选中的 Space ID
+  channelSpaceMap: Map<string, string> = new Map(); // channelID_channelType → spaceID 缓存
   spaceChecked: boolean = false; // Space 检查是否完成
   deviceName: string = ""; // 设备名称
   deviceModel: string = ""; // 设备型号

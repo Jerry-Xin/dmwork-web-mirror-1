@@ -197,6 +197,6 @@
     vertical-align: text-bottom;
 }
 
-.wk-markdown-send .wk-markdown .wk-stream-cursor {
+.wk-markdown.wk-markdown-send .wk-stream-cursor {
     background-color: rgba(255, 255, 255, 0.9);
 }

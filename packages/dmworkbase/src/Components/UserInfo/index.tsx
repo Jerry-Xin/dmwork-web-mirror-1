@@ -32,12 +32,12 @@ export default class UserInfo extends Component<UserInfoProps> {
         }
 
         let content = <></>
-        // Space 模式：成员间可直接发消息，无需好友关系
+        // Space 模式：成员间可直接发消息，但 Bot 需要先加好友
         const spaceId = WKApp.shared.currentSpaceId;
         const isBot = vm.channelInfo?.orgData?.robot === 1;
         const isFriend = vm.relation() === UserRelation.friend;
-
-        if (spaceId) {
+        if (spaceId && (!isBot || isFriend)) {
+            // 非 Bot 成员或已加好友的 Bot：直接发消息
             content = <Button theme='solid' type="primary" onClick={() => {
                 WKApp.shared.baseContext.hideUserInfo()
                 // WuKongIM DM 只认裸 uid
@@ -49,19 +49,40 @@ export default class UserInfo extends Component<UserInfoProps> {
                 WKApp.endpoints.showConversation(new Channel(vm.uid, ChannelTypePerson))
             }}>发送消息</Button>
         } else if (isBot) {
-            // Bot 未添加好友时，直接显示添加好友按钮（无需 vercode）
-            content = <Button onClick={async () => {
-                try {
-                    await WKApp.apiClient.post("friend/apply", {
-                        to_uid: vm.uid,
-                        remark: "",
-                    });
-                    Toast.success("好友申请已发送");
-                    // Bot auto_approve=1 时会自动通过，刷新用户信息
-                    setTimeout(() => vm.reloadChannelInfo(), 500);
-                } catch (err: any) {
-                    Toast.error(err.msg || "申请失败");
-                }
+            // Bot 未加好友：走好友申请流程（BotFather 通知创建者审核）
+            content = <Button theme='solid' type="primary" onClick={() => {
+                let msg = `我想使用${vm.displayName()}`
+                var finishButtonContext: FinishButtonContext
+                context.push(<FriendApplyUI placeholder={msg} onMessage={(m) => {
+                    msg = m
+                    if (!m || m === "") {
+                        finishButtonContext.disable(true)
+                    } else {
+                        finishButtonContext.disable(false)
+                    }
+                }}></FriendApplyUI>, {
+                    title: "申请添加好友",
+                    showFinishButton: true,
+                    onFinishContext: (ctx) => {
+                        finishButtonContext = ctx
+                        finishButtonContext.disable(false)
+                    },
+                    onFinish: async () => {
+                        if (!finishButtonContext) return
+                        finishButtonContext.loading(true)
+                        await WKApp.dataSource.commonDataSource.friendApply({
+                            uid: vm.uid,
+                            remark: msg,
+                            vercode: vm.vercode || ""
+                        }).then(() => {
+                            Toast.success("好友申请已发送")
+                            WKApp.shared.baseContext.hideUserInfo()
+                        }).catch((err: any) => {
+                            Toast.error(err.msg || "申请失败")
+                        })
+                        finishButtonContext.loading(false)
+                    }
+                })
             }}>添加好友</Button>
         } else {
             if (!vm.vercode || vm.vercode === "") { // 没有验证码，不显示添加好友按钮
@@ -90,6 +111,7 @@ export default class UserInfo extends Component<UserInfoProps> {
                         finishButtonContext.disable(false)
                     },
                     onFinish: async () => {
+                        if (!finishButtonContext) return
                         finishButtonContext.loading(true)
                         await WKApp.dataSource.commonDataSource.friendApply({
                             uid: vm.uid,

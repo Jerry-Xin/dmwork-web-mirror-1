@@ -1,6 +1,7 @@
 import React, { Component } from "react"
 import { Channel, ChannelTypePerson } from "wukongimjssdk"
 import WKApp from "../../App"
+import BotDetailModal from "../../Components/BotDetailModal"
 import "./index.css"
 
 interface BotInfo {
@@ -20,6 +21,8 @@ interface BotStoreState {
     loading: boolean
     activeTab: "my" | "store"
     applyingUid: string
+    botDetailUid: string
+    botDetailVisible: boolean
 }
 
 export default class BotStore extends Component<{}, BotStoreState> {
@@ -28,6 +31,8 @@ export default class BotStore extends Component<{}, BotStoreState> {
         spaceBots: [],
         loading: true,
         activeTab: "store",
+        botDetailUid: "",
+        botDetailVisible: false,
         applyingUid: "",
     }
 
@@ -66,17 +71,9 @@ export default class BotStore extends Component<{}, BotStoreState> {
         WKApp.endpoints.showConversation(new Channel(uid, ChannelTypePerson))
     }
 
-    handleAddFriend = async (uid: string) => {
-        this.setState({ applyingUid: uid })
-        try {
-            await WKApp.apiClient.post("friend/apply", { to_uid: uid, remark: "" })
-            // 刷新列表
-            setTimeout(() => this.loadData(), 500)
-        } catch {
-            // ignore
-        } finally {
-            this.setState({ applyingUid: "" })
-        }
+    handleAddFriend = (uid: string) => {
+        // 打开 BotDetailModal，走好友审核流程
+        this.setState({ botDetailUid: uid, botDetailVisible: true })
     }
 
     handleBotFatherChat = () => {
@@ -177,6 +174,18 @@ export default class BotStore extends Component<{}, BotStoreState> {
                     {!loading && activeTab === "my" && myBots.map(bot => this.renderBotCard(bot, false))}
                     {!loading && activeTab === "store" && spaceBots.map(bot => this.renderBotCard(bot, true))}
                 </div>
+                <BotDetailModal
+                    uid={this.state.botDetailUid || ""}
+                    visible={this.state.botDetailVisible}
+                    onClose={() => {
+                        this.setState({ botDetailVisible: false })
+                        setTimeout(() => this.loadData(), 500)
+                    }}
+                    onChat={(channel) => {
+                        WKApp.endpoints.showConversation(channel)
+                        this.setState({ botDetailVisible: false })
+                    }}
+                />
             </div>
         )
     }

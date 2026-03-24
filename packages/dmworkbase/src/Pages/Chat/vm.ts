@@ -395,8 +395,38 @@ export class ChatVM extends ProviderListener {
 }
 
 // 处理搜索内容点击事件
-export function handleGlobalSearchClick(item: any, type: string,hideModal?:()=>void) {
-    if (type === "contacts" || type === "group") {
+export async function handleGlobalSearchClick(item: any, type: string,hideModal?:()=>void) {
+    if (type === "contacts") {
+        if (item.channel_type === ChannelTypePerson) {
+            // 个人频道/Bot：通过 users API 检查好友关系
+            try {
+                const resp = await WKApp.apiClient.get(`users/${item.channel_id}`)
+                if (resp.follow === 1) {
+                    if(hideModal){
+                        hideModal()
+                    }
+                    WKApp.endpoints.showConversation(new Channel(item.channel_id, item.channel_type))
+                } else {
+                    if(hideModal){
+                        hideModal()
+                    }
+                    WKApp.shared.baseContext.showUserInfo(item.channel_id, new Channel(item.channel_id, item.channel_type))
+                }
+            } catch {
+                // API 失败时降级到资料页
+                if(hideModal){
+                    hideModal()
+                }
+                WKApp.shared.baseContext.showUserInfo(item.channel_id, new Channel(item.channel_id, item.channel_type))
+            }
+        } else {
+            // 非个人频道（如群组）直接进入会话
+            if(hideModal){
+                hideModal()
+            }
+            WKApp.endpoints.showConversation(new Channel(item.channel_id, item.channel_type))
+        }
+    } else if (type === "group") {
         if(hideModal){
             hideModal()
         }

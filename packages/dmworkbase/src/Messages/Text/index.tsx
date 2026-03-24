@@ -7,6 +7,7 @@ import MessageBase from "../Base";
 import MessageHead from "../Base/head";
 import MessageTrail from "../Base/tail";
 import { MessageCell } from "../MessageCell";
+import MarkdownContent from "./MarkdownContent";
 import "./index.css"
 
 
@@ -55,45 +56,56 @@ export class TextCell extends MessageCell {
         return <a  key={`${message.clientMsgNo}-link-${k}`} href={link} target="__blank">{part.text}</a>
     }
 
-    getStreamText() {
-        const { message } = this.props
-        const fullText = message.fullStreamContent
-        const texts = fullText.split("\n")
-        return <span className="wk-message-text-commontext">
-            {texts.map((text: string, i: number) => {
-                return <span key={`${message.clientMsgNo}-stream-${i}`} className="wk-message-text-richtext">{text}{i !== texts.length - 1 ? <br /> : undefined}</span>
-            })}
-            {message.isStreaming && <span className="wk-stream-cursor" />}
-        </span>
-    }
-
     getRenderMessageText() {
         const { message } = this.props
 
-        // 流式消息：使用拼接后的完整内容渲染
+        // 流式消息：Markdown 渲染流式内容（带光标）
         if (message.streamOn) {
-            return this.getStreamText()
+            return (
+                <MarkdownContent
+                    content={message.fullStreamContent}
+                    isSend={message.send}
+                    isStreaming={message.isStreaming}
+                />
+            )
         }
 
+        // 含 mention/emoji 等富文本 parts：降级为原有逐 part 渲染
         const parts = message.parts
-        const elements = new Array<JSX.Element>()
-        if (parts && parts.length > 0) {
-            let i = 0
-            for (const part of parts) {
-                part.text.split("\n")
-                if (part.type === PartType.text) {
-                   elements.push(this.getCommonText(i, part))
-                } else if (part.type === PartType.mention) {
-                    elements.push(this.getMentionText(i, part))
-                } else if (part.type === PartType.emoji) {
-                   elements.push(this.getEmojiText(i, part))
-                }else if(part.type === PartType.link) {
-                    elements.push(this.getLinkText(i,part))
+        const hasMentionOrEmoji = parts?.some(
+            (p: Part) => p.type === PartType.mention || p.type === PartType.emoji
+        )
+
+        if (hasMentionOrEmoji) {
+            const elements = new Array<JSX.Element>()
+            if (parts && parts.length > 0) {
+                let i = 0
+                for (const part of parts) {
+                    if (part.type === PartType.text) {
+                        elements.push(this.getCommonText(i, part))
+                    } else if (part.type === PartType.mention) {
+                        elements.push(this.getMentionText(i, part))
+                    } else if (part.type === PartType.emoji) {
+                        elements.push(this.getEmojiText(i, part))
+                    } else if (part.type === PartType.link) {
+                        elements.push(this.getLinkText(i, part))
+                    }
+                    i++
                 }
-                i++
             }
+            return elements
         }
-        return elements
+
+        // 纯文本消息：走 Markdown 渲染
+        const plainText = parts
+            ? parts.map((p: Part) => p.text).join("")
+            : (message.content?.text ?? "")
+        return (
+            <MarkdownContent
+                content={plainText}
+                isSend={message.send}
+            />
+        )
     }
 
     render() {
@@ -119,10 +131,10 @@ export class TextCell extends MessageCell {
                 </div> : undefined
             }
 
-            <p  className="wk-message-text-content">
+            <div className="wk-message-text-content">
                 {this.getRenderMessageText()}
                 <MessageTrail message={message} />
-            </p>
+            </div>
         </MessageBase>
     }
 }

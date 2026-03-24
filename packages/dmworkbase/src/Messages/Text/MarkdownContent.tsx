@@ -19,15 +19,15 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, isSend, isSt
                 rehypePlugins={[rehypeHighlight]}
                 components={{
                     // 链接在新标签页打开
-                    a: ({ href, children }) => (
-                        <a href={href} target="_blank" rel="noopener noreferrer">
+                    a: ({ href, children, ...props }) => (
+                        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
                             {children}
                         </a>
                     ),
-                    // 代码块：带复制按钮
-                    pre: ({ children }) => (
+                    // 代码块：包裹容器（方便后续加复制按钮）
+                    pre: ({ children, ...props }) => (
                         <div className="wk-markdown-pre-wrapper">
-                            <pre>{children}</pre>
+                            <pre {...props}>{children}</pre>
                         </div>
                     ),
                 }}

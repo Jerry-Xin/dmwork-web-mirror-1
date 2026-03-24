@@ -34,7 +34,25 @@ const sanitizeSchema = {
     },
 };
 
+/**
+ * 预处理 Markdown 内容：
+ * 把独占一行的 --- / === 补充前后空行，避免被解析成 setext 标题（h2/h1）。
+ * 标准 Markdown：紧跟在文本行后面的 --- 会变成 h2，=== 会变成 h1。
+ * AI 输出的 --- 通常是分割线意图，前后补空行可强制解析为 <hr>。
+ */
+function normalizeContent(raw: string): string {
+    return raw
+        // --- 或 *** 或 ___ 作为分割线：确保前后各有一个空行
+        .replace(/([^\n])\n([-*_]{3,})\n/g, "$1\n\n$2\n\n")
+        // 行首 --- 但前面没有空行（文件开头或紧接内容）
+        .replace(/(^|\n)([-*_]{3,})(\n|$)/g, "\n\n$2\n\n")
+        // 收拢多余空行（最多两个换行）
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
 const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, isSend, isStreaming }) => {
+    const normalized = normalizeContent(content);
     return (
         <div className={`wk-markdown ${isSend ? "wk-markdown-send" : "wk-markdown-recv"}`}>
             <ReactMarkdown
@@ -57,7 +75,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content, isSend, isSt
                     ),
                 }}
             >
-                {content}
+                {normalized}
             </ReactMarkdown>
             {isStreaming && <span className="wk-stream-cursor" />}
         </div>

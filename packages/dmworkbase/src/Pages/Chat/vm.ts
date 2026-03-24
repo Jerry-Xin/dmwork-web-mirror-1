@@ -336,15 +336,11 @@ export class ChatVM extends ProviderListener {
         this.notifyListener()
         const conversationWraps = new Array<ConversationWrap>()
         const conversations = await WKSDK.shared().conversationManager.sync({})
-        const currentSpaceId = WKApp.shared.currentSpaceId
         if (conversations && conversations.length > 0) {
             for (const conversation of conversations) {
-                // Space 过滤：只保留当前 Space 或无前缀的旧会话
-                if (currentSpaceId) {
-                    const cid = conversation.channel?.channelID || ""
-                    if (cid.startsWith("s") && !cid.startsWith(`s${currentSpaceId}_`)) {
-                        continue
-                    }
+                // Space 过滤：复用共享函数（含 channelSpaceMap 缓存）
+                if (shouldSkipChannelForSpace(conversation.channel)) {
+                    continue
                 }
                 conversationWraps.push(new ConversationWrap(conversation))
             }
@@ -355,20 +351,17 @@ export class ChatVM extends ProviderListener {
         this.sortConversations()
 
         this.notifyListener()
+        WKApp.menus.refresh() // Fix #3: 切换 Space 后刷新 badge
     }
 
     async reloadRequestConversationList() {
         const conversationWraps = new Array<ConversationWrap>()
         const conversations = await WKSDK.shared().conversationManager.sync({})
-        const currentSpaceId = WKApp.shared.currentSpaceId
         if (conversations && conversations.length > 0) {
             for (const conversation of conversations) {
-                // Space 过滤
-                if (currentSpaceId) {
-                    const cid = conversation.channel?.channelID || ""
-                    if (cid.startsWith("s") && !cid.startsWith(`s${currentSpaceId}_`)) {
-                        continue
-                    }
+                // Space 过滤：复用共享函数（含 channelSpaceMap 缓存）
+                if (shouldSkipChannelForSpace(conversation.channel)) {
+                    continue
                 }
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType == MessageContentType.text) {
                     conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage.content.text)

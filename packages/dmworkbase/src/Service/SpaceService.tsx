@@ -14,17 +14,17 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
     if (!currentSpaceId) return false
     if (!channel?.channelID) return false
 
-    // 私聊永远不过滤
-    if (channel.channelType === ChannelTypePerson) return false
-
     const cid = channel.channelID
 
-    // 有 Space 前缀的 channel
+    // 有 Space 前缀的 channel（私聊 s{spaceId}_{uid} 或群聊 s{spaceId}_{groupNo}）
     if (cid.startsWith("s")) {
         return !cid.startsWith(`s${currentSpaceId}_`)
     }
 
-    // 群聊：查 channelSpaceMap 缓存
+    // 无前缀的私聊 → 不过滤（旧数据兼容）
+    if (channel.channelType === ChannelTypePerson) return false
+
+    // 无前缀的群聊 → 查 channelSpaceMap 缓存
     if (channel.channelType === ChannelTypeGroup) {
         const key = `${cid}_${channel.channelType}`
         const cachedSpaceId = WKApp.shared.channelSpaceMap.get(key)

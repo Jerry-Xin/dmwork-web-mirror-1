@@ -215,6 +215,8 @@ export default class DataSourceModule implements IModule {
             const syncUrl = spaceId ? `conversation/sync?space_id=${encodeURIComponent(spaceId)}` : "conversation/sync"
             resp = await WKApp.apiClient.post(syncUrl, { "msg_count": 1 })
             if (resp) {
+                // 防止快速切换 Space 时旧响应覆盖新缓存
+                if (spaceId && WKApp.shared.currentSpaceId !== spaceId) return conversations
                 // 清空旧缓存，用本次 sync 响应重建 channelID→spaceID 映射
                 WKApp.shared.channelSpaceMap.clear()
                 resp.conversations.forEach((conversationMap: any) => {

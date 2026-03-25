@@ -20,6 +20,8 @@ export class DefaultEmojiService implements EmojiService {
     }
     public static shared = new DefaultEmojiService()
     emojiMap = new Map<string, string>([
+        ["[崇尚行动]", "custom_action"],
+        ["[有品位]", "custom_taste"],
         ["😀", "0_0"],
         ["😃", "0_1"],
         ["😄", "0_2"],
@@ -189,7 +191,9 @@ export class DefaultEmojiService implements EmojiService {
                 this.emojiKeys.push(emojiKey)
            }
         }
-        this._cachedRegExp = new RegExp(`(${this.emojiKeys.join("|")})`)
+        // Escape regex special characters for custom emoji keys like [崇尚行动]
+        const escapedKeys = this.emojiKeys.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        this._cachedRegExp = new RegExp(`(${escapedKeys.join("|")})`)
         return this._cachedRegExp
     }
 

@@ -50,10 +50,8 @@ export class LoginVM extends ProviderListener {
     registerEmailConfirmPassword?:string
     registerEmailName?:string
     registerEmailCode?:string           // 注册验证码
-    registerCodeSending: boolean = false
     registerCodeCountdown: number = 0
     private _registerCountdownTimer?: any
-    emailCodeSending: boolean = false
     emailCodeCountdown: number = 0
     private _countdownTimer?: any
 
@@ -232,8 +230,6 @@ export class LoginVM extends ProviderListener {
     }
 
     async requestRegisterSendCode(email: string) {
-        this.registerCodeSending = true
-        this.notifyListener()
         return WKApp.apiClient.post('user/email/sendcode', {
             email: email,
             code_type: 0, // 0 = 注册
@@ -251,15 +247,10 @@ export class LoginVM extends ProviderListener {
                 }
                 this.notifyListener()
             }, 1000)
-        }).finally(() => {
-            this.registerCodeSending = false
-            this.notifyListener()
         })
     }
 
     async requestEmailSendCode(email: string, codeType: number = 0) {
-        this.emailCodeSending = true
-        this.notifyListener()
         return WKApp.apiClient.post('user/email/sendcode', {
             email: email,
             code_type: codeType,
@@ -278,9 +269,6 @@ export class LoginVM extends ProviderListener {
                 }
                 this.notifyListener()
             }, 1000)
-        }).finally(() => {
-            this.emailCodeSending = false
-            this.notifyListener()
         })
     }
 

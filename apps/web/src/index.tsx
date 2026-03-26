@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import '@dmwork/base/src/theme/tokens.css';
 import './index.css';
 import App from './App';
@@ -40,11 +40,12 @@ WKApp.shared.startup() // app启动
 
 // Initialize Electron notification bridge if running in Electron
 
-ReactDOM.render(
+const container = document.getElementById('root')!
+const root = createRoot(container)
+root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-  document.getElementById('root')
+  </React.StrictMode>
 );
 reportWebVitals();
 

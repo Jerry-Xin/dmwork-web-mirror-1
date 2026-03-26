@@ -3,7 +3,7 @@ import { Component, ReactNode } from "react";
 import WKApp from "../../App";
 import WKViewQueueHeader from "../WKViewQueueHeader";
 import "./index.css"
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Spin, Toast } from "@douyinfe/semi-ui";
 
 interface QRCodeMyState {
@@ -58,9 +58,9 @@ export default class QRCodeMy extends Component<QRCodeMyProps, QRCodeMyState> {
                         </div>
                         <div className="wk-qrcodemy-content-qrcode">
                             {
-                                qrcode ? <QRCode value={qrcode}
+                                qrcode ? <QRCodeSVG value={qrcode}
                                     size={250}
-                                    fgColor="#000000"></QRCode> : <Spin></Spin>
+                                    fgColor="#000000"></QRCodeSVG> : <Spin></Spin>
                             }
                         </div>
                         <div className="wk-qrcodemy-content-tip">

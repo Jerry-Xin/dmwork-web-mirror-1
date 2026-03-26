@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Button, Spin, Toast } from '@douyinfe/semi-ui';
 import './login.css'
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { WKApp, Provider } from "@dmwork/base"
 import { LoginStatus, LoginType, LoginVM } from "./login_vm";
 import classNames from "classnames";
@@ -341,7 +341,7 @@ class Login extends Component<any, LoginState> {
                                 <Spin size="large" spinning={vm.qrcodeLoading}>
                                     <div className="wk-login-content-scanlogin-qrcode-wrap">
                                         <div className="wk-login-content-scanlogin-qrcode">
-                                            {vm.qrcodeLoading || !vm.qrcode ? undefined : <QRCode value={vm.qrcode} size={176} fgColor={WKApp.config.themeColor}></QRCode>}
+                                            {vm.qrcodeLoading || !vm.qrcode ? undefined : <QRCodeSVG value={vm.qrcode} size={176} fgColor={WKApp.config.themeColor}></QRCodeSVG>}
                                             <div className={classNames("wk-login-content-scanlogin-qrcode-avatar", vm.showAvatar() ? "wk-login-content-scanlogin-qrcode-avatar-show" : undefined)}>
                                                 {vm.showAvatar() ? <img src={WKApp.shared.avatarUser(vm.uid!)}></img> : undefined}
                                             </div>

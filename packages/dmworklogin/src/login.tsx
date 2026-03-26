@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import { Button, Spin, Toast } from '@douyinfe/semi-ui';
 import './login.css'
 import QRCode from 'qrcode.react';
@@ -44,6 +44,33 @@ type LoginState = {
     getLoginUUIDLoading: boolean
     scanner?: string  // 扫描者的uid
     qrcode?: string
+}
+
+interface SendCodeButtonProps {
+    onSend: () => Promise<void>
+    countdown: number
+    className?: string
+}
+
+function SendCodeButton({ onSend, countdown, className }: SendCodeButtonProps) {
+    const [loading, setLoading] = useState(false)
+    const disabled = countdown > 0 || loading
+    const label = countdown > 0 ? `${countdown}s` : '发送验证码'
+    return (
+        <Button
+            className={className}
+            disabled={disabled}
+            loading={loading}
+            onClick={async () => {
+                setLoading(true)
+                try {
+                    await onSend()
+                } finally {
+                    setLoading(false)
+                }
+            }}
+        >{label}</Button>
+    )
 }
 
 class Login extends Component<any, LoginState> {
@@ -217,17 +244,21 @@ class Login extends Component<any, LoginState> {
                                     <input type="text" name="reg-code" autoComplete="one-time-code" placeholder="邮箱验证码" onChange={(v) => {
                                         vm.registerEmailCode = v.target.value
                                     }}></input>
-                                    <Button className="wk-login-content-form-code-btn" disabled={vm.registerCodeCountdown > 0 || vm.registerCodeSending} loading={vm.registerCodeSending} onClick={async () => {
-                                        const regEmailEl = document.querySelector<HTMLInputElement>('input[name="reg-email"]')
-                                        if (regEmailEl?.value && !vm.registerEmail) vm.registerEmail = regEmailEl.value
-                                        if (!vm.registerEmail || !isValidEmail(vm.registerEmail)) {
-                                            Toast.error("请先输入正确的邮箱地址！")
-                                            return
-                                        }
-                                        await vm.requestRegisterSendCode(vm.registerEmail).catch((err) => {
-                                            Toast.error(sanitizeErrorMessage(err.msg))
-                                        })
-                                    }}>{vm.registerCodeCountdown > 0 ? `${vm.registerCodeCountdown}s` : '发送验证码'}</Button>
+                                    <SendCodeButton
+                                        className="wk-login-content-form-code-btn"
+                                        countdown={vm.registerCodeCountdown}
+                                        onSend={async () => {
+                                            const regEmailEl = document.querySelector<HTMLInputElement>('input[name="reg-email"]')
+                                            if (regEmailEl?.value && !vm.registerEmail) vm.registerEmail = regEmailEl.value
+                                            if (!vm.registerEmail || !isValidEmail(vm.registerEmail)) {
+                                                Toast.error("请先输入正确的邮箱地址！")
+                                                return
+                                            }
+                                            await vm.requestRegisterSendCode(vm.registerEmail).catch((err: any) => {
+                                                Toast.error(sanitizeErrorMessage(err.msg))
+                                            })
+                                        }}
+                                    />
                                 </div>
                                 <input type="text" name="reg-name" autoComplete="name" placeholder="昵称" onChange={(v) => {
                                     vm.registerEmailName = v.target.value
@@ -300,16 +331,19 @@ class Login extends Component<any, LoginState> {
                                     <input type="text" name="forget-code" autoComplete="one-time-code" placeholder="验证码" onChange={(v) => {
                                         vm.forgetCode = v.target.value
                                     }}></input>
-                                    <Button className="wk-login-content-form-code-btn" disabled={vm.emailCodeCountdown > 0 || vm.emailCodeSending} loading={vm.emailCodeSending} onClick={async () => {
-                                        if (!vm.forgetEmail || !isValidEmail(vm.forgetEmail)) {
-                                            Toast.error("请输入正确的邮箱地址！")
-                                            return
-                                        }
-                                        await vm.requestEmailSendCode(vm.forgetEmail, 2).catch((err) => {
-                                            Toast.error(sanitizeErrorMessage(err.msg))
-                                        })
-                                    }}>{vm.emailCodeCountdown > 0 ? `${vm.emailCodeCountdown}s` : '发送验证码'}</Button>
-                                </div>
+                                    <SendCodeButton
+                                        className="wk-login-content-form-code-btn"
+                                        countdown={vm.emailCodeCountdown}
+                                        onSend={async () => {
+                                            if (!vm.forgetEmail || !isValidEmail(vm.forgetEmail)) {
+                                                Toast.error("请输入正确的邮箱地址！")
+                                                return
+                                            }
+                                            await vm.requestEmailSendCode(vm.forgetEmail!, 2).catch((err: any) => {
+                                                Toast.error(sanitizeErrorMessage(err.msg))
+                                            })
+                                        }}
+                                    />                                </div>
                                 <input type="password" name="forget-new-pwd" autoComplete="off" placeholder="新密码" onChange={(v) => {
                                     vm.forgetNewPassword = v.target.value
                                     vm.notifyListener()

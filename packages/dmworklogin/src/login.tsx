@@ -1,4 +1,4 @@
-import React, { Component, useState } from "react";
+import React, { Component, useState, useEffect, useRef } from "react";
 import { Button, Spin, Toast } from '@douyinfe/semi-ui';
 import './login.css'
 import QRCode from 'qrcode.react';
@@ -54,6 +54,16 @@ interface SendCodeButtonProps {
 
 function SendCodeButton({ onSend, countdown, className }: SendCodeButtonProps) {
     const [loading, setLoading] = useState(false)
+    const prevCountdown = useRef(countdown)
+
+    // countdown 从 0 变成正数，说明发送成功倒计时开始，此时才清除 loading
+    useEffect(() => {
+        if (prevCountdown.current === 0 && countdown > 0) {
+            setLoading(false)
+        }
+        prevCountdown.current = countdown
+    }, [countdown])
+
     const disabled = countdown > 0 || loading
     const label = countdown > 0 ? `${countdown}s` : '发送验证码'
     return (
@@ -64,7 +74,8 @@ function SendCodeButton({ onSend, countdown, className }: SendCodeButtonProps) {
                 setLoading(true)
                 try {
                     await onSend()
-                } finally {
+                } catch {
+                    // 失败时立即清除 loading
                     setLoading(false)
                 }
             }}

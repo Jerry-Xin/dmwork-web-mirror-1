@@ -7,7 +7,7 @@ import MessageBase from "../Base";
 import MessageHead from "../Base/head";
 import MessageTrail from "../Base/tail";
 import { MessageCell } from "../MessageCell";
-import MarkdownContent, { type MentionInfo } from "./MarkdownContent";
+import MarkdownContent, { type MentionInfo, type EmojiInfo } from "./MarkdownContent";
 import "./index.css"
 
 
@@ -76,6 +76,17 @@ export class TextCell extends MessageCell {
             ?.filter((p: Part) => p.type === PartType.mention && p.data?.uid)
             .map((p: Part) => ({ name: p.text, uid: p.data.uid })) ?? []
 
+        // 从 parts 提取 emoji 列表，过滤掉 emojiService 返回空 URL 的（未知 emoji）
+        const emojis: EmojiInfo[] = parts
+            ?.filter((p: Part) => p.type === PartType.emoji)
+            .reduce((acc: EmojiInfo[], p: Part) => {
+                const url = WKApp.emojiService.getImage(p.text)
+                if (url && !acc.find((e) => e.key === p.text)) {
+                    acc.push({ key: p.text, url })
+                }
+                return acc
+            }, []) ?? []
+
         // content.text 是 SDK MessageText 实例的 text 属性（decodeJSON 里赋值）
         // fallback 到 parts 拼接（发送方消息 text 已由构造函数设置，一般不走这里）
         const rawContent = message.content as any
@@ -89,6 +100,7 @@ export class TextCell extends MessageCell {
                 isSend={message.send}
                 mentions={mentions}
                 onMentionClick={(uid) => context.showUser(uid)}
+                emojis={emojis}
             />
         )
     }

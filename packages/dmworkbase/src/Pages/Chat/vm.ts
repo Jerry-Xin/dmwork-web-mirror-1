@@ -2,7 +2,7 @@ import WKSDK, { MessageContentType } from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ConnectStatus, ConnectStatusListener } from "wukongimjssdk";
 import { ConversationAction, ConversationListener } from "wukongimjssdk";
-import { Channel, ChannelInfo, Conversation, Message } from "wukongimjssdk";
+import { Channel, ChannelInfo, Conversation, Message, ChannelTypePerson } from "wukongimjssdk";
 import WKApp, { MessageDeleteListener } from "../../App";
 import { ConversationWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";

@@ -7,7 +7,7 @@ import MessageBase from "../Base";
 import MessageHead from "../Base/head";
 import MessageTrail from "../Base/tail";
 import { MessageCell } from "../MessageCell";
-import MarkdownContent from "./MarkdownContent";
+import MarkdownContent, { type MentionInfo } from "./MarkdownContent";
 import "./index.css"
 
 
@@ -57,7 +57,7 @@ export class TextCell extends MessageCell {
     }
 
     getRenderMessageText() {
-        const { message } = this.props
+        const { message, context } = this.props
 
         // 流式消息：Markdown 渲染流式内容（带光标）
         if (message.streamOn) {
@@ -70,40 +70,25 @@ export class TextCell extends MessageCell {
             )
         }
 
-        // 含 mention（@某人，带 uid 数据）时降级为原有逐 part 渲染，保留点击跳转能力
-        // emoji / link 不降级——Markdown 渲染路径可以直接处理 unicode emoji 和链接
+        // 从 parts 提取 mention 列表（name→uid）
         const parts = message.parts
-        const hasMention = parts?.some(
-            (p: Part) => p.type === PartType.mention
-        )
+        const mentions: MentionInfo[] = parts
+            ?.filter((p: Part) => p.type === PartType.mention && p.data?.uid)
+            .map((p: Part) => ({ name: p.text, uid: p.data.uid })) ?? []
 
-        if (hasMention) {
-            const elements = new Array<JSX.Element>()
-            if (parts && parts.length > 0) {
-                let i = 0
-                for (const part of parts) {
-                    if (part.type === PartType.text) {
-                        elements.push(this.getCommonText(i, part))
-                    } else if (part.type === PartType.mention) {
-                        elements.push(this.getMentionText(i, part))
-                    } else if (part.type === PartType.emoji) {
-                        elements.push(this.getEmojiText(i, part))
-                    } else if (part.type === PartType.link) {
-                        elements.push(this.getLinkText(i, part))
-                    }
-                    i++
-                }
-            }
-            return elements
-        }
+        // content.text 是 SDK MessageText 实例的 text 属性（decodeJSON 里赋值）
+        // fallback 到 parts 拼接（发送方消息 text 已由构造函数设置，一般不走这里）
+        const rawContent = message.content as any
+        const plainText = rawContent?.text
+            || parts?.map((p: Part) => p.text).join("")
+            || ""
 
-        // 普通文本（含 emoji、链接）：走 Markdown 渲染
-        // 直接取原始 text 避免 parseLinks 把 Markdown 链接语法拆坏
-        const plainText = (message.content as any)?.text ?? ""
         return (
             <MarkdownContent
                 content={plainText}
                 isSend={message.send}
+                mentions={mentions}
+                onMentionClick={(uid) => context.showUser(uid)}
             />
         )
     }

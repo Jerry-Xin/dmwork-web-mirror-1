@@ -1,2 +1,3 @@
 // Re-export from @dmwork/base for backwards compatibility
-export { Space, SpaceMember, SpaceCreateResp, InviteResp, SpaceService } from "@dmwork/base"
+export type { Space, SpaceMember, SpaceCreateResp, InviteResp } from "@dmwork/base"
+export { SpaceService } from "@dmwork/base"

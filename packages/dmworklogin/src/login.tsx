@@ -217,14 +217,14 @@ class Login extends Component<any, LoginState> {
                                     <input type="text" name="reg-code" autoComplete="one-time-code" placeholder="邮箱验证码" onChange={(v) => {
                                         vm.registerEmailCode = v.target.value
                                     }}></input>
-                                    <Button className="wk-login-content-form-code-btn" disabled={vm.registerCodeCountdown > 0 || vm.registerCodeSending} loading={vm.registerCodeSending} onClick={() => {
+                                    <Button className="wk-login-content-form-code-btn" disabled={vm.registerCodeCountdown > 0 || vm.registerCodeSending} loading={vm.registerCodeSending} onClick={async () => {
                                         const regEmailEl = document.querySelector<HTMLInputElement>('input[name="reg-email"]')
                                         if (regEmailEl?.value && !vm.registerEmail) vm.registerEmail = regEmailEl.value
                                         if (!vm.registerEmail || !isValidEmail(vm.registerEmail)) {
                                             Toast.error("请先输入正确的邮箱地址！")
                                             return
                                         }
-                                        vm.requestRegisterSendCode(vm.registerEmail).catch((err) => {
+                                        await vm.requestRegisterSendCode(vm.registerEmail).catch((err) => {
                                             Toast.error(sanitizeErrorMessage(err.msg))
                                         })
                                     }}>{vm.registerCodeCountdown > 0 ? `${vm.registerCodeCountdown}s` : '发送验证码'}</Button>
@@ -275,7 +275,7 @@ class Login extends Component<any, LoginState> {
                                             Toast.error("两次密码输入不一致！")
                                             return
                                         }
-                                        vm.requestEmailRegister(vm.registerEmail, vm.registerEmailPassword, vm.registerEmailName, vm.registerEmailCode).catch((err) => {
+                                        vm.requestEmailRegister(vm.registerEmail!, vm.registerEmailPassword!, vm.registerEmailName!, vm.registerEmailCode!).catch((err) => {
                                             Toast.error(sanitizeErrorMessage(err.msg))
                                         })
                                     }}>注册</Button>
@@ -300,12 +300,12 @@ class Login extends Component<any, LoginState> {
                                     <input type="text" name="forget-code" autoComplete="one-time-code" placeholder="验证码" onChange={(v) => {
                                         vm.forgetCode = v.target.value
                                     }}></input>
-                                    <Button className="wk-login-content-form-code-btn" disabled={vm.emailCodeCountdown > 0 || vm.emailCodeSending} loading={vm.emailCodeSending} onClick={() => {
+                                    <Button className="wk-login-content-form-code-btn" disabled={vm.emailCodeCountdown > 0 || vm.emailCodeSending} loading={vm.emailCodeSending} onClick={async () => {
                                         if (!vm.forgetEmail || !isValidEmail(vm.forgetEmail)) {
                                             Toast.error("请输入正确的邮箱地址！")
                                             return
                                         }
-                                        vm.requestEmailSendCode(vm.forgetEmail, 2).catch((err) => {
+                                        await vm.requestEmailSendCode(vm.forgetEmail, 2).catch((err) => {
                                             Toast.error(sanitizeErrorMessage(err.msg))
                                         })
                                     }}>{vm.emailCodeCountdown > 0 ? `${vm.emailCodeCountdown}s` : '发送验证码'}</Button>
@@ -337,7 +337,7 @@ class Login extends Component<any, LoginState> {
                                             Toast.error("两次密码输入不一致！")
                                             return
                                         }
-                                        vm.requestForgetPassword(vm.forgetEmail, vm.forgetCode, vm.forgetNewPassword).then(() => {
+                                        vm.requestForgetPassword(vm.forgetEmail!, vm.forgetCode!, vm.forgetNewPassword!).then(() => {
                                             Toast.success("密码重置成功，请登录")
                                             vm.loginType = LoginType.phone
                                         }).catch((err) => {

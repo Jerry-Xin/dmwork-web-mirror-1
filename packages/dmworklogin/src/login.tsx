@@ -1,5 +1,5 @@
 import React, { Component, useState } from "react";
-import { Button, Spin, Toast } from '@douyinfe/semi-ui';
+import { Button, Toast } from '@douyinfe/semi-ui';
 import './login.css'
 import QRCode from 'qrcode.react';
 import { WKApp, Provider } from "@dmwork/base"

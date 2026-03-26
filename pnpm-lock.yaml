@@ -227,9 +227,6 @@ importers:
       react-spinners:
         specifier: ^0.11.0
         version: 0.11.0(@types/react@16.14.69)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      react-viewer:
-        specifier: ^3.2.2
-        version: 3.2.2
       rehype-highlight:
         specifier: '6'
         version: 6.0.0
@@ -245,6 +242,9 @@ importers:
       wukongimjssdk:
         specifier: ^1.2.11
         version: 1.3.5
+      yet-another-react-lightbox:
+        specifier: ^3.30.0
+        version: 3.30.0(@types/react-dom@19.2.3(@types/react@16.14.69))(@types/react@16.14.69)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
     devDependencies:
       '@types/react-avatar-editor':
         specifier: ^13.0.0
@@ -4784,9 +4784,6 @@ packages:
       react: ^16.0.0 || ^17.0.0
       react-dom: ^16.0.0 || ^17.0.0
 
-  react-viewer@3.2.2:
-    resolution: {integrity: sha512-DHOq1x6cXsAViY43204ILRzLVR5ovP1MgzsC+LzZCWlInRuHjzAgpQZ8GzWm1CkiNYuHGwCxH36X0JUHl2xDSg==}
-
   react-window@1.8.11:
     resolution: {integrity: sha512-+SRbUVT2scadgFSWx+R1P754xHPEqvcfSfVX10QYg6POOz+WNgkN48pS+BtZNIMGiL1HYrSEiCkwsMS15QogEQ==}
     engines: {node: '>8.0.0'}
@@ -5856,6 +5853,20 @@ packages:
 
   yauzl@2.10.0:
     resolution: {integrity: sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==}
+
+  yet-another-react-lightbox@3.30.0:
+    resolution: {integrity: sha512-qZWnIvt7rWH9Lh8kWEDpuX5WNuMDPt9NEAxZtfdgUakjNrTgW2RAKmnS3tHw2GncGNKAIaRmGrt7e7+5Y4Ijug==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      '@types/react': ^16 || ^17 || ^18 || ^19
+      '@types/react-dom': ^16 || ^17 || ^18 || ^19
+      react: ^16.8.0 || ^17 || ^18 || ^19
+      react-dom: ^16.8.0 || ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
 
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
@@ -11719,10 +11730,6 @@ snapshots:
       - '@types/react'
       - supports-color
 
-  react-viewer@3.2.2:
-    dependencies:
-      classnames: 2.5.1
-
   react-window@1.8.11(react-dom@17.0.2(react@17.0.2))(react@17.0.2):
     dependencies:
       '@babel/runtime': 7.29.2
@@ -12970,6 +12977,14 @@ snapshots:
     dependencies:
       buffer-crc32: 0.2.13
       fd-slicer: 1.1.0
+
+  yet-another-react-lightbox@3.30.0(@types/react-dom@19.2.3(@types/react@16.14.69))(@types/react@16.14.69)(react-dom@17.0.2(react@17.0.2))(react@17.0.2):
+    dependencies:
+      react: 17.0.2
+      react-dom: 17.0.2(react@17.0.2)
+    optionalDependencies:
+      '@types/react': 16.14.69
+      '@types/react-dom': 19.2.3(@types/react@16.14.69)
 
   yocto-queue@0.1.0: {}
 

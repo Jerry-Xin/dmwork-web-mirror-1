@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for canvas.toBlob error handling
  * Tests that null blob is properly handled with error feedback (fix for issue #315)
@@ -23,7 +24,7 @@ describe('canvas.toBlob error handling', () => {
     }
 
     it('should call error handler when blob is null', () => {
-        const errorHandler = jest.fn();
+        const errorHandler = vi.fn();
         const result = handleToBlobResult(null, errorHandler);
 
         expect(result).toBe(false);
@@ -31,7 +32,7 @@ describe('canvas.toBlob error handling', () => {
     });
 
     it('should not call error handler when blob is valid', () => {
-        const errorHandler = jest.fn();
+        const errorHandler = vi.fn();
         const mockBlob = new Blob(['test'], { type: 'image/png' });
         const result = handleToBlobResult(mockBlob, errorHandler);
 
@@ -40,7 +41,7 @@ describe('canvas.toBlob error handling', () => {
     });
 
     it('should handle empty blob correctly (not null but empty)', () => {
-        const errorHandler = jest.fn();
+        const errorHandler = vi.fn();
         const emptyBlob = new Blob([], { type: 'image/png' });
         const result = handleToBlobResult(emptyBlob, errorHandler);
 
@@ -69,8 +70,8 @@ describe('ListItemAvatar toBlob handling', () => {
     }
 
     it('should return early and show error when blob is null', async () => {
-        const onSuccess = jest.fn();
-        const onError = jest.fn();
+        const onSuccess = vi.fn();
+        const onError = vi.fn();
 
         const result = await processAvatarBlob(null, onSuccess, onError);
 
@@ -80,8 +81,8 @@ describe('ListItemAvatar toBlob handling', () => {
     });
 
     it('should create file and call onSuccess when blob is valid', async () => {
-        const onSuccess = jest.fn();
-        const onError = jest.fn();
+        const onSuccess = vi.fn();
+        const onError = vi.fn();
         const mockBlob = new Blob(['test-image-data'], { type: 'image/png' });
 
         const result = await processAvatarBlob(mockBlob, onSuccess, onError);
@@ -121,9 +122,9 @@ describe('ChannelAvatar toBlob handling', () => {
     }
 
     it('should return early and show error when blob is null', async () => {
-        const onFileUpload = jest.fn();
-        const uploadAvatar = jest.fn();
-        const onError = jest.fn();
+        const onFileUpload = vi.fn();
+        const uploadAvatar = vi.fn();
+        const onError = vi.fn();
 
         const result = await processChannelAvatarBlob(null, onFileUpload, uploadAvatar, onError);
 
@@ -134,9 +135,9 @@ describe('ChannelAvatar toBlob handling', () => {
     });
 
     it('should use onFileUpload when provided', async () => {
-        const onFileUpload = jest.fn();
-        const uploadAvatar = jest.fn();
-        const onError = jest.fn();
+        const onFileUpload = vi.fn();
+        const uploadAvatar = vi.fn();
+        const onError = vi.fn();
         const mockBlob = new Blob(['test'], { type: 'image/png' });
 
         const result = await processChannelAvatarBlob(mockBlob, onFileUpload, uploadAvatar, onError);
@@ -148,8 +149,8 @@ describe('ChannelAvatar toBlob handling', () => {
     });
 
     it('should use uploadAvatar when onFileUpload is undefined', async () => {
-        const uploadAvatar = jest.fn();
-        const onError = jest.fn();
+        const uploadAvatar = vi.fn();
+        const onError = vi.fn();
         const mockBlob = new Blob(['test'], { type: 'image/png' });
 
         const result = await processChannelAvatarBlob(mockBlob, undefined, uploadAvatar, onError);

@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for requestLogin error handling logic in LoginVM
  * Tests that loginLoading state is properly reset even when API call fails (fix for issue #128)
@@ -181,7 +182,7 @@ describe('requestLogin error handling', () => {
 
     it('should log error when API call fails', async () => {
         const manager = createLoginManager();
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
         const testError = new Error('Test error');
         await manager.requestLogin(async () => {

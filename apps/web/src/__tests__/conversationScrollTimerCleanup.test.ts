@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for Conversation scrollTimer cleanup logic
  * Tests that scrollTimer is properly cleared on dealloc (fix for issue #124)
@@ -5,11 +6,11 @@
 
 describe('Conversation scrollTimer cleanup', () => {
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     // Extracted scrollTimer cleanup logic for testing
@@ -41,7 +42,7 @@ describe('Conversation scrollTimer cleanup', () => {
 
     it('should set scrollTimer when setTimer is called', () => {
         const manager = createScrollTimerManager();
-        const callback = jest.fn();
+        const callback = vi.fn();
 
         manager.setTimer(callback, 500);
 
@@ -50,13 +51,13 @@ describe('Conversation scrollTimer cleanup', () => {
 
     it('should clear previous timer when setTimer is called multiple times', () => {
         const manager = createScrollTimerManager();
-        const callback1 = jest.fn();
-        const callback2 = jest.fn();
+        const callback1 = vi.fn();
+        const callback2 = vi.fn();
 
         manager.setTimer(callback1, 500);
         manager.setTimer(callback2, 500);
 
-        jest.advanceTimersByTime(500);
+        vi.advanceTimersByTime(500);
 
         expect(callback1).not.toHaveBeenCalled();
         expect(callback2).toHaveBeenCalledTimes(1);
@@ -64,7 +65,7 @@ describe('Conversation scrollTimer cleanup', () => {
 
     it('should clear scrollTimer on dealloc', () => {
         const manager = createScrollTimerManager();
-        const callback = jest.fn();
+        const callback = vi.fn();
 
         manager.setTimer(callback, 500);
         expect(manager.getTimer()).not.toBeNull();
@@ -76,12 +77,12 @@ describe('Conversation scrollTimer cleanup', () => {
 
     it('should prevent callback execution after dealloc', () => {
         const manager = createScrollTimerManager();
-        const callback = jest.fn();
+        const callback = vi.fn();
 
         manager.setTimer(callback, 500);
         manager.dealloc();
 
-        jest.advanceTimersByTime(500);
+        vi.advanceTimersByTime(500);
 
         expect(callback).not.toHaveBeenCalled();
     });

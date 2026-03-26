@@ -1,15 +1,16 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for Conversation beforeunload event listener cleanup
  * Tests that beforeunload event listener is properly added/removed (fix for issue #125)
  */
 
 describe('Conversation beforeunload event listener cleanup', () => {
-    let addEventListenerSpy: jest.SpyInstance;
-    let removeEventListenerSpy: jest.SpyInstance;
+    let addEventListenerSpy: vi.SpyInstance;
+    let removeEventListenerSpy: vi.SpyInstance;
 
     beforeEach(() => {
-        addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-        removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+        addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+        removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
     });
 
     afterEach(() => {
@@ -77,7 +78,7 @@ describe('Conversation beforeunload event listener cleanup', () => {
     });
 
     it('should not override other beforeunload handlers', () => {
-        const otherHandler = jest.fn();
+        const otherHandler = vi.fn();
         window.addEventListener('beforeunload', otherHandler);
 
         const manager = createBeforeUnloadManager();

@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for email code countdown timer cleanup logic in LoginVM
  * Tests that countdown timer is properly cleared before creating a new one (fix for issue #131)
@@ -5,11 +6,11 @@
 
 describe('Email code countdown timer cleanup', () => {
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     // Extracted countdown timer logic for testing (mirrors LoginVM implementation)
@@ -70,7 +71,7 @@ describe('Email code countdown timer cleanup', () => {
         const firstTimer = manager.getTimer();
 
         // Advance 2 seconds
-        jest.advanceTimersByTime(2000);
+        vi.advanceTimersByTime(2000);
         expect(manager.getCountdown()).toBe(58);
 
         // Start new countdown - should clear old timer first
@@ -84,7 +85,7 @@ describe('Email code countdown timer cleanup', () => {
 
         // Only the new timer should tick
         const notifyCountBefore = manager.getNotifyCount();
-        jest.advanceTimersByTime(3000);
+        vi.advanceTimersByTime(3000);
         // Should have 3 more notifications (from new timer only)
         expect(manager.getNotifyCount() - notifyCountBefore).toBe(3);
         expect(manager.getCountdown()).toBe(57);
@@ -99,7 +100,7 @@ describe('Email code countdown timer cleanup', () => {
         manager.startCountdown();
 
         // Advance 1 second
-        jest.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(1000);
 
         // Should only have 1 notification (only one timer active)
         // If timers weren't cleared, would have 3 notifications
@@ -114,7 +115,7 @@ describe('Email code countdown timer cleanup', () => {
         expect(manager.getTimer()).toBeDefined();
 
         // Advance full 60 seconds
-        jest.advanceTimersByTime(60000);
+        vi.advanceTimersByTime(60000);
 
         expect(manager.getCountdown()).toBe(0);
         expect(manager.getTimer()).toBeUndefined();
@@ -139,7 +140,7 @@ describe('Email code countdown timer cleanup', () => {
 
         manager.cleanup();
 
-        jest.advanceTimersByTime(5000);
+        vi.advanceTimersByTime(5000);
 
         // No more notifications after cleanup
         expect(manager.getNotifyCount()).toBe(notifyCountBefore);

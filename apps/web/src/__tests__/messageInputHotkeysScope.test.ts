@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for MessageInput hotkeys scope management
  * Tests that hotkeys scope is properly saved and restored on component mount/unmount
@@ -17,7 +18,7 @@ describe('MessageInput hotkeys scope management', () => {
             scopeHistory.push(scope);
             currentScope = scope;
         },
-        unbind: jest.fn(),
+        unbind: vi.fn(),
         filter: null as ((event: Event) => boolean) | null,
     };
 

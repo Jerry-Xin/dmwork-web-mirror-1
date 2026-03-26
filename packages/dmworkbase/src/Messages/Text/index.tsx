@@ -70,13 +70,14 @@ export class TextCell extends MessageCell {
             )
         }
 
-        // 含 mention/emoji 等富文本 parts：降级为原有逐 part 渲染
+        // 含 mention（@某人，带 uid 数据）时降级为原有逐 part 渲染，保留点击跳转能力
+        // emoji / link 不降级——Markdown 渲染路径可以直接处理 unicode emoji 和链接
         const parts = message.parts
-        const hasMentionOrEmoji = parts?.some(
-            (p: Part) => p.type === PartType.mention || p.type === PartType.emoji
+        const hasMention = parts?.some(
+            (p: Part) => p.type === PartType.mention
         )
 
-        if (hasMentionOrEmoji) {
+        if (hasMention) {
             const elements = new Array<JSX.Element>()
             if (parts && parts.length > 0) {
                 let i = 0
@@ -96,10 +97,9 @@ export class TextCell extends MessageCell {
             return elements
         }
 
-        // 纯文本消息：走 Markdown 渲染
-        const plainText = parts
-            ? parts.map((p: Part) => p.text).join("")
-            : (message.content?.text ?? "")
+        // 普通文本（含 emoji、链接）：走 Markdown 渲染
+        // 直接取原始 text 避免 parseLinks 把 Markdown 链接语法拆坏
+        const plainText = (message.content as any)?.text ?? ""
         return (
             <MarkdownContent
                 content={plainText}

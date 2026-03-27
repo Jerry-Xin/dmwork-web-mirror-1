@@ -1,16 +1,47 @@
-
 .wk-iconclick {
-   padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--wk-r-sm);
+  cursor: pointer;
+  color: var(--wk-text-tertiary);
+  transition: background var(--wk-dur-fast) var(--wk-ease),
+              color var(--wk-dur-fast) var(--wk-ease);
+  flex-shrink: 0;
 }
 
-.wk-iconclick  img {
-    width: 20px;
-    height: 20px;
+.wk-iconclick--md {
+  width: 32px;
+  height: 32px;
 }
 
-.wk-iconclick .wk-toolbar-icon {
-    transition: color 0.15s;
+.wk-iconclick--sm {
+  width: 24px;
+  height: 24px;
 }
-.wk-iconclick:hover .wk-toolbar-icon {
-    color: #5b6abf !important;
+
+.wk-iconclick:hover:not(.wk-iconclick--disabled) {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-secondary);
+}
+
+.wk-iconclick:active:not(.wk-iconclick--disabled) {
+  background: var(--wk-bg-active);
+  color: var(--wk-text-primary);
+}
+
+.wk-iconclick:focus-visible {
+  outline: 2px solid var(--wk-border-glow);
+  outline-offset: 2px;
+}
+
+.wk-iconclick--disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.wk-iconclick img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }

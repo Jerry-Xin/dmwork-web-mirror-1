@@ -1,0 +1,15 @@
+/* Storybook 全局重置 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--wk-font-sans);
+  background-color: var(--wk-bg-base);
+  color: var(--wk-text-primary);
+  -webkit-font-smoothing: antialiased;
+}

@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "ESNext"
+  },
+  "include": [
+    "../src/**/*.stories.ts",
+    "../src/**/*.stories.tsx",
+    "../../../packages/**/*.stories.ts",
+    "../../../packages/**/*.stories.tsx",
+    "*.ts",
+    "*.tsx"
+  ],
+  "exclude": []
+}

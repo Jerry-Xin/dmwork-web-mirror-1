@@ -274,6 +274,12 @@ export default class BaseModule implements IModule {
         WKSDK.shared().conversationManager.removeConversation(channel);
       } else if (cmdContent.cmd === "friendRequest") {
         // 好友申请
+        // Space 隔离：不属于当前 Space 的好友申请不显示、不播提示音
+        const cmdSpaceId = param.space_id;
+        const curSpaceId = WKApp.shared.currentSpaceId;
+        if (cmdSpaceId && curSpaceId && cmdSpaceId !== curSpaceId) {
+          return;
+        }
         const friendApply = new FriendApply();
         friendApply.uid = param.apply_uid;
         friendApply.to_name = param.apply_name;

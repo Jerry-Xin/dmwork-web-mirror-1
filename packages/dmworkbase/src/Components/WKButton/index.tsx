@@ -43,13 +43,12 @@ const WKButton: React.FC<WKButtonProps> = ({
       {loading && (
         <span className="wk-btn__spinner" aria-hidden="true" />
       )}
-      {!iconOnly && !loading && icon && (
+      {!loading && icon && (
         <span className="wk-btn__icon">{icon}</span>
       )}
       {!iconOnly && children && (
         <span className="wk-btn__label">{children}</span>
       )}
-      {iconOnly && !loading && icon}
     </button>
   )
 }

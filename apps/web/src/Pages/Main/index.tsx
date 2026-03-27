@@ -5,21 +5,10 @@ import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
 import { TabNormalScreen } from "./tab_normal_screen";
 import { Space, SpaceService } from "@dmwork/base";
-import { SpaceCreate, ConnectionStatus, JoinSpaceModal, ActionListItem, SpaceItem, WKButton } from "@dmwork/base";
-import { useJoinSpace } from "@dmwork/base";
+import { SpaceCreate, ConnectionStatus, JoinSpaceModalConnected, ActionListItem, SpaceItem, WKButton } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
 import { IconSearch, IconPlus, IconLink } from "@douyinfe/semi-icons";
 import classNames from "classnames";
-
-/** hook 包装组件，供 Class 组件内使用 */
-function InternalJoinModal({ visible, onClose, onSuccess }: {
-    visible: boolean;
-    onClose: () => void;
-    onSuccess: (spaceId: string) => void;
-}) {
-    const joinProps = useJoinSpace({ onClose, onSuccess });
-    return <JoinSpaceModal visible={visible} {...joinProps} />;
-}
 
 
 export interface MainContentLeftProps {
@@ -183,21 +172,22 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                         this.setState({ allSpaces: spaces, showSpaceCreate: false });
                         WKApp.shared.currentSpaceId = spaceId;
                         localStorage.setItem("currentSpaceId", spaceId);
-                        WKApp.mittBus.emit("space-changed", spaces.find(s => s.space_id === spaceId));
+                        const target = spaces.find(s => s.space_id === spaceId);
+                        if (target) WKApp.mittBus.emit("space-changed", target);
                         WKApp.shared.notifyListener();
                     }).catch(() => {});
                 }}
             />
-            <InternalJoinModal
+            <JoinSpaceModalConnected
                 visible={this.state.showJoinSpace}
                 onClose={() => this.setState({ showJoinSpace: false })}
                 onSuccess={(spaceId) => {
                     SpaceService.shared.getMySpaces().then(spaces => {
                         this.setState({ allSpaces: spaces, showJoinSpace: false });
-                        // 切换到新加入的 Space
                         WKApp.shared.currentSpaceId = spaceId;
                         localStorage.setItem("currentSpaceId", spaceId);
-                        WKApp.mittBus.emit("space-changed", spaces.find(s => s.space_id === spaceId));
+                        const target = spaces.find(s => s.space_id === spaceId);
+                        if (target) WKApp.mittBus.emit("space-changed", target);
                         WKApp.shared.notifyListener();
                     }).catch(() => {});
                 }}

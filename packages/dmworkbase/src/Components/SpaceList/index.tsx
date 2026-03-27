@@ -4,19 +4,8 @@ import { Spin, Modal, Toast, Tooltip } from "@douyinfe/semi-ui";
 import { Space, SpaceService } from "../../Service/SpaceService";
 import SpaceItem from "../SpaceItem";
 import ActionListItem from "../ActionListItem";
-import JoinSpaceModal from "../JoinSpaceModal";
-import { useJoinSpace } from "../JoinSpaceModal/useJoinSpace";
+import JoinSpaceModalConnected from "../JoinSpaceModal/JoinSpaceModalConnected";
 import "./index.css";
-
-/** 内部用：把 hook 包成组件，解决 Class 组件无法直接用 hook 的问题 */
-function InternalJoinModal({ visible, onClose, onSuccess }: {
-    visible: boolean;
-    onClose: () => void;
-    onSuccess: (spaceId: string) => void;
-}) {
-    const joinProps = useJoinSpace({ onClose, onSuccess });
-    return <JoinSpaceModal visible={visible} {...joinProps} />;
-}
 
 export interface SpaceListProps {
     selectedSpaceId?: string;
@@ -114,10 +103,14 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
                 </div>
 
                 {/* 加入弹窗（内部自管，父层未传 onJoinClick 时使用） */}
-                <InternalJoinModal
+                <JoinSpaceModalConnected
                     visible={showJoinModal}
                     onClose={() => this.setState({ showJoinModal: false })}
-                    onSuccess={() => this.loadSpaces()}
+                    onSuccess={async (spaceId) => {
+                        await this.loadSpaces();
+                        const space = this.state.spaces.find(s => s.space_id === spaceId);
+                        if (space) this.props.onSelect(space);
+                    }}
                 />
 
                 {/* 邀请他人弹窗 */}

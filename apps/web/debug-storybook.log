@@ -1,0 +1,17 @@
+[17:04:37.742] [INFO] storybook v10.3.3
+[17:04:39.360] [DEBUG] Getting package.json info for /Users/soso/Desktop/VirtualBuddyShared/dmwork/dmwork-web-space-join/apps/web/package.json...
+[17:04:40.805] [WARN] No story files found for the specified pattern: src/**/*.mdx
+[17:04:41.071] [INFO] Starting...
+[17:04:41.301] [ERROR] [38;2;241;97;97mError: ENOENT: no such file or directory, open './node_modules/.cache/storybook/10.3.3/9791e0e12f559a4e39854d3d8b7004ec1c8d0cd662fcbcd62fe92e9d2b18f5db/public/sb-addons/a11y-1/manager-bundle.js'[39m
+    at async open (node:internal/fs/promises:636:25)
+    at async writeFile (node:internal/fs/promises:1205:14)
+    at async file:///Users/soso/Desktop/VirtualBuddyShared/dmwork/dmwork-web-space-join/node_modules/.pnpm/storybook@10.3.3_@testing-library+dom@9.3.4_prettier@2.8.8_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/storybook/dist/_node-chunks/builder-manager-LPFGKXTG.js:1359:14
+    at async Promise.all (index 1)
+    at async readOrderedFiles (file:///Users/soso/Desktop/VirtualBuddyShared/dmwork/dmwork-web-space-join/node_modules/.pnpm/storybook@10.3.3_@testing-library+dom@9.3.4_prettier@2.8.8_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/storybook/dist/_node-chunks/builder-manager-LPFGKXTG.js:1352:15)
+    at async starter (file:///Users/soso/Desktop/VirtualBuddyShared/dmwork/dmwork-web-space-join/node_modules/.pnpm/storybook@10.3.3_@testing-library+dom@9.3.4_prettier@2.8.8_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/storybook/dist/_node-chunks/builder-manager-LPFGKXTG.js:1526:31)
+    at async Module.start (file:///Users/soso/Desktop/VirtualBuddyShared/dmwork/dmwork-web-space-join/node_modules/.pnpm/storybook@10.3.3_@testing-library+dom@9.3.4_prettier@2.8.8_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/storybook/dist/_node-chunks/builder-manager-LPFGKXTG.js:1618:14)
+    at async storybookDevServer (file:///Users/soso/Desktop/VirtualBuddyShared/dmwork/dmwork-web-space-join/node_modules/.pnpm/storybook@10.3.3_@testing-library+dom@9.3.4_prettier@2.8.8_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/storybook/dist/core-server/index.js:7495:54)
+    at async buildOrThrow (file:///Users/soso/Desktop/VirtualBuddyShared/dmwork/dmwork-web-space-join/node_modules/.pnpm/storybook@10.3.3_@testing-library+dom@9.3.4_prettier@2.8.8_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/storybook/dist/core-server/index.js:4508:12)
+    at async buildDevStandalone (file:///Users/soso/Desktop/VirtualBuddyShared/dmwork/dmwork-web-space-join/node_modules/.pnpm/storybook@10.3.3_@testing-library+dom@9.3.4_prettier@2.8.8_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/storybook/dist/core-server/index.js:8029:41)
+[17:04:41.305] [WARN] Broken build, fix the error above.
+You may need to refresh the browser.

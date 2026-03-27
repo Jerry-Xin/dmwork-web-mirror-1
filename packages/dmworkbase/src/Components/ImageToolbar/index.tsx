@@ -1,4 +1,7 @@
-import { ConversationContext, FileHelper, ImageContent, WKApp } from "@dmwork/base";
+import WKApp from "../../App";
+import type ConversationContext from "../Conversation/context";
+import FileHelper from "../../Utils/filehelper";
+import { ImageContent } from "../../Messages/Image";
 import React from "react";
 import { Component, ReactNode } from "react";
 

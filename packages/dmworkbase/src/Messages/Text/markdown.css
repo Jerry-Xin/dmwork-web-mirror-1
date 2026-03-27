@@ -4,7 +4,7 @@
    ============================================================ */
 
 .wk-markdown {
-    font-size: 14px;
+    font-size: inherit;
     line-height: 1.6;
     word-break: break-word;
     min-width: 0;
@@ -184,6 +184,22 @@
 .wk-markdown img {
     max-width: 100%;
     border-radius: var(--wk-r-sm);
+}
+
+/* ── @mention（消息气泡内的 mention span）── */
+.wk-message-mention {
+    display: inline;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.wk-message-mention-send {
+    color: white;
+}
+.wk-message-mention-recv {
+    color: black;
+}
+body[theme-mode=dark] .wk-message-mention-recv {
+    color: white;
 }
 
 /* ── 流式光标（复用已有动画） ── */

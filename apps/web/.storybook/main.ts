@@ -2,6 +2,8 @@ import type { StorybookConfig } from '@storybook/react-vite'
 import { mergeConfig } from 'vite'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import commonjs from 'vite-plugin-commonjs'
+import tsconfigPaths from 'vite-tsconfig-paths'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -21,12 +23,17 @@ const config: StorybookConfig = {
   framework: '@storybook/react-vite',
   viteFinal: (config) =>
     mergeConfig(config, {
+      plugins: [
+        commonjs(),
+        tsconfigPaths({ root: path.resolve(__dirname, '../../../') }),
+      ],
       resolve: {
         alias: {
           '@dmwork/base': path.resolve(__dirname, '../../../packages/dmworkbase/src'),
           '@dmwork/contacts': path.resolve(__dirname, '../../../packages/dmworkcontacts/src'),
           '@dmwork/login': path.resolve(__dirname, '../../../packages/dmworklogin/src'),
         },
+        dedupe: ['react', 'react-dom'],
       },
     }),
 }

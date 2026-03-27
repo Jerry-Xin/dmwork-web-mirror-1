@@ -1,7 +1,8 @@
 import type { Preview } from '@storybook/react-vite'
 
-// 分层 CSS（primitive → semantic），通过 index.css 入口加载
-import '../../../packages/dmworkbase/src/theme/index.css'
+// 分层 CSS — 直接 import，不走 @import 链，避免 Vite 跨包路径问题
+import '../../../packages/dmworkbase/src/theme/primitive.css'
+import '../../../packages/dmworkbase/src/theme/semantic.css'
 import './preview.css'
 
 const preview: Preview = {

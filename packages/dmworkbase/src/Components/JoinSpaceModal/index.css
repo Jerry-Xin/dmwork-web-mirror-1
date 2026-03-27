@@ -39,34 +39,6 @@
     justify-content: flex-end;
 }
 
-.wk-join-space-modal__btn {
-    height: 36px;
-    padding: 0 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: inherit;
-    cursor: pointer;
-    border: none;
-    transition: background 0.15s;
-}
-
-.wk-join-space-modal__btn--cancel {
-    background: #F0F1F5;
-    color: #5C6070;
-}
-.wk-join-space-modal__btn--cancel:hover { background: #E2E3EA; }
-
-.wk-join-space-modal__btn--confirm {
-    background: #008F76;
-    color: #fff;
-}
-.wk-join-space-modal__btn--confirm:hover:not(:disabled) { background: #007a66; }
-.wk-join-space-modal__btn--confirm:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 /* confirm step */
 .wk-join-space-modal--confirm .wk-join-space-modal__space-preview {
     display: flex;

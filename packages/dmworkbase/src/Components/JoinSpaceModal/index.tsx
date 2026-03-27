@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, Input } from "@douyinfe/semi-ui";
+import WKButton from "../WKButton";
 import "./index.css";
 
 export interface InviteInfo {
@@ -73,16 +74,10 @@ export default function JoinSpaceModal({
                         </span>
                     </div>
                     <div className="wk-join-space-modal__footer">
-                        <button className="wk-join-space-modal__btn wk-join-space-modal__btn--cancel" onClick={onCancel}>
-                            取消
-                        </button>
-                        <button
-                            className="wk-join-space-modal__btn wk-join-space-modal__btn--confirm"
-                            onClick={onVerify}
-                            disabled={verifyLoading}
-                        >
-                            {verifyLoading ? "验证中…" : "下一步"}
-                        </button>
+                        <WKButton variant="secondary" onClick={onCancel}>取消</WKButton>
+                        <WKButton variant="primary" loading={verifyLoading} onClick={onVerify}>
+                            下一步
+                        </WKButton>
                     </div>
                 </div>
             )}
@@ -104,16 +99,15 @@ export default function JoinSpaceModal({
                         )}
                     </div>
                     <div className="wk-join-space-modal__footer">
-                        <button className="wk-join-space-modal__btn wk-join-space-modal__btn--cancel" onClick={onBack}>
-                            ← 重新输入
-                        </button>
-                        <button
-                            className="wk-join-space-modal__btn wk-join-space-modal__btn--confirm"
+                        <WKButton variant="secondary" onClick={onBack}>← 重新输入</WKButton>
+                        <WKButton
+                            variant="primary"
+                            loading={joinLoading}
+                            disabled={isFull}
                             onClick={onJoin}
-                            disabled={joinLoading || isFull}
                         >
-                            {joinLoading ? "加入中…" : isFull ? "空间已满" : "确认加入"}
-                        </button>
+                            {isFull ? "空间已满" : "确认加入"}
+                        </WKButton>
                     </div>
                 </div>
             )}

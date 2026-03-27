@@ -42,7 +42,9 @@
     "test:universal": "./scripts/test-universal-build.sh",
     "eject": "react-app-rewired eject",
     "clean": "rimraf node_modules dist-ele build dist-ele .turbo",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@dmwork/base": "workspace:*",

@@ -49,7 +49,9 @@ export class LoginVM extends ProviderListener {
     registerEmailPassword?:string
     registerEmailConfirmPassword?:string
     registerEmailName?:string
-    emailCodeSending: boolean = false
+    registerEmailCode?:string           // 注册验证码
+    registerCodeCountdown: number = 0
+    private _registerCountdownTimer?: any
     emailCodeCountdown: number = 0
     private _countdownTimer?: any
 
@@ -109,6 +111,10 @@ export class LoginVM extends ProviderListener {
         if (this._countdownTimer) {
             clearInterval(this._countdownTimer)
             this._countdownTimer = undefined
+        }
+        if (this._registerCountdownTimer) {
+            clearInterval(this._registerCountdownTimer)
+            this._registerCountdownTimer = undefined
         }
     }
 
@@ -223,9 +229,28 @@ export class LoginVM extends ProviderListener {
         })
     }
 
+    async requestRegisterSendCode(email: string) {
+        return WKApp.apiClient.post('user/email/sendcode', {
+            email: email,
+            code_type: 0, // 0 = 注册
+        }).then(() => {
+            this.registerCodeCountdown = 60
+            if (this._registerCountdownTimer) {
+                clearInterval(this._registerCountdownTimer)
+                this._registerCountdownTimer = undefined
+            }
+            this._registerCountdownTimer = setInterval(() => {
+                this.registerCodeCountdown--
+                if (this.registerCodeCountdown <= 0) {
+                    clearInterval(this._registerCountdownTimer)
+                    this._registerCountdownTimer = undefined
+                }
+                this.notifyListener()
+            }, 1000)
+        })
+    }
+
     async requestEmailSendCode(email: string, codeType: number = 0) {
-        this.emailCodeSending = true
-        this.notifyListener()
         return WKApp.apiClient.post('user/email/sendcode', {
             email: email,
             code_type: codeType,
@@ -244,18 +269,15 @@ export class LoginVM extends ProviderListener {
                 }
                 this.notifyListener()
             }, 1000)
-        }).finally(() => {
-            this.emailCodeSending = false
-            this.notifyListener()
         })
     }
 
-    async requestEmailRegister(email: string, password: string, name: string) {
+    async requestEmailRegister(email: string, password: string, name: string, code: string) {
         this.registerLoading = true
         this.notifyListener()
         const device = this.getDevice()
         return WKApp.apiClient.post('user/emailregister', {
-            email, password, name, flag: 1, device,
+            email, password, name, code, flag: 1, device,
         }).then((result) => {
             // emailregister wraps response in {data: ...}
             this.loginSuccess(result)
@@ -305,6 +327,7 @@ export class LoginVM extends ProviderListener {
     clearSensitiveFields() {
         this.password = ''
         this.registerEmailPassword = ''
+        this.registerEmailCode = ''
         this.forgetNewPassword = ''
     }
 

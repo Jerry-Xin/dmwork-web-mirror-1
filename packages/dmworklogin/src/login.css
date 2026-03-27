@@ -801,3 +801,7 @@
         font-size: 10px;
     }
 }
+
+@keyframes wk-spin {
+    to { transform: rotate(360deg); }
+}

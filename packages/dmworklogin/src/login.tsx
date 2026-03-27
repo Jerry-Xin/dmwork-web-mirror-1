@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useState, useEffect, useRef } from "react";
 import { Button, Spin, Toast } from '@douyinfe/semi-ui';
 import './login.css'
 import QRCode from 'qrcode.react';
@@ -44,6 +44,55 @@ type LoginState = {
     getLoginUUIDLoading: boolean
     scanner?: string  // 扫描者的uid
     qrcode?: string
+}
+
+interface SendCodeButtonProps {
+    onSend: () => Promise<void>
+    countdown: number
+    className?: string
+}
+
+function SendCodeButton({ onSend, countdown, className }: SendCodeButtonProps) {
+    const [loading, setLoading] = useState(false)
+    const prevCountdown = useRef(countdown)
+
+    // countdown 从 0 变成正数，说明发送成功倒计时开始，此时才清除 loading
+    useEffect(() => {
+        if (prevCountdown.current === 0 && countdown > 0) {
+            setLoading(false)
+        }
+        prevCountdown.current = countdown
+    }, [countdown])
+
+    const disabled = countdown > 0 || loading
+    const label = countdown > 0 ? `${countdown}s` : '发送验证码'
+    return (
+        <Button
+            className={className}
+            disabled={disabled}
+            onClick={async () => {
+                setLoading(true)
+                try {
+                    await onSend()
+                } catch {
+                    // 失败时立即清除 loading
+                    setLoading(false)
+                }
+            }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+        >
+            {loading && (
+                <svg
+                    width="14" height="14"
+                    viewBox="0 0 14 14"
+                    style={{ flexShrink: 0, animation: 'wk-spin 0.8s linear infinite' }}
+                >
+                    <circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="26" strokeDashoffset="10" strokeLinecap="round" />
+                </svg>
+            )}
+            {label}
+        </Button>
+    )
 }
 
 class Login extends Component<any, LoginState> {
@@ -213,6 +262,26 @@ class Login extends Component<any, LoginState> {
                                 <input type="email" name="reg-email" autoComplete="email" placeholder="邮箱" onChange={(v) => {
                                     vm.registerEmail = v.target.value
                                 }}></input>
+                                <div className="wk-login-content-form-code-row">
+                                    <input type="text" name="reg-code" autoComplete="one-time-code" placeholder="邮箱验证码" onChange={(v) => {
+                                        vm.registerEmailCode = v.target.value
+                                    }}></input>
+                                    <SendCodeButton
+                                        className="wk-login-content-form-code-btn"
+                                        countdown={vm.registerCodeCountdown}
+                                        onSend={async () => {
+                                            const regEmailEl = document.querySelector<HTMLInputElement>('input[name="reg-email"]')
+                                            if (regEmailEl?.value && !vm.registerEmail) vm.registerEmail = regEmailEl.value
+                                            if (!vm.registerEmail || !isValidEmail(vm.registerEmail)) {
+                                                Toast.error("请先输入正确的邮箱地址！")
+                                                return
+                                            }
+                                            await vm.requestRegisterSendCode(vm.registerEmail).catch((err: any) => {
+                                                Toast.error(sanitizeErrorMessage(err.msg))
+                                            })
+                                        }}
+                                    />
+                                </div>
                                 <input type="text" name="reg-name" autoComplete="name" placeholder="昵称" onChange={(v) => {
                                     vm.registerEmailName = v.target.value
                                 }}></input>
@@ -228,16 +297,22 @@ class Login extends Component<any, LoginState> {
                                     <Button loading={vm.registerLoading} className="wk-login-content-form-ok" type='primary' theme='solid' onClick={async () => {
                                         // 兼容移动端自动填充不触发 onChange
                                         const regEmailEl = document.querySelector<HTMLInputElement>('input[name="reg-email"]')
+                                        const regCodeEl = document.querySelector<HTMLInputElement>('input[name="reg-code"]')
                                         const regNameEl = document.querySelector<HTMLInputElement>('input[name="reg-name"]')
                                         const regPwdEl = document.querySelector<HTMLInputElement>('input[name="reg-password"]')
                                         const regConfirmEl = document.querySelector<HTMLInputElement>('input[name="reg-confirm-password"]')
                                         if (regEmailEl?.value && !vm.registerEmail) vm.registerEmail = regEmailEl.value
+                                        if (regCodeEl?.value && !vm.registerEmailCode) vm.registerEmailCode = regCodeEl.value
                                         if (regNameEl?.value && !vm.registerEmailName) vm.registerEmailName = regNameEl.value
                                         if (regPwdEl?.value && !vm.registerEmailPassword) vm.registerEmailPassword = regPwdEl.value
                                         if (regConfirmEl?.value && !vm.registerEmailConfirmPassword) vm.registerEmailConfirmPassword = regConfirmEl.value
 
                                         if (!vm.registerEmail || !isValidEmail(vm.registerEmail)) {
                                             Toast.error("请输入正确的邮箱地址！")
+                                            return
+                                        }
+                                        if (!vm.registerEmailCode) {
+                                            Toast.error("请输入邮箱验证码！")
                                             return
                                         }
                                         if (!vm.registerEmailName) {
@@ -253,7 +328,7 @@ class Login extends Component<any, LoginState> {
                                             Toast.error("两次密码输入不一致！")
                                             return
                                         }
-                                        vm.requestEmailRegister(vm.registerEmail, vm.registerEmailPassword, vm.registerEmailName).catch((err) => {
+                                        vm.requestEmailRegister(vm.registerEmail!, vm.registerEmailPassword!, vm.registerEmailName!, vm.registerEmailCode!).catch((err) => {
                                             Toast.error(sanitizeErrorMessage(err.msg))
                                         })
                                     }}>注册</Button>
@@ -278,16 +353,19 @@ class Login extends Component<any, LoginState> {
                                     <input type="text" name="forget-code" autoComplete="one-time-code" placeholder="验证码" onChange={(v) => {
                                         vm.forgetCode = v.target.value
                                     }}></input>
-                                    <Button className="wk-login-content-form-code-btn" disabled={vm.emailCodeCountdown > 0 || vm.emailCodeSending} loading={vm.emailCodeSending} onClick={() => {
-                                        if (!vm.forgetEmail || !isValidEmail(vm.forgetEmail)) {
-                                            Toast.error("请输入正确的邮箱地址！")
-                                            return
-                                        }
-                                        vm.requestEmailSendCode(vm.forgetEmail, 2).catch((err) => {
-                                            Toast.error(sanitizeErrorMessage(err.msg))
-                                        })
-                                    }}>{vm.emailCodeCountdown > 0 ? `${vm.emailCodeCountdown}s` : '发送验证码'}</Button>
-                                </div>
+                                    <SendCodeButton
+                                        className="wk-login-content-form-code-btn"
+                                        countdown={vm.emailCodeCountdown}
+                                        onSend={async () => {
+                                            if (!vm.forgetEmail || !isValidEmail(vm.forgetEmail)) {
+                                                Toast.error("请输入正确的邮箱地址！")
+                                                return
+                                            }
+                                            await vm.requestEmailSendCode(vm.forgetEmail!, 2).catch((err: any) => {
+                                                Toast.error(sanitizeErrorMessage(err.msg))
+                                            })
+                                        }}
+                                    />                                </div>
                                 <input type="password" name="forget-new-pwd" autoComplete="off" placeholder="新密码" onChange={(v) => {
                                     vm.forgetNewPassword = v.target.value
                                     vm.notifyListener()
@@ -315,7 +393,7 @@ class Login extends Component<any, LoginState> {
                                             Toast.error("两次密码输入不一致！")
                                             return
                                         }
-                                        vm.requestForgetPassword(vm.forgetEmail, vm.forgetCode, vm.forgetNewPassword).then(() => {
+                                        vm.requestForgetPassword(vm.forgetEmail!, vm.forgetCode!, vm.forgetNewPassword!).then(() => {
                                             Toast.success("密码重置成功，请登录")
                                             vm.loginType = LoginType.phone
                                         }).catch((err) => {

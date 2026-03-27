@@ -115,6 +115,16 @@ export class SpaceService {
         return WKApp.apiClient.post(`space/${spaceId}/invite`, {})
     }
 
+    async getInviteInfo(inviteCode: string): Promise<{
+        invite_code: string;
+        space_id: string;
+        space_name: string;
+        member_count: number;
+        max_users: number;
+    }> {
+        return WKApp.apiClient.get(`space/invite/${inviteCode}`)
+    }
+
     async joinSpace(inviteCode: string): Promise<void> {
         return WKApp.apiClient.post("space/join", { invite_code: inviteCode })
     }

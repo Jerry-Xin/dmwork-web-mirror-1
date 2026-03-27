@@ -37,6 +37,15 @@ export const InputWithCode: Story = {
     },
 };
 
+/** Step 1：粘贴完整邀请链接 */
+export const InputWithLink: Story = {
+    name: "Step 1 — 粘贴邀请链接",
+    args: {
+        step: "input",
+        code: "https://im-test.deepminer.com.cn/?invite=4330ed4c",
+    },
+};
+
 /** Step 1：验证中 */
 export const InputVerifying: Story = {
     name: "Step 1 — 验证中",

@@ -30,10 +30,23 @@ export function useJoinSpace({ onSuccess, onClose }: UseJoinSpaceOptions = {}) {
         const trimmed = code.trim();
         if (!trimmed) { Toast.warning("请输入邀请码或邀请链接"); return; }
 
-        // 支持完整链接，提取末段
-        const extracted = trimmed.includes("/")
-            ? trimmed.split("/").filter(Boolean).pop() ?? trimmed
-            : trimmed;
+        // 支持邀请链接：从 ?invite= 参数提取邀请码
+        let extracted = trimmed;
+        if (trimmed.includes("://") || trimmed.startsWith("//")) {
+            try {
+                const url = new URL(trimmed.startsWith("//") ? `https:${trimmed}` : trimmed);
+                const inviteParam = url.searchParams.get("invite");
+                if (inviteParam) {
+                    extracted = inviteParam;
+                } else {
+                    Toast.error("链接中未找到邀请码（缺少 ?invite= 参数）");
+                    return;
+                }
+            } catch {
+                Toast.error("邀请链接格式不正确");
+                return;
+            }
+        }
 
         if (!/^[a-zA-Z0-9_-]+$/.test(extracted)) {
             Toast.error("邀请码格式不正确");

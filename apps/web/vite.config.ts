@@ -12,6 +12,7 @@ export default defineConfig({
   ],
   resolve: {
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+    dedupe: ['react', 'react-dom'],
   },
   build: {
     outDir: 'build',

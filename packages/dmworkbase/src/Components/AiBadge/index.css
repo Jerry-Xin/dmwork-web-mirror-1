@@ -2,16 +2,18 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #ffffff;
-    font-weight: 600;
-    border-radius: 4px;
+    background: var(--wk-brand-gradient);
+    color: var(--wk-text-inverse);
+    font-weight: var(--wk-font-semibold);
+    border-radius: var(--wk-r-xs);
     flex-shrink: 0;
     vertical-align: middle;
+    font-family: var(--wk-font-sans);
+    letter-spacing: 0.02em;
 }
 
 .ai-badge-default {
-    font-size: 10px;
+    font-size: var(--wk-text-size-tiny);   /* 10px */
     padding: 1px 4px;
     line-height: 12px;
 }

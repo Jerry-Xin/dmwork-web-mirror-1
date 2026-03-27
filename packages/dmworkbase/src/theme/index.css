@@ -1,0 +1,13 @@
+/**
+ * DMWork v4 — Theme Entry Point
+ *
+ * 在 App.css 顶部引入这一个文件即可，不要单独引入子文件。
+ *
+ * 层级结构：
+ *   primitive.css  →  原始调色板（不直接用）
+ *   semantic.css   →  语义层 + 主题切换（组件用这层）
+ *   component.css  →  组件专属 token（待补充）
+ */
+
+@import './primitive.css';
+@import './semantic.css';

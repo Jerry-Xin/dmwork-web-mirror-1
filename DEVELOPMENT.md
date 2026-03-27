@@ -336,8 +336,7 @@ src={icon}
 
 | 坑 | 现象 | 解决方案 |
 |---|---|---|
-| Vite 跨包 CSS @import 链失效 | token 变量为空字符串 | ✅ 已通过 postcss-import 解决，viteFinal 里已配置 |
 | pnpm 幽灵依赖 | 运行时 Module not found | 在 package.json 显式声明，或加到 .npmrc public-hoist-pattern |
 | stories 被主项目 tsc 扫到 | TS 报错 moduleResolution | tsconfig.json exclude stories 和 .storybook |
 | class component 在 StrictMode 下副作用双调用 | React 18 StrictMode 特性 | 改函数组件 + useEffect |
-| WKButton/InputEdit 缺 default export | story 渲染报错 | index.tsx 必须同时有 default 和 named export |
+| 组件缺 default export | story 渲染报错「does not provide an export named default」 | index.tsx 必须同时有 default 和 named export |

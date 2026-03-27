@@ -35,6 +35,19 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
         }
     }
 
+    handleSpaceSelected = (spaceId: string) => {
+        SpaceService.shared.getMySpaces().then(spaces => {
+            this.setState({ allSpaces: spaces, showSpaceCreate: false, showJoinSpace: false });
+            WKApp.shared.currentSpaceId = spaceId;
+            localStorage.setItem("currentSpaceId", spaceId);
+            const target = spaces.find(s => s.space_id === spaceId);
+            if (target) WKApp.mittBus.emit("space-changed", target);
+            WKApp.shared.notifyListener();
+        }).catch(() => {
+            Toast.error("刷新 Space 列表失败，请手动刷新");
+        });
+    };
+
     handleCopyInviteLink = async (spaceId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
@@ -167,30 +180,12 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                 onClose={() => {
                     this.setState({ showSpaceCreate: false });
                 }}
-                onSuccess={(spaceId) => {
-                    SpaceService.shared.getMySpaces().then(spaces => {
-                        this.setState({ allSpaces: spaces, showSpaceCreate: false });
-                        WKApp.shared.currentSpaceId = spaceId;
-                        localStorage.setItem("currentSpaceId", spaceId);
-                        const target = spaces.find(s => s.space_id === spaceId);
-                        if (target) WKApp.mittBus.emit("space-changed", target);
-                        WKApp.shared.notifyListener();
-                    }).catch(() => {});
-                }}
+                onSuccess={this.handleSpaceSelected}
             />
             <JoinSpaceModalConnected
                 visible={this.state.showJoinSpace}
                 onClose={() => this.setState({ showJoinSpace: false })}
-                onSuccess={(spaceId) => {
-                    SpaceService.shared.getMySpaces().then(spaces => {
-                        this.setState({ allSpaces: spaces, showJoinSpace: false });
-                        WKApp.shared.currentSpaceId = spaceId;
-                        localStorage.setItem("currentSpaceId", spaceId);
-                        const target = spaces.find(s => s.space_id === spaceId);
-                        if (target) WKApp.mittBus.emit("space-changed", target);
-                        WKApp.shared.notifyListener();
-                    }).catch(() => {});
-                }}
+                onSuccess={this.handleSpaceSelected}
             />
         </div>
     }

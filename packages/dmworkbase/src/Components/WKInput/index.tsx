@@ -28,6 +28,7 @@ const WKInput = forwardRef<HTMLInputElement, WKInputProps>(({
   prefix,
   suffix,
   className,
+  onKeyDown: externalOnKeyDown,
   ...rest
 }, ref) => {
   const cls = [
@@ -49,7 +50,7 @@ const WKInput = forwardRef<HTMLInputElement, WKInputProps>(({
         onChange={(e) => onChange?.(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') onEnterPress?.()
-          rest.onKeyDown?.(e)
+          externalOnKeyDown?.(e)
         }}
         {...rest}
       />

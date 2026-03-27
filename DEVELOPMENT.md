@@ -50,28 +50,24 @@ semantic.css   → 语义层，组件里用这一层
 component.css  → 组件专属变量（待补充）
 ```
 
-### ⚠️ Vite 跨包 CSS @import 坑
+### ⚠️ Vite 跨包 CSS @import 坑（已解决）
 
-**在 Vite 下，JS/TS 里 `import` CSS 文件时，该 CSS 文件里的 `@import` 链不会被递归展开。**
+**问题：** 在 Vite 下，JS/TS `import` CSS 文件时，该文件里的 `@import` 链不会被递归展开，导致跨包的 token 变量全部为空。
+
+**现在的解法：** `viteFinal` 里已配置 `postcss-import` 插件，编译时展开 `@import` 链，行为和 webpack css-loader 一致。
 
 ```ts
-// ❌ 错误：index.css 里的 @import primitive.css 不会生效
+// viteFinal 里已有，不需要手动处理
+css: { postcss: { plugins: [postcssImport()] } }
+```
+
+所以 preview.ts 里只需要 import 入口文件：
+```ts
+// ✅ 正确，postcss-import 会自动展开 @import 链
 import '../../../packages/dmworkbase/src/theme/index.css'
-
-// ✅ 正确：在 preview.ts 里直接 import 每个文件
-import '../../../packages/dmworkbase/src/theme/primitive.css'
-import '../../../packages/dmworkbase/src/theme/semantic.css'
 ```
 
-或者在 `vite.config.ts` / `viteFinal` 里加 `postcss-import` 插件（编译时展开）：
-
-```ts
-import postcssImport from 'postcss-import'
-
-viteFinal: (config) => mergeConfig(config, {
-  css: { postcss: { plugins: [postcssImport()] } }
-})
-```
+**注意：** 如果新建了 Vite 项目或独立工具，没有这个配置时会遇到同样问题，解法是加 `postcss-import`。
 
 ### 主题切换
 
@@ -340,7 +336,7 @@ src={icon}
 
 | 坑 | 现象 | 解决方案 |
 |---|---|---|
-| Vite 跨包 CSS @import 链失效 | token 变量为空字符串 | preview.ts 直接 import 每个 CSS 文件，或用 postcss-import |
+| Vite 跨包 CSS @import 链失效 | token 变量为空字符串 | ✅ 已通过 postcss-import 解决，viteFinal 里已配置 |
 | pnpm 幽灵依赖 | 运行时 Module not found | 在 package.json 显式声明，或加到 .npmrc public-hoist-pattern |
 | stories 被主项目 tsc 扫到 | TS 报错 moduleResolution | tsconfig.json exclude stories 和 .storybook |
 | class component 在 StrictMode 下副作用双调用 | React 18 StrictMode 特性 | 改函数组件 + useEffect |

@@ -284,11 +284,37 @@ Stories 文件已在主项目 `tsconfig.json` 里 exclude，不会被主项目 t
 
 ## 七、Git 规范
 
-- 身份：`sosoclaw / sosoclaw@openclaw.local`
-- 分支命名：`feat/sosoclaw/description`、`fix/sosoclaw/description`
-- **禁止 push，禁止开 PR/MR**，除非明确指示
+### 分支命名
+
+```
+feat/描述        功能开发
+fix/描述         Bug 修复
+chore/描述       工程/依赖/文档
+refactor/描述    重构（不改功能）
+```
+
+Agent 开分支时，在描述里体现自己的角色或任务，例如：
+```
+feat/add-wkavatar-stories
+fix/checkbox-class-name-migration
+```
+
+### Commit 规范
+
+```
+feat(scope): 简短描述      新功能
+fix(scope): 简短描述       修复
+refactor(scope): 简短描述  重构
+chore(scope): 简短描述     工程变更
+docs(scope): 简短描述      文档
+```
+
+### 铁律
+
+- **禁止 push，禁止开 PR/MR**，除非 Will 明确指示
 - commit 前用 `git diff --stat` 确认改动文件数，超过 10 个要警觉
 - **不要提交 `yarn.lock`**，项目用 `pnpm-lock.yaml`
+- 基于 `github/main` 建分支，不要基于其他分支
 
 ---
 

@@ -166,7 +166,7 @@ export default class SpaceGate extends Component<{}, SpaceGateState> {
                 <SpaceCreate
                     visible={showCreate}
                     onClose={() => this.setState({ showCreate: false })}
-                    onSuccess={() => this.checkSpaces()}
+                    onSuccess={(_spaceId) => this.checkSpaces()}
                 />
             </div>
         );

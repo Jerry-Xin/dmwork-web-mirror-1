@@ -178,10 +178,13 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                 onClose={() => {
                     this.setState({ showSpaceCreate: false });
                 }}
-                onSuccess={() => {
-                    this.setState({ showSpaceCreate: false });
+                onSuccess={(spaceId) => {
                     SpaceService.shared.getMySpaces().then(spaces => {
-                        this.setState({ allSpaces: spaces });
+                        this.setState({ allSpaces: spaces, showSpaceCreate: false });
+                        WKApp.shared.currentSpaceId = spaceId;
+                        localStorage.setItem("currentSpaceId", spaceId);
+                        WKApp.mittBus.emit("space-changed", spaces.find(s => s.space_id === spaceId));
+                        WKApp.shared.notifyListener();
                     }).catch(() => {});
                 }}
             />

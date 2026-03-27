@@ -6,7 +6,7 @@ import "./index.css";
 export interface SpaceCreateProps {
     visible: boolean;
     onClose: () => void;
-    onSuccess: () => void;
+    onSuccess: (spaceId: string) => void;
 }
 
 interface SpaceCreateState {
@@ -39,7 +39,7 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
             const invite = await SpaceService.shared.createInvite(resp.space_id);
             this.setState({ inviteUrl: invite.invite_url, loading: false });
             Toast.success("Space 创建成功");
-            this.props.onSuccess();
+            this.props.onSuccess(resp.space_id);
         } catch {
             Toast.error("创建失败，请重试");
             this.setState({ loading: false });

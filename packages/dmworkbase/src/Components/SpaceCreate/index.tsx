@@ -1,6 +1,8 @@
 import React, { Component } from "react";
-import { Modal, Input, TextArea, Toast } from "@douyinfe/semi-ui";
+import { Modal, Input, Toast } from "@douyinfe/semi-ui";
 import { SpaceService } from "../../Service/SpaceService";
+import WKButton from "../WKButton";
+import InputEdit from "../InputEdit";
 import "./index.css";
 
 export interface SpaceCreateProps {
@@ -37,7 +39,7 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
         try {
             const resp = await SpaceService.shared.createSpace(name.trim(), description.trim());
             const invite = await SpaceService.shared.createInvite(resp.space_id);
-            this.setState({ inviteUrl: invite.invite_url, loading: false });
+            this.setState({ name: "", description: "", inviteUrl: invite.invite_url, loading: false });
             Toast.success("Space 创建成功");
             this.props.onSuccess(resp.space_id);
         } catch {
@@ -89,29 +91,25 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
                                 value={name}
                                 onChange={(v) => this.setState({ name: v })}
                                 maxLength={32}
+                                onEnterPress={this.handleCreate}
+                                autoFocus
                             />
                         </div>
                         <div className="wk-spacecreate-field">
                             <label className="wk-spacecreate-label">描述</label>
-                            <TextArea
+                            <InputEdit
+                                key={visible ? "open" : "closed"}
+                                defaultValue={description}
                                 placeholder="输入 Space 描述（可选）"
-                                value={description}
-                                onChange={(v) => this.setState({ description: v })}
                                 maxCount={200}
-                                autosize={{ minRows: 3, maxRows: 5 }}
+                                onChange={(v) => this.setState({ description: v })}
                             />
                         </div>
                         <div className="wk-spacecreate-actions">
-                            <button className="wk-spacecreate-btn wk-spacecreate-btn-cancel" onClick={this.handleClose}>
-                                取消
-                            </button>
-                            <button
-                                className="wk-spacecreate-btn wk-spacecreate-btn-primary"
-                                onClick={this.handleCreate}
-                                disabled={loading}
-                            >
-                                {loading ? "创建中..." : "创建"}
-                            </button>
+                            <WKButton variant="secondary" onClick={this.handleClose}>取消</WKButton>
+                            <WKButton variant="primary" loading={loading} onClick={this.handleCreate}>
+                                创建
+                            </WKButton>
                         </div>
                     </div>
                 )}

@@ -226,20 +226,30 @@ export class CommonDataSource implements ICommonDataSource {
         return WKApp.apiClient.get(`sticker/user/sticker?category=${encodeURIComponent(category)}`).catch(() => [])
     }
     searchUser(keyword: string): Promise<any> {
-        return WKApp.apiClient.get(`user/search?keyword=${encodeURIComponent(keyword)}`)
+        const spaceId = WKApp.shared.currentSpaceId
+        const spaceParam = spaceId ? `&space_id=${encodeURIComponent(spaceId)}` : ''
+        return WKApp.apiClient.get(`user/search?keyword=${encodeURIComponent(keyword)}${spaceParam}`)
     }
     qrcodeMy(): Promise<any> {
         return WKApp.apiClient.get("user/qrcode")
     }
 
     friendSure(token: string): Promise<void> {
-        return WKApp.apiClient.post("friend/sure", {
-            "token": token,
-        })
+        const body: any = { "token": token }
+        const spaceId = WKApp.shared.currentSpaceId
+        if (spaceId) {
+            body.space_id = spaceId
+        }
+        return WKApp.apiClient.post("friend/sure", body)
     }
 
     friendApply(req:{uid:string,remark:string,vercode:string}):Promise<void> {
-        return WKApp.apiClient.post(`friend/apply`,{to_uid:req.uid,remark:req.remark,vercode:req.vercode},)
+        const body: any = { to_uid: req.uid, remark: req.remark, vercode: req.vercode }
+        const spaceId = WKApp.shared.currentSpaceId
+        if (spaceId) {
+            body.space_id = spaceId
+        }
+        return WKApp.apiClient.post(`friend/apply`, body)
     }
 
     /**

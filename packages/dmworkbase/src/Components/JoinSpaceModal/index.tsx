@@ -1,6 +1,7 @@
 import React from "react";
-import { Modal, Input } from "@douyinfe/semi-ui";
+import { Modal } from "@douyinfe/semi-ui";
 import WKButton from "../WKButton";
+import WKInput from "../WKInput";
 import "./index.css";
 
 export interface InviteInfo {
@@ -61,8 +62,8 @@ export default function JoinSpaceModal({
                     </p>
                     <div className="wk-join-space-modal__field">
                         <label className="wk-join-space-modal__label">邀请码</label>
-                        <Input
-                            size="large"
+                        <WKInput
+                            size="lg"
                             placeholder="例如：abc123 或 https://…/invite/abc123"
                             value={code}
                             onChange={onCodeChange}

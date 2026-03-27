@@ -1,5 +1,6 @@
 import React, { Component } from "react";
-import { Modal, Input, Toast } from "@douyinfe/semi-ui";
+import { Modal, Toast } from "@douyinfe/semi-ui";
+import WKInput from "../WKInput";
 import { SpaceService } from "../../Service/SpaceService";
 import WKButton from "../WKButton";
 import InputEdit from "../InputEdit";
@@ -76,17 +77,15 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
                     <div className="wk-spacecreate-invite">
                         <p className="wk-spacecreate-invite-tip">Space 创建成功！分享以下链接邀请成员加入：</p>
                         <div className="wk-spacecreate-invite-link">
-                            <Input value={inviteUrl} readOnly />
-                            <button className="wk-spacecreate-btn" onClick={this.handleCopyInvite}>
-                                复制链接
-                            </button>
+                            <WKInput value={inviteUrl} readOnly />
+                            <WKButton variant="secondary" onClick={this.handleCopyInvite}>复制链接</WKButton>
                         </div>
                     </div>
                 ) : (
                     <div className="wk-spacecreate-form">
                         <div className="wk-spacecreate-field">
                             <label className="wk-spacecreate-label">名称</label>
-                            <Input
+                            <WKInput
                                 placeholder="输入 Space 名称"
                                 value={name}
                                 onChange={(v) => this.setState({ name: v })}

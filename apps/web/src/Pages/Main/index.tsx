@@ -5,10 +5,10 @@ import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
 import { TabNormalScreen } from "./tab_normal_screen";
 import { Space, SpaceService } from "@dmwork/base";
-import { SpaceCreate, ConnectionStatus, JoinSpaceModal } from "@dmwork/base";
+import { SpaceCreate, ConnectionStatus, JoinSpaceModal, ActionListItem, SpaceItem } from "@dmwork/base";
 import { useJoinSpace } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
-import { IconSearch } from "@douyinfe/semi-icons";
+import { IconSearch, IconPlus } from "@douyinfe/semi-icons";
 import classNames from "classnames";
 
 /** hook 包装组件，供 Class 组件内使用 */
@@ -142,14 +142,20 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                                 );
                             })}
                             <div className="wk-global-topbar-dropdown-divider"></div>
-                            <div className="wk-global-topbar-dropdown-item" onClick={() => this.setState({ showSpaceDropdown: false, showJoinSpace: true })}>
-                                <span className="wk-global-topbar-space-icon" style={{ backgroundColor: 'rgba(0,184,148,0.1)', color: '#00B894', width: 24, height: 24, fontSize: 14 }}>↩</span>
-                                <span style={{ flex: 1, color: '#0a9e7e' }}>加入 Space</span>
-                            </div>
-                            <div className="wk-global-topbar-dropdown-item" onClick={() => this.setState({ showSpaceDropdown: false, showSpaceCreate: true })}>
-                                <span className="wk-global-topbar-space-icon" style={{ backgroundColor: 'rgba(124,92,252,0.08)', color: '#7C5CFC', width: 24, height: 24, fontSize: 14 }}>+</span>
-                                <span style={{ flex: 1, color: '#6B4FD8' }}>创建 Space</span>
-                            </div>
+                            <ActionListItem
+                                icon={<IconSearch />}
+                                label="加入 Space"
+                                desc="通过邀请码或链接加入"
+                                variant="join"
+                                onClick={() => this.setState({ showSpaceDropdown: false, showJoinSpace: true })}
+                            />
+                            <ActionListItem
+                                icon={<IconPlus />}
+                                label="创建 Space"
+                                desc="新建你自己的工作空间"
+                                variant="create"
+                                onClick={() => this.setState({ showSpaceDropdown: false, showSpaceCreate: true })}
+                            />
                         </div>
                     )}
                 </div>

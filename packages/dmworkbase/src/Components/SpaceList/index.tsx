@@ -44,7 +44,7 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
         this.loadSpaces();
     }
 
-    loadSpaces = async () => {
+    loadSpaces = async (): Promise<Space[]> => {
         this.setState({ loading: true });
         try {
             const spaces = await SpaceService.shared.getMySpaces();
@@ -52,8 +52,10 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
             if (spaces.length === 1 && !this.props.selectedSpaceId) {
                 this.props.onSelect(spaces[0]);
             }
+            return spaces;
         } catch {
             this.setState({ loading: false });
+            return this.state.spaces;
         }
     };
 
@@ -107,8 +109,8 @@ export default class SpaceList extends Component<SpaceListProps, SpaceListState>
                     visible={showJoinModal}
                     onClose={() => this.setState({ showJoinModal: false })}
                     onSuccess={async (spaceId) => {
-                        await this.loadSpaces();
-                        const space = this.state.spaces.find(s => s.space_id === spaceId);
+                        const spaces = await this.loadSpaces();
+                        const space = spaces.find(s => s.space_id === spaceId);
                         if (space) this.props.onSelect(space);
                     }}
                 />

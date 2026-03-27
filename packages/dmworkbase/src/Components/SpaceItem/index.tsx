@@ -33,7 +33,18 @@ export default function SpaceItem({
         .join(" ");
 
     return (
-        <div className={cls} onClick={onClick} role="button" tabIndex={0}>
+        <div
+            className={cls}
+            onClick={onClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClick?.();
+                }
+            }}
+        >
             <SpaceAvatar name={name} logo={logo} size={avatarSize} />
             <div className="wk-space-item__info">
                 <span className="wk-space-item__name">{name}</span>

@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ErrorBoundary, ErrorFallback } from "../../../../../packages/dmworkbase/src/Components/ErrorBoundary";
@@ -13,7 +14,7 @@ const ThrowingComponent = ({ shouldThrow = true }: { shouldThrow?: boolean }) =>
 // Suppress console.error for tests that expect errors
 const originalError = console.error;
 beforeAll(() => {
-    console.error = jest.fn();
+    console.error = vi.fn();
 });
 afterAll(() => {
     console.error = originalError;
@@ -21,7 +22,7 @@ afterAll(() => {
 
 describe("ErrorBoundary", () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it("renders children when there is no error", () => {
@@ -71,7 +72,7 @@ describe("ErrorBoundary", () => {
     });
 
     it("calls onError callback when error occurs", () => {
-        const onError = jest.fn();
+        const onError = vi.fn();
 
         render(
             <ErrorBoundary onError={onError}>
@@ -138,7 +139,7 @@ describe("ErrorBoundary", () => {
 
 describe("ErrorFallback", () => {
     it("renders error message and retry button", () => {
-        const onRetry = jest.fn();
+        const onRetry = vi.fn();
         const error = new Error("Something went wrong");
 
         const { container } = render(

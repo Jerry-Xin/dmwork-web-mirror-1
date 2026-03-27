@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for friendApply API error handling in App/index.tsx
  * Tests that the API call properly handles errors with .catch() (fix for issue #324)
@@ -99,7 +100,7 @@ describe('friendApply API error handling', () => {
 
     it('should log warning when API call fails', async () => {
         const manager = createFriendApplyManager();
-        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
 
         const testError = new Error('API Error');
         await manager.fetchFriendApplyCount(async () => {

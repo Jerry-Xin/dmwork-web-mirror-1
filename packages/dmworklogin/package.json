@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "main": "src/index.tsx",
   "dependencies": {
-    "@dmwork/base": "*",
-    "@types/node-forge": "^1.0.0",
+    "@dmwork/base": "workspace:*",
+    "@douyinfe/semi-ui": "^2.93.0",
     "@types/qrcode.react": "^1.0.2",
-    "axios": "^0.25.0",
-    "keypair": "^1.0.4",
-    "qrcode.react": "^1.0.1",
+    "classnames": "^2.5.1",
+    "qrcode.react": "^4.2.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {

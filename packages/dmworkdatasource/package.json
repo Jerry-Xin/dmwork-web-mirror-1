@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "src/index.tsx",
   "dependencies": {
-    "@dmwork/base": "*",
-    "axios": "^0.25.0"
+    "@dmwork/base": "workspace:*",
+    "axios": "^0.25.0",
+    "wukongimjssdk": "^1.3.5"
   }
 }

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import "./index.css"
 import { Channel, WKSDK } from "wukongimjssdk";
 import WKApp from "../../App";
@@ -47,9 +47,9 @@ export default class ChannelQRCode extends Component<ChannelQRCodeProps> {
                             }
                             {
                                 vm.qrcodeResp ?
-                                    <QRCode value={vm.qrcodeResp?.qrcode || ""}
+                                    <QRCodeSVG value={vm.qrcodeResp?.qrcode || ""}
                                         size={250}
-                                        fgColor="#000000"></QRCode>
+                                        fgColor="#000000"></QRCodeSVG>
                                     : undefined
                             }
                         </div>

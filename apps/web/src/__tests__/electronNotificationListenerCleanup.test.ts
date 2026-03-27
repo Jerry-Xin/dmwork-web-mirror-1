@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for Electron notification IPC listener cleanup
  * Tests that IPC listeners are properly managed to prevent memory leaks (fix for issue #349)
@@ -5,9 +6,9 @@
 
 describe('Electron notification IPC listener cleanup', () => {
     // Mock ipcRenderer
-    const mockOn = jest.fn();
-    const mockRemoveListener = jest.fn();
-    const mockRemoveAllListeners = jest.fn();
+    const mockOn = vi.fn();
+    const mockRemoveListener = vi.fn();
+    const mockRemoveAllListeners = vi.fn();
 
     const mockIpcRenderer = {
         on: mockOn,
@@ -16,7 +17,7 @@ describe('Electron notification IPC listener cleanup', () => {
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     // Simulate the onClicked implementation from preload/index.ts
@@ -46,7 +47,7 @@ describe('Electron notification IPC listener cleanup', () => {
     describe('onClicked', () => {
         it('should remove all existing listeners before adding new one', () => {
             const onClicked = createOnClickedHandler(mockIpcRenderer);
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             onClicked(callback);
 
@@ -60,7 +61,7 @@ describe('Electron notification IPC listener cleanup', () => {
 
         it('should register a new listener for notification-clicked channel', () => {
             const onClicked = createOnClickedHandler(mockIpcRenderer);
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             onClicked(callback);
 
@@ -69,7 +70,7 @@ describe('Electron notification IPC listener cleanup', () => {
 
         it('should return a cleanup function that removes the listener', () => {
             const onClicked = createOnClickedHandler(mockIpcRenderer);
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             const cleanup = onClicked(callback);
 
@@ -82,7 +83,7 @@ describe('Electron notification IPC listener cleanup', () => {
 
         it('should call the callback with data when notification is clicked', () => {
             const onClicked = createOnClickedHandler(mockIpcRenderer);
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             onClicked(callback);
 
@@ -100,9 +101,9 @@ describe('Electron notification IPC listener cleanup', () => {
             const onClicked = createOnClickedHandler(mockIpcRenderer);
 
             // Call multiple times (simulating component remounts)
-            onClicked(jest.fn());
-            onClicked(jest.fn());
-            onClicked(jest.fn());
+            onClicked(vi.fn());
+            onClicked(vi.fn());
+            onClicked(vi.fn());
 
             // removeAllListeners should be called each time before adding
             expect(mockRemoveAllListeners).toHaveBeenCalledTimes(3);
@@ -113,7 +114,7 @@ describe('Electron notification IPC listener cleanup', () => {
     describe('onActionClicked', () => {
         it('should remove all existing listeners before adding new one', () => {
             const onActionClicked = createOnActionClickedHandler(mockIpcRenderer);
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             onActionClicked(callback);
 
@@ -127,7 +128,7 @@ describe('Electron notification IPC listener cleanup', () => {
 
         it('should register a new listener for notification-action-clicked channel', () => {
             const onActionClicked = createOnActionClickedHandler(mockIpcRenderer);
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             onActionClicked(callback);
 
@@ -136,7 +137,7 @@ describe('Electron notification IPC listener cleanup', () => {
 
         it('should return a cleanup function that removes the listener', () => {
             const onActionClicked = createOnActionClickedHandler(mockIpcRenderer);
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             const cleanup = onActionClicked(callback);
 
@@ -149,7 +150,7 @@ describe('Electron notification IPC listener cleanup', () => {
 
         it('should call the callback with data when action is clicked', () => {
             const onActionClicked = createOnActionClickedHandler(mockIpcRenderer);
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             onActionClicked(callback);
 

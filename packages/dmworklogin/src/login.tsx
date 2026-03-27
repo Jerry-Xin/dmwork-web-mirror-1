@@ -1,7 +1,7 @@
 import React, { Component, useState, useEffect, useRef } from "react";
 import { Button, Spin, Toast } from '@douyinfe/semi-ui';
 import './login.css'
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { WKApp, Provider } from "@dmwork/base"
 import { LoginStatus, LoginType, LoginVM } from "./login_vm";
 import classNames from "classnames";
@@ -137,7 +137,7 @@ class Login extends Component<any, LoginState> {
                 <div className="wk-login-brand">
                     {/* Logo fixed top-left */}
                     <div className="wk-login-brand-logo-top">
-                        <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="logo" style={{ width: 36, height: 36, borderRadius: 10 }} />
+                        <img src={`/logo.png`} alt="logo" style={{ width: 36, height: 36, borderRadius: 10 }} />
                         <span className="wk-login-brand-logo-name">{WKApp.config.appName || 'DMWork'}</span>
                     </div>
                     <div className="wk-login-brand-inner">
@@ -204,7 +204,7 @@ class Login extends Component<any, LoginState> {
                     <div className="wk-login-content">
                         {/* Mobile logo fallback */}
                         <div className="wk-login-content-logo">
-                            <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="logo" />
+                            <img src={`/logo.png`} alt="logo" />
                         </div>
 
                         {vm.inviteInfo && (
@@ -419,7 +419,7 @@ class Login extends Component<any, LoginState> {
                                 <Spin size="large" spinning={vm.qrcodeLoading}>
                                     <div className="wk-login-content-scanlogin-qrcode-wrap">
                                         <div className="wk-login-content-scanlogin-qrcode">
-                                            {vm.qrcodeLoading || !vm.qrcode ? undefined : <QRCode value={vm.qrcode} size={176} fgColor={WKApp.config.themeColor}></QRCode>}
+                                            {vm.qrcodeLoading || !vm.qrcode ? undefined : <QRCodeSVG value={vm.qrcode} size={176} fgColor={WKApp.config.themeColor}></QRCodeSVG>}
                                             <div className={classNames("wk-login-content-scanlogin-qrcode-avatar", vm.showAvatar() ? "wk-login-content-scanlogin-qrcode-avatar-show" : undefined)}>
                                                 {vm.showAvatar() ? <img src={WKApp.shared.avatarUser(vm.uid!)}></img> : undefined}
                                             </div>

@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for handleGlobalSearchClick file download URL validation
  * Tests that file download URLs are validated before being opened
@@ -8,15 +9,15 @@
 import { isSafeUrl } from '../../../../packages/dmworkbase/src/Utils/security';
 
 // Mock the WKApp and its dependencies
-jest.mock('../../../../packages/dmworkbase/src/App', () => ({
+vi.mock('../../../../packages/dmworkbase/src/App', () => ({
     default: {
         dataSource: {
             commonDataSource: {
-                getImageURL: jest.fn((url: string) => url)
+                getImageURL: vi.fn((url: string) => url)
             }
         },
         endpoints: {
-            showConversation: jest.fn()
+            showConversation: vi.fn()
         }
     }
 }));
@@ -25,16 +26,16 @@ jest.mock('../../../../packages/dmworkbase/src/App', () => ({
 const originalWindowOpen = window.open;
 
 describe('handleGlobalSearchClick file download URL validation', () => {
-    let mockWindowOpen: jest.Mock;
+    let mockWindowOpen: vi.Mock;
 
     beforeEach(() => {
-        mockWindowOpen = jest.fn();
+        mockWindowOpen = vi.fn();
         window.open = mockWindowOpen;
     });
 
     afterEach(() => {
         window.open = originalWindowOpen;
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('URL validation integration', () => {

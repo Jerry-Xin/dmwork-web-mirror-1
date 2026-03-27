@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 /**
  * Unit tests for BotDetailModal refreshTimer cleanup logic
  * Tests that setTimeout is properly cleared on component unmount (fix for issue #313)
@@ -5,11 +6,11 @@
 
 describe('BotDetailModal refreshTimer cleanup', () => {
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     // Extracted refreshTimer cleanup logic for testing (mirrors BotDetailModal implementation)
@@ -37,7 +38,7 @@ describe('BotDetailModal refreshTimer cleanup', () => {
 
     it('should set refreshTimer when scheduleRefresh is called', () => {
         const manager = createRefreshTimerManager();
-        const callback = jest.fn();
+        const callback = vi.fn();
 
         manager.scheduleRefresh(callback, 500);
 
@@ -46,18 +47,18 @@ describe('BotDetailModal refreshTimer cleanup', () => {
 
     it('should execute callback after delay', () => {
         const manager = createRefreshTimerManager();
-        const callback = jest.fn();
+        const callback = vi.fn();
 
         manager.scheduleRefresh(callback, 500);
 
         expect(callback).not.toHaveBeenCalled();
-        jest.advanceTimersByTime(500);
+        vi.advanceTimersByTime(500);
         expect(callback).toHaveBeenCalledTimes(1);
     });
 
     it('should clear refreshTimer on componentWillUnmount', () => {
         const manager = createRefreshTimerManager();
-        const callback = jest.fn();
+        const callback = vi.fn();
 
         manager.scheduleRefresh(callback, 500);
         expect(manager.getTimer()).not.toBeNull();
@@ -69,12 +70,12 @@ describe('BotDetailModal refreshTimer cleanup', () => {
 
     it('should prevent callback execution after unmount (memory leak prevention)', () => {
         const manager = createRefreshTimerManager();
-        const callback = jest.fn();
+        const callback = vi.fn();
 
         manager.scheduleRefresh(callback, 500);
         manager.componentWillUnmount();
 
-        jest.advanceTimersByTime(500);
+        vi.advanceTimersByTime(500);
 
         expect(callback).not.toHaveBeenCalled();
     });
@@ -90,7 +91,7 @@ describe('BotDetailModal refreshTimer cleanup', () => {
     it('should prevent setState on unmounted component scenario', () => {
         const manager = createRefreshTimerManager();
         let componentMounted = true;
-        const setStateMock = jest.fn(() => {
+        const setStateMock = vi.fn(() => {
             if (!componentMounted) {
                 throw new Error('Cannot call setState on unmounted component');
             }
@@ -106,7 +107,7 @@ describe('BotDetailModal refreshTimer cleanup', () => {
         manager.componentWillUnmount();
 
         // Advance timers - callback should NOT execute
-        jest.advanceTimersByTime(500);
+        vi.advanceTimersByTime(500);
 
         // setStateMock should never have been called
         expect(setStateMock).not.toHaveBeenCalled();

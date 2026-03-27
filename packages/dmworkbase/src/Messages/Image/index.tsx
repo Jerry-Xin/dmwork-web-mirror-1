@@ -4,7 +4,9 @@ import WKApp from "../../App"
 import { MessageContentTypeConst } from "../../Service/Const"
 import MessageBase from "../Base"
 import { MessageCell } from "../MessageCell"
-import Viewer from 'react-viewer';
+import Lightbox from "yet-another-react-lightbox"
+import Download from "yet-another-react-lightbox/plugins/download"
+import "yet-another-react-lightbox/styles.css"
 import { Toast } from "@douyinfe/semi-ui"
 
 const SMALL_FILE_THRESHOLD = 1024 * 1024 // 1MB 以下不显示进度覆盖层
@@ -209,16 +211,17 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
                     </div>
                 )}
             </div>
-            <Viewer
-                visible={showPreview}
-                noImgDetails={true}
-                downloadable={true}
-                rotatable={false}
-                changeable={false}
-                showTotal={false}
-                onMaskClick={() => { this.setState({ showPreview: false }); }}
-                onClose={() => { this.setState({ showPreview: false }); }}
-                images={[{ src: imageURL, alt: '', downloadUrl: imageURL }]}
+            <Lightbox
+                open={showPreview}
+                close={() => this.setState({ showPreview: false })}
+                slides={[{ src: imageURL, alt: '', download: imageURL }]}
+                plugins={[Download]}
+                carousel={{ finite: true }}
+                controller={{ closeOnBackdropClick: true }}
+                render={{
+                    buttonPrev: () => null,
+                    buttonNext: () => null,
+                }}
             />
         </MessageBase>
     }

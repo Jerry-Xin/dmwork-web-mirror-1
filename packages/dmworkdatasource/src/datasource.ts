@@ -369,17 +369,37 @@ export class CommonDataSource implements ICommonDataSource {
     }
 
     async searchFriends(keyword?: string): Promise<ChannelInfo[]> {
-        let resp = await WKApp.apiClient.get('friend/sync', {
-            param: {
-                "keyword": keyword,
-                "api_version":"1"
-            }
-        })
+        const spaceId = WKApp.shared.currentSpaceId
+        let resp: any
+        if (spaceId) {
+            // Space 模式：从 Space 成员搜索
+            resp = await WKApp.apiClient.get(`space/${spaceId}/members`, {
+                param: { page: "1", limit: "10000" },
+            })
+        } else {
+            resp = await WKApp.apiClient.get('friend/sync', {
+                param: {
+                    "keyword": keyword,
+                    "api_version": "1"
+                }
+            })
+        }
         const channelInfos = [];
         if (resp) {
             for (const data of resp) {
                 if (data.is_deleted === 1) {
                     continue
+                }
+                // 排除自己
+                if (data.uid === WKApp.loginInfo.uid) {
+                    continue
+                }
+                // Space 模式下本地 keyword 过滤
+                if (spaceId && keyword) {
+                    const name = (data.name || "").toLowerCase()
+                    if (!name.includes(keyword.toLowerCase())) {
+                        continue
+                    }
                 }
                 let channelInfo = new ChannelInfo();
                 channelInfo.channel = new Channel(data.uid, ChannelTypePerson);

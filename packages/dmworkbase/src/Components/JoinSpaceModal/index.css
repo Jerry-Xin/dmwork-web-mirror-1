@@ -7,7 +7,7 @@
 
 .wk-join-space-modal__desc {
     font-size: 13px;
-    color: #5C6070;
+    color: var(--wk-text-secondary);
     line-height: 1.5;
     margin: 0;
 }
@@ -21,14 +21,14 @@
 .wk-join-space-modal__label {
     font-size: 12px;
     font-weight: 600;
-    color: #5C6070;
+    color: var(--wk-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
 
 .wk-join-space-modal__hint {
     font-size: 12px;
-    color: #9498A8;
+    color: var(--wk-text-tertiary);
     line-height: 1.4;
 }
 
@@ -64,17 +64,17 @@
 .wk-join-space-modal__space-name {
     font-size: 18px;
     font-weight: 600;
-    color: #1A1C24;
+    color: var(--wk-text-primary);
 }
 
 .wk-join-space-modal__space-meta {
     font-size: 13px;
-    color: #9498A8;
+    color: var(--wk-text-tertiary);
 }
 
 .wk-join-space-modal__full-badge {
-    background: #ffe3e3;
-    color: #e53e3e;
+    background: var(--wk-color-danger-bg, rgba(229,62,62,0.1));
+    color: var(--wk-color-danger, #e53e3e);
     font-size: 12px;
     font-weight: 500;
     padding: 2px 10px;

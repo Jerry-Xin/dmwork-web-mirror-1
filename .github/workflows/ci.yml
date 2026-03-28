@@ -2,9 +2,9 @@ name: ✅ CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   push:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   lint-and-build:
@@ -35,3 +35,67 @@ jobs:
 
       - name: 🏗️ Build
         run: pnpm build
+
+  stylelint:
+    name: 🎨 CSS 硬编码颜色检查
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: 📦 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 🎨 Stylelint (只检查新增/修改的 CSS)
+        run: |
+          BASE=${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+          FILES=$(git diff "$BASE"...HEAD --name-only --diff-filter=ACM | grep '\.css$' || true)
+          if [ -z "$FILES" ]; then
+            echo "✅ 没有 CSS 文件变更，跳过检查"
+            exit 0
+          fi
+          echo "📋 检查以下文件："
+          echo "$FILES"
+          echo "$FILES" | xargs pnpm stylelint --config stylelint.ci.config.mjs
+
+  story-coverage:
+    name: 📖 Story 覆盖检查
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📖 检查新增组件是否有 Story
+        run: |
+          BASE=${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+          MISSING=""
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            dir=$(dirname "$file")
+            component=$(basename "$dir")
+            story="$dir/${component}.stories.tsx"
+            if [ ! -f "$story" ]; then
+              MISSING="$MISSING\n  ❌ 缺少 story: $story"
+            fi
+          done < <(git diff "$BASE"...HEAD --name-only --diff-filter=A | grep 'Components/.*/index\.tsx$' || true)
+
+          if [ -n "$MISSING" ]; then
+            echo "以下新组件缺少对应的 Story 文件："
+            echo -e "$MISSING"
+            echo ""
+            echo "新建 UI 组件必须同时提交 ComponentName.stories.tsx"
+            exit 1
+          fi
+          echo "✅ 所有新组件都有对应 Story"

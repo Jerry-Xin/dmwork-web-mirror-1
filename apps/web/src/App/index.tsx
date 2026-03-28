@@ -1,4 +1,5 @@
 import { ChatPage, EndpointCategory, WKApp, Menus, shouldSkipChannelForSpace } from '@dmwork/base';
+import { ChannelTypePerson } from 'wukongimjssdk';
 import { ContactsList } from '@dmwork/contacts';
 import { BotStore } from '@dmwork/base';
 import React from 'react';
@@ -39,6 +40,15 @@ async function registerMenus() {
       // Space 过滤：复用 shouldSkipChannelForSpace 完整逻辑（含 channelSpaceMap 缓存）
       if (shouldSkipChannelForSpace(conversation.channel)) {
         continue
+      }
+      // 1:1 私聊消息级 Space 过滤：用 lastMessage 的 space_id 判断
+      // 如果 lastMessage 不属于当前 Space，不计入未读（和 ConversationWrap.unread 逻辑一致）
+      const currentSpaceId = WKApp.shared.currentSpaceId
+      if (currentSpaceId && conversation.channel.channelType === ChannelTypePerson && conversation.unread > 0) {
+        const msgSpaceId = conversation.lastMessage?.content?.contentObj?.space_id
+        if (msgSpaceId && msgSpaceId !== currentSpaceId) {
+          continue // lastMessage 属于其他 Space → 不计入 badge
+        }
       }
       badge += conversation.unread
     }

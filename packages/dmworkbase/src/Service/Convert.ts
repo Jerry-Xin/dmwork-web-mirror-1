@@ -17,6 +17,13 @@ export class Convert {
         }
         conversation.extra = {}
         conversation.extra.top = conversationMap["stick"]
+        // 后端返回的 per-Space 字段
+        if (conversationMap["space_unread"] !== undefined && conversationMap["space_unread"] !== null) {
+            conversation.extra.spaceUnread = conversationMap["space_unread"]
+        }
+        if (conversationMap["space_last_message"]) {
+            conversation.extra.spaceLastMessage = this.toMessage(conversationMap["space_last_message"])
+        }
         if(conversationMap["extra"]) {
             conversation.remoteExtra = this.toConversationExtra(conversation.channel,conversationMap["extra"])
         }

@@ -56,8 +56,16 @@ export class ConversationWrap {
         const rawUnread = this.conversation.unread
         if (rawUnread === 0) return 0
 
-        // 系统 Bot（如 BotFather）在 Space 模式下清零未读
         const currentSpaceId = WKApp.shared.currentSpaceId
+
+        // 后端 per-Space 未读计数：Person 频道优先使用 space_unread
+        if (currentSpaceId
+            && this.conversation.channel.channelType === ChannelTypePerson
+            && this.conversation.extra?.spaceUnread !== undefined) {
+            return this.conversation.extra.spaceUnread
+        }
+
+        // 系统 Bot（如 BotFather）在 Space 模式下清零未读
         if (currentSpaceId
             && this.conversation.channel.channelType === ChannelTypePerson
             && SYSTEM_BOTS.has(this.conversation.channel.channelID)) {
@@ -84,6 +92,13 @@ export class ConversationWrap {
     }
 
     public get lastMessage() {
+        // 后端 per-Space 消息预览：Person 频道优先使用 space_last_message
+        const currentSpaceId = WKApp.shared.currentSpaceId
+        if (currentSpaceId
+            && this.conversation.channel.channelType === ChannelTypePerson
+            && this.conversation.extra?.spaceLastMessage) {
+            return this.conversation.extra.spaceLastMessage
+        }
         return getSpaceFilteredLastMessage(this.conversation)
     }
     public set lastMessage(lastMessage: Message | undefined) {

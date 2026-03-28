@@ -8,7 +8,7 @@ import { ConversationWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
 import { animateScroll, scroller } from 'react-scroll';
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
-import { shouldSkipChannelForSpace } from "../../Service/SpaceService";
+import { shouldSkipChannelForSpace, hasSpacePrefix } from "../../Service/SpaceService";
 import { EndpointID } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import { Space, SpaceService } from "../../Service/SpaceService";
@@ -33,6 +33,7 @@ export class ChatVM extends ProviderListener {
     private _selectedSpace?: Space // 选中的 Space
     private _showSpaceCreate = false // 是否显示创建 Space 弹窗
     private _spaceMemberUids: Set<string> = new Set() // 当前 space 的成员 uid 集合
+    private _pendingSpaceConversations: Map<string, Conversation> = new Map() // 等待 channelInfo 的新群会话
 
     set showAddPopover(v: boolean) {
         this._showAddPopover = v
@@ -138,6 +139,7 @@ export class ChatVM extends ProviderListener {
                 WKApp.shared.currentSpaceId = _space.space_id
             }
             WKSDK.shared().conversationManager.conversations = []
+            this._pendingSpaceConversations.clear()
             this.selectedConversation = undefined // 清空选中的会话
             WKApp.shared.openChannel = undefined // 清空全局打开的频道
             this._showChannelSetting = false // 关闭频道设置面板
@@ -177,10 +179,17 @@ export class ChatVM extends ProviderListener {
                 if (conversation.channel.channelType === ChannelTypeGroup) {
                     const key = `${conversation.channel.channelID}_${conversation.channel.channelType}`
                     if (!WKApp.shared.channelSpaceMap.has(key)) {
+                        // 尝试从多个来源同步获取 space_id
                         const info = WKSDK.shared().channelManager.getChannelInfo(conversation.channel)
                         const sid = info?.orgData?.space_id
+                            || conversation.channelInfo?.orgData?.space_id
                         if (sid) {
                             WKApp.shared.channelSpaceMap.set(key, sid)
+                        } else if (WKApp.shared.currentSpaceId && !hasSpacePrefix(conversation.channel.channelID)) {
+                            // Bug #744: cache miss 且无法同步获取 space_id → 不 fail-close
+                            // 暂存到待定队列，等 channelListener 拿到 channelInfo 后补插
+                            this._pendingSpaceConversations.set(key, conversation)
+                            return
                         }
                     }
                 }
@@ -232,8 +241,12 @@ export class ChatVM extends ProviderListener {
                 if (sid) {
                     WKApp.shared.channelSpaceMap.set(key, sid)
                 }
-                // 检查 SDK 中是否有该会话（之前被 fail-close 丢弃的）
-                const conv = WKSDK.shared().conversationManager.findConversation(channelInfo.channel)
+                // Bug #744: 优先从待定队列取回会话（解决 SDK findConversation 可能找不到的问题）
+                const pendingConv = this._pendingSpaceConversations.get(key)
+                if (pendingConv) {
+                    this._pendingSpaceConversations.delete(key)
+                }
+                const conv = pendingConv || WKSDK.shared().conversationManager.findConversation(channelInfo.channel)
                 if (conv && !shouldSkipChannelForSpace(channelInfo.channel)) {
                     this.conversations = [new ConversationWrap(conv), ...this.conversations]
                     this.sortConversations()
@@ -358,6 +371,7 @@ export class ChatVM extends ProviderListener {
         // 切换 Space 时清空 SDK 内部缓存和当前列表，避免旧 Space 会话残留
         WKSDK.shared().conversationManager.conversations = []
         this.conversations = []
+        this._pendingSpaceConversations.clear()
         this.notifyListener()
         const conversationWraps = new Array<ConversationWrap>()
         const conversations = await WKSDK.shared().conversationManager.sync({})

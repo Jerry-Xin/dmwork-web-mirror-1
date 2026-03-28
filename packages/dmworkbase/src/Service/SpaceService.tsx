@@ -5,7 +5,7 @@ import { hasSpacePrefix } from "./SpacePrefix"
 export { hasSpacePrefix } from "./SpacePrefix"
 
 // 系统 Bot channelID 集合
-const SYSTEM_BOTS = new Set(["botfather"])
+export const SYSTEM_BOTS = new Set(["botfather"])
 
 /**
  * 为系统 Bot（如 BotFather）的会话列表预览做 Space 过滤。

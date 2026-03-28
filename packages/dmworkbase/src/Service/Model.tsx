@@ -4,7 +4,7 @@ import WKApp from "../App"
 import { MessageContentTypeConst, MessageReasonCode, OrderFactor } from "./Const"
 import { DefaultEmojiService } from "./EmojiService"
 import { TypingManager } from "./TypingManager"
-import { getSpaceFilteredLastMessage } from "./SpaceService"
+import { getSpaceFilteredLastMessage, SYSTEM_BOTS } from "./SpaceService"
 
 export class ConversationWrap {
     conversation: Conversation
@@ -54,6 +54,22 @@ export class ConversationWrap {
 
     public get unread() {
         const rawUnread = this.conversation.unread
+        if (rawUnread === 0) return 0
+
+        // Bug #743: 系统 Bot（BotFather）未读红点按 Space 过滤
+        // 参考 iOS（Badge 从已过滤列表计算）和 Android（adjustSystemBotForSpace 清零跨 Space 未读）
+        const currentSpaceId = WKApp.shared.currentSpaceId
+        if (currentSpaceId
+            && this.conversation.channel.channelType === ChannelTypePerson
+            && SYSTEM_BOTS.has(this.conversation.channel.channelID)) {
+            const lastMsg = this.conversation.lastMessage
+            const msgSpaceId = lastMsg?.content?.contentObj?.space_id
+            // 无 space_id 或不匹配当前 Space → 清零未读
+            if (!msgSpaceId || msgSpaceId !== currentSpaceId) {
+                return 0
+            }
+        }
+
         // If unread is 1 and the last message is a system/event message,
         // don't show unread badge (fixes #165)
         if (rawUnread === 1 && this.isSystemMessage(this.conversation.lastMessage)) {

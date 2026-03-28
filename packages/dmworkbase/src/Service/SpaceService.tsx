@@ -1,5 +1,5 @@
 import WKApp from "../App"
-import { ChannelTypePerson, ChannelTypeGroup, Channel, Conversation } from "wukongimjssdk"
+import { ChannelTypePerson, ChannelTypeGroup, Channel } from "wukongimjssdk"
 import { hasSpacePrefix } from "./SpacePrefix"
 
 export { hasSpacePrefix } from "./SpacePrefix"
@@ -10,7 +10,7 @@ export { hasSpacePrefix } from "./SpacePrefix"
  * - Person channel（私聊）→ 永远不过滤
  * - 有 Space 前缀（s{spaceId}_）的 channel → 前缀匹配
  * - 群聊（无前缀）→ 查 channelSpaceMap 缓存
- * - 缓存未命中 → fail-open（放行）
+ * - 缓存未命中 → fail-close（不放行）
  */
 export function shouldSkipChannelForSpace(channel: Channel): boolean {
     const currentSpaceId = WKApp.shared.currentSpaceId
@@ -31,34 +31,13 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
     if (channel.channelType === ChannelTypeGroup) {
         const key = `${cid}_${channel.channelType}`
         const cachedSpaceId = WKApp.shared.channelSpaceMap.get(key)
-        if (cachedSpaceId && cachedSpaceId !== currentSpaceId) {
-            return true // 属于其他 Space → 跳过
+        if (cachedSpaceId) {
+            return cachedSpaceId !== currentSpaceId // 匹配 → 放行，不匹配 → 跳过
         }
-        // 缓存未命中或匹配 → 放行
+        return true // 缓存未命中 → fail-close，不放行
     }
 
     return false
-}
-
-// 系统 Bot 列表（与 Conversation/vm.ts 中 SYSTEM_BOTS 一致）
-const SYSTEM_BOTS = new Set(["botfather"])
-
-/**
- * 判断系统 Bot（如 BotFather）的 DM 会话是否不属于当前 Space。
- * 只对 SYSTEM_BOTS 中的 Bot 生效，非系统 Bot 直接返回 false。
- * 检查 lastMessage 的 contentObj.space_id：
- *   - 无 lastMessage 或无 space_id（历史消息）→ 不跳过（向前兼容）
- *   - space_id 匹配当前 Space → 不跳过
- *   - space_id 不匹配 → 跳过
- */
-export function shouldSkipSystemBotConversation(conversation: Conversation): boolean {
-    const currentSpaceId = WKApp.shared.currentSpaceId
-    if (!currentSpaceId) return false
-    if (!SYSTEM_BOTS.has(conversation.channel?.channelID)) return false
-
-    const spaceId = conversation.lastMessage?.content?.contentObj?.space_id
-    if (!spaceId) return false // 无 space_id（历史消息）→ 向前兼容，不跳过
-    return spaceId !== currentSpaceId
 }
 
 export interface Space {

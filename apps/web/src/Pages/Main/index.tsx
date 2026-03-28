@@ -5,9 +5,9 @@ import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
 import { TabNormalScreen } from "./tab_normal_screen";
 import { Space, SpaceService } from "@dmwork/base";
-import { SpaceCreate, ConnectionStatus } from "@dmwork/base";
+import { SpaceCreate, ConnectionStatus, JoinSpaceModalConnected, ActionListItem, SpaceItem, WKButton } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
-import { IconSearch } from "@douyinfe/semi-icons";
+import { IconSearch, IconPlus, IconLink } from "@douyinfe/semi-icons";
 import classNames from "classnames";
 
 
@@ -20,7 +20,8 @@ export interface MainContentLeftState {
 interface MainContentLeftFullState {
     allSpaces: Space[];
     showSpaceDropdown: boolean;
-showSpaceCreate: boolean;
+    showSpaceCreate: boolean;
+    showJoinSpace: boolean;
 }
 
 export class MainContentLeft extends Component<MainContentLeftProps, MainContentLeftFullState>{
@@ -30,8 +31,47 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
             allSpaces: [],
             showSpaceDropdown: false,
             showSpaceCreate: false,
+            showJoinSpace: false,
         }
     }
+
+    handleSpaceSelected = (spaceId: string) => {
+        SpaceService.shared.getMySpaces().then(spaces => {
+            this.setState({ allSpaces: spaces, showSpaceCreate: false, showJoinSpace: false });
+            WKApp.shared.currentSpaceId = spaceId;
+            localStorage.setItem("currentSpaceId", spaceId);
+            const target = spaces.find(s => s.space_id === spaceId);
+            if (target) WKApp.mittBus.emit("space-changed", target);
+            WKApp.shared.notifyListener();
+        }).catch(() => {
+            Toast.error("刷新 Space 列表失败，请手动刷新");
+        });
+    };
+
+    handleCopyInviteLink = async (spaceId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            const detail = await WKApp.apiClient.get(`/space/${spaceId}`);
+            if (!detail.invite_code) { Toast.warning("该 Space 暂无邀请码"); return; }
+            const link = `${window.location.origin}${window.location.pathname}?invite=${detail.invite_code}`;
+            let copied = false;
+            try {
+                await navigator.clipboard.writeText(link);
+                copied = true;
+            } catch {
+                const textarea = document.createElement("textarea");
+                textarea.value = link;
+                textarea.style.cssText = "position:fixed;opacity:0";
+                document.body.appendChild(textarea);
+                textarea.select();
+                copied = document.execCommand("copy");
+                document.body.removeChild(textarea);
+            }
+            copied ? Toast.success("邀请链接已复制") : Toast.error("复制失败，请手动复制");
+        } catch {
+            Toast.error("获取邀请码失败");
+        }
+    };
 
     componentDidMount() {
         SpaceService.shared.getMySpaces().then(spaces => {
@@ -78,61 +118,49 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                     )}
                     {showSpaceDropdown && (
                         <div className="wk-global-topbar-dropdown" onClick={e => e.stopPropagation()}>
-                            {allSpaces.map(space => {
-                                const isSelected = space.space_id === currentSpaceId;
-                                return (
-                                    <div key={space.space_id}
-                                        className={classNames("wk-global-topbar-dropdown-item", isSelected && "selected")}
-                                        onClick={() => {
-                                            WKApp.shared.currentSpaceId = space.space_id;
-                                            localStorage.setItem("currentSpaceId", space.space_id);
-                                            WKApp.shared.notifyListener();
-                                            WKApp.mittBus.emit("space-changed", space);
-                                            this.setState({ showSpaceDropdown: false });
-                                        }}>
-                                        <span className="wk-global-topbar-space-icon" style={{
-                                            backgroundColor: colors[space.name.charCodeAt(0) % colors.length],
-                                            width: 24, height: 24, fontSize: 12,
-                                        }}>{space.name.charAt(0)}</span>
-                                        <span style={{ flex: 1 }}>{space.name}</span>
-                                        <span className="wk-global-topbar-invite-btn" title="复制邀请链接" onClick={async (e) => {
-                                            e.stopPropagation();
-                                            try {
-                                                const detail = await WKApp.apiClient.get(`/space/${space.space_id}`);
-                                                if (detail.invite_code) {
-                                                    const link = `${window.location.origin}${window.location.pathname}?invite=${detail.invite_code}`;
-                                                    let copied = false;
-                                                    try {
-                                                        await navigator.clipboard.writeText(link);
-                                                        copied = true;
-                                                    } catch {
-                                                        // iOS Safari: clipboard API fails outside synchronous click handler
-                                                        const textarea = document.createElement("textarea");
-                                                        textarea.value = link;
-                                                        textarea.style.position = "fixed";
-                                                        textarea.style.opacity = "0";
-                                                        document.body.appendChild(textarea);
-                                                        textarea.select();
-                                                        copied = document.execCommand("copy");
-                                                        document.body.removeChild(textarea);
-                                                    }
-                                                    if (copied) {
-                                                        Toast.success("邀请链接已复制");
-                                                    } else {
-                                                        Toast.error("复制失败，请手动复制");
-                                                    }
-                                                } else { Toast.warning("该 Space 暂无邀请码"); }
-                                            } catch { Toast.error("获取邀请码失败"); }
-                                        }}>🔗</span>
-                                        {isSelected && <span style={{ color: '#6366F1', marginLeft: 4 }}>✓</span>}
-                                    </div>
-                                );
-                            })}
+                            {allSpaces.map(space => (
+                                <SpaceItem
+                                    key={space.space_id}
+                                    name={space.name}
+                                    logo={space.logo}
+                                    meta={space.max_users > 0
+                                        ? `${space.member_count}/${space.max_users} 人`
+                                        : `${space.member_count} 人`}
+                                    selected={space.space_id === currentSpaceId}
+                                    onClick={() => {
+                                        WKApp.shared.currentSpaceId = space.space_id;
+                                        localStorage.setItem("currentSpaceId", space.space_id);
+                                        WKApp.shared.notifyListener();
+                                        WKApp.mittBus.emit("space-changed", space);
+                                        this.setState({ showSpaceDropdown: false });
+                                    }}
+                                    actions={
+                                        <WKButton
+                                            variant="ghost"
+                                            size="sm"
+                                            iconOnly
+                                            icon={<IconLink />}
+                                            title="复制邀请链接"
+                                            onClick={(e) => this.handleCopyInviteLink(space.space_id, e)}
+                                        />
+                                    }
+                                />
+                            ))}
                             <div className="wk-global-topbar-dropdown-divider"></div>
-                            <div className="wk-global-topbar-dropdown-item" onClick={() => this.setState({ showSpaceDropdown: false, showSpaceCreate: true })}>
-                                <span className="wk-global-topbar-space-icon" style={{ backgroundColor: '#e0e0e0', color: '#666', width: 24, height: 24, fontSize: 14 }}>+</span>
-                                <span style={{ flex: 1, color: '#5b6abf' }}>加入 / 创建 Space</span>
-                            </div>
+                            <ActionListItem
+                                icon={<IconSearch />}
+                                label="加入 Space"
+                                desc="通过邀请码或链接加入"
+                                variant="join"
+                                onClick={() => this.setState({ showSpaceDropdown: false, showJoinSpace: true })}
+                            />
+                            <ActionListItem
+                                icon={<IconPlus />}
+                                label="创建 Space"
+                                desc="新建你自己的工作空间"
+                                variant="create"
+                                onClick={() => this.setState({ showSpaceDropdown: false, showSpaceCreate: true })}
+                            />
                         </div>
                     )}
                 </div>
@@ -152,13 +180,12 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                 onClose={() => {
                     this.setState({ showSpaceCreate: false });
                 }}
-                onSuccess={() => {
-                    this.setState({ showSpaceCreate: false });
-                    // 刷新 Space 列表
-                    SpaceService.shared.getMySpaces().then(spaces => {
-                        this.setState({ allSpaces: spaces });
-                    }).catch(() => {});
-                }}
+                onSuccess={this.handleSpaceSelected}
+            />
+            <JoinSpaceModalConnected
+                visible={this.state.showJoinSpace}
+                onClose={() => this.setState({ showJoinSpace: false })}
+                onSuccess={this.handleSpaceSelected}
             />
         </div>
     }

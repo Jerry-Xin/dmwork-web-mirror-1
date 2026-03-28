@@ -49,7 +49,6 @@ const WKButton: React.FC<WKButtonProps> = ({
       {!iconOnly && children && (
         <span className="wk-btn__label">{children}</span>
       )}
-      {iconOnly && !loading && icon}
     </button>
   )
 }

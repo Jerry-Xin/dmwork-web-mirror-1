@@ -1,12 +1,15 @@
 import React, { Component } from "react";
-import { Modal, Input, TextArea, Toast } from "@douyinfe/semi-ui";
+import { Modal, Toast } from "@douyinfe/semi-ui";
+import WKInput from "../WKInput";
 import { SpaceService } from "../../Service/SpaceService";
+import WKButton from "../WKButton";
+import InputEdit from "../InputEdit";
 import "./index.css";
 
 export interface SpaceCreateProps {
     visible: boolean;
     onClose: () => void;
-    onSuccess: () => void;
+    onSuccess: (spaceId: string) => void;
 }
 
 interface SpaceCreateState {
@@ -37,9 +40,9 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
         try {
             const resp = await SpaceService.shared.createSpace(name.trim(), description.trim());
             const invite = await SpaceService.shared.createInvite(resp.space_id);
-            this.setState({ inviteUrl: invite.invite_url, loading: false });
+            this.setState({ name: "", description: "", inviteUrl: invite.invite_url, loading: false });
             Toast.success("Space 创建成功");
-            this.props.onSuccess();
+            this.props.onSuccess(resp.space_id);
         } catch {
             Toast.error("创建失败，请重试");
             this.setState({ loading: false });
@@ -74,44 +77,38 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
                     <div className="wk-spacecreate-invite">
                         <p className="wk-spacecreate-invite-tip">Space 创建成功！分享以下链接邀请成员加入：</p>
                         <div className="wk-spacecreate-invite-link">
-                            <Input value={inviteUrl} readOnly />
-                            <button className="wk-spacecreate-btn" onClick={this.handleCopyInvite}>
-                                复制链接
-                            </button>
+                            <WKInput value={inviteUrl} readOnly />
+                            <WKButton variant="secondary" onClick={this.handleCopyInvite}>复制链接</WKButton>
                         </div>
                     </div>
                 ) : (
                     <div className="wk-spacecreate-form">
                         <div className="wk-spacecreate-field">
                             <label className="wk-spacecreate-label">名称</label>
-                            <Input
+                            <WKInput
                                 placeholder="输入 Space 名称"
                                 value={name}
                                 onChange={(v) => this.setState({ name: v })}
                                 maxLength={32}
+                                onEnterPress={this.handleCreate}
+                                autoFocus
                             />
                         </div>
                         <div className="wk-spacecreate-field">
                             <label className="wk-spacecreate-label">描述</label>
-                            <TextArea
+                            <InputEdit
+                                key={visible ? "open" : "closed"}
+                                defaultValue={description}
                                 placeholder="输入 Space 描述（可选）"
-                                value={description}
-                                onChange={(v) => this.setState({ description: v })}
                                 maxCount={200}
-                                autosize={{ minRows: 3, maxRows: 5 }}
+                                onChange={(v) => this.setState({ description: v })}
                             />
                         </div>
                         <div className="wk-spacecreate-actions">
-                            <button className="wk-spacecreate-btn wk-spacecreate-btn-cancel" onClick={this.handleClose}>
-                                取消
-                            </button>
-                            <button
-                                className="wk-spacecreate-btn wk-spacecreate-btn-primary"
-                                onClick={this.handleCreate}
-                                disabled={loading}
-                            >
-                                {loading ? "创建中..." : "创建"}
-                            </button>
+                            <WKButton variant="secondary" onClick={this.handleClose}>取消</WKButton>
+                            <WKButton variant="primary" loading={loading} onClick={this.handleCreate}>
+                                创建
+                            </WKButton>
                         </div>
                     </div>
                 )}

@@ -56,17 +56,14 @@ export class ConversationWrap {
         const rawUnread = this.conversation.unread
         if (rawUnread === 0) return 0
 
-        // Bug #743/#751: 1:1 私聊未读按 Space 过滤
+        // 系统 Bot（如 BotFather）在 Space 模式下清零未读
         const currentSpaceId = WKApp.shared.currentSpaceId
         if (currentSpaceId
-            && this.conversation.channel.channelType === ChannelTypePerson) {
+            && this.conversation.channel.channelType === ChannelTypePerson
+            && SYSTEM_BOTS.has(this.conversation.channel.channelID)) {
             const lastMsg = this.conversation.lastMessage
             const msgSpaceId = lastMsg?.content?.contentObj?.space_id
-            if (msgSpaceId && msgSpaceId !== currentSpaceId) {
-                return 0
-            }
-            // 系统 Bot 无 space_id 也清零（BotFather 旧消息不属于任何 Space）
-            if (!msgSpaceId && SYSTEM_BOTS.has(this.conversation.channel.channelID)) {
+            if (!msgSpaceId) {
                 return 0
             }
         }

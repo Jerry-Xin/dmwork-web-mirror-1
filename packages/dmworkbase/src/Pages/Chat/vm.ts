@@ -225,6 +225,20 @@ export class ChatVM extends ProviderListener {
                 conversation.extra.top = channelInfo.top ? 1 : 0
                 this.sortConversations()
                 this.notifyListener()
+            } else if (channelInfo.channel.channelType === ChannelTypeGroup) {
+                // 新群 channelInfo 异步返回：补写 channelSpaceMap + 补插被 fail-close 漏掉的会话
+                const key = `${channelInfo.channel.channelID}_${channelInfo.channel.channelType}`
+                const sid = channelInfo.orgData?.space_id
+                if (sid) {
+                    WKApp.shared.channelSpaceMap.set(key, sid)
+                }
+                // 检查 SDK 中是否有该会话（之前被 fail-close 丢弃的）
+                const conv = WKSDK.shared().conversationManager.findConversation(channelInfo.channel)
+                if (conv && !shouldSkipChannelForSpace(channelInfo.channel)) {
+                    this.conversations = [new ConversationWrap(conv), ...this.conversations]
+                    this.sortConversations()
+                    this.notifyListener()
+                }
             }
         }
         WKSDK.shared().channelManager.addListener(this.channelListener)

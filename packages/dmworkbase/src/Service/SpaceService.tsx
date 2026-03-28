@@ -66,6 +66,30 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
     return false
 }
 
+/**
+ * 判断一条消息是否不属于当前 Space（用于通知/提示音过滤）。
+ * 对普通 channel 退化为 shouldSkipChannelForSpace。
+ * 对系统 Bot 消息，额外检查 message.content.contentObj.space_id。
+ */
+export function shouldSkipMessageForSpace(message: Message): boolean {
+    // 先检查 channel 级过滤
+    if (shouldSkipChannelForSpace(message.channel)) return true
+
+    // 系统 Bot 额外检查消息级 space_id
+    const currentSpaceId = WKApp.shared.currentSpaceId
+    if (!currentSpaceId) return false
+    if (message.channel.channelType !== ChannelTypePerson) return false
+    if (!SYSTEM_BOTS.has(message.channel.channelID)) return false
+
+    const msgSpaceId = message.content?.contentObj?.space_id
+    // 有 space_id 且不匹配 → 跳过
+    if (msgSpaceId && msgSpaceId !== currentSpaceId) return true
+    // 无 space_id → 跳过（BotFather 旧消息不应触发通知）
+    if (!msgSpaceId) return true
+
+    return false
+}
+
 export interface Space {
     space_id: string
     name: string

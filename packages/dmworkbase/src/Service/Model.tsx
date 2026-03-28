@@ -4,6 +4,7 @@ import WKApp from "../App"
 import { MessageContentTypeConst, MessageReasonCode, OrderFactor } from "./Const"
 import { DefaultEmojiService } from "./EmojiService"
 import { TypingManager } from "./TypingManager"
+import { getSpaceFilteredLastMessage } from "./SpaceService"
 
 export class ConversationWrap {
     conversation: Conversation
@@ -69,11 +70,10 @@ export class ConversationWrap {
     }
 
     public get lastMessage() {
-        return this.conversation.lastMessage
+        return getSpaceFilteredLastMessage(this.conversation)
     }
     public set lastMessage(lastMessage: Message | undefined) {
         this.conversation.lastMessage = lastMessage
-
     }
 
     public get isMentionMe() {

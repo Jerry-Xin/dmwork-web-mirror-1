@@ -1,8 +1,34 @@
 import WKApp from "../App"
-import { ChannelTypePerson, ChannelTypeGroup, Channel } from "wukongimjssdk"
+import { ChannelTypePerson, ChannelTypeGroup, Channel, Conversation, Message } from "wukongimjssdk"
 import { hasSpacePrefix } from "./SpacePrefix"
 
 export { hasSpacePrefix } from "./SpacePrefix"
+
+// 系统 Bot channelID 集合
+const SYSTEM_BOTS = new Set(["botfather"])
+
+/**
+ * 为系统 Bot（如 BotFather）的会话列表预览做 Space 过滤。
+ * - 不在 Space 模式 → 返回原始 lastMessage
+ * - channel 不是系统 Bot → 返回原始 lastMessage
+ * - lastMessage.content.contentObj.space_id 匹配当前 Space → 返回原消息
+ * - 不匹配或无 space_id → 返回 undefined（不泄漏其他 Space 内容）
+ */
+export function getSpaceFilteredLastMessage(conversation: Conversation): Message | undefined {
+    const currentSpaceId = WKApp.shared.currentSpaceId
+    if (!currentSpaceId) return conversation.lastMessage
+
+    if (conversation.channel.channelType !== ChannelTypePerson) return conversation.lastMessage
+    if (!SYSTEM_BOTS.has(conversation.channel.channelID)) return conversation.lastMessage
+
+    const lastMsg = conversation.lastMessage
+    if (!lastMsg) return undefined
+
+    const spaceId = lastMsg.content?.contentObj?.space_id
+    if (spaceId && spaceId === currentSpaceId) return lastMsg
+    // 无 space_id 或不匹配 → 不展示（与 iOS spaceFilteredLastMessage 行为一致）
+    return undefined
+}
 
 /**
  * 判断一个 channel 是否不属于当前 Space，应从展示/计数中跳过。

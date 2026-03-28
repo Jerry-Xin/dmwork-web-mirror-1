@@ -2,7 +2,7 @@ import WKSDK, { MessageContentType } from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ConnectStatus, ConnectStatusListener } from "wukongimjssdk";
 import { ConversationAction, ConversationListener } from "wukongimjssdk";
-import { Channel, ChannelInfo, Conversation, Message, ChannelTypePerson } from "wukongimjssdk";
+import { Channel, ChannelInfo, Conversation, Message, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
 import WKApp, { MessageDeleteListener } from "../../App";
 import { ConversationWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
@@ -173,6 +173,17 @@ export class ChatVM extends ProviderListener {
                 WKSDK.shared().channelManager.fetchChannelInfo(conversation.channel)
             }
             if (action === ConversationAction.add) {
+                // 新群补写 channelSpaceMap 缓存（WS 推送新群时缓存可能未命中）
+                if (conversation.channel.channelType === ChannelTypeGroup) {
+                    const key = `${conversation.channel.channelID}_${conversation.channel.channelType}`
+                    if (!WKApp.shared.channelSpaceMap.has(key)) {
+                        const info = WKSDK.shared().channelManager.getChannelInfo(conversation.channel)
+                        const sid = info?.orgData?.space_id
+                        if (sid) {
+                            WKApp.shared.channelSpaceMap.set(key, sid)
+                        }
+                    }
+                }
                 // Space 过滤：只添加属于当前 Space 的会话
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     return

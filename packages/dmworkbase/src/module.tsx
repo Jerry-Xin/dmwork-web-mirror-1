@@ -93,7 +93,7 @@ import { GroupManagement } from "./Components/GroupManagement";
 import { handleGlobalSearchClick } from "./Pages/Chat/vm";
 import { ApproveGroupMemberCell } from "./Messages/ApproveGroupMember";
 import { notificationUtil } from "./Utils/NotificationUtil";
-import { shouldSkipChannelForSpace } from "./Service/SpaceService";
+import { shouldSkipChannelForSpace, shouldSkipMessageForSpace } from "./Service/SpaceService";
 
 export default class BaseModule implements IModule {
   messageTone?: Howl;
@@ -477,7 +477,7 @@ export default class BaseModule implements IModule {
       return false;
     }
     // Space 隔离：不属于当前 Space 的消息不弹通知、不播提示音
-    if (shouldSkipChannelForSpace(message.channel)) {
+    if (shouldSkipMessageForSpace(message)) {
       return false;
     }
 

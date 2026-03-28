@@ -2,13 +2,13 @@ import WKSDK, { MessageContentType } from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ConnectStatus, ConnectStatusListener } from "wukongimjssdk";
 import { ConversationAction, ConversationListener } from "wukongimjssdk";
-import { Channel, ChannelInfo, Conversation, Message, ChannelTypePerson } from "wukongimjssdk";
+import { Channel, ChannelInfo, Conversation, Message, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
 import WKApp, { MessageDeleteListener } from "../../App";
 import { ConversationWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
 import { animateScroll, scroller } from 'react-scroll';
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
-import { shouldSkipChannelForSpace, shouldSkipSystemBotConversation } from "../../Service/SpaceService";
+import { shouldSkipChannelForSpace } from "../../Service/SpaceService";
 import { EndpointID } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import { Space, SpaceService } from "../../Service/SpaceService";
@@ -173,11 +173,19 @@ export class ChatVM extends ProviderListener {
                 WKSDK.shared().channelManager.fetchChannelInfo(conversation.channel)
             }
             if (action === ConversationAction.add) {
+                // 新群补写 channelSpaceMap 缓存（WS 推送新群时缓存可能未命中）
+                if (conversation.channel.channelType === ChannelTypeGroup) {
+                    const key = `${conversation.channel.channelID}_${conversation.channel.channelType}`
+                    if (!WKApp.shared.channelSpaceMap.has(key)) {
+                        const info = WKSDK.shared().channelManager.getChannelInfo(conversation.channel)
+                        const sid = info?.orgData?.space_id
+                        if (sid) {
+                            WKApp.shared.channelSpaceMap.set(key, sid)
+                        }
+                    }
+                }
                 // Space 过滤：只添加属于当前 Space 的会话
                 if (shouldSkipChannelForSpace(conversation.channel)) {
-                    return
-                }
-                if (shouldSkipSystemBotConversation(conversation)) {
                     return
                 }
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType === MessageContentType.text) {
@@ -188,9 +196,6 @@ export class ChatVM extends ProviderListener {
             } else if (action === ConversationAction.update) {
                 // Space 过滤：忽略不属于当前 Space 的会话更新
                 if (shouldSkipChannelForSpace(conversation.channel)) {
-                    return
-                }
-                if (shouldSkipSystemBotConversation(conversation)) {
                     return
                 }
                 const existConversation = this.findConversation(conversation.channel)
@@ -220,6 +225,20 @@ export class ChatVM extends ProviderListener {
                 conversation.extra.top = channelInfo.top ? 1 : 0
                 this.sortConversations()
                 this.notifyListener()
+            } else if (channelInfo.channel.channelType === ChannelTypeGroup) {
+                // 新群 channelInfo 异步返回：补写 channelSpaceMap + 补插被 fail-close 漏掉的会话
+                const key = `${channelInfo.channel.channelID}_${channelInfo.channel.channelType}`
+                const sid = channelInfo.orgData?.space_id
+                if (sid) {
+                    WKApp.shared.channelSpaceMap.set(key, sid)
+                }
+                // 检查 SDK 中是否有该会话（之前被 fail-close 丢弃的）
+                const conv = WKSDK.shared().conversationManager.findConversation(channelInfo.channel)
+                if (conv && !shouldSkipChannelForSpace(channelInfo.channel)) {
+                    this.conversations = [new ConversationWrap(conv), ...this.conversations]
+                    this.sortConversations()
+                    this.notifyListener()
+                }
             }
         }
         WKSDK.shared().channelManager.addListener(this.channelListener)
@@ -348,9 +367,6 @@ export class ChatVM extends ProviderListener {
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     continue
                 }
-                if (shouldSkipSystemBotConversation(conversation)) {
-                    continue
-                }
                 conversationWraps.push(new ConversationWrap(conversation))
             }
         }
@@ -370,9 +386,6 @@ export class ChatVM extends ProviderListener {
             for (const conversation of conversations) {
                 // Space 过滤：复用共享函数（含 channelSpaceMap 缓存）
                 if (shouldSkipChannelForSpace(conversation.channel)) {
-                    continue
-                }
-                if (shouldSkipSystemBotConversation(conversation)) {
                     continue
                 }
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType == MessageContentType.text) {

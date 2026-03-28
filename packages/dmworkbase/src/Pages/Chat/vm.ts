@@ -186,10 +186,10 @@ export class ChatVM extends ProviderListener {
                         if (sid) {
                             WKApp.shared.channelSpaceMap.set(key, sid)
                         } else if (WKApp.shared.currentSpaceId && !hasSpacePrefix(conversation.channel.channelID)) {
-                            // Bug #744: cache miss 且无法同步获取 space_id → 不 fail-close
-                            // 暂存到待定队列，等 channelListener 拿到 channelInfo 后补插
-                            this._pendingSpaceConversations.set(key, conversation)
-                            return
+                            // Fix: fail-open — 新群假定属于当前 Space，先展示
+                            // 建群 API 已带 space_id，channelInfo 异步返回后会补写正确值
+                            // 下次 Space 切换时 requestConversationList() 会用真实缓存重新过滤
+                            WKApp.shared.channelSpaceMap.set(key, WKApp.shared.currentSpaceId)
                         }
                     }
                 }
@@ -235,7 +235,7 @@ export class ChatVM extends ProviderListener {
                 this.sortConversations()
                 this.notifyListener()
             } else if (channelInfo.channel.channelType === ChannelTypeGroup) {
-                // 新群 channelInfo 异步返回：补写 channelSpaceMap + 补插被 fail-close 漏掉的会话
+                // 新群 channelInfo 异步返回：用真实 space_id 纠正 fail-open 假定值 + 补插遗漏的会话
                 const key = `${channelInfo.channel.channelID}_${channelInfo.channel.channelType}`
                 const sid = channelInfo.orgData?.space_id
                 if (sid) {

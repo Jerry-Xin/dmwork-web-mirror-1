@@ -44,7 +44,8 @@
     "clean": "rimraf node_modules dist-ele build dist-ele .turbo",
     "tauri": "tauri",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test:storybook": "vitest run --config vitest.storybook.config.ts"
   },
   "dependencies": {
     "@dmwork/base": "workspace:*",

@@ -14,8 +14,8 @@
     "bootstrap": "yarn install",
     "clean": "turbo run clean && rimraf node_modules .turbo",
     "lint": "turbo run lint",
-  "lint:css": "stylelint '**/*.css' --config stylelint.config.mjs --allow-empty-input",
-  "lint:css:ci": "stylelint --config stylelint.ci.config.mjs --allow-empty-input",
+    "lint:css": "stylelint '**/*.css' --config stylelint.config.mjs --allow-empty-input",
+    "lint:css:ci": "stylelint --config stylelint.ci.config.mjs --allow-empty-input",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "resolutions": {
@@ -23,6 +23,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "@storybook/addon-vitest": "^10.3.3",
+    "@vitest/browser-playwright": "^4.1.2",
     "eslint": "^7.32.0",
     "eslint-config-custom": "*",
     "prettier": "^2.5.1",

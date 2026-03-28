@@ -99,3 +99,32 @@ jobs:
             exit 1
           fi
           echo "✅ 所有新组件都有对应 Story"
+
+  storybook-test:
+    name: 🧪 Storybook 渲染 & A11y 测试
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: 🔧 Fix git SSH → HTTPS
+        run: |
+          git config --global url."https://github.com/".insteadOf "git+ssh://git@github.com/"
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+
+      - name: 📦 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 🎭 Install Playwright Chromium
+        run: pnpm playwright install chromium --with-deps
+
+      - name: 🧪 Run Storybook Tests
+        run: pnpm --filter @dmwork/web test:storybook

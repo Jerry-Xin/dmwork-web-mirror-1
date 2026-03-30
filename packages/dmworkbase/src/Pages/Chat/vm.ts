@@ -8,7 +8,7 @@ import { ConversationWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
 import { animateScroll, scroller } from 'react-scroll';
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
-import { shouldSkipChannelForSpace, hasSpacePrefix } from "../../Service/SpaceService";
+import { shouldSkipChannelForSpace, shouldSkipPersonConversationForSpace, hasSpacePrefix } from "../../Service/SpaceService";
 import { EndpointID } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import { Space, SpaceService } from "../../Service/SpaceService";
@@ -197,6 +197,7 @@ export class ChatVM extends ProviderListener {
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     return
                 }
+                if (shouldSkipPersonConversationForSpace(conversation)) return
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType === MessageContentType.text) {
                     conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage?.content.text)
                 }
@@ -216,6 +217,7 @@ export class ChatVM extends ProviderListener {
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     return
                 }
+                if (shouldSkipPersonConversationForSpace(conversation)) return
                 const existConversation = this.findConversation(conversation.channel)
                 if (existConversation) {
                     existConversation.conversation = conversation

@@ -13,6 +13,7 @@ import { SendackPacket, Setting } from "wukongimjssdk";
 import MergeforwardContent from "../../Messages/Mergeforward";
 import { TypingListener, TypingManager } from "../../Service/TypingManager";
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
+import { SYSTEM_BOTS } from "../../Service/SpaceService";
 import { SuperGroup } from "../../Utils/const";
 import { SystemContent } from "wukongimjssdk";
 
@@ -1031,7 +1032,9 @@ export default class ConversationVM extends ProviderListener {
         return messages.filter((m) => {
             const msgSpaceId = m.message?.content?.contentObj?.space_id
             if (!msgSpaceId) {
-                return true // 无 space_id 的历史消息：所有 Space 可见
+                // 系统 Bot（BotFather）无 space_id 的旧消息不显示（每个 Space 独立上下文）
+                if (SYSTEM_BOTS.has(this.channel.channelID)) return false
+                return true // 普通私聊：旧消息向前兼容
             }
             return msgSpaceId === currentSpaceId
         })

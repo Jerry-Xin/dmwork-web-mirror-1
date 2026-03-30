@@ -387,8 +387,15 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                                 toolbar
                             }
                             <VoiceInputIndicator
-                                onTranscribed={(text: string) => {
-                                    this.insertText(text)
+                                onTranscribed={(text: string, shouldReplace: boolean) => {
+                                    if (shouldReplace) {
+                                        // Replace entire input with modified text
+                                        this.setState({ value: text })
+                                        this.inputRef.focus()
+                                    } else {
+                                        // Append new transcription
+                                        this.insertText(text)
+                                    }
                                 }}
                                 getCurrentText={() => this.state.value}
                                 getChatContext={this.props.getChatContext}

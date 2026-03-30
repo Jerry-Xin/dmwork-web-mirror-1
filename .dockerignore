@@ -2,3 +2,9 @@ node_modules
 .git
 .gitignore
 Dockerfile
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+vitest.config.*

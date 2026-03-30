@@ -4,7 +4,7 @@ import useVoiceInput from "./useVoiceInput"
 import "./voiceInput.css"
 
 interface VoiceInputIndicatorProps {
-    onTranscribed: (text: string) => void
+    onTranscribed: (text: string, shouldReplace: boolean) => void
     getCurrentText?: () => string | undefined
     getChatContext?: () => string | undefined
 }

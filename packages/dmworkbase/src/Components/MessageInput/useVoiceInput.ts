@@ -3,7 +3,7 @@ import VoiceService, { VoiceConfig } from "../../Service/VoiceService"
 
 export interface UseVoiceInputOptions {
     maxDuration?: number
-    onTranscribed?: (text: string) => void
+    onTranscribed?: (text: string, shouldReplace: boolean) => void
     onError?: (error: Error) => void
     getChatContext?: () => string | undefined
 }
@@ -131,7 +131,9 @@ export default function useVoiceInput(options: UseVoiceInputOptions = {}): UseVo
                 const chatContext = getChatContextRef.current?.()
                 const result = await VoiceService.shared.transcribe(blob, contextTextRef.current, chatContext)
                 if (result.text && onTranscribed) {
-                    onTranscribed(result.text)
+                    // If context_text was provided, LLM returns complete modified text - should replace
+                    const shouldReplace = !!contextTextRef.current
+                    onTranscribed(result.text, shouldReplace)
                 }
             } catch (err) {
                 const error = err instanceof Error ? err : new Error("Transcription failed")

@@ -662,8 +662,8 @@ export class Conversation extends Component<ConversationProps> implements Conver
                             }} toolbar={this.chatToolbarUI()} context={this} getChatContext={() => {
                                 const messages = this.vm.messagesOfOrigin
                                 if (!messages || messages.length === 0) return undefined
-                                const last20 = messages.slice(-20)
-                                const lines = last20.map(m => {
+                                const last10 = messages.slice(-10)
+                                const lines = last10.map(m => {
                                     const senderName = m.from?.title || m.fromUID
                                     const text = m.content?.text || ''
                                     return `[${senderName}]: ${text}`

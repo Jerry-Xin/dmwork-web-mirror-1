@@ -66,7 +66,6 @@ export default class ContactsList extends Component<any, ContactsState> {
     baseContext!: WKBaseContext
     private spaceChangedHandler!: (space: any) => void
 
-    private scrollContainerRef = createRef<HTMLDivElement>()
     private virtualListRef = createRef<HTMLDivElement>()
     private virtualizer?: Virtualizer<HTMLDivElement, Element>
     private flatItems: Contacts[] = []
@@ -126,6 +125,7 @@ export default class ContactsList extends Component<any, ContactsState> {
         ContactsListManager.shared.setRefreshList = undefined
         WKSDK.shared().channelManager.removeListener(this.channelInfoListener)
         WKApp.mittBus.off('space-changed', this.spaceChangedHandler)
+        this.debouncedSearch.cancel()
         if (this.virtualizer) {
             this.virtualizer = undefined
         }

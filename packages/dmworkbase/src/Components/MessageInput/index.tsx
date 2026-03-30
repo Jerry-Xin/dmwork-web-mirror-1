@@ -12,6 +12,7 @@ import {IconSend} from '@douyinfe/semi-icons';
 import { Notification, Button } from '@douyinfe/semi-ui';
 import SlashCommandMenu, { BotCommand } from "../SlashCommandMenu";
 import AiBadge from "../AiBadge";
+import VoiceInputIndicator from "./VoiceInputIndicator";
 
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -38,6 +39,7 @@ interface MessageInputProps extends HTMLProps<any>{
     onContext?: (ctx: MessageInputContext) => void
     topView?: JSX.Element
     botCommands?: BotCommand[]
+    getChatContext?: () => string | undefined
 }
 
 interface MessageInputState {
@@ -387,6 +389,20 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                             {
                                 toolbar
                             }
+                            <VoiceInputIndicator
+                                onTranscribed={(text: string, shouldReplace: boolean) => {
+                                    if (shouldReplace) {
+                                        // Replace entire input with modified text
+                                        this.setState({ value: text })
+                                        this.inputRef.focus()
+                                    } else {
+                                        // Append new transcription
+                                        this.insertText(text)
+                                    }
+                                }}
+                                getCurrentText={() => this.state.value}
+                                getChatContext={this.props.getChatContext}
+                            />
 
                             {/* <div className="wk-messageinput-actionitem" style={{ cursor: "pointer" }} onClick={() => {
                                 window.open("https://jietu.qq.com/")

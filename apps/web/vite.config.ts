@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import commonjs from 'vite-plugin-commonjs'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     // TODO: remove after all require() calls are migrated to import (chore/migrate-require-to-import)
     commonjs(),
@@ -29,8 +29,8 @@ export default defineConfig({
     },
   },
   define: {
-    'process.env.NODE_ENV': 'import.meta.env.MODE',
+    'process.env.NODE_ENV': JSON.stringify(mode),
     'process.env.PUBLIC_URL': '""',
   },
   envPrefix: 'VITE_',
-})
+}))

@@ -99,16 +99,23 @@ export default function JoinSpaceModal({
                             <div className="wk-join-space-modal__full-badge">空间已满</div>
                         )}
                     </div>
-                    <div className="wk-join-space-modal__footer">
-                        <WKButton variant="secondary" onClick={onBack}>← 重新输入</WKButton>
+                    <div className="wk-join-space-modal__footer wk-join-space-modal__footer--confirm">
                         <WKButton
                             variant="primary"
                             loading={joinLoading}
                             disabled={isFull}
                             onClick={onJoin}
+                            className="wk-join-space-modal__join-btn"
                         >
                             {isFull ? "空间已满" : "确认加入"}
                         </WKButton>
+                        <button
+                            type="button"
+                            className="wk-join-space-modal__back-link"
+                            onClick={onBack}
+                        >
+                            重新输入
+                        </button>
                     </div>
                 </div>
             )}

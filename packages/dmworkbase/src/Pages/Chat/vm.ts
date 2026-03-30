@@ -402,6 +402,7 @@ export class ChatVM extends ProviderListener {
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     continue
                 }
+                if (shouldSkipPersonConversationForSpace(conversation)) continue
                 conversationWraps.push(new ConversationWrap(conversation))
             }
         }
@@ -423,6 +424,7 @@ export class ChatVM extends ProviderListener {
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     continue
                 }
+                if (shouldSkipPersonConversationForSpace(conversation)) continue
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType == MessageContentType.text) {
                     conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage.content.text)
                 }

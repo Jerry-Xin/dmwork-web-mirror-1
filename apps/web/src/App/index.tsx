@@ -1,4 +1,4 @@
-import { ChatPage, EndpointCategory, WKApp, Menus, shouldSkipChannelForSpace } from '@dmwork/base';
+import { ChatPage, EndpointCategory, WKApp, Menus, shouldSkipChannelForSpace, shouldSkipPersonConversationForSpace } from '@dmwork/base';
 import { ContactsList } from '@dmwork/contacts';
 import { BotStore } from '@dmwork/base';
 import React from 'react';
@@ -40,6 +40,7 @@ async function registerMenus() {
       if (shouldSkipChannelForSpace(conversation.channel)) {
         continue
       }
+      if (shouldSkipPersonConversationForSpace(conversation)) continue
       // Person 频道在 Space 模式下优先使用 per-Space 未读计数
       const currentSpaceId = WKApp.shared.currentSpaceId
       if (currentSpaceId

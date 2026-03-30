@@ -450,3 +450,47 @@ src={icon}
 > 格式：场景类型 + 决策 + 适用条件 + 日期
 
 <!-- 等待第一次 Level 3 确认后填充 -->
+
+---
+
+## 十三、CSS 编写禁止事项
+
+### 禁止 `!important`
+
+用提高选择器优先级代替：
+
+```css
+/* ❌ */
+.my-btn { height: 46px !important; }
+
+/* ✅ */
+.wk-login-panel .semi-button.my-btn { height: 46px; }
+```
+
+### 禁止在组件里创建新颜色变量
+
+需要新颜色时先更新 `packages/dmworkbase/src/theme/tokens.css`，在那里定义，再通过 Token 引用。
+
+```css
+/* ❌ */
+.my-component { --my-special-color: #7C5CFC; }
+
+/* ✅ 先在 tokens.css 定义，再引用 */
+.my-component { color: var(--wk-brand-primary); }
+```
+
+### 禁止直接覆盖 Semi class
+
+```css
+/* ❌ 直接改 Semi 内部 class */
+.semi-button-primary { background: red; }
+
+/* ✅ 在组件根节点覆盖 Token */
+.my-component {
+  --semi-color-primary: var(--wk-brand-primary);
+}
+```
+
+### `@media (prefers-color-scheme: dark)` 禁止用于主题切换
+
+项目用 `body[theme-mode=dark]` + Token 变量实现主题，不用媒体查询。

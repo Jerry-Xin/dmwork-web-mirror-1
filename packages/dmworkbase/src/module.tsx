@@ -93,7 +93,7 @@ import { GroupManagement } from "./Components/GroupManagement";
 import { handleGlobalSearchClick } from "./Pages/Chat/vm";
 import { ApproveGroupMemberCell } from "./Messages/ApproveGroupMember";
 import { notificationUtil } from "./Utils/NotificationUtil";
-import { shouldSkipChannelForSpace, shouldSkipMessageForSpace } from "./Service/SpaceService";
+import { shouldSkipMessageForSpace } from "./Service/SpaceService";
 
 export default class BaseModule implements IModule {
   messageTone?: Howl;

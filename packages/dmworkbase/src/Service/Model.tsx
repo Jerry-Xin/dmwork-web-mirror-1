@@ -367,37 +367,124 @@ export class MessageWrap {
         if (this.message.remoteExtra.isEdit && this.message.remoteExtra.contentEdit !== undefined) {
             textContent = this.message.remoteExtra.contentEdit as MessageText
         }
-        let text = textContent.text || ''
+        const text = textContent.text || ''
         const mention = this.content.mention
-        if (!mention?.uids || mention.uids.length <= 0) {
+
+        if (!mention) {
             return [new Part(PartType.text, text)]
         }
-        let parts = new Array<Part>();
+
+        // Try entities from SDK first, then fallback to contentObj
+        let entities = mention.entities
+        if (!entities && this.content.contentObj?.mention?.entities) {
+            entities = this.content.contentObj.mention.entities
+        }
+
+        if (entities && Array.isArray(entities)) {
+            const result = this.parseMentionWithEntities(text, entities)
+            if (result !== null) return result
+        }
+
+        if (mention.uids && Array.isArray(mention.uids) && mention.uids.length > 0) {
+            return this.parseMentionLegacy(text, mention.uids)
+        }
+
+        return [new Part(PartType.text, text)]
+    }
+
+    private parseMentionWithEntities(text: string, entities: Array<{uid: string; offset: number; length: number}>): Array<Part> | null {
+        const validEntities = entities
+            .filter((e): e is {uid: string; offset: number; length: number} =>
+                e != null &&
+                typeof e === 'object' &&
+                !Array.isArray(e) &&
+                typeof e.uid === 'string' &&
+                typeof e.offset === 'number' &&
+                typeof e.length === 'number' &&
+                Number.isFinite(e.offset) &&
+                Number.isFinite(e.length) &&
+                e.offset >= 0 &&
+                e.length > 0 &&
+                e.offset + e.length <= text.length
+            )
+            .sort((a, b) => a.offset - b.offset)
+
+        if (validEntities.length === 0) {
+            return null
+        }
+
+        const deduped: Array<{uid: string; offset: number; length: number}> = []
+        let lastEnd = 0
+        for (const entity of validEntities) {
+            if (entity.offset >= lastEnd) {
+                deduped.push(entity)
+                lastEnd = entity.offset + entity.length
+            }
+        }
+
+        const parts: Part[] = []
+        let cursor = 0
+
+        for (const entity of deduped) {
+            if (entity.offset > cursor) {
+                parts.push(new Part(PartType.text, text.substring(cursor, entity.offset)))
+            }
+
+            const mentionText = text.substring(entity.offset, entity.offset + entity.length)
+
+            if (!mentionText.startsWith('@')) {
+                parts.push(new Part(PartType.text, mentionText))
+                cursor = entity.offset + entity.length
+                continue
+            }
+
+            parts.push(new Part(PartType.mention, mentionText, { uid: entity.uid }))
+            cursor = entity.offset + entity.length
+        }
+
+        if (cursor < text.length) {
+            parts.push(new Part(PartType.text, text.substring(cursor)))
+        }
+
+        return parts
+    }
+
+    private parseMentionLegacy(text: string, uids: string[]): Part[] {
+        const parts: Part[] = []
+        const mentionRegex = /@[\w\u4e00-\u9fa5.\-]+/gm
+        let match: RegExpExecArray | null
+        let cursor = 0
         let i = 0
-        while (text.length > 0) {
-            const mentionMatchResult = text.match(/@([\w\u4e00-\u9fa5])+/m)
-            let index = mentionMatchResult?.index
-            if (index === undefined) {
-                index = -1
-            }
-            if (!mentionMatchResult || index === -1) {
-                parts.push(new Part(PartType.text, text))
-                break
-            }
-            if (index > 0) {
-                parts.push(new Part(PartType.text, text.substring(0, index)));
-            }
-            let data = {}
-            if (i < mention.uids.length) {
-                data = { "uid": mention.uids[i] }
+
+        while ((match = mentionRegex.exec(text)) !== null && i < uids.length) {
+            const matchStart = match.index
+            const matchText = match[0]
+
+            if (matchStart > 0) {
+                const charBefore = text.charCodeAt(matchStart - 1)
+                if ((charBefore >= 97 && charBefore <= 122) ||
+                    (charBefore >= 65 && charBefore <= 90) ||
+                    (charBefore >= 48 && charBefore <= 57) ||
+                    charBefore === 95) {
+                    continue
+                }
             }
 
-            parts.push(new Part(PartType.mention, text.substring(index, index + mentionMatchResult[0].length), data))
-            text = text.substring(index + mentionMatchResult[0].length);
+            if (matchStart > cursor) {
+                parts.push(new Part(PartType.text, text.substring(cursor, matchStart)))
+            }
 
+            const data = i < uids.length ? { uid: uids[i] } : {}
+            parts.push(new Part(PartType.mention, matchText, data))
+            cursor = matchStart + matchText.length
             i++
         }
-        return parts;
+
+        if (cursor < text.length) {
+            parts.push(new Part(PartType.text, text.substring(cursor)))
+        }
+
+        return parts
     }
     // 解析emoji
     parseEmoji(parts: Array<Part>): Array<Part> {

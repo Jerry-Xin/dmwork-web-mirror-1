@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import React, { useState } from "react";
 import { Toast } from "@douyinfe/semi-ui";
-import { vi } from "vitest";
 import SpaceList, { SpaceListProps } from "./index";
 import { SpaceService } from "../../Service/SpaceService";
 import "../../theme/index.css";
@@ -56,8 +55,8 @@ const meta: Meta<typeof SpaceListWrapper> = {
     },
     loaders: [
         async () => {
-            // mock SpaceService.shared.getMySpaces，避免 Storybook 环境里 WKApp 未初始化
-            vi.spyOn(SpaceService.shared, "getMySpaces").mockResolvedValue(MOCK_SPACES as any);
+            // 直接替换方法，兼容 Storybook 预览和 vitest 两种环境
+            SpaceService.shared.getMySpaces = async () => MOCK_SPACES as any;
             return {};
         },
     ],

@@ -5,6 +5,57 @@
 
 ---
 
+## 🚀 任务开始前：必读
+
+**不管接到什么任务，开始写代码前先做这两件事：**
+
+1. **读 `DEVELOPMENT.md`** — 环境配置、组件分层规则、Storybook 工作流、已知坑，都在里面
+2. **确认工作目录** — worktree 在 `dmwork-web-{branch}/`，不要动 `dmwork-web/`（Will 的主目录）
+
+跳过这步直接写代码 = 大概率踩已知的坑，返工。
+
+---
+
+## 🎨 Storybook 驱动开发（新组件必须遵循）
+
+**新建任何 UI 组件，必须按以下顺序：**
+
+```
+1. 建组件文件（index.tsx + index.css）
+2. 写 Story（ComponentName.stories.tsx）
+3. 启动 Storybook：pnpm --filter @dmwork/web storybook
+4. 在 Storybook 里验证所有 variant（light + dark 都看）
+5. 确认通过 → 再接入业务代码
+```
+
+**Story 必须覆盖：**
+- 所有视觉状态（default / hover / focus / disabled / error / loading）
+- light 和 dark 两个主题（Storybook toolbar 切换）
+- 边界值（文字超长、内容为空等）
+
+**常见错误（犯了就要返工）：**
+- 跳过 Storybook 直接接入业务，dark mode 漏测
+- 硬编码颜色而不是用 token，主题切换时文字看不清
+- Story 里只写了 Default，没覆盖其他状态
+
+**启动命令：**
+```bash
+cd dmwork-web-{branch}
+pnpm --filter @dmwork/web storybook --ci  # --ci 避免交互式提示
+```
+
+---
+
+## 📋 PR 规范
+
+- **PR 描述禁止包含本地路径**（`/Users/...`、`/home/...` 等）
+- PR 开出去后，每隔 30 分钟自己检查一次 review 评论：`gh pr view {num} --comments`
+- 有评论立即处理，处理完在 PR 回复说明修了哪些，再通知 Will
+
+---
+
+---
+
 ## 🚫 绝对禁止
 
 ### 硬编码颜色

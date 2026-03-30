@@ -1,8 +1,19 @@
 # DMWork 前端开发规范
 
-> 适用于所有开发 Agent（织码、览境、审之等）
-> 违反以下规则的 PR 不予合并
 > 基于 Vite 8 + pnpm 10 + React 18（2026-03-27 更新）
+
+## 快速查阅
+
+| 当前任务 | 读这些章节 |
+|---------|-----------|
+| 写新组件 | 二、三、四、十一 |
+| 改造现有组件 | 二、三、五 |
+| 做代码审查 | 二、三、十一 |
+| 配置 Storybook/测试 | 六 |
+| 提交/分支管理 | 七 |
+| 做视觉审查 | 二、十二 |
+
+不需要读全部，按任务找对应章节即可。
 
 ---
 
@@ -153,10 +164,21 @@ Layer 3 业务组件（暂不重构）：
 
 用上面的决策树判断是 Layer 1/2/3。
 
-### Step 2：查 MCP，确认没有现成的
+### Step 2：查现有组件，确认没有现成的
 
-Storybook 跑着时，MCP server 在 `http://localhost:6006/mcp`。
+**如果 agent 支持 MCP（Claude Code 等本地进程 agent）：**
+Storybook 跑着时，MCP server 固定在 `http://localhost:16006/mcp`。
 连上后可以查询：「有没有类似 XXX 的组件？」
+
+**如果 agent 不支持 MCP（OpenClaw ACP session 等）：**
+```bash
+# 列出所有现有组件
+ls packages/dmworkbase/src/Components/
+
+# 查某个组件的 props 和用法
+cat packages/dmworkbase/src/Components/ComponentName/index.tsx
+cat packages/dmworkbase/src/Components/ComponentName/ComponentName.stories.tsx
+```
 
 ### Step 3：标准文件结构
 
@@ -244,20 +266,18 @@ grep -rn "旧class名" packages/ apps/ --include="*.tsx" --include="*.css"
 ### 启动
 
 ```bash
-# 在项目根目录或 apps/web 目录下执行
+# 固定端口 16006（避免与常用端口冲突）
 pnpm storybook
+# 等价于：storybook dev -p 16006 --ci
 
-# 启动成功后终端会输出实际地址，例如：
-# Local: http://localhost:6006/
+# 地址固定为：http://localhost:16006
+# MCP server：http://localhost:16006/mcp（需要 agent 支持 MCP）
 ```
 
-MCP Server 地址 = Storybook 地址 + `/mcp`，例如：`http://localhost:6006/mcp`
-
-**Agent 使用 MCP 前，先确认 Storybook 是否在跑：**
+**确认是否在跑：**
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:6006
-# 返回 200 = 正在运行，可以用 MCP
-# 连接失败 = 先执行 pnpm storybook 启动
+curl -s -o /dev/null -w "%{http_code}" http://localhost:16006
+# 200 = 正在运行  |  000 = 未启动，先跑 pnpm storybook
 ```
 
 ### Story 写法
@@ -378,3 +398,55 @@ src={icon}
 | stories 被主项目 tsc 扫到 | TS 报错 moduleResolution | tsconfig.json exclude stories 和 .storybook |
 | class component 在 StrictMode 下副作用双调用 | React 18 StrictMode 特性 | 改函数组件 + useEffect |
 | 组件缺 default export | story 渲染报错「does not provide an export named default」 | index.tsx 必须同时有 default 和 named export |
+
+---
+
+## 十一、组件开发风格规范
+
+### Props 设计
+
+- 单组件 Props 不超过 **8 个**，超过考虑拆分或用 config 对象合并
+- 事件 handler 统一 **on 前缀**：onConfirm / onCancel / onChange
+- boolean prop 用 **is/has/can 前缀**：isLoading / hasError / canEdit
+- 不传整个对象，只传组件需要的字段
+
+```tsx
+// ❌ 太多 props，职责不清
+<Modal title onClose onConfirm onCancel onBack loading error data user channel />
+
+// ✅ 合并相关 props
+<Modal
+  title
+  state={{ loading, error }}
+  onConfirm onCancel
+/>
+```
+
+### 组件拆分判断
+
+- 单文件不超过 **150 行**（含注释）→ 超过考虑拆子组件
+- 有独立状态的 UI 块 → 抽成子组件
+- 相同 JSX 片段出现 **3 次以上** → 抽成组件
+- 有独立生命周期逻辑 → 抽成子组件
+
+### Hooks 使用
+
+- 超过 **3 个 useState** → 考虑抽成 `useXxx` hook
+- 异步请求逻辑不写在组件里 → 抽成 service 或 hook
+- `useEffect` 依赖数组超过 **4 个** → 考虑拆分逻辑
+
+### TypeScript
+
+- 优先用 `interface`（可扩展），`type` 用于联合类型 / 工具类型
+- 禁止 `any`，用 `unknown` + 类型守卫替代
+- 组件 Props 类型命名统一：`ComponentNameProps`
+- 不用类型断言（`as`）绕过类型检查
+
+---
+
+## 十二、布局模式决策记录
+
+> 由 UI 审查机制在 Level 3 确认后自动追加
+> 格式：场景类型 + 决策 + 适用条件 + 日期
+
+<!-- 等待第一次 Level 3 确认后填充 -->

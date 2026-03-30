@@ -312,13 +312,16 @@ export default class ContactsList extends Component<any, ContactsState> {
             items = [...memberItems, ...extraBots]
         }
 
+        // 预计算拼音，避免排序和分组时重复转换
+        const pinyinCache = new Map<string, string>()
+        for (const item of items) {
+            let name = (item.remark || item.name || '').replace(/\*\*/g, '')
+            pinyinCache.set(item.uid, getPinyin(toSimplized(name)).toUpperCase())
+        }
+
         // 按拼音排序
         items.sort((a, b) => {
-            const na = (a.remark || a.name || '').replace(/\*\*/g, '')
-            const nb = (b.remark || b.name || '').replace(/\*\*/g, '')
-            const pa = getPinyin(toSimplized(na)).toUpperCase()
-            const pb = getPinyin(toSimplized(nb)).toUpperCase()
-            return pa.localeCompare(pb)
+            return pinyinCache.get(a.uid)!.localeCompare(pinyinCache.get(b.uid)!)
         })
 
         // 构建字母分组索引
@@ -326,9 +329,7 @@ export default class ContactsList extends Component<any, ContactsState> {
         const indexList: string[] = []
 
         for (const item of items) {
-            let name = (item.name || '').replace(/\*\*/g, '')
-            if (item.remark && item.remark !== "") name = item.remark
-            const py = getPinyin(toSimplized(name)).toUpperCase()
+            const py = pinyinCache.get(item.uid)!
             let letter = (py && py[0]) || '#'
             if (!/[A-Z]/.test(letter)) letter = '#'
 

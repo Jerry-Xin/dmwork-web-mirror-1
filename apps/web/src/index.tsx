@@ -8,6 +8,7 @@ import  { BaseModule, WKApp } from '@dmwork/base';
 import  { LoginModule } from '@dmwork/login';
 import  { DataSourceModule } from '@dmwork/datasource';
 import {ContactsModule} from '@dmwork/contacts';
+import { version as pkgVersion } from '../package.json';
 
 const apiURL = import.meta.env.VITE_API_URL || "https://api.botgate.cn/v1/"
 
@@ -26,7 +27,7 @@ if((window as any).__TAURI_IPC__) { // tauri环境
 WKApp.apiClient.config.tokenCallback = ()=> {
   return WKApp.loginInfo.token
 }
-WKApp.config.appVersion = `${import.meta.env.VITE_VERSION || "0.0.0"}`
+WKApp.config.appVersion = import.meta.env.VITE_VERSION || pkgVersion
 WKApp.config.appName = "Octo"
 
 WKApp.loginInfo.load() // 加载登录信息

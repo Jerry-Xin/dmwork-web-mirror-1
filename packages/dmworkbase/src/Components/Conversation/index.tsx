@@ -665,6 +665,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                     const mn = new Mention()
                                     mn.all = mention.all
                                     mn.uids = mention.uids
+                                    mn.entities = mention.entities
                                     content.mention = mn
                                 }
                                 if (vm.currentReplyMessage) {

@@ -42,16 +42,75 @@ interface MessageInputProps extends HTMLProps<any>{
 
 interface MessageInputState {
     value: string | undefined
-    mentionCache: any
     quickReplySelectIndex: number
     slashMenuVisible: boolean
     slashFilter: string
     slashActiveIndex: number
 }
 
+export interface MentionEntity {
+    uid: string;
+    offset: number;
+    length: number;
+}
+
 export class MentionModel {
     all: boolean = false
     uids?: Array<string>
+    entities?: MentionEntity[]
+}
+
+export function formatMentionTextV2(text: string): {
+    content: string;
+    mention: MentionModel | undefined;
+} {
+    const entities: MentionEntity[] = [];
+    const uids: string[] = [];
+    let result = '';
+    let cursor = 0;
+    let all = false;
+
+    const placeholderPattern = /@\[([^:\]]+):([^\]]+)\]/g;
+    let match;
+
+    while ((match = placeholderPattern.exec(text)) !== null) {
+        const uid = match[1];
+        const name = match[2];
+
+        result += text.substring(cursor, match.index);
+
+        if (uid === '-1') {
+            all = true;
+            const atName = `@${name}`;
+            result += atName;
+        } else {
+            const atName = `@${name}`;
+            const offset = result.length;
+            result += atName;
+
+            entities.push({ uid, offset, length: atName.length });
+            uids.push(uid);
+        }
+
+        cursor = match.index + match[0].length;
+    }
+
+    result += text.substring(cursor);
+
+    if (all) {
+        const mention = new MentionModel();
+        mention.all = true;
+        return { content: result, mention };
+    }
+
+    if (entities.length === 0) {
+        return { content: result, mention: undefined };
+    }
+
+    const mention = new MentionModel();
+    mention.uids = uids;
+    mention.entities = entities;
+    return { content: result, mention };
 }
 
 class MemberSuggestionDataItem implements SuggestionDataItem {
@@ -77,7 +136,6 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         this.toolbars = []
         this.state = {
             value: "",
-            mentionCache: {},
             quickReplySelectIndex: 0,
             slashMenuVisible: false,
             slashFilter: "",
@@ -104,7 +162,6 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             const { value } = self.state;
             self.setState({
                 value: value + '\n',
-                mentionCache: {},
             });
         });
         hotkeys.setScope(scope);
@@ -203,62 +260,13 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             return
         }
         if (this.props.onSend && value && value.trim() !== "") {
-            let formatValue = this.formatMentionText(value);
-            let mention = this.parseMention(formatValue)
-            this.props.onSend(formatValue, mention);
+            const { content, mention } = formatMentionTextV2(value);
+            this.props.onSend(content, mention);
         }
         this.setState({
             value: '',
             quickReplySelectIndex: 0,
-            mentionCache: {},
         });
-    }
-
-    formatMentionText(text: string) {
-        let newText = text;
-        let mentionMatchResult = newText.match(/@([^ ]+) /g)
-        if (mentionMatchResult && mentionMatchResult.length > 0) {
-            for (let i = 0; i < mentionMatchResult.length; i++) {
-                let mentionStr = mentionMatchResult[i];
-                let name = mentionStr.replace('@[', '@').replace(']', '')
-                newText = newText.replace(mentionStr, name);
-            }
-        }
-        return newText;
-    }
-    // 解析@
-    parseMention(text: string) {
-        const { mentionCache } = this.state;
-        let mention: MentionModel = new MentionModel();
-        if (mentionCache) {
-            let mentions = Object.values(mentionCache);
-            let all = false;
-            if (mentions.length > 0) {
-                let mentionUIDS = new Array();
-                let mentionMatchResult = text.match(/@([^ ]+) /g)
-                if (mentionMatchResult && mentionMatchResult.length > 0) {
-                    for (let i = 0; i < mentionMatchResult.length; i++) {
-                        let mentionStr = mentionMatchResult[i];
-                        let name = mentionStr.trim().replace('@', '')
-                        let member = mentionCache[name];
-                        if (member) {
-                            if (member.uid === -1) { // -1表示@所有人
-                                all = true;
-                            } else {
-                                mentionUIDS.push(member.uid)
-                            }
-                        }
-                    }
-                }
-                if (all) {
-                    mention.all = true
-                } else {
-                    mention.uids = mentionUIDS
-                }
-            }
-            return mention;
-        }
-        return undefined
     }
 
     handleChange = (event: { target: { value: string } }) => {
@@ -330,19 +338,14 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
 
     addMention(uid: string, name: string): void {
-        const { mentionCache } = this.state
         if (name) {
-            mentionCache[`${name}`] = { uid: uid, name: name }
-            this.insertText(`@[${name}] `)
-            this.setState({
-                mentionCache: mentionCache,
-            })
+            this.insertText(`@[${uid}:${name}] `)
         }
     }
 
     render() {
         const { members, onInputRef, topView, toolbar, botCommands } = this.props
-        const { value, mentionCache, slashMenuVisible, slashFilter, slashActiveIndex } = this.state
+        const { value, slashMenuVisible, slashFilter, slashActiveIndex } = this.state
         const hasValue = value && value.length > 0
         let selectedItems = new Array<MemberSuggestionDataItem>();
         if (members && members.length > 0) {
@@ -459,12 +462,10 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                                 `(@([^'\\s'@]*))$`
                             )}
                             data={selectedItems}
-                            markup="@[__display__]"
+                            markup="@[__id__:__display__]"
                             displayTransform={(id, display) => `@${display}`}
                             appendSpaceOnAdd={true}
-                            onAdd={(id, display) => {
-                                mentionCache[display] = { uid: id, name: display }
-                            }}
+                            onAdd={() => {}}
                             renderSuggestion={(
                                 suggestion,
                                 search,

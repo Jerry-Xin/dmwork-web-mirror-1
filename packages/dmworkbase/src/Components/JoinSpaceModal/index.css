@@ -67,7 +67,7 @@
 }
 
 .wk-join-space-modal__back-link:focus-visible {
-    outline: var(--wk-focus-ring-width, 2px) solid var(--wk-color-primary, #7C5CFC);
+    outline: var(--wk-focus-ring-width, 2px) solid var(--wk-brand-primary);
     outline-offset: var(--wk-sp-0-5, 2px);
     border-radius: var(--wk-r-xs, 4px);
 }

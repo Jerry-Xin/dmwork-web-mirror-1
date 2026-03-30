@@ -1,5 +1,5 @@
 .wk-join-space-modal {
-    padding: var(--wk-sp-1, 4px) 0 var(--wk-sp-2, 8px);
+    padding: var(--wk-sp-1, 4px) 0 var(--wk-sp-5, 20px);
     display: flex;
     flex-direction: column;
     gap: var(--wk-sp-4, 16px);

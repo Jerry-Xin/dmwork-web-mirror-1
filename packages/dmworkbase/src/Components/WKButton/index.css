@@ -123,6 +123,16 @@
   cursor: wait;
 }
 
+/* 确保 loading 状态下内容仍水平居中 */
+.wk-btn--loading .wk-btn__label,
+.wk-btn--loading .wk-btn__spinner,
+.wk-btn--loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wk-sp-2);
+}
+
 .wk-btn__spinner {
   width: 14px;
   height: 14px;

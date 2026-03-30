@@ -1,7 +1,7 @@
 # DMWork Web
 
 <a href="https://zh-hans.react.dev/" target="_blank" rel="noopener" style="display:inline-block;">
-	<img src="https://img.shields.io/badge/React-17.0.2-%236CB52D.svg?logo=React" alt="React" />
+	<img src="https://img.shields.io/badge/React-18-%236CB52D.svg?logo=React" alt="React" />
 </a> &nbsp;
 <a href="https://ts.nodejs.cn/" target="_blank" rel="noopener" style="display:inline-block;">
 	<img src="https://img.shields.io/badge/TypeScript-5.0.4-%236CB52D.svg?logo=TypeScript&logoColor=FFF" alt="TypeScript" />
@@ -35,30 +35,30 @@ dmwork-web/
 
 ## 开发
 
-> 要求 Node.js >= 18，Yarn 1.22+
+> 要求 Node.js >= 20，pnpm 10.x
 
 ### 安装依赖
 
 ```bash
-yarn install
+pnpm install
 ```
 
 ### 本地开发
 
 ```bash
-yarn dev
+pnpm dev
 ```
 
 ### 编译
 
 ```bash
-yarn build
+pnpm build
 ```
 
 ### 清除缓存
 
 ```bash
-yarn clean
+pnpm clean
 ```
 
 ## Docker 部署
@@ -99,6 +99,12 @@ yarn build-ele:win
 # 打包 Linux（在 apps/web 下执行）
 yarn build-ele:linux
 ```
+
+## 文档
+
+- [DEVELOPMENT.md](./DEVELOPMENT.md) — 前端开发规范（Token、组件分层、Storybook）
+- [AGENTS.md](./AGENTS.md) — AI Agent 编码规范
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — 贡献指南
 
 ## 相关仓库
 

@@ -92,8 +92,8 @@ If AI tools were used in creating the PR:
 
 ### Prerequisites
 
-- Node.js >= 18
-- Yarn 1.22+
+- Node.js >= 20
+- pnpm 10.x
 
 ### Getting Started
 
@@ -104,10 +104,10 @@ cd dmwork-web
 git remote add upstream https://github.com/dmwork-org/dmwork-web.git
 
 # Install dependencies
-yarn install
+pnpm install
 
 # Start development server
-yarn dev
+pnpm dev
 ```
 
 ### Project Structure

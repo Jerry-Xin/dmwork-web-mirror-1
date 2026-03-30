@@ -221,9 +221,15 @@ export class ChatVM extends ProviderListener {
                 const existConversation = this.findConversation(conversation.channel)
                 if (existConversation) {
                     existConversation.conversation = conversation
-                    // WS 更新后清除缓存的 spaceLastMessage，让 getter 读取实时 lastMessage (#783)
+                    // WS 更新后有条件清除 spaceLastMessage (#783)
+                    // 只在新消息属于当前 Space 时清除（有更新的实时消息可用）
+                    // 新消息属于其他 Space 时保留（spaceLastMessage 仍是当前 Space 的最佳预览）
                     if (conversation.extra) {
-                        conversation.extra.spaceLastMessage = undefined
+                        const newMsgSpaceId = conversation.lastMessage?.content?.contentObj?.space_id
+                        const currentSpaceId = WKApp.shared.currentSpaceId
+                        if (!currentSpaceId || !newMsgSpaceId || newMsgSpaceId === currentSpaceId) {
+                            conversation.extra.spaceLastMessage = undefined
+                        }
                     }
                     if (existConversation.lastMessage?.content && existConversation.lastMessage?.contentType === MessageContentType.text) {
                         existConversation.lastMessage.content.text = ProhibitwordsService.shared.filter(existConversation.lastMessage?.content.text)

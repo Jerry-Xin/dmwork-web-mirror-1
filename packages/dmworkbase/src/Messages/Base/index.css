@@ -294,7 +294,7 @@ body[theme-mode=dark] .wk-message-base-bubble-box.recv .svgAppendix .corner  {
    
 }
 
-.wk-message-base-checkBox .wk-check {
+.wk-message-base-checkBox .wk-checkbox {
     position: absolute;
     bottom: 10px;
 }

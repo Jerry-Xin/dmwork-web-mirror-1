@@ -1,16 +1,64 @@
 import WKApp from "../App"
-import { ChannelTypePerson, ChannelTypeGroup, Channel, Conversation } from "wukongimjssdk"
+import { ChannelTypePerson, ChannelTypeGroup, Channel, Conversation, Message, WKSDK } from "wukongimjssdk"
 import { hasSpacePrefix } from "./SpacePrefix"
 
 export { hasSpacePrefix } from "./SpacePrefix"
+
+// 系统 Bot channelID 集合
+export const SYSTEM_BOTS = new Set(["botfather"])
+
+/**
+ * 判断 1:1 私聊会话的 lastMessage 是否不属于当前 Space。
+ * - 非 Space 模式 → false（不跳过）
+ * - 非 Person 频道 → false
+ * - lastMessage 无 space_id → false（旧消息向前兼容）
+ * - space_id 匹配当前 Space → false
+ * - space_id 存在但不匹配 → true（跳过）
+ */
+export function shouldSkipPersonConversationForSpace(conversation: Conversation): boolean {
+    const currentSpaceId = WKApp.shared.currentSpaceId
+    if (!currentSpaceId) return false
+    if (conversation.channel.channelType !== ChannelTypePerson) return false
+
+    const msgSpaceId = conversation.lastMessage?.content?.contentObj?.space_id
+    if (msgSpaceId && msgSpaceId !== currentSpaceId) return true
+    // 系统 Bot 无 space_id 时跳过，避免空壳会话（有条目无内容）
+    if (!msgSpaceId && SYSTEM_BOTS.has(conversation.channel.channelID)) return true
+    return false
+}
+
+/**
+ * 为 1:1 私聊会话的列表预览做 Space 过滤。
+ * - 不在 Space 模式 → 返回原始 lastMessage
+ * - 非 Person 频道 → 返回原始 lastMessage
+ * - lastMessage.content.contentObj.space_id 匹配当前 Space → 返回原消息
+ * - space_id 存在但不匹配 → 返回 undefined（不泄漏其他 Space 内容）
+ * - 无 space_id：系统 Bot → undefined；普通私聊 → 原消息（旧消息兼容）
+ */
+export function getSpaceFilteredLastMessage(conversation: Conversation): Message | undefined {
+    const currentSpaceId = WKApp.shared.currentSpaceId
+    if (!currentSpaceId) return conversation.lastMessage
+
+    if (conversation.channel.channelType !== ChannelTypePerson) return conversation.lastMessage
+
+    const lastMsg = conversation.lastMessage
+    if (!lastMsg) return conversation.lastMessage
+
+    const spaceId = lastMsg.content?.contentObj?.space_id
+    if (spaceId && spaceId === currentSpaceId) return lastMsg
+    if (spaceId && spaceId !== currentSpaceId) return undefined
+    // 无 space_id：系统 Bot 不展示，普通私聊向前兼容
+    if (SYSTEM_BOTS.has(conversation.channel.channelID)) return undefined
+    return conversation.lastMessage
+}
 
 /**
  * 判断一个 channel 是否不属于当前 Space，应从展示/计数中跳过。
  * - 无 currentSpaceId → 不过滤
  * - Person channel（私聊）→ 永远不过滤
  * - 有 Space 前缀（s{spaceId}_）的 channel → 前缀匹配
- * - 群聊（无前缀）→ 查 channelSpaceMap 缓存
- * - 缓存未命中 → fail-open（放行）
+ * - 群聊（无前缀）→ 查 channelSpaceMap 缓存 → channelInfo.orgData.space_id
+ * - 都未命中 → fail-open（放行，等 channelInfo 回调后再检查）
  */
 export function shouldSkipChannelForSpace(channel: Channel): boolean {
     const currentSpaceId = WKApp.shared.currentSpaceId
@@ -31,34 +79,44 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
     if (channel.channelType === ChannelTypeGroup) {
         const key = `${cid}_${channel.channelType}`
         const cachedSpaceId = WKApp.shared.channelSpaceMap.get(key)
-        if (cachedSpaceId && cachedSpaceId !== currentSpaceId) {
-            return true // 属于其他 Space → 跳过
+        if (cachedSpaceId) {
+            return cachedSpaceId !== currentSpaceId
         }
-        // 缓存未命中或匹配 → 放行
+        // 缓存未命中 → 尝试从已缓存的 channelInfo 获取 space_id
+        const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
+        const infoSpaceId = channelInfo?.orgData?.space_id
+        if (infoSpaceId) {
+            // 回填 channelSpaceMap 避免下次再查
+            WKApp.shared.channelSpaceMap.set(key, infoSpaceId)
+            return infoSpaceId !== currentSpaceId
+        }
+        // channelInfo 也没有 → fail-open，等 channelInfo 回调后 channelListener 会二次检查
     }
 
     return false
 }
 
-// 系统 Bot 列表（与 Conversation/vm.ts 中 SYSTEM_BOTS 一致）
-const SYSTEM_BOTS = new Set(["botfather"])
-
 /**
- * 判断系统 Bot（如 BotFather）的 DM 会话是否不属于当前 Space。
- * 只对 SYSTEM_BOTS 中的 Bot 生效，非系统 Bot 直接返回 false。
- * 检查 lastMessage 的 contentObj.space_id：
- *   - 无 lastMessage 或无 space_id（历史消息）→ 不跳过（向前兼容）
- *   - space_id 匹配当前 Space → 不跳过
- *   - space_id 不匹配 → 跳过
+ * 判断一条消息是否不属于当前 Space（用于通知/提示音过滤）。
+ * 对普通 channel 退化为 shouldSkipChannelForSpace。
+ * 对系统 Bot 消息，额外检查 message.content.contentObj.space_id。
  */
-export function shouldSkipSystemBotConversation(conversation: Conversation): boolean {
+export function shouldSkipMessageForSpace(message: Message): boolean {
+    // 先检查 channel 级过滤
+    if (shouldSkipChannelForSpace(message.channel)) return true
+
+    // 1:1 私聊额外检查消息级 space_id
     const currentSpaceId = WKApp.shared.currentSpaceId
     if (!currentSpaceId) return false
-    if (!SYSTEM_BOTS.has(conversation.channel?.channelID)) return false
+    if (message.channel.channelType !== ChannelTypePerson) return false
 
-    const spaceId = conversation.lastMessage?.content?.contentObj?.space_id
-    if (!spaceId) return false // 无 space_id（历史消息）→ 向前兼容，不跳过
-    return spaceId !== currentSpaceId
+    const msgSpaceId = message.content?.contentObj?.space_id
+    // 有 space_id 且不匹配 → 跳过
+    if (msgSpaceId && msgSpaceId !== currentSpaceId) return true
+    // 无 space_id：系统 Bot 跳过，普通私聊不过滤（旧消息兼容）
+    if (!msgSpaceId && SYSTEM_BOTS.has(message.channel.channelID)) return true
+
+    return false
 }
 
 export interface Space {
@@ -113,6 +171,16 @@ export class SpaceService {
 
     async createInvite(spaceId: string): Promise<InviteResp> {
         return WKApp.apiClient.post(`space/${spaceId}/invite`, {})
+    }
+
+    async getInviteInfo(inviteCode: string): Promise<{
+        invite_code: string;
+        space_id: string;
+        space_name: string;
+        member_count: number;
+        max_users: number;
+    }> {
+        return WKApp.apiClient.get(`space/invite/${inviteCode}`)
     }
 
     async joinSpace(inviteCode: string): Promise<void> {

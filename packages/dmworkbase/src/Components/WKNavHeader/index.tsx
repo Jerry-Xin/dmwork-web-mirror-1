@@ -1,27 +1,19 @@
-import React from "react";
-import { Component, ReactNode } from "react";
-import "./index.css"
+import React, { ReactNode } from 'react'
+import './index.css'
 
 export interface WKNavHeaderProps {
-    title:string
-    rightView?:JSX.Element
+  title: string
+  rightView?: ReactNode
+  className?: string
 }
 
-export default class WKNavMainHeader extends Component<WKNavHeaderProps> {
+const WKNavHeader: React.FC<WKNavHeaderProps> = ({ title, rightView, className }) => (
+  <div className={['wk-navheader', className || ''].filter(Boolean).join(' ')}>
+    <div className="wk-navheader__content">
+      <div className="wk-navheader__title">{title}</div>
+      {rightView && <div className="wk-navheader__right">{rightView}</div>}
+    </div>
+  </div>
+)
 
-    render(): ReactNode {
-        const {rightView,title} = this.props
-        return <div className="wk-navheader">
-            <div className="wk-navheader-content">
-                <div className="wk-navheader-content-left">
-                    <div className="wk-navheader-content-left-title">
-                       {title}
-                    </div>
-                </div>
-                <div className="wk-navheader-content-right">
-                    {rightView}
-                </div>
-            </div>
-        </div>
-    }
-}
+export default WKNavHeader

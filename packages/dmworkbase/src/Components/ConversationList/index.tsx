@@ -181,12 +181,12 @@ export default class ConversationList extends Component<ConversationListProps, C
                         <div className="wk-conversationlist-item-name">
                             <h3>
                                 {channelInfo?.orgData.displayName}
-                                {channelInfo?.orgData?.robot === 1 && <AiBadge />}
                             </h3>
+                            {channelInfo?.orgData?.robot === 1 && <AiBadge />}
                             {
-                                channelInfo?.orgData.identityIcon ? <img style={{ "marginLeft": "4px", "width": channelInfo?.orgData?.identitySize.width, "height": channelInfo?.orgData?.identitySize.height }} src={channelInfo?.orgData.identityIcon}></img> : undefined
+                                channelInfo?.orgData.identityIcon ? <img style={{ "width": channelInfo?.orgData?.identitySize.width, "height": channelInfo?.orgData?.identitySize.height }} src={channelInfo?.orgData.identityIcon}></img> : undefined
                             }
-                            <div style={{ "width": "14px", height: "14px", "display": "flex", "alignItems": "center", "marginLeft": "5px" }}>
+                            <div style={{ "width": "14px", height: "14px", "display": "flex", "alignItems": "center" }}>
                                 {
                                     channelInfo?.mute && <svg className="icon" viewBox="0 0 1131 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2755" width="14" height="14"><path d="M914.688 892.736L64 236.224l38.784-50.88L271.36 315.648a300.288 300.288 0 0 1 246.976-157.952v-33.28c0-16.64 13.504-30.08 30.08-30.08h2.304c16.576 0 30.08 13.44 30.08 30.08v32.96a299.776 299.776 0 0 1 284.928 299.136v294.272l45.504 58.624 48.768 37.696-45.312 45.632zM234.624 480.384l506.88 391.232H140.416l94.272-121.536-0.064-269.696z" fill="#bfbfbf" p-id="2756"></path></svg>
                                 }

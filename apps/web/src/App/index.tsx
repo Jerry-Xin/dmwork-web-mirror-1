@@ -1,10 +1,10 @@
-import { ChatPage, EndpointCategory, WKApp, Menus, shouldSkipChannelForSpace } from '@dmwork/base';
+import { ChatPage, EndpointCategory, WKApp, Menus, shouldSkipChannelForSpace, shouldSkipPersonConversationForSpace } from '@dmwork/base';
 import { ContactsList } from '@dmwork/contacts';
 import React from 'react';
 import { MessageSquare, Users } from 'lucide-react';
 import './index.css';
 import AppLayout from '../Layout';
-import { WKSDK } from 'wukongimjssdk';
+import { WKSDK, ChannelTypePerson } from 'wukongimjssdk';
 function App() {
   registerMenus()
   return (
@@ -39,7 +39,16 @@ async function registerMenus() {
       if (shouldSkipChannelForSpace(conversation.channel)) {
         continue
       }
-      badge += conversation.unread
+      if (shouldSkipPersonConversationForSpace(conversation)) continue
+      // Person 频道在 Space 模式下优先使用 per-Space 未读计数
+      const currentSpaceId = WKApp.shared.currentSpaceId
+      if (currentSpaceId
+          && conversation.channel.channelType === ChannelTypePerson
+          && conversation.extra?.spaceUnread !== undefined) {
+        badge += conversation.extra.spaceUnread
+      } else {
+        badge += conversation.unread
+      }
     }
 
     m.badge = badge;

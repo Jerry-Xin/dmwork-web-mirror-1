@@ -5,7 +5,8 @@ import MessageBase from "../Base"
 import WKApp from "../../App"
 import { FileContent } from "./FileContent"
 import { WKSDK, Task, TaskStatus } from "wukongimjssdk"
-import { Toast } from "@douyinfe/semi-ui"
+import { Toast, Modal } from "@douyinfe/semi-ui"
+import MarkdownContent from "../Text/MarkdownContent"
 
 export { FileContent } from "./FileContent"
 
@@ -17,8 +18,8 @@ function formatFileSize(bytes: number): string {
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-function getFileIconInfo(extension: string): { color: string; label: string } {
-    const ext = (extension || "").toLowerCase()
+function getFileIconInfo(extension: string, name?: string): { color: string; label: string } {
+    const ext = getExtension(extension, name)
     switch (ext) {
         case "pdf":
             return { color: "#EF4444", label: "PDF" }
@@ -62,9 +63,25 @@ function getFileIconInfo(extension: string): { color: string; label: string } {
     }
 }
 
-function isPreviewable(extension: string): boolean {
+function getExtension(extension: string, name?: string): string {
     const ext = (extension || "").toLowerCase()
-    return ["pdf", "png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)
+    if (ext) return ext
+    // fallback: extract from filename
+    if (name) {
+        const dot = name.lastIndexOf(".")
+        if (dot >= 0) return name.substring(dot + 1).toLowerCase()
+    }
+    return ""
+}
+
+function isPreviewable(extension: string, name?: string): boolean {
+    const ext = getExtension(extension, name)
+    return ["pdf", "png", "jpg", "jpeg", "gif", "bmp", "webp", "md", "txt"].includes(ext)
+}
+
+function isTextFile(extension: string, name?: string): boolean {
+    const ext = getExtension(extension, name)
+    return ["md", "txt"].includes(ext)
 }
 
 function isSafeURL(url: string): boolean {
@@ -82,6 +99,10 @@ interface FileCellState {
     downloading: boolean
     uploadProgress: number       // 0~100 整数百分比
     uploadStatus: TaskStatus | null
+    textPreviewVisible: boolean
+    textPreviewContent: string
+    textPreviewName: string
+    textPreviewExt: string
 }
 
 export class FileCell extends MessageCell<any, FileCellState> {
@@ -102,6 +123,10 @@ export class FileCell extends MessageCell<any, FileCellState> {
             downloading: false,
             uploadProgress: 0,
             uploadStatus: null,
+            textPreviewVisible: false,
+            textPreviewContent: "",
+            textPreviewName: "",
+            textPreviewExt: "",
         }
     }
 
@@ -138,20 +163,36 @@ export class FileCell extends MessageCell<any, FileCellState> {
         return ""
     }
 
-    handleDownload = () => {
+    handleDownload = async () => {
         const { message } = this.props
         const content = message.content as FileContent
         const url = this.getFileURL(content)
         if (!url || !isSafeURL(url)) return
 
         try {
-            const a = document.createElement("a")
-            a.href = url
-            a.download = content.name || "file"
-            a.target = "_blank"
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
+            if (isTextFile(content.extension, content.name)) {
+                // Text files: fetch as ArrayBuffer and decode as UTF-8 to avoid CDN charset issues
+                const resp = await fetch(url)
+                const buf = await resp.arrayBuffer()
+                const text = new TextDecoder("utf-8").decode(buf)
+                const blob = new Blob([text], { type: "text/plain;charset=utf-8" })
+                const blobUrl = URL.createObjectURL(blob)
+                const a = document.createElement("a")
+                a.href = blobUrl
+                a.download = content.name || "file"
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(blobUrl)
+            } else {
+                const a = document.createElement("a")
+                a.href = url
+                a.download = content.name || "file"
+                a.target = "_blank"
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+            }
         } catch {
             alert("文件下载失败")
         }
@@ -163,6 +204,11 @@ export class FileCell extends MessageCell<any, FileCellState> {
         const url = this.getFileURL(content)
         if (!url || !isSafeURL(url)) return
 
+        if (isTextFile(content.extension, content.name)) {
+            this.handleTextPreview(url, content.name, getExtension(content.extension, content.name))
+            return
+        }
+
         try {
             window.open(url, "_blank")
         } catch {
@@ -170,11 +216,31 @@ export class FileCell extends MessageCell<any, FileCellState> {
         }
     }
 
+    handleTextPreview = async (url: string, name: string, extension: string) => {
+        try {
+            const response = await fetch(url)
+            if (!response.ok) {
+                Toast.error("文件预览失败")
+                return
+            }
+            const buffer = await response.arrayBuffer()
+            const text = new TextDecoder("utf-8").decode(buffer)
+            this.setState({
+                textPreviewVisible: true,
+                textPreviewContent: text,
+                textPreviewName: name,
+                textPreviewExt: extension.toLowerCase(),
+            })
+        } catch {
+            Toast.error("文件预览失败")
+        }
+    }
+
     render() {
         const { message, context } = this.props
         const content = message.content as FileContent
-        const iconInfo = getFileIconInfo(content.extension)
-        const canPreview = isPreviewable(content.extension)
+        const iconInfo = getFileIconInfo(content.extension, content.name)
+        const canPreview = isPreviewable(content.extension, content.name)
         const { uploadProgress, uploadStatus } = this.state
 
         const isUploading =
@@ -293,6 +359,22 @@ export class FileCell extends MessageCell<any, FileCellState> {
                         </div>
                     )}
                 </div>
+                <Modal
+                    className="wk-base-modal"
+                    visible={this.state.textPreviewVisible}
+                    title={this.state.textPreviewName}
+                    footer={null}
+                    width={720}
+                    onCancel={() => this.setState({ textPreviewVisible: false })}
+                >
+                    <div className="wk-text-file-preview">
+                        {this.state.textPreviewExt === "md" ? (
+                            <MarkdownContent content={this.state.textPreviewContent} />
+                        ) : (
+                            <pre className="wk-text-file-preview-plain">{this.state.textPreviewContent}</pre>
+                        )}
+                    </div>
+                </Modal>
             </MessageBase>
         )
     }

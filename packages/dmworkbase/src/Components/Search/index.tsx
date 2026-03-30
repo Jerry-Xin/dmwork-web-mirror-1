@@ -15,20 +15,14 @@ export default class Search extends Component<SearchProps> {
         const { placeholder,onChange,onEnterPress } = this.props
         return <div className="wk-search-box">
             <div className="wk-search-icon">
-                <IconSearchStroked style={{ color: '#bbbfc4', fontSize: '20px' }} />
+                <IconSearchStroked style={{ fontSize: '16px' }} />
             </div>
             <div className="wk-search-input">
-                {/* <input onChange={(v)=>{
-                    if(onChange) {
-                        onChange(v.target.value)
-                    }
-                }}  placeholder={placeholder} type="text" style={{ fontSize: '17px' }}  /> */}
-
-                <Input onChange={(v)=>{
-                    if(onChange) {
-                        onChange(v)
-                    }
-                }} placeholder={placeholder} style={{ fontSize: '17px' }} onEnterPress={onEnterPress} ></Input>
+                <Input
+                    onChange={(v) => { if (onChange) onChange(v) }}
+                    placeholder={placeholder}
+                    onEnterPress={onEnterPress}
+                />
             </div>
         </div>
     }

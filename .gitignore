@@ -43,3 +43,4 @@ scripts/debug.js
 debug-storybook.log
 
 .mcp.json
+.gstack/

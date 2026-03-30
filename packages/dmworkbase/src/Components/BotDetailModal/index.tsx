@@ -117,9 +117,12 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
         const { applyRemark } = this.state;
         this.setState({ applying: true });
         try {
-            await WKApp.apiClient.post("friend/apply", {
-                to_uid: uid, remark: applyRemark,
-            });
+            const body: any = { to_uid: uid, remark: applyRemark };
+            const spaceId = WKApp.shared.currentSpaceId;
+            if (spaceId) {
+                body.space_id = spaceId;
+            }
+            await WKApp.apiClient.post("friend/apply", body);
             Toast.success("好友申请已发送");
             this.setState({ showApplyInput: false });
             this.refreshTimer = setTimeout(() => this.loadBotInfo(), 500);

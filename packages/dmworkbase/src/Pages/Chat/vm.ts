@@ -2,13 +2,13 @@ import WKSDK, { MessageContentType } from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ConnectStatus, ConnectStatusListener } from "wukongimjssdk";
 import { ConversationAction, ConversationListener } from "wukongimjssdk";
-import { Channel, ChannelInfo, Conversation, Message, ChannelTypePerson } from "wukongimjssdk";
+import { Channel, ChannelInfo, Conversation, Message, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
 import WKApp, { MessageDeleteListener } from "../../App";
 import { ConversationWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
 import { animateScroll, scroller } from 'react-scroll';
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
-import { shouldSkipChannelForSpace, shouldSkipSystemBotConversation } from "../../Service/SpaceService";
+import { shouldSkipChannelForSpace, shouldSkipPersonConversationForSpace, hasSpacePrefix } from "../../Service/SpaceService";
 import { EndpointID } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import { Space, SpaceService } from "../../Service/SpaceService";
@@ -33,6 +33,7 @@ export class ChatVM extends ProviderListener {
     private _selectedSpace?: Space // 选中的 Space
     private _showSpaceCreate = false // 是否显示创建 Space 弹窗
     private _spaceMemberUids: Set<string> = new Set() // 当前 space 的成员 uid 集合
+    private _pendingSpaceConversations: Map<string, Conversation> = new Map() // 等待 channelInfo 的新群会话
 
     set showAddPopover(v: boolean) {
         this._showAddPopover = v
@@ -138,6 +139,7 @@ export class ChatVM extends ProviderListener {
                 WKApp.shared.currentSpaceId = _space.space_id
             }
             WKSDK.shared().conversationManager.conversations = []
+            this._pendingSpaceConversations.clear()
             this.selectedConversation = undefined // 清空选中的会话
             WKApp.shared.openChannel = undefined // 清空全局打开的频道
             this._showChannelSetting = false // 关闭频道设置面板
@@ -173,29 +175,56 @@ export class ChatVM extends ProviderListener {
                 WKSDK.shared().channelManager.fetchChannelInfo(conversation.channel)
             }
             if (action === ConversationAction.add) {
+                // 新群补写 channelSpaceMap 缓存（WS 推送新群时缓存可能未命中）
+                if (conversation.channel.channelType === ChannelTypeGroup) {
+                    const key = `${conversation.channel.channelID}_${conversation.channel.channelType}`
+                    if (!WKApp.shared.channelSpaceMap.has(key)) {
+                        // 尝试从多个来源同步获取 space_id
+                        const info = WKSDK.shared().channelManager.getChannelInfo(conversation.channel)
+                        const sid = info?.orgData?.space_id
+                            || conversation.channelInfo?.orgData?.space_id
+                        if (sid) {
+                            WKApp.shared.channelSpaceMap.set(key, sid)
+                        } else if (WKApp.shared.currentSpaceId && !hasSpacePrefix(conversation.channel.channelID)) {
+                            // Fix: fail-open — 新群假定属于当前 Space，先展示
+                            // 建群 API 已带 space_id，channelInfo 异步返回后会补写正确值
+                            // 下次 Space 切换时 requestConversationList() 会用真实缓存重新过滤
+                            WKApp.shared.channelSpaceMap.set(key, WKApp.shared.currentSpaceId)
+                        }
+                    }
+                }
                 // Space 过滤：只添加属于当前 Space 的会话
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     return
                 }
-                if (shouldSkipSystemBotConversation(conversation)) {
-                    return
-                }
+                if (shouldSkipPersonConversationForSpace(conversation)) return
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType === MessageContentType.text) {
                     conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage?.content.text)
                 }
                 this.conversations = [new ConversationWrap(conversation), ...this.conversations]
                 this.notifyListener()
             } else if (action === ConversationAction.update) {
+                // 缓存未命中时异步补写，避免 fail-close 误丢群聊
+                if (conversation.channel.channelType === ChannelTypeGroup) {
+                    const key = `${conversation.channel.channelID}_${conversation.channel.channelType}`
+                    if (!WKApp.shared.channelSpaceMap.has(key)) {
+                        // 缓存未命中：异步获取 channelInfo 补写缓存
+                        WKSDK.shared().channelManager.fetchChannelInfo(conversation.channel)
+                        return // 等待 channelInfoListener 回调处理
+                    }
+                }
                 // Space 过滤：忽略不属于当前 Space 的会话更新
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     return
                 }
-                if (shouldSkipSystemBotConversation(conversation)) {
-                    return
-                }
+                if (shouldSkipPersonConversationForSpace(conversation)) return
                 const existConversation = this.findConversation(conversation.channel)
                 if (existConversation) {
                     existConversation.conversation = conversation
+                    // WS 更新后清除缓存的 spaceLastMessage，让 getter 读取实时 lastMessage (#783)
+                    if (conversation.extra) {
+                        conversation.extra.spaceLastMessage = undefined
+                    }
                     if (existConversation.lastMessage?.content && existConversation.lastMessage?.contentType === MessageContentType.text) {
                         existConversation.lastMessage.content.text = ProhibitwordsService.shared.filter(existConversation.lastMessage?.content.text)
                     }
@@ -215,11 +244,39 @@ export class ChatVM extends ProviderListener {
         WKSDK.shared().conversationManager.addConversationListener(this.conversationListener)
 
         this.channelListener = (channelInfo: ChannelInfo) => {
+            // 群聊 channelInfo 到达时，更新 channelSpaceMap 并做 Space 二次过滤
+            if (channelInfo.channel?.channelType === ChannelTypeGroup && channelInfo.orgData?.space_id) {
+                const key = `${channelInfo.channel.channelID}_${channelInfo.channel.channelType}`
+                WKApp.shared.channelSpaceMap.set(key, channelInfo.orgData.space_id)
+                // 如果该群不属于当前 Space，移除会话
+                if (shouldSkipChannelForSpace(channelInfo.channel)) {
+                    this.removeConversation(channelInfo.channel)
+                    return
+                }
+            }
             const conversation = this.findConversation(channelInfo.channel)
             if (conversation) {
                 conversation.extra.top = channelInfo.top ? 1 : 0
                 this.sortConversations()
                 this.notifyListener()
+            } else if (channelInfo.channel.channelType === ChannelTypeGroup) {
+                // 新群 channelInfo 异步返回：用真实 space_id 纠正 fail-open 假定值 + 补插遗漏的会话
+                const key = `${channelInfo.channel.channelID}_${channelInfo.channel.channelType}`
+                const sid = channelInfo.orgData?.space_id
+                if (sid) {
+                    WKApp.shared.channelSpaceMap.set(key, sid)
+                }
+                // Bug #744: 优先从待定队列取回会话（解决 SDK findConversation 可能找不到的问题）
+                const pendingConv = this._pendingSpaceConversations.get(key)
+                if (pendingConv) {
+                    this._pendingSpaceConversations.delete(key)
+                }
+                const conv = pendingConv || WKSDK.shared().conversationManager.findConversation(channelInfo.channel)
+                if (conv && !shouldSkipChannelForSpace(channelInfo.channel)) {
+                    this.conversations = [new ConversationWrap(conv), ...this.conversations]
+                    this.sortConversations()
+                    this.notifyListener()
+                }
             }
         }
         WKSDK.shared().channelManager.addListener(this.channelListener)
@@ -339,6 +396,7 @@ export class ChatVM extends ProviderListener {
         // 切换 Space 时清空 SDK 内部缓存和当前列表，避免旧 Space 会话残留
         WKSDK.shared().conversationManager.conversations = []
         this.conversations = []
+        this._pendingSpaceConversations.clear()
         this.notifyListener()
         const conversationWraps = new Array<ConversationWrap>()
         const conversations = await WKSDK.shared().conversationManager.sync({})
@@ -348,9 +406,7 @@ export class ChatVM extends ProviderListener {
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     continue
                 }
-                if (shouldSkipSystemBotConversation(conversation)) {
-                    continue
-                }
+                if (shouldSkipPersonConversationForSpace(conversation)) continue
                 conversationWraps.push(new ConversationWrap(conversation))
             }
         }
@@ -372,9 +428,7 @@ export class ChatVM extends ProviderListener {
                 if (shouldSkipChannelForSpace(conversation.channel)) {
                     continue
                 }
-                if (shouldSkipSystemBotConversation(conversation)) {
-                    continue
-                }
+                if (shouldSkipPersonConversationForSpace(conversation)) continue
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType == MessageContentType.text) {
                     conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage.content.text)
                 }

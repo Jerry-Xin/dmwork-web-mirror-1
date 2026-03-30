@@ -226,20 +226,30 @@ export class CommonDataSource implements ICommonDataSource {
         return WKApp.apiClient.get(`sticker/user/sticker?category=${encodeURIComponent(category)}`).catch(() => [])
     }
     searchUser(keyword: string): Promise<any> {
-        return WKApp.apiClient.get(`user/search?keyword=${encodeURIComponent(keyword)}`)
+        const spaceId = WKApp.shared.currentSpaceId
+        const spaceParam = spaceId ? `&space_id=${encodeURIComponent(spaceId)}` : ''
+        return WKApp.apiClient.get(`user/search?keyword=${encodeURIComponent(keyword)}${spaceParam}`)
     }
     qrcodeMy(): Promise<any> {
         return WKApp.apiClient.get("user/qrcode")
     }
 
     friendSure(token: string): Promise<void> {
-        return WKApp.apiClient.post("friend/sure", {
-            "token": token,
-        })
+        const body: any = { "token": token }
+        const spaceId = WKApp.shared.currentSpaceId
+        if (spaceId) {
+            body.space_id = spaceId
+        }
+        return WKApp.apiClient.post("friend/sure", body)
     }
 
     friendApply(req:{uid:string,remark:string,vercode:string}):Promise<void> {
-        return WKApp.apiClient.post(`friend/apply`,{to_uid:req.uid,remark:req.remark,vercode:req.vercode},)
+        const body: any = { to_uid: req.uid, remark: req.remark, vercode: req.vercode }
+        const spaceId = WKApp.shared.currentSpaceId
+        if (spaceId) {
+            body.space_id = spaceId
+        }
+        return WKApp.apiClient.post(`friend/apply`, body)
     }
 
     /**
@@ -359,17 +369,37 @@ export class CommonDataSource implements ICommonDataSource {
     }
 
     async searchFriends(keyword?: string): Promise<ChannelInfo[]> {
-        let resp = await WKApp.apiClient.get('friend/sync', {
-            param: {
-                "keyword": keyword,
-                "api_version":"1"
-            }
-        })
+        const spaceId = WKApp.shared.currentSpaceId
+        let resp: any
+        if (spaceId) {
+            // Space 模式：从 Space 成员搜索
+            resp = await WKApp.apiClient.get(`space/${spaceId}/members`, {
+                param: { page: "1", limit: "10000" },
+            })
+        } else {
+            resp = await WKApp.apiClient.get('friend/sync', {
+                param: {
+                    "keyword": keyword,
+                    "api_version": "1"
+                }
+            })
+        }
         const channelInfos = [];
         if (resp) {
             for (const data of resp) {
                 if (data.is_deleted === 1) {
                     continue
+                }
+                // 排除自己
+                if (data.uid === WKApp.loginInfo.uid) {
+                    continue
+                }
+                // Space 模式下本地 keyword 过滤
+                if (spaceId && keyword) {
+                    const name = (data.name || "").toLowerCase()
+                    if (!name.includes(keyword.toLowerCase())) {
+                        continue
+                    }
                 }
                 let channelInfo = new ChannelInfo();
                 channelInfo.channel = new Channel(data.uid, ChannelTypePerson);

@@ -4,6 +4,7 @@ import WKApp from "../App"
 import { MessageContentTypeConst, MessageReasonCode, OrderFactor } from "./Const"
 import { DefaultEmojiService } from "./EmojiService"
 import { TypingManager } from "./TypingManager"
+import { getSpaceFilteredLastMessage, SYSTEM_BOTS } from "./SpaceService"
 
 export class ConversationWrap {
     conversation: Conversation
@@ -53,6 +54,28 @@ export class ConversationWrap {
 
     public get unread() {
         const rawUnread = this.conversation.unread
+        if (rawUnread === 0) return 0
+
+        const currentSpaceId = WKApp.shared.currentSpaceId
+
+        // 后端 per-Space 未读计数：Person 频道优先使用 space_unread
+        if (currentSpaceId
+            && this.conversation.channel.channelType === ChannelTypePerson
+            && this.conversation.extra?.spaceUnread !== undefined) {
+            return this.conversation.extra.spaceUnread
+        }
+
+        // 系统 Bot（如 BotFather）在 Space 模式下清零未读
+        if (currentSpaceId
+            && this.conversation.channel.channelType === ChannelTypePerson
+            && SYSTEM_BOTS.has(this.conversation.channel.channelID)) {
+            const lastMsg = this.conversation.lastMessage
+            const msgSpaceId = lastMsg?.content?.contentObj?.space_id
+            if (!msgSpaceId) {
+                return 0
+            }
+        }
+
         // If unread is 1 and the last message is a system/event message,
         // don't show unread badge (fixes #165)
         if (rawUnread === 1 && this.isSystemMessage(this.conversation.lastMessage)) {
@@ -69,11 +92,17 @@ export class ConversationWrap {
     }
 
     public get lastMessage() {
-        return this.conversation.lastMessage
+        // 后端 per-Space 消息预览：Person 频道优先使用 space_last_message
+        const currentSpaceId = WKApp.shared.currentSpaceId
+        if (currentSpaceId
+            && this.conversation.channel.channelType === ChannelTypePerson
+            && this.conversation.extra?.spaceLastMessage) {
+            return this.conversation.extra.spaceLastMessage
+        }
+        return getSpaceFilteredLastMessage(this.conversation)
     }
     public set lastMessage(lastMessage: Message | undefined) {
         this.conversation.lastMessage = lastMessage
-
     }
 
     public get isMentionMe() {

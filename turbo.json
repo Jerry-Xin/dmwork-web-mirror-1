@@ -6,37 +6,78 @@
       "persistent": true
     },
     "dev-ele": {
-      "dependsOn": ["^dev"],
+      "dependsOn": [
+        "^dev"
+      ],
       "cache": false
     },
     "build": {
-      "outputs": ["build/**"]
+      "outputs": [
+        "build/**"
+      ]
     },
     "build-ele": {
-      "outputs": ["dist-ele/**"],
-      "dependsOn": ["^build"]
+      "outputs": [
+        "dist-ele/**"
+      ],
+      "dependsOn": [
+        "^build"
+      ]
     },
     "build-ele:mac": {
-      "outputs": ["dist-ele/**"],
-      "dependsOn": ["^build"]
+      "outputs": [
+        "dist-ele/**"
+      ],
+      "dependsOn": [
+        "^build"
+      ]
     },
     "build-ele:win": {
-      "outputs": ["dist-ele/**"],
-      "dependsOn": ["^build"]
+      "outputs": [
+        "dist-ele/**"
+      ],
+      "dependsOn": [
+        "^build"
+      ]
     },
     "build-ele:linux": {
-      "outputs": ["dist-ele/**"],
-      "dependsOn": ["^build"]
+      "outputs": [
+        "dist-ele/**"
+      ],
+      "dependsOn": [
+        "^build"
+      ]
     },
     "build-ele:linux-arm64": {
-      "outputs": ["dist-ele/**"],
-      "dependsOn": ["^build"]
+      "outputs": [
+        "dist-ele/**"
+      ],
+      "dependsOn": [
+        "^build"
+      ]
     },
     "lint": {
       "outputs": []
     },
     "clean": {
-      "dependsOn": ["^clean"]
+      "dependsOn": [
+        "^clean"
+      ]
+    },
+    "storybook": {
+      "dependsOn": [
+        "^build"
+      ],
+      "cache": false,
+      "persistent": true
+    },
+    "build-storybook": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "storybook-static/**"
+      ]
     }
   },
   "ui": "stream"

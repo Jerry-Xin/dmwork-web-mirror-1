@@ -1,38 +1,54 @@
-import { TextArea } from "@douyinfe/semi-ui";
-import { Input } from "@douyinfe/semi-ui/lib/es/input";
-import React from "react";
-import { Component } from "react";
-import "./index.css"
+import React, { useState } from 'react'
+import { TextArea } from '@douyinfe/semi-ui'
+import './index.css'
 
 export interface InputEditProps {
-    // exceeded 表示是否超出最大限制
-    onChange?:(value:string,exceeded?:boolean)=>void
-    defaultValue?:string
-    placeholder?:string
-    maxCount?:number
-    allowWrap?:boolean // 是否允许换行
+  onChange?: (value: string, exceeded?: boolean) => void
+  defaultValue?: string
+  placeholder?: string
+  maxCount?: number
+  /** 是否允许换行，默认 false（Enter 不换行） */
+  allowWrap?: boolean
+  className?: string
 }
 
-export class InputEdit extends Component<InputEditProps>{
+const InputEdit: React.FC<InputEditProps> = ({
+  onChange,
+  defaultValue,
+  placeholder,
+  maxCount,
+  allowWrap = false,
+  className,
+}) => {
+  const [value, setValue] = useState(defaultValue ?? '')
+  const count = value.length
+  const exceeded = !!(maxCount && count > maxCount)
 
-    render() {
-        const {onChange,defaultValue,placeholder,maxCount,allowWrap} = this.props
-        return <div className="wk-inputedit">
-            <TextArea  defaultValue={defaultValue} onChange={(value)=>{
-                let exceeded = false
-                if( maxCount && value.length>maxCount) {
-                    exceeded = true
-                }
-                if(onChange) {
-                    onChange(value,exceeded)
-                }
-            }} autosize rows={2}  showClear maxCount={maxCount} onKeyDown={(e)=>{
-                if(!allowWrap) {
-                    if(e.keyCode !== 13) return;
-                    e.preventDefault();
-                }
-            }}></TextArea>
-            <div className="wk-inputedit-placeholder">{placeholder}</div>
+  return (
+    <div className={['wk-inputedit', exceeded ? 'wk-inputedit--exceeded' : '', className || ''].filter(Boolean).join(' ')}>
+      <TextArea
+        value={value}
+        placeholder={placeholder}
+        autosize={{ minRows: 2, maxRows: 6 }}
+        showClear
+        onChange={(v) => {
+          setValue(v)
+          onChange?.(v, !!(maxCount && v.length > maxCount))
+        }}
+        onKeyDown={(e) => {
+          if (!allowWrap && e.keyCode === 13) {
+            e.preventDefault()
+          }
+        }}
+      />
+      {maxCount && (
+        <div className={['wk-inputedit__count', exceeded ? 'wk-inputedit__count--exceeded' : ''].filter(Boolean).join(' ')}>
+          {count} / {maxCount}
         </div>
-    }
+      )}
+    </div>
+  )
 }
+
+export default InputEdit
+export { InputEdit }

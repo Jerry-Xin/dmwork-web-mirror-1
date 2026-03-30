@@ -13,6 +13,7 @@ import { SendackPacket, Setting } from "wukongimjssdk";
 import MergeforwardContent from "../../Messages/Mergeforward";
 import { TypingListener, TypingManager } from "../../Service/TypingManager";
 import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
+import { SYSTEM_BOTS } from "../../Service/SpaceService";
 import { SuperGroup } from "../../Utils/const";
 import { SystemContent } from "wukongimjssdk";
 
@@ -1015,15 +1016,13 @@ export default class ConversationVM extends ProviderListener {
         })
     }
 
-    // 系统 Bot 列表：这些 Bot 在所有 Space 可见，但聊天历史需按 Space 过滤
-    private static readonly SYSTEM_BOTS = new Set(["botfather"])
-
-    // 过滤系统 Bot（如 BotFather）的消息：只显示属于当前 Space 的消息
+    // 过滤 1:1 私聊消息的 Space 隔离
+    // 对所有 Person 类型频道（包括系统 Bot 和普通用户）按 space_id 过滤
     // 规则：payload 有 space_id 且匹配当前 Space → 显示
     //       payload 有 space_id 且不匹配 → 隐藏
     //       payload 无 space_id（历史消息）→ 所有 Space 都显示（向前兼容）
-    filterSystemBotMessages(messages: MessageWrap[]): MessageWrap[] {
-        if (!ConversationVM.SYSTEM_BOTS.has(this.channel.channelID)) {
+    filterPersonMessagesBySpace(messages: MessageWrap[]): MessageWrap[] {
+        if (this.channel.channelType !== ChannelTypePerson) {
             return messages
         }
         const currentSpaceId = WKApp.shared.currentSpaceId
@@ -1033,7 +1032,9 @@ export default class ConversationVM extends ProviderListener {
         return messages.filter((m) => {
             const msgSpaceId = m.message?.content?.contentObj?.space_id
             if (!msgSpaceId) {
-                return true // 无 space_id 的历史消息：所有 Space 可见
+                // 系统 Bot（BotFather）无 space_id 的旧消息不显示（每个 Space 独立上下文）
+                if (SYSTEM_BOTS.has(this.channel.channelID)) return false
+                return true // 普通私聊：旧消息向前兼容
             }
             return msgSpaceId === currentSpaceId
         })
@@ -1043,7 +1044,7 @@ export default class ConversationVM extends ProviderListener {
     refreshMessages(messages: MessageWrap[], callback?: () => void) {
         let newMessages = messages
         this.distinctMessages(newMessages)
-        newMessages = this.filterSystemBotMessages(newMessages)
+        newMessages = this.filterPersonMessagesBySpace(newMessages)
         newMessages = this.deduplicateSystemTips(newMessages)
         newMessages = this.insertTimeOrHistorySplit(newMessages)
         for (let i = 0; i < newMessages.length; i++) {
@@ -1291,6 +1292,8 @@ export default class ConversationVM extends ProviderListener {
                 obj.space_id = spaceId
                 return obj
             }
+            // 同步 contentObj，让本地回显也通过 filterPersonMessagesBySpace (#784)
+            content.contentObj = { ...(content.contentObj || {}), space_id: spaceId }
         }
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
         let setting = new Setting()

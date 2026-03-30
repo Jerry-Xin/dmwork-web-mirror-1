@@ -1,12 +1,21 @@
 
 .wk-emojitoolbar {
-    padding: 10px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 
 .wk-emojitoolbar img {
     width: 20px;
     height: 20px;
+}
+
+.wk-emojitoolbar-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .wk-emojitoolbar .wk-toolbar-icon {

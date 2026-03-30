@@ -15,7 +15,7 @@ import {
   MessageStatus,
 } from "wukongimjssdk";
 import React, { ElementType } from "react";
-import { Smile, Scissors, ImagePlus, Paperclip } from "lucide-react";
+import { Smile, Scissors, ImagePlus, Paperclip, AtSign } from "lucide-react";
 import { Howl, Howler } from "howler";
 import WKApp, { FriendApply, FriendApplyState, ThemeMode } from "./App";
 import ChannelQRCode from "./Components/ChannelQRCode";
@@ -505,7 +505,7 @@ export default class BaseModule implements IModule {
       }
       return (
         <IconClick
-          icon={require("./assets/toolbars/func_mention_normal.svg").default}
+          icon={<AtSign size={20} color="#ee9278" className="wk-toolbar-icon" />}
           onClick={() => {
             ctx.messageInputContext().insertText("@");
           }}

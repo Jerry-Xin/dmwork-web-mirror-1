@@ -185,7 +185,7 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
                             return <div className="wk-mergeforwardmessagelist-content-msg" key={m.messageID}>
                                 <div className="wk-mergeforwardmessagelist-content-msg-avatar">
                                     {
-                                        showAvatar?<WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)} style={{ "width": "40px", "height": "40px", "borderRadius": "50%" }}></WKAvatar>:undefined
+                                        showAvatar?<WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)}></WKAvatar>:undefined
                                     }
                                 </div>
                                 <div className="wk-mergeforwardmessagelist-content-msg-info">

@@ -39,8 +39,15 @@
 .wk-mergeforwardmessagelist-content-msg-avatar {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
+    border-radius: 50%; /* L1-b: 无 --wk-r-circle Token，待 Will 确认 */
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.wk-mergeforwardmessagelist-content-msg-avatar .wk-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .wk-mergeforwardmessagelist-content-msg-info {
@@ -88,14 +95,16 @@
 }
 
 .wk-mergeforward-file__icon {
-    width: 36px;
-    height: 36px;
+    width: var(--wk-icon-size-lg, 36px);
+    height: var(--wk-icon-size-lg, 36px);
     border-radius: var(--wk-r-sm, 6px);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
+
+/* L1-b: border-radius: 50% 无对应 Token，等 Will 确认是否新增 --wk-r-circle */
 
 .wk-mergeforward-file__icon-label {
     color: var(--wk-color-white, #fff);

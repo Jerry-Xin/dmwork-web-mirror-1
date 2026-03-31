@@ -11,12 +11,14 @@
     padding: var(--wk-sp-4, 16px) 0;
     position: relative;
     z-index: 10;
+    overflow: visible; /* dropdown 需要溢出 */
 }
 
 /* ── Space switcher ── */
 .wk-navrail__switcher {
     position: relative;
-    margin-bottom: var(--wk-sp-8, 32px);
+    flex-shrink: 0;
+    margin-bottom: var(--wk-sp-4, 16px);
 }
 
 .wk-navrail__space-btn {
@@ -87,6 +89,7 @@
     align-items: center;
     gap: var(--wk-sp-0-5, 2px);
     flex: 1;
+    justify-content: flex-start; /* 图标从顶部堆叠，不撑满 */
 }
 
 /* ── NavItem button ── */

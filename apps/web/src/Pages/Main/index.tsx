@@ -4,8 +4,8 @@ import "./index.css"
 import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
 import { Space, SpaceService } from "@dmwork/base";
-import { SpaceCreate, JoinSpaceModalConnected, NavRail } from "@dmwork/base";
-import { Toast } from "@douyinfe/semi-ui";
+import { SpaceCreate, JoinSpaceModalConnected, NavRail, MeInfo } from "@dmwork/base";
+import { Toast, Modal } from "@douyinfe/semi-ui";
 
 export interface MainContentLeftProps {
     vm: MainVM
@@ -15,6 +15,7 @@ interface MainContentLeftFullState {
     allSpaces: Space[];
     showSpaceCreate: boolean;
     showJoinSpace: boolean;
+    showMeInfo: boolean;
 }
 
 export class MainContentLeft extends Component<MainContentLeftProps, MainContentLeftFullState> {
@@ -24,6 +25,7 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
             allSpaces: [],
             showSpaceCreate: false,
             showJoinSpace: false,
+            showMeInfo: false,
         }
     }
 
@@ -66,7 +68,6 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
     };
 
     handleAvatarClick = () => {
-        const { vm } = this.props;
         const uid = WKApp.loginInfo.uid;
         WKApp.apiClient
             .get(`/users/${uid}`)
@@ -76,9 +77,12 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                 loginInfo.name = data.name;
                 loginInfo.sex = data.sex;
                 loginInfo.save();
-                vm.showMeInfo = true;
+                this.setState({ showMeInfo: true });
             })
-            .catch(() => {});
+            .catch(() => {
+                // 请求失败也允许打开（用本地缓存数据）
+                this.setState({ showMeInfo: true });
+            });
     };
 
     componentDidMount() {
@@ -106,7 +110,7 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
 
     render() {
         const { vm } = this.props;
-        const { allSpaces } = this.state;
+        const { allSpaces, showMeInfo } = this.state;
         const currentSpaceId = WKApp.shared.currentSpaceId;
 
         return (
@@ -133,8 +137,6 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                     }}
                     // 用户
                     onAvatarClick={this.handleAvatarClick}
-                    showMeInfo={vm.showMeInfo}
-                    onSetShowMeInfo={(v) => { vm.showMeInfo = v; }}
                     // 设置
                     settingSelected={vm.settingSelected}
                     hasNewVersion={vm.hasNewVersion}
@@ -150,6 +152,19 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                     onInstallUpdate={() => vm.installUpdate()}
                     onNotifyListener={() => vm.notifyListener()}
                 />
+
+                {/* MeInfo Modal — 放在 NavRail 外，确保 React state 控制渲染 */}
+                <Modal
+                    width={400}
+                    className="wk-main-sider-modal wk-main-sider-meinfo"
+                    footer={null}
+                    closeIcon={<div />}
+                    visible={showMeInfo}
+                    mask={false}
+                    onCancel={() => this.setState({ showMeInfo: false })}
+                >
+                    <MeInfo onClose={() => this.setState({ showMeInfo: false })} />
+                </Modal>
 
                 {/* 路由内容（Sidebar + Main） */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: '1px solid var(--wk-border-default)' }}>

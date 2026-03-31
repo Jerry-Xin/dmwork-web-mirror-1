@@ -2,12 +2,11 @@ import React, { Component } from "react";
 import { Space } from "wukongimjssdk";
 import WKApp from "../../App";
 import { Menus } from "../../Service/Menus";
-import { MeInfo } from "../MeInfo";
 import NavSpaceSwitcher from "./NavSpaceSwitcher";
 import NavItem from "./NavItem";
 import NavBottom from "./NavBottom";
 import NavSettingsPanel from "./NavSettingsPanel";
-import { Modal, Badge } from "@douyinfe/semi-ui";
+import { Badge } from "@douyinfe/semi-ui";
 import "./index.css";
 
 export type NavRailItem = "messages";
@@ -23,7 +22,6 @@ export interface NavRailVMProps {
     appUpdateProgress: number;
     showAppUpdateOperation: boolean;
     lastVersionInfo?: { appVersion: string; updateDesc: string };
-    showMeInfo: boolean;
     onMenuClick: (menus: Menus) => void;
     onToggleSetting: () => void;
     onSetShowNewVersion: (v: boolean) => void;
@@ -31,7 +29,6 @@ export interface NavRailVMProps {
     onInstallUpdate: () => void;
     onNotifyListener: () => void;
     onAvatarClick: () => void;
-    onSetShowMeInfo: (v: boolean) => void;
     // Space 相关
     spaces: Space[];
     currentSpaceId?: string;
@@ -56,7 +53,6 @@ export default class NavRail extends Component<NavRailProps> {
             appUpdateProgress,
             showAppUpdateOperation,
             lastVersionInfo,
-            showMeInfo,
             onMenuClick,
             onToggleSetting,
             onSetShowNewVersion,
@@ -64,7 +60,6 @@ export default class NavRail extends Component<NavRailProps> {
             onInstallUpdate,
             onNotifyListener,
             onAvatarClick,
-            onSetShowMeInfo,
             spaces,
             currentSpaceId,
             onSpaceSelect,
@@ -126,18 +121,7 @@ export default class NavRail extends Component<NavRailProps> {
                     onNotifyListener={onNotifyListener}
                 />
 
-                {/* MeInfo Modal */}
-                <Modal
-                    width={400}
-                    className="wk-main-sider-modal wk-main-sider-meinfo"
-                    footer={null}
-                    closeIcon={<div />}
-                    visible={showMeInfo}
-                    mask={false}
-                    onCancel={() => onSetShowMeInfo(false)}
-                >
-                    <MeInfo onClose={() => onSetShowMeInfo(false)} />
-                </Modal>
+
             </>
         );
     }

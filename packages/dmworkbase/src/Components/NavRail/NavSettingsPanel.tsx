@@ -39,7 +39,13 @@ export default class NavSettingsPanel extends Component<NavSettingsPanelProps> {
 
         return (
             <>
-                {/* 设置触发按钮（三横线 → 将被 NavBottom 的齿轮替代，这里只保留 panel） */}
+                {/* 点击外部关闭 mask */}
+                {settingSelected && (
+                    <div
+                        style={{ position: "fixed", inset: 0, zIndex: 199 }}
+                        onClick={onToggleSetting}
+                    />
+                )}
                 <ul className={classnames("wk-sider-setting-list wk-navrail__settings-list", settingSelected ? "open" : undefined)}>
                     <li onClick={() => {
                         onToggleSetting();

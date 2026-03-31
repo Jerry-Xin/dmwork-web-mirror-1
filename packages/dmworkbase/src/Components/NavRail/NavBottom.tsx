@@ -1,12 +1,13 @@
 import React from "react";
+import { Badge } from "@douyinfe/semi-ui";
 
 export interface NavBottomProps {
-    userName?: string;
+    hasNewVersion?: boolean;
+    settingSelected?: boolean;
     onSettingsClick?: () => void;
     onAvatarClick?: () => void;
 }
 
-// 齿轮 SVG icon（无外部依赖）
 function IconSettings() {
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -17,9 +18,11 @@ function IconSettings() {
     );
 }
 
-export default function NavBottom({ userName, onSettingsClick, onAvatarClick }: NavBottomProps) {
-    const initial = userName ? userName.charAt(0).toUpperCase() : "?";
-
+export default function NavBottom({
+    hasNewVersion,
+    onSettingsClick,
+    onAvatarClick,
+}: NavBottomProps) {
     return (
         <div className="wk-navrail__bottom">
             <button
@@ -30,16 +33,19 @@ export default function NavBottom({ userName, onSettingsClick, onAvatarClick }: 
                 onClick={onSettingsClick}
             >
                 <IconSettings />
+                {hasNewVersion && (
+                    <span className="wk-navrail__settings-badge">
+                        <Badge dot type="danger" />
+                    </span>
+                )}
             </button>
             <button
                 type="button"
                 className="wk-navrail__avatar"
-                title={userName ?? "用户"}
-                aria-label="用户头像"
+                title="我的信息"
+                aria-label="我的信息"
                 onClick={onAvatarClick}
-            >
-                {initial}
-            </button>
+            />
         </div>
     );
 }

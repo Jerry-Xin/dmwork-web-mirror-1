@@ -3,32 +3,25 @@ import React, { Component } from "react";
 import "./index.css"
 import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
-import { TabNormalScreen } from "./tab_normal_screen";
 import { Space, SpaceService } from "@dmwork/base";
-import { SpaceCreate, ConnectionStatus, JoinSpaceModalConnected, NavRail } from "@dmwork/base";
+import { SpaceCreate, JoinSpaceModalConnected, NavRail } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
-
-
 
 export interface MainContentLeftProps {
     vm: MainVM
 }
 
-export interface MainContentLeftState {
-}
 interface MainContentLeftFullState {
     allSpaces: Space[];
-    showSpaceDropdown: boolean;
     showSpaceCreate: boolean;
     showJoinSpace: boolean;
 }
 
-export class MainContentLeft extends Component<MainContentLeftProps, MainContentLeftFullState>{
+export class MainContentLeft extends Component<MainContentLeftProps, MainContentLeftFullState> {
     constructor(props: any) {
         super(props)
         this.state = {
             allSpaces: [],
-            showSpaceDropdown: false,
             showSpaceCreate: false,
             showJoinSpace: false,
         }
@@ -72,117 +65,143 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
         }
     };
 
+    handleAvatarClick = () => {
+        const { vm } = this.props;
+        const uid = WKApp.loginInfo.uid;
+        WKApp.apiClient
+            .get(`/users/${uid}`)
+            .then((data) => {
+                const loginInfo = WKApp.loginInfo;
+                loginInfo.shortNo = data.short_no;
+                loginInfo.name = data.name;
+                loginInfo.sex = data.sex;
+                loginInfo.save();
+                vm.showMeInfo = true;
+            })
+            .catch(() => {});
+    };
+
     componentDidMount() {
+        const { vm } = this.props;
+        // 注册菜单刷新回调
+        WKApp.menus.setRefresh = () => { this.forceUpdate(); };
+
         SpaceService.shared.getMySpaces().then(spaces => {
             this.setState({ allSpaces: spaces });
-            // 恢复上次选中的 Space，或默认第一个
-            const savedSpaceId = localStorage.getItem("currentSpaceId")
+            const savedSpaceId = localStorage.getItem("currentSpaceId");
             if (savedSpaceId && spaces.find(s => s.space_id === savedSpaceId)) {
-                WKApp.shared.currentSpaceId = savedSpaceId
+                WKApp.shared.currentSpaceId = savedSpaceId;
             } else if (spaces.length > 0) {
-                // savedSpaceId 不在列表中或 currentSpaceId 为空，fallback 到第一个
-                WKApp.shared.currentSpaceId = spaces[0].space_id
-                localStorage.setItem("currentSpaceId", spaces[0].space_id)
-                this.forceUpdate()
+                WKApp.shared.currentSpaceId = spaces[0].space_id;
+                localStorage.setItem("currentSpaceId", spaces[0].space_id);
+                this.forceUpdate();
             } else {
-                // 无 Space：清除状态，回到 SpaceGate 引导页
-                WKApp.shared.currentSpaceId = ''
-                WKApp.shared.spaceChecked = false
-                localStorage.removeItem("currentSpaceId")
+                WKApp.shared.currentSpaceId = '';
+                WKApp.shared.spaceChecked = false;
+                localStorage.removeItem("currentSpaceId");
                 try { WKApp.shared.notifyListener(); } catch (_) {}
             }
         }).catch(() => {});
     }
 
     render() {
-        const { vm } = this.props
+        const { vm } = this.props;
         const { allSpaces } = this.state;
         const currentSpaceId = WKApp.shared.currentSpaceId;
 
-        return <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-            {/* NavRail — 替换原 wk-global-topbar */}
-            <NavRail
-                spaces={allSpaces}
-                currentSpaceId={currentSpaceId}
-                activeItem="messages"
-                userName={WKApp.loginInfo.name}
-                onSpaceSelect={this.handleSpaceSelected}
-                onCopyInviteLink={this.handleCopyInviteLink}
-                onJoinSpace={() => this.setState({ showJoinSpace: true })}
-                onCreateSpace={() => this.setState({ showSpaceCreate: true })}
-                onSettingsClick={() => {
-                    // TODO: 接入设置页（待设置路由实现后替换）
-                    WKApp.routeLeft.setPush?.(undefined as any);
-                }}
-                onAvatarClick={() => {
-                    // TODO: 接入个人资料页（待实现）
-                }}
-            />
-            {/* 路由内容（Sidebar + Main） */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: '1px solid var(--wk-border-default)' }}>
-                {vm.historyRoutePaths.map((routePath, i) => {
-                    const Cpt = WKApp.route.get(routePath)
-                    return <div key={i} style={{ "display": routePath === vm.currentMenus?.routePath ? "block" : "none", "width": "100%", "height": "100%" }}>
-                        {React.isValidElement(Cpt) ? Cpt : undefined}
-                    </div>
-                })}
+        return (
+            <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+                {/* NavRail — 全面接管原 TabNormalScreen + wk-global-topbar */}
+                <NavRail
+                    // Space
+                    spaces={allSpaces}
+                    currentSpaceId={currentSpaceId}
+                    onSpaceSelect={this.handleSpaceSelected}
+                    onCopyInviteLink={this.handleCopyInviteLink}
+                    onJoinSpace={() => this.setState({ showJoinSpace: true })}
+                    onCreateSpace={() => this.setState({ showSpaceCreate: true })}
+                    // 菜单
+                    menusList={vm.menusList}
+                    currentMenus={vm.currentMenus}
+                    onMenuClick={(menus) => {
+                        vm.currentMenus = menus;
+                        if (menus.onPress) {
+                            menus.onPress();
+                        } else {
+                            WKApp.routeLeft.popToRoot();
+                        }
+                    }}
+                    // 用户
+                    onAvatarClick={this.handleAvatarClick}
+                    showMeInfo={vm.showMeInfo}
+                    onSetShowMeInfo={(v) => { vm.showMeInfo = v; }}
+                    // 设置
+                    settingSelected={vm.settingSelected}
+                    hasNewVersion={vm.hasNewVersion}
+                    showNewVersion={vm.showNewVersion}
+                    showAppVersion={vm.showAppVersion}
+                    showAppUpdate={vm.showAppUpdate}
+                    appUpdateProgress={vm.appUpdateProgress}
+                    showAppUpdateOperation={vm.showAppUpdateOperation}
+                    lastVersionInfo={vm.lastVersionInfo}
+                    onToggleSetting={() => { vm.settingSelected = !vm.settingSelected; }}
+                    onSetShowNewVersion={(v) => { vm.showNewVersion = v; }}
+                    onSetShowAppVersion={(v) => { vm.showAppVersion = v; vm.notifyListener(); }}
+                    onInstallUpdate={() => vm.installUpdate()}
+                    onNotifyListener={() => vm.notifyListener()}
+                />
+
+                {/* 路由内容（Sidebar + Main） */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: '1px solid var(--wk-border-default)' }}>
+                    {vm.historyRoutePaths.map((routePath, i) => {
+                        const Cpt = WKApp.route.get(routePath);
+                        return (
+                            <div key={i} style={{ display: routePath === vm.currentMenus?.routePath ? "block" : "none", width: "100%", height: "100%" }}>
+                                {React.isValidElement(Cpt) ? Cpt : undefined}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <SpaceCreate
+                    visible={this.state.showSpaceCreate}
+                    onClose={() => this.setState({ showSpaceCreate: false })}
+                    onSuccess={this.handleSpaceSelected}
+                />
+                <JoinSpaceModalConnected
+                    visible={this.state.showJoinSpace}
+                    onClose={() => this.setState({ showJoinSpace: false })}
+                    onSuccess={this.handleSpaceSelected}
+                />
             </div>
-            <SpaceCreate
-                visible={this.state.showSpaceCreate}
-                onClose={() => {
-                    this.setState({ showSpaceCreate: false });
-                }}
-                onSuccess={this.handleSpaceSelected}
-            />
-            <JoinSpaceModalConnected
-                visible={this.state.showJoinSpace}
-                onClose={() => this.setState({ showJoinSpace: false })}
-                onSuccess={this.handleSpaceSelected}
-            />
-        </div>
+        );
     }
 }
 
 export class MainPage extends Component {
-
     render() {
-        return <Provider create={() => {
-            return new MainVM()
-        }} render={(vm: MainVM) => {
-            return <WKLayout onRenderTab={(size) => {
-                // if (size === ScreenSize.small) {
-                //     return <TabLowScreen vm={vm}></TabLowScreen>
-                // }
-                return <TabNormalScreen vm={vm} />
-            }} contentLeft={<MainContentLeft vm={vm} />} onRightContext={(context) => {
-                WKApp.routeRight.setPush = (view) => {
-                    context.push(view)
-                }
-                WKApp.routeRight.setReplaceToRoot = (view) => {
-                    context.replaceToRoot(view)
-                }
-                WKApp.routeRight.setPop = () => {
-                    context.pop()
-                }
-                WKApp.routeRight.setPopToRoot = () => {
-                    context.popToRoot()
-                }
-            }} onLeftContext={(context) => {
-                WKApp.routeLeft.setPush = (view) => {
-                    context.push(view)
-                }
-                WKApp.routeLeft.setReplaceToRoot = (view) => {
-                    context.replaceToRoot(view)
-                }
-                WKApp.routeLeft.setPop = () => {
-                    context.pop()
-                }
-                WKApp.routeLeft.setPopToRoot = () => {
-                    context.popToRoot()
-                }
-            }} contentRight={<EmptyStateIllustration />} />
-        }}>
-
-        </Provider>
+        return (
+            <Provider create={() => new MainVM()} render={(vm: MainVM) => {
+                return (
+                    <WKLayout
+                        contentLeft={<MainContentLeft vm={vm} />}
+                        onRightContext={(context) => {
+                            WKApp.routeRight.setPush = (view) => { context.push(view); };
+                            WKApp.routeRight.setReplaceToRoot = (view) => { context.replaceToRoot(view); };
+                            WKApp.routeRight.setPop = () => { context.pop(); };
+                            WKApp.routeRight.setPopToRoot = () => { context.popToRoot(); };
+                        }}
+                        onLeftContext={(context) => {
+                            WKApp.routeLeft.setPush = (view) => { context.push(view); };
+                            WKApp.routeLeft.setReplaceToRoot = (view) => { context.replaceToRoot(view); };
+                            WKApp.routeLeft.setPop = () => { context.pop(); };
+                            WKApp.routeLeft.setPopToRoot = () => { context.popToRoot(); };
+                        }}
+                        contentRight={<EmptyStateIllustration />}
+                    />
+                );
+            }}>
+            </Provider>
+        );
     }
 }

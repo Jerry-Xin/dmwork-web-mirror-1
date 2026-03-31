@@ -3,7 +3,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--wk-sp-2);
+  gap: var(--wk-sp-2, 8px);
   font-family: var(--wk-font-sans);
   font-weight: var(--wk-font-medium);
   font-size: var(--wk-text-size-md);

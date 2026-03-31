@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import { Space } from "wukongimjssdk";
-import { SpaceItem, ActionListItem, WKButton } from "../index";
+import SpaceItem from "../SpaceItem";
+import ActionListItem from "../ActionListItem";
+import WKButton from "../WKButton";
 import { IconSearch, IconPlus, IconLink } from "@douyinfe/semi-icons";
 
 export interface NavSpaceSwitcherProps {

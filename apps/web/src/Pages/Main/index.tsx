@@ -7,26 +7,67 @@ import { Space, SpaceService } from "@dmwork/base";
 import { SpaceCreate, JoinSpaceModalConnected, NavRail, MeInfo } from "@dmwork/base";
 import { Toast, Modal } from "@douyinfe/semi-ui";
 
+// ─── MainContentLeft：纯路由渲染区（Sidebar + 内容） ───────────────────────
+
 export interface MainContentLeftProps {
     vm: MainVM
 }
 
-interface MainContentLeftFullState {
+export class MainContentLeft extends Component<MainContentLeftProps> {
+    render() {
+        const { vm } = this.props;
+        return (
+            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                {vm.historyRoutePaths.map((routePath, i) => {
+                    const Cpt = WKApp.route.get(routePath);
+                    return (
+                        <div key={i} style={{ display: routePath === vm.currentMenus?.routePath ? "block" : "none", width: "100%", height: "100%" }}>
+                            {React.isValidElement(Cpt) ? Cpt : undefined}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
+}
+
+// ─── MainPage：顶层，管理 Space/MeInfo/NavRail 状态 ───────────────────────
+
+interface MainPageState {
     allSpaces: Space[];
     showSpaceCreate: boolean;
     showJoinSpace: boolean;
     showMeInfo: boolean;
 }
 
-export class MainContentLeft extends Component<MainContentLeftProps, MainContentLeftFullState> {
-    constructor(props: any) {
-        super(props)
+export class MainPage extends Component<{}, MainPageState> {
+    constructor(props: {}) {
+        super(props);
         this.state = {
             allSpaces: [],
             showSpaceCreate: false,
             showJoinSpace: false,
             showMeInfo: false,
-        }
+        };
+    }
+
+    componentDidMount() {
+        SpaceService.shared.getMySpaces().then(spaces => {
+            this.setState({ allSpaces: spaces });
+            const savedSpaceId = localStorage.getItem("currentSpaceId");
+            if (savedSpaceId && spaces.find(s => s.space_id === savedSpaceId)) {
+                WKApp.shared.currentSpaceId = savedSpaceId;
+            } else if (spaces.length > 0) {
+                WKApp.shared.currentSpaceId = spaces[0].space_id;
+                localStorage.setItem("currentSpaceId", spaces[0].space_id);
+                this.forceUpdate();
+            } else {
+                WKApp.shared.currentSpaceId = '';
+                WKApp.shared.spaceChecked = false;
+                localStorage.removeItem("currentSpaceId");
+                try { WKApp.shared.notifyListener(); } catch (_) {}
+            }
+        }).catch(() => {});
     }
 
     handleSpaceSelected = (spaceId: string) => {
@@ -80,140 +121,101 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                 this.setState({ showMeInfo: true });
             })
             .catch(() => {
-                // 请求失败也允许打开（用本地缓存数据）
                 this.setState({ showMeInfo: true });
             });
     };
 
-    componentDidMount() {
-        const { vm } = this.props;
-        // 注册菜单刷新回调
-        WKApp.menus.setRefresh = () => { this.forceUpdate(); };
-
-        SpaceService.shared.getMySpaces().then(spaces => {
-            this.setState({ allSpaces: spaces });
-            const savedSpaceId = localStorage.getItem("currentSpaceId");
-            if (savedSpaceId && spaces.find(s => s.space_id === savedSpaceId)) {
-                WKApp.shared.currentSpaceId = savedSpaceId;
-            } else if (spaces.length > 0) {
-                WKApp.shared.currentSpaceId = spaces[0].space_id;
-                localStorage.setItem("currentSpaceId", spaces[0].space_id);
-                this.forceUpdate();
-            } else {
-                WKApp.shared.currentSpaceId = '';
-                WKApp.shared.spaceChecked = false;
-                localStorage.removeItem("currentSpaceId");
-                try { WKApp.shared.notifyListener(); } catch (_) {}
-            }
-        }).catch(() => {});
-    }
-
     render() {
-        const { vm } = this.props;
-        const { allSpaces, showMeInfo } = this.state;
-        const currentSpaceId = WKApp.shared.currentSpaceId;
+        const { allSpaces, showSpaceCreate, showJoinSpace, showMeInfo } = this.state;
 
-        return (
-            <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-                {/* NavRail — 全面接管原 TabNormalScreen + wk-global-topbar */}
-                <NavRail
-                    // Space
-                    spaces={allSpaces}
-                    currentSpaceId={currentSpaceId}
-                    onSpaceSelect={this.handleSpaceSelected}
-                    onCopyInviteLink={this.handleCopyInviteLink}
-                    onJoinSpace={() => this.setState({ showJoinSpace: true })}
-                    onCreateSpace={() => this.setState({ showSpaceCreate: true })}
-                    // 菜单
-                    menusList={vm.menusList}
-                    currentMenus={vm.currentMenus}
-                    onMenuClick={(menus) => {
-                        vm.currentMenus = menus;
-                        if (menus.onPress) {
-                            menus.onPress();
-                        } else {
-                            WKApp.routeLeft.popToRoot();
-                        }
-                    }}
-                    // 用户
-                    onAvatarClick={this.handleAvatarClick}
-                    // 设置
-                    settingSelected={vm.settingSelected}
-                    hasNewVersion={vm.hasNewVersion}
-                    showNewVersion={vm.showNewVersion}
-                    showAppVersion={vm.showAppVersion}
-                    showAppUpdate={vm.showAppUpdate}
-                    appUpdateProgress={vm.appUpdateProgress}
-                    showAppUpdateOperation={vm.showAppUpdateOperation}
-                    lastVersionInfo={vm.lastVersionInfo}
-                    onToggleSetting={() => { vm.settingSelected = !vm.settingSelected; }}
-                    onSetShowNewVersion={(v) => { vm.showNewVersion = v; }}
-                    onSetShowAppVersion={(v) => { vm.showAppVersion = v; vm.notifyListener(); }}
-                    onInstallUpdate={() => vm.installUpdate()}
-                    onNotifyListener={() => vm.notifyListener()}
-                />
-
-                {/* MeInfo Modal — 放在 NavRail 外，确保 React state 控制渲染 */}
-                <Modal
-                    width={400}
-                    className="wk-main-sider-modal wk-main-sider-meinfo"
-                    footer={null}
-                    closeIcon={<div />}
-                    visible={showMeInfo}
-                    mask={false}
-                    onCancel={() => this.setState({ showMeInfo: false })}
-                >
-                    <MeInfo onClose={() => this.setState({ showMeInfo: false })} />
-                </Modal>
-
-                {/* 路由内容（Sidebar + Main） */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: '1px solid var(--wk-border-default)' }}>
-                    {vm.historyRoutePaths.map((routePath, i) => {
-                        const Cpt = WKApp.route.get(routePath);
-                        return (
-                            <div key={i} style={{ display: routePath === vm.currentMenus?.routePath ? "block" : "none", width: "100%", height: "100%" }}>
-                                {React.isValidElement(Cpt) ? Cpt : undefined}
-                            </div>
-                        );
-                    })}
-                </div>
-
-                <SpaceCreate
-                    visible={this.state.showSpaceCreate}
-                    onClose={() => this.setState({ showSpaceCreate: false })}
-                    onSuccess={this.handleSpaceSelected}
-                />
-                <JoinSpaceModalConnected
-                    visible={this.state.showJoinSpace}
-                    onClose={() => this.setState({ showJoinSpace: false })}
-                    onSuccess={this.handleSpaceSelected}
-                />
-            </div>
-        );
-    }
-}
-
-export class MainPage extends Component {
-    render() {
         return (
             <Provider create={() => new MainVM()} render={(vm: MainVM) => {
+                // 注册菜单刷新（触发父组件 forceUpdate）
+                WKApp.menus.setRefresh = () => { this.forceUpdate(); };
+
+                const currentSpaceId = WKApp.shared.currentSpaceId;
+
                 return (
-                    <WKLayout
-                        contentLeft={<MainContentLeft vm={vm} />}
-                        onRightContext={(context) => {
-                            WKApp.routeRight.setPush = (view) => { context.push(view); };
-                            WKApp.routeRight.setReplaceToRoot = (view) => { context.replaceToRoot(view); };
-                            WKApp.routeRight.setPop = () => { context.pop(); };
-                            WKApp.routeRight.setPopToRoot = () => { context.popToRoot(); };
-                        }}
-                        onLeftContext={(context) => {
-                            WKApp.routeLeft.setPush = (view) => { context.push(view); };
-                            WKApp.routeLeft.setReplaceToRoot = (view) => { context.replaceToRoot(view); };
-                            WKApp.routeLeft.setPop = () => { context.pop(); };
-                            WKApp.routeLeft.setPopToRoot = () => { context.popToRoot(); };
-                        }}
-                        contentRight={<EmptyStateIllustration />}
-                    />
+                    <>
+                        <WKLayout
+                            onRenderTab={() => (
+                                <NavRail
+                                    // Space
+                                    spaces={allSpaces}
+                                    currentSpaceId={currentSpaceId}
+                                    onSpaceSelect={this.handleSpaceSelected}
+                                    onCopyInviteLink={this.handleCopyInviteLink}
+                                    onJoinSpace={() => this.setState({ showJoinSpace: true })}
+                                    onCreateSpace={() => this.setState({ showSpaceCreate: true })}
+                                    // 菜单
+                                    menusList={vm.menusList}
+                                    currentMenus={vm.currentMenus}
+                                    onMenuClick={(menus) => {
+                                        vm.currentMenus = menus;
+                                        if (menus.onPress) {
+                                            menus.onPress();
+                                        } else {
+                                            WKApp.routeLeft.popToRoot();
+                                        }
+                                    }}
+                                    // 用户
+                                    onAvatarClick={this.handleAvatarClick}
+                                    // 设置
+                                    settingSelected={vm.settingSelected}
+                                    hasNewVersion={vm.hasNewVersion}
+                                    showNewVersion={vm.showNewVersion}
+                                    showAppVersion={vm.showAppVersion}
+                                    showAppUpdate={vm.showAppUpdate}
+                                    appUpdateProgress={vm.appUpdateProgress}
+                                    showAppUpdateOperation={vm.showAppUpdateOperation}
+                                    lastVersionInfo={vm.lastVersionInfo}
+                                    onToggleSetting={() => { vm.settingSelected = !vm.settingSelected; }}
+                                    onSetShowNewVersion={(v) => { vm.showNewVersion = v; }}
+                                    onSetShowAppVersion={(v) => { vm.showAppVersion = v; vm.notifyListener(); }}
+                                    onInstallUpdate={() => vm.installUpdate()}
+                                    onNotifyListener={() => vm.notifyListener()}
+                                />
+                            )}
+                            contentLeft={<MainContentLeft vm={vm} />}
+                            onRightContext={(context) => {
+                                WKApp.routeRight.setPush = (view) => { context.push(view); };
+                                WKApp.routeRight.setReplaceToRoot = (view) => { context.replaceToRoot(view); };
+                                WKApp.routeRight.setPop = () => { context.pop(); };
+                                WKApp.routeRight.setPopToRoot = () => { context.popToRoot(); };
+                            }}
+                            onLeftContext={(context) => {
+                                WKApp.routeLeft.setPush = (view) => { context.push(view); };
+                                WKApp.routeLeft.setReplaceToRoot = (view) => { context.replaceToRoot(view); };
+                                WKApp.routeLeft.setPop = () => { context.pop(); };
+                                WKApp.routeLeft.setPopToRoot = () => { context.popToRoot(); };
+                            }}
+                            contentRight={<EmptyStateIllustration />}
+                        />
+
+                        {/* MeInfo Modal */}
+                        <Modal
+                            width={400}
+                            className="wk-main-sider-modal wk-main-sider-meinfo"
+                            footer={null}
+                            closeIcon={<div />}
+                            visible={showMeInfo}
+                            mask={false}
+                            onCancel={() => this.setState({ showMeInfo: false })}
+                        >
+                            <MeInfo onClose={() => this.setState({ showMeInfo: false })} />
+                        </Modal>
+
+                        <SpaceCreate
+                            visible={showSpaceCreate}
+                            onClose={() => this.setState({ showSpaceCreate: false })}
+                            onSuccess={this.handleSpaceSelected}
+                        />
+                        <JoinSpaceModalConnected
+                            visible={showJoinSpace}
+                            onClose={() => this.setState({ showJoinSpace: false })}
+                            onSuccess={this.handleSpaceSelected}
+                        />
+                    </>
                 );
             }}>
             </Provider>

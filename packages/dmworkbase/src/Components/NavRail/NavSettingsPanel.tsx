@@ -1,4 +1,4 @@
-import { WKApp, ThemeMode, MeInfo } from "../../App";
+import WKApp, { ThemeMode } from "../../App";
 import classnames from "classnames";
 import React, { Component } from "react";
 import { Badge, Modal, Toast, Progress, Button } from "@douyinfe/semi-ui";

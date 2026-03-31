@@ -1,7 +1,8 @@
 import React, { Component } from "react";
 import { Space } from "wukongimjssdk";
-import { Menus, MeInfo } from "../../App";
-import { WKApp } from "../../App";
+import WKApp from "../../App";
+import { Menus } from "../../Service/Menus";
+import { MeInfo } from "../MeInfo";
 import NavSpaceSwitcher from "./NavSpaceSwitcher";
 import NavItem from "./NavItem";
 import NavBottom from "./NavBottom";

@@ -16,10 +16,22 @@ interface NavSpaceSwitcherState {
     open: boolean;
 }
 
-const SPACE_COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
+const SPACE_COLOR_TOKENS = [
+    '--wk-space-color-1',
+    '--wk-space-color-2',
+    '--wk-space-color-3',
+    '--wk-space-color-4',
+    '--wk-space-color-5',
+    '--wk-space-color-6',
+];
+
+const SPACE_COLOR_FALLBACKS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
 
 export function getSpaceColor(name: string): string {
-    return SPACE_COLORS[name.charCodeAt(0) % SPACE_COLORS.length];
+    const idx = name.charCodeAt(0) % SPACE_COLOR_TOKENS.length;
+    const token = SPACE_COLOR_TOKENS[idx];
+    const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+    return value || SPACE_COLOR_FALLBACKS[idx];
 }
 
 export default class NavSpaceSwitcher extends Component<NavSpaceSwitcherProps, NavSpaceSwitcherState> {
@@ -42,7 +54,7 @@ export default class NavSpaceSwitcher extends Component<NavSpaceSwitcherProps, N
         const current = spaces.find(s => s.space_id === currentSpaceId);
 
         return (
-            <div className="wk-navrail__switcher" style={{ position: "relative" }}>
+            <div className="wk-navrail__switcher">
                 <button
                     type="button"
                     className="wk-navrail__space-btn"

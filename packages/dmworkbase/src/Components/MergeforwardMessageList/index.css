@@ -32,8 +32,15 @@
 .wk-mergeforwardmessagelist-content-msg {
     display: flex;
     width: 100%;
-    padding: 15px;
+    padding: var(--wk-sp-4, 16px);
     background-color: var(--wk-color-item);
+}
+
+.wk-mergeforwardmessagelist-content-msg-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .wk-mergeforwardmessagelist-content-msg-info {
@@ -46,21 +53,69 @@
     display: flex;
     width: 100%;
     justify-content: space-between;
-    padding: 0px 15px;
-
+    padding: 0 var(--wk-sp-4, 16px);
 }
 
 .wk-mergeforwardmessagelist-content-msg-info-first-name {
-    font-size: 14px;
-    color: #999;
+    font-size: var(--wk-text-size-sm, 14px);
+    color: var(--wk-text-tertiary);
 }
 
 .wk-mergeforwardmessagelist-content-msg-info-first-time {
-    font-size: 12px;
-    color: #999;
+    font-size: var(--wk-text-size-xs, 12px);
+    color: var(--wk-text-tertiary);
 }
 
 .wk-mergeforwardmessagelist-content-msg-info-second-msgcontent {
-    padding: 0px 15px;
-    margin-top: 5px;
+    padding: 0 var(--wk-sp-4, 16px);
+    margin-top: var(--wk-sp-1, 4px);
+}
+
+/* ── file attachment ── */
+.wk-mergeforward-file {
+    display: flex;
+    align-items: center;
+    padding: var(--wk-sp-2, 8px) var(--wk-sp-3, 12px);
+    background: var(--semi-color-fill-0, #f5f5f5);
+    border-radius: var(--wk-r-sm, 6px);
+    gap: var(--wk-sp-2-5, 10px);
+    max-width: 300px;
+    cursor: default;
+}
+
+.wk-mergeforward-file--clickable {
+    cursor: pointer;
+}
+
+.wk-mergeforward-file__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--wk-r-sm, 6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wk-mergeforward-file__icon-label {
+    color: var(--wk-color-white, #fff);
+    font-size: var(--wk-text-size-xs, 11px);
+    font-weight: 600;
+}
+
+.wk-mergeforward-file__info {
+    overflow: hidden;
+}
+
+.wk-mergeforward-file__name {
+    font-size: var(--wk-text-size-sm, 13px);
+    color: var(--wk-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wk-mergeforward-file__size {
+    font-size: var(--wk-text-size-xs, 11px);
+    color: var(--wk-text-tertiary);
 }

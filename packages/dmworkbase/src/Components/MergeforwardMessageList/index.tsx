@@ -1,4 +1,4 @@
-import { Channel, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageContentType } from "wukongimjssdk";
+import { Channel, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageContentType, MessageText } from "wukongimjssdk";
 import React from "react";
 import { Component, ReactNode } from "react";
 import { ImageContent } from "../../Messages/Image";
@@ -10,6 +10,7 @@ import WKAvatar, { isBot } from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import WKViewQueueHeader from "../WKViewQueueHeader";
 import WKApp from "../../App";
+import MarkdownContent from "../../Messages/Text/MarkdownContent";
 
 import "./index.css"
 
@@ -90,13 +91,15 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
 
     getFileExtColor(extension: string): string {
         const ext = (extension || "").toLowerCase()
+        // CSS 变量在 JS 里取运行时值
+        const style = getComputedStyle(document.documentElement)
         switch (ext) {
-            case "pdf": return "#EF4444"
-            case "doc": case "docx": return "#3B82F6"
-            case "xls": case "xlsx": return "#22C55E"
-            case "ppt": case "pptx": return "#F97316"
-            case "zip": case "rar": case "7z": return "#EAB308"
-            default: return "#9CA3AF"
+            case "pdf": return style.getPropertyValue("--wk-color-danger").trim() || "#EF4444"
+            case "doc": case "docx": return style.getPropertyValue("--wk-color-info").trim() || "#3B82F6"
+            case "xls": case "xlsx": return style.getPropertyValue("--wk-color-success").trim() || "#22C55E"
+            case "ppt": case "pptx": return style.getPropertyValue("--wk-color-warning").trim() || "#F97316"
+            case "zip": case "rar": case "7z": return style.getPropertyValue("--wk-color-caution").trim() || "#EAB308"
+            default: return style.getPropertyValue("--wk-text-tertiary").trim() || "#9CA3AF"
         }
     }
 
@@ -109,39 +112,45 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
     }
 
     getMsgContent(msg:Message) {
+        if (msg.contentType === MessageContentType.text) {
+            const text = (msg.content as MessageText).text ?? ""
+            return <MarkdownContent content={text} isSend={false} />
+        }
         if(msg.contentType === MessageContentType.image) {
            const imageContent = msg.content as ImageContent
            const size = this.imageScale(imageContent.width,imageContent.height)
 
-           return <img style={{"width":`${size.width}px`,"height":`${size.height}px`,borderRadius:"4px"}} src={this.getImageSrc(imageContent)}>
+           return <img style={{"width":`${size.width}px`,"height":`${size.height}px`,borderRadius:"var(--wk-r-xs, 4px)"}} src={this.getImageSrc(imageContent)}>
            </img>
         }
         if (msg.contentType === MessageContentTypeConst.file) {
             const fileContent = msg.content as FileContent
             const url = this.getFileURL(fileContent)
             const ext = (fileContent.extension || "").toUpperCase()
-            const color = this.getFileExtColor(fileContent.extension)
+            const iconBg = this.getFileExtColor(fileContent.extension)
             return (
-                <div style={{ display: "flex", alignItems: "center", padding: "8px 12px", background: "#f5f5f5", borderRadius: "6px", gap: "10px", maxWidth: "300px", cursor: url ? "pointer" : "default" }}
-                     onClick={() => {
-                         if (url && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/"))) {
-                             const a = document.createElement("a")
-                             a.href = url
-                             a.download = fileContent.name || "file"
-                             a.target = "_blank"
-                             document.body.appendChild(a)
-                             a.click()
-                             document.body.removeChild(a)
-                         }
-                     }}>
-                    <div style={{ width: "36px", height: "36px", borderRadius: "6px", backgroundColor: color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <span style={{ color: "#fff", fontSize: "11px", fontWeight: 600 }}>{ext || "FILE"}</span>
+                <div
+                    className={`wk-mergeforward-file${url ? " wk-mergeforward-file--clickable" : ""}`}
+                    onClick={() => {
+                        if (url && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/"))) {
+                            const a = document.createElement("a")
+                            a.href = url
+                            a.download = fileContent.name || "file"
+                            a.target = "_blank"
+                            document.body.appendChild(a)
+                            a.click()
+                            document.body.removeChild(a)
+                        }
+                    }}
+                >
+                    <div className="wk-mergeforward-file__icon" style={{ backgroundColor: iconBg }}>
+                        <span className="wk-mergeforward-file__icon-label">{ext || "FILE"}</span>
                     </div>
-                    <div style={{ overflow: "hidden" }}>
-                        <div style={{ fontSize: "13px", color: "#333", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={fileContent.name}>
+                    <div className="wk-mergeforward-file__info">
+                        <div className="wk-mergeforward-file__name" title={fileContent.name}>
                             {fileContent.name || "unknown file"}
                         </div>
-                        <div style={{ fontSize: "11px", color: "#999" }}>
+                        <div className="wk-mergeforward-file__size">
                             {this.formatFileSize(fileContent.size)}
                         </div>
                     </div>
@@ -174,7 +183,7 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
                                 showAvatar = mergeforwardContent.msgs[i-1].fromUID !== m.fromUID
                             }
                             return <div className="wk-mergeforwardmessagelist-content-msg" key={m.messageID}>
-                                <div className="wk-mergeforwardmessagelist-content-msg-avatar" style={{ "width": "40px", "height": "40px", "borderRadius": "50%" }}>
+                                <div className="wk-mergeforwardmessagelist-content-msg-avatar">
                                     {
                                         showAvatar?<WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)} style={{ "width": "40px", "height": "40px", "borderRadius": "50%" }}></WKAvatar>:undefined
                                     }

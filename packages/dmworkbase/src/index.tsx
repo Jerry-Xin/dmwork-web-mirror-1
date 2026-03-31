@@ -74,3 +74,5 @@ export type { ErrorBoundaryProps, ErrorFallbackProps } from "./Components/ErrorB
 export { default as ConnectionStatus } from "./Components/ConnectionStatus"
 export { default as BotStore } from "./Pages/BotStore"
 export { default as GroupCard } from "./Components/GroupCard"
+export { default as NavRail } from "./Components/NavRail"
+export type { NavRailProps, NavRailItem } from "./Components/NavRail"

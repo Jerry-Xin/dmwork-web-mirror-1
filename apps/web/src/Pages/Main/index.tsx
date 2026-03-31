@@ -5,10 +5,9 @@ import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
 import { TabNormalScreen } from "./tab_normal_screen";
 import { Space, SpaceService } from "@dmwork/base";
-import { SpaceCreate, ConnectionStatus, JoinSpaceModalConnected, ActionListItem, SpaceItem, WKButton } from "@dmwork/base";
+import { SpaceCreate, ConnectionStatus, JoinSpaceModalConnected, NavRail } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
-import { IconSearch, IconPlus, IconLink } from "@douyinfe/semi-icons";
-import classNames from "classnames";
+
 
 
 export interface MainContentLeftProps {
@@ -97,77 +96,23 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
 
     render() {
         const { vm } = this.props
-        const { allSpaces, showSpaceDropdown } = this.state;
+        const { allSpaces } = this.state;
         const currentSpaceId = WKApp.shared.currentSpaceId;
-        const currentSpace = allSpaces.find(s => s.space_id === currentSpaceId);
-        const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
 
-        return <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', borderRight: '1px solid var(--wk-border-default)' }}>
-            {/* 全局顶栏 */}
-            <div className="wk-global-topbar">
-                <div className="wk-global-topbar-space" style={{ position: 'relative' }}
-                    onClick={() => this.setState(prev => ({ showSpaceDropdown: !prev.showSpaceDropdown }))}>
-                    {currentSpace && (
-                        <>
-                            <span className="wk-global-topbar-space-icon" style={{
-                                backgroundColor: colors[currentSpace.name.charCodeAt(0) % colors.length]
-                            }}>{currentSpace.name.charAt(0)}</span>
-                            <span className="wk-global-topbar-space-name">{currentSpace.name}</span>
-                            <span style={{ fontSize: 12, color: '#999', marginLeft: 4 }}>▾</span>
-                        </>
-                    )}
-                    {showSpaceDropdown && (
-                        <div className="wk-global-topbar-dropdown" onClick={e => e.stopPropagation()}>
-                            {allSpaces.map(space => (
-                                <SpaceItem
-                                    key={space.space_id}
-                                    name={space.name}
-                                    logo={space.logo}
-                                    meta={space.max_users > 0
-                                        ? `${space.member_count}/${space.max_users} 人`
-                                        : `${space.member_count} 人`}
-                                    selected={space.space_id === currentSpaceId}
-                                    onClick={() => {
-                                        WKApp.shared.currentSpaceId = space.space_id;
-                                        localStorage.setItem("currentSpaceId", space.space_id);
-                                        WKApp.shared.notifyListener();
-                                        WKApp.mittBus.emit("space-changed", space);
-                                        this.setState({ showSpaceDropdown: false });
-                                    }}
-                                    actions={
-                                        <WKButton
-                                            variant="ghost"
-                                            size="sm"
-                                            iconOnly
-                                            icon={<IconLink />}
-                                            title="复制邀请链接"
-                                            onClick={(e) => this.handleCopyInviteLink(space.space_id, e)}
-                                        />
-                                    }
-                                />
-                            ))}
-                            <div className="wk-global-topbar-dropdown-divider"></div>
-                            <ActionListItem
-                                icon={<IconSearch />}
-                                label="加入 Space"
-                                desc="通过邀请码或链接加入"
-                                variant="join"
-                                onClick={() => this.setState({ showSpaceDropdown: false, showJoinSpace: true })}
-                            />
-                            <ActionListItem
-                                icon={<IconPlus />}
-                                label="创建 Space"
-                                desc="新建你自己的工作空间"
-                                variant="create"
-                                onClick={() => this.setState({ showSpaceDropdown: false, showSpaceCreate: true })}
-                            />
-                        </div>
-                    )}
-                </div>
-                <ConnectionStatus />
-            </div>
-            {/* 路由内容 */}
-            <div style={{ flex: 1, overflow: 'hidden' }}>
+        return <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+            {/* NavRail — 替换原 wk-global-topbar */}
+            <NavRail
+                spaces={allSpaces}
+                currentSpaceId={currentSpaceId}
+                activeItem="messages"
+                userName={WKApp.loginInfo.name}
+                onSpaceSelect={this.handleSpaceSelected}
+                onCopyInviteLink={this.handleCopyInviteLink}
+                onJoinSpace={() => this.setState({ showJoinSpace: true })}
+                onCreateSpace={() => this.setState({ showSpaceCreate: true })}
+            />
+            {/* 路由内容（Sidebar + Main） */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: '1px solid var(--wk-border-default)' }}>
                 {vm.historyRoutePaths.map((routePath, i) => {
                     const Cpt = WKApp.route.get(routePath)
                     return <div key={i} style={{ "display": routePath === vm.currentMenus?.routePath ? "block" : "none", "width": "100%", "height": "100%" }}>

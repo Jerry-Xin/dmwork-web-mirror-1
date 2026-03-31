@@ -39,7 +39,7 @@
 .wk-mergeforwardmessagelist-content-msg-avatar {
     width: 40px;
     height: 40px;
-    border-radius: 50%; /* L1-b: 无 --wk-r-circle Token，待 Will 确认 */
+    border-radius: var(--wk-radius-full, 50%);
     flex-shrink: 0;
     overflow: hidden;
 }
@@ -104,7 +104,7 @@
     flex-shrink: 0;
 }
 
-/* L1-b: border-radius: 50% 无对应 Token，等 Will 确认是否新增 --wk-r-circle */
+
 
 .wk-mergeforward-file__icon-label {
     color: var(--wk-color-white, #fff);

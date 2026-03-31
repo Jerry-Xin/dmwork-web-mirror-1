@@ -18,6 +18,7 @@ interface NavSpaceSwitcherState {
     open: boolean;
 }
 
+
 const SPACE_COLOR_TOKENS = [
     '--wk-space-color-1',
     '--wk-space-color-2',
@@ -30,7 +31,9 @@ const SPACE_COLOR_TOKENS = [
 const SPACE_COLOR_FALLBACKS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
 
 export function getSpaceColor(name: string): string {
-    const idx = name.charCodeAt(0) % SPACE_COLOR_TOKENS.length;
+    // 累加所有字符 charCode，避免同首字母 Space 颜色重复
+    const sum = name.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    const idx = sum % SPACE_COLOR_TOKENS.length;
     const token = SPACE_COLOR_TOKENS[idx];
     const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
     return value || SPACE_COLOR_FALLBACKS[idx];
@@ -41,6 +44,20 @@ export default class NavSpaceSwitcher extends Component<NavSpaceSwitcherProps, N
         super(props);
         this.state = { open: false };
     }
+
+    componentDidMount() {
+        document.addEventListener("keydown", this.handleKeyDown);
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener("keydown", this.handleKeyDown);
+    }
+
+    private handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape" && this.state.open) {
+            this.handleClose();
+        }
+    };
 
     private handleToggle = () => {
         this.setState(prev => ({ open: !prev.open }));

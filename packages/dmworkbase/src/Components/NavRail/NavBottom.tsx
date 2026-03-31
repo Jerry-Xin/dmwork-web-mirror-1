@@ -27,10 +27,7 @@ export default function NavBottom({ userName, onSettingsClick, onAvatarClick }: 
                 className="wk-navrail__item"
                 title="设置"
                 aria-label="设置"
-                onClick={() => {
-                    console.log("[NavRail] settings clicked");
-                    onSettingsClick?.();
-                }}
+                onClick={onSettingsClick}
             >
                 <IconSettings />
             </button>

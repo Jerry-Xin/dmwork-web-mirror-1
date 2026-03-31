@@ -110,6 +110,13 @@ export class MainContentLeft extends Component<MainContentLeftProps, MainContent
                 onCopyInviteLink={this.handleCopyInviteLink}
                 onJoinSpace={() => this.setState({ showJoinSpace: true })}
                 onCreateSpace={() => this.setState({ showSpaceCreate: true })}
+                onSettingsClick={() => {
+                    // TODO: 接入设置页（待设置路由实现后替换）
+                    WKApp.routeLeft.setPush?.(undefined as any);
+                }}
+                onAvatarClick={() => {
+                    // TODO: 接入个人资料页（待实现）
+                }}
             />
             {/* 路由内容（Sidebar + Main） */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: '1px solid var(--wk-border-default)' }}>

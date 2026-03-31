@@ -104,12 +104,3 @@
     font-size: var(--wk-text-size-sm, 13px);
     color: var(--wk-text-tertiary);
 }
-
-.wk-join-space-modal__full-badge {
-    background: var(--wk-color-danger-bg, rgba(229,62,62,0.1));
-    color: var(--wk-color-danger, #e53e3e);
-    font-size: var(--wk-text-size-xs, 12px);
-    font-weight: 500;
-    padding: var(--wk-sp-0-5, 2px) var(--wk-sp-2-5, 10px);
-    border-radius: var(--wk-r-full, 20px);
-}

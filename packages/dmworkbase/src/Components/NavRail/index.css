@@ -21,6 +21,14 @@
     margin-bottom: var(--wk-sp-4, 16px);
 }
 
+/* SpaceAvatar 在 NavRail 里统一 34×34 */
+.wk-navrail__space-avatar {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: var(--wk-r-md, 10px) !important;
+    font-size: var(--wk-text-size-md, 14px) !important;
+}
+
 .wk-navrail__space-btn {
     background: none;
     border: none;

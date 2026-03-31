@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Space } from "wukongimjssdk";
 import SpaceItem from "../SpaceItem";
+import SpaceAvatar from "../SpaceAvatar";
 import ActionListItem from "../ActionListItem";
 import WKButton from "../WKButton";
 import { IconSearch, IconPlus, IconLink } from "@douyinfe/semi-icons";
@@ -19,25 +20,7 @@ interface NavSpaceSwitcherState {
 }
 
 
-const SPACE_COLOR_TOKENS = [
-    '--wk-space-color-1',
-    '--wk-space-color-2',
-    '--wk-space-color-3',
-    '--wk-space-color-4',
-    '--wk-space-color-5',
-    '--wk-space-color-6',
-];
 
-const SPACE_COLOR_FALLBACKS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
-
-export function getSpaceColor(name: string): string {
-    // 累加所有字符 charCode，避免同首字母 Space 颜色重复
-    const sum = name.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    const idx = sum % SPACE_COLOR_TOKENS.length;
-    const token = SPACE_COLOR_TOKENS[idx];
-    const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
-    return value || SPACE_COLOR_FALLBACKS[idx];
-}
 
 export default class NavSpaceSwitcher extends Component<NavSpaceSwitcherProps, NavSpaceSwitcherState> {
     constructor(props: NavSpaceSwitcherProps) {
@@ -81,12 +64,7 @@ export default class NavSpaceSwitcher extends Component<NavSpaceSwitcherProps, N
                     onClick={this.handleToggle}
                 >
                     {current ? (
-                        <span
-                            className="wk-navrail__space-icon"
-                            style={{ background: getSpaceColor(current.name) }}
-                        >
-                            {current.name.charAt(0).toUpperCase()}
-                        </span>
+                        <SpaceAvatar name={current.name} logo={current.logo} size="md" className="wk-navrail__space-avatar" />
                     ) : (
                         <span className="wk-navrail__space-icon wk-navrail__space-icon--empty">?</span>
                     )}

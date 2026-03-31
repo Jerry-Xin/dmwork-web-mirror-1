@@ -1,5 +1,6 @@
 import React from "react";
 import { Badge } from "@douyinfe/semi-ui";
+import WKApp from "../../App";
 
 export interface NavBottomProps {
     hasNewVersion?: boolean;
@@ -45,6 +46,9 @@ export default function NavBottom({
                 title="我的信息"
                 aria-label="我的信息"
                 onClick={onAvatarClick}
+                style={{
+                    backgroundImage: `url(${WKApp.shared.avatarUser(WKApp.loginInfo.uid || "")})`,
+                }}
             />
         </div>
     );

@@ -57,8 +57,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 🎨 Stylelint (只检查新增/修改的 CSS)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
         run: |
-          BASE=${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+          BASE=$BASE_SHA
           FILES=$(git diff "$BASE"...HEAD --name-only --diff-filter=ACM | grep '\.css$' || true)
           if [ -z "$FILES" ]; then
             echo "✅ 没有 CSS 文件变更，跳过检查"
@@ -78,8 +80,10 @@ jobs:
           fetch-depth: 0
 
       - name: 📖 检查新增组件是否有 Story
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
         run: |
-          BASE=${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+          BASE=$BASE_SHA
           MISSING=""
           while IFS= read -r file; do
             [ -z "$file" ] && continue

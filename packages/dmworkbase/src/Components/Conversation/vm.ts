@@ -4,7 +4,7 @@ import { SyncMessageOptions } from "../../Service/DataSource/DataProvider";
 import { MessageWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
 import { animateScroll, scroller } from 'react-scroll';
-import { EndpointID, MessageContentTypeConst, OrderFactor, ChannelTypeCommunityTopic } from "../../Service/Const";
+import { EndpointID, MessageContentTypeConst, OrderFactor } from "../../Service/Const";
 import moment from 'moment'
 import { TimeContent } from "../../Messages/Time";
 import { HistorySplitContent } from "../../Messages/HistorySplit";
@@ -385,7 +385,7 @@ export default class ConversationVM extends ProviderListener {
             }
         }, {})
 
-        if (this.channel.channelType === ChannelTypeGroup || this.channel.channelType === ChannelTypeCommunityTopic) {
+        if (this.channel.channelType === ChannelTypeGroup) {
 
             // 加载频道信息
             this.channelInfo = WKSDK.shared().channelManager.getChannelInfo(this.channel)
@@ -479,7 +479,7 @@ export default class ConversationVM extends ProviderListener {
 
     // 加载频道信息完成
     async loadChannelInfoFinished() {
-        if (this.channel.channelType !== ChannelTypeGroup && this.channel.channelType !== ChannelTypeCommunityTopic) {
+        if (this.channel.channelType !== ChannelTypeGroup) {
             return
         }
         this.reloadSubscribers()

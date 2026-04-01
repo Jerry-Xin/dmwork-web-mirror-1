@@ -10,7 +10,7 @@ import classNames from "classnames";
 import "./index.css"
 import { Badge, Toast } from "@douyinfe/semi-ui";
 import WKApp from "../../App";
-import { EndpointID, ChannelTypeCommunityTopic } from "../../Service/Const";
+import { EndpointID } from "../../Service/Const";
 import ContextMenus, { ContextMenusContext } from "../ContextMenus";
 import { ChannelSettingManager } from "../../Service/ChannelSetting";
 import { TypingListener, TypingManager } from "../../Service/TypingManager";
@@ -37,8 +37,6 @@ export default class ConversationList extends Component<ConversationListProps, C
     channelListener!: ChannelInfoListener
     contextMenusContext!: ContextMenusContext
     typingListener!: TypingListener
-    // 记录已发起 fetchChannelInfo 的 channelID，避免 render 中重复请求
-    private _fetchingChannelIds: Set<string> = new Set()
     constructor(props: ConversationListProps) {
         super(props)
 
@@ -148,35 +146,6 @@ export default class ConversationList extends Component<ConversationListProps, C
         return false
     }
 
-    // 获取话题的父群名称
-    getParentGroupName(conversationWrap: ConversationWrap): string | undefined {
-        if (conversationWrap.channel.channelType !== ChannelTypeCommunityTopic) {
-            return undefined
-        }
-        // 从 remoteExtra 或 channelInfo.orgData 中获取 parentChannelID
-        let parentChannelID = (conversationWrap.remoteExtra as any)?.parent_channel_id
-        if (!parentChannelID && conversationWrap.channelInfo?.orgData) {
-            parentChannelID = conversationWrap.channelInfo.orgData.parent_channel_id
-        }
-        if (!parentChannelID) {
-            return undefined
-        }
-        const parentChannel = new Channel(parentChannelID, ChannelTypeGroup)
-        const parentInfo = WKSDK.shared().channelManager.getChannelInfo(parentChannel)
-        if (!parentInfo) {
-            // 防止 render 中重复发起请求
-            const fetchKey = parentChannel.getChannelKey()
-            if (!this._fetchingChannelIds.has(fetchKey)) {
-                this._fetchingChannelIds.add(fetchKey)
-                WKSDK.shared().channelManager.fetchChannelInfo(parentChannel).finally(() => {
-                    this._fetchingChannelIds.delete(fetchKey) // fetch 完成后释放，允许重试
-                })
-            }
-            return undefined
-        }
-        return parentInfo.title
-    }
-
     conversationItem(conversationWrap: ConversationWrap) {
         
 
@@ -229,15 +198,6 @@ export default class ConversationList extends Component<ConversationListProps, C
                         </div>
 
                     </div>
-                    {/* 话题：显示来自哪个群 */}
-                    {(() => {
-                        const parentName = conversationWrap.channel.channelType === ChannelTypeCommunityTopic ? this.getParentGroupName(conversationWrap) : undefined
-                        return parentName ? (
-                            <div className="wk-conversationlist-item-topic-parent" style={{ fontSize: '12px', color: 'var(--semi-color-text-2)', lineHeight: '16px' }}>
-                                来自 {parentName}
-                            </div>
-                        ) : null
-                    })()}
                     <div className="wk-conversationlist-item-right-second-line">
                         <div className="wk-conversationlist-item-lastmsg">
                             {

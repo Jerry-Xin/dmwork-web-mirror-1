@@ -20,7 +20,6 @@ import {
   Message,
   MessageContentType,
 } from "wukongimjssdk";
-import { ChannelTypeCommunityTopic } from "./Service/Const";
 import { IConversationProvider } from "./Service/DataSource/DataProvider";
 import MessageManager from "./Service/MessageManager";
 import { DefaultEmojiService, EmojiService } from "./Service/EmojiService";
@@ -468,7 +467,7 @@ export default class WKApp extends ProviderListener {
       }
       if (!uid) uid = channel.channelID; // fallback
       return `${baseURL}users/${uid}/avatar?v=${avatarTag}`;
-    } else if (channel.channelType === ChannelTypeGroup || channel.channelType === ChannelTypeCommunityTopic) {
+    } else if (channel.channelType === ChannelTypeGroup) {
       return `${baseURL}groups/${channel.channelID}/avatar?v=${avatarTag}`;
     }
     return "";

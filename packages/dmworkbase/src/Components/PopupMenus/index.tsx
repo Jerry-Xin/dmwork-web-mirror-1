@@ -42,12 +42,6 @@ export default class PopupMenus extends Component<any> {
                     !hiddenRevoke ? (<div title="撤回" className={clsName("wk-popupmenus-item", "wk-popupmenus-revoke")} onClick={onMessageRevoke}>
                     </div>) : null
                 }
-                {/* 创建话题 */}
-                {
-                    this.props.onCreateThread ? (<div title="创建话题" className={clsName("wk-popupmenus-item", "wk-popupmenus-thread")} onClick={this.props.onCreateThread} style={{ cursor: 'pointer', fontSize: '12px', padding: '4px 8px' }}>
-                        话题
-                    </div>) : null
-                }
 
             </div>
         );

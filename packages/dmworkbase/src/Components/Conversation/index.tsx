@@ -6,7 +6,7 @@ import "./index.css"
 import { MessageWrap } from "../../Service/Model";
 import WKApp from "../../App";
 import { RevokeCell } from "../../Messages/Revoke";
-import { MessageContentTypeConst, ChannelTypeCommunityTopic } from "../../Service/Const";
+import { MessageContentTypeConst } from "../../Service/Const";
 import ConversationContext from "./context";
 import MessageInput, { MentionModel, MessageInputContext } from "../MessageInput";
 import { BotCommand } from "../SlashCommandMenu";
@@ -15,7 +15,7 @@ import classNames from "classnames";
 import WKAvatar from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import { IconClose, IconEdit, IconReply } from "@douyinfe/semi-icons";
-import { Toast, Spin, Modal, Input } from "@douyinfe/semi-ui";
+import { Toast, Spin } from "@douyinfe/semi-ui";
 import { FlameMessageCell } from "../../Messages/Flame";
 
 export interface ConversationProps {
@@ -38,17 +38,10 @@ export class Conversation extends Component<ConversationProps> implements Conver
     updateBrowseToMessageSeqAndReminderDoneing: boolean = false
     private _dragFileCallback?: (file: File) => void
     private _beforeUnloadHandler: () => void
-    // 创建话题相关状态（存入 React state 确保渲染可靠性）
-    // 记录已发起 fetchChannelInfo 的 channelID，避免 render 中重复请求
-    private _fetchingChannelIds: Set<string> = new Set()
 
     constructor(props: any) {
         super(props)
         this.state = {
-            createThreadVisible: false,
-            createThreadTitle: '',
-            createThreadMessageID: '',
-            createThreadLoading: false,
         }
         this._beforeUnloadHandler = () => {
             // Use sendBeacon for reliable delivery during page unload
@@ -152,7 +145,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
     showUser(uid: string) {
         let fromChannel: Channel | undefined
         let vercode: string | undefined
-        if (this.vm.channel.channelType === ChannelTypeGroup || this.vm.channel.channelType === ChannelTypeCommunityTopic) {
+        if (this.vm.channel.channelType === ChannelTypeGroup) {
             fromChannel = this.vm.channel
             const subscriber = this.vm.subscriberWithUID(uid)
             if (subscriber?.orgData?.vercode) {
@@ -511,44 +504,6 @@ export class Conversation extends Component<ConversationProps> implements Conver
         return visiableMessages
     }
 
-    // 打开创建话题弹窗
-    showCreateThreadModal(messageID: string) {
-        if (!messageID) {
-            Toast.error('消息尚未发送完成')
-            return
-        }
-        this.setState({ createThreadMessageID: messageID, createThreadTitle: '', createThreadVisible: true })
-    }
-
-    // 提交创建话题
-    async submitCreateThread() {
-        const { createThreadLoading, createThreadTitle, createThreadMessageID } = this.state as any
-        if (createThreadLoading) return
-        if (!createThreadTitle?.trim()) {
-            Toast.error('请输入话题标题')
-            return
-        }
-        this.setState({ createThreadLoading: true })
-        try {
-            const resp = await WKApp.apiClient.post('thread/create', {
-                parent_channel_id: this.props.channel.channelID,
-                parent_channel_type: this.props.channel.channelType,
-                root_message_id: createThreadMessageID,
-                title: createThreadTitle.trim(),
-            })
-            this.setState({ createThreadVisible: false, createThreadLoading: false })
-            if (!resp?.channel_id) {
-                Toast.error('创建话题失败')
-                return
-            }
-            // 跳转到话题会话
-            WKApp.endpoints.showConversation(new Channel(resp.channel_id, ChannelTypeCommunityTopic))
-        } catch (e) {
-            this.setState({ createThreadLoading: false })
-            Toast.error('创建话题失败')
-        }
-    }
-
     chatToolbarUI() {
         const toolbars = WKApp.endpoints.chatToolbarsWithKey(this)
         return <ul className="wk-conversation-chattoolbars">
@@ -592,65 +547,12 @@ export class Conversation extends Component<ConversationProps> implements Conver
             }
         }
 
-        // 话题面包屑：获取父群信息
-        let parentGroupName: string | undefined
-        let parentChannelID: string | undefined
-        let parentChannelType: number | undefined
-        if (channel.channelType === ChannelTypeCommunityTopic) {
-            const topicInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
-            if (topicInfo?.orgData) {
-                parentChannelID = topicInfo.orgData.parent_channel_id
-                parentChannelType = topicInfo.orgData.parent_channel_type
-            }
-            if (parentChannelID) {
-                const parentChannel = new Channel(parentChannelID, parentChannelType ?? ChannelTypeGroup)
-                const parentInfo = WKSDK.shared().channelManager.getChannelInfo(parentChannel)
-                if (parentInfo) {
-                    parentGroupName = parentInfo.title
-                } else {
-                    // 防止 render 中重复发起请求
-                    const fetchKey = parentChannel.getChannelKey()
-                    if (!this._fetchingChannelIds.has(fetchKey)) {
-                        this._fetchingChannelIds.add(fetchKey)
-                        WKSDK.shared().channelManager.fetchChannelInfo(parentChannel).finally(() => {
-                            this._fetchingChannelIds.delete(fetchKey) // fetch 完成后释放，允许重试
-                        })
-                    }
-                }
-            }
-        }
-
         return <Provider create={() => {
             this.vm = new ConversationVM(channel, initLocateMessageSeq)
             return this.vm
         }} render={(vm: ConversationVM) => {
             return <>
                 <div className={classNames("wk-conversation", vm.fileDragEnter ? "wk-conversation-dragover" : undefined, vm.currentReplyMessage ? "wk-conversation-hasreply" : undefined)} style={{ "background": chatBg ? `url(${chatBg}) rgb(245, 247, 249)` : undefined }}>
-                    {/* 话题面包屑导航 */}
-                    {channel.channelType === ChannelTypeCommunityTopic && (
-                        <div className="wk-conversation-thread-breadcrumb" style={{
-                            padding: '8px 16px',
-                            fontSize: '14px',
-                            color: 'var(--semi-color-text-2)',
-                            borderBottom: '1px solid var(--semi-color-border)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                        }}>
-                            <span
-                                style={{ cursor: 'pointer', color: 'var(--semi-color-primary)' }}
-                                onClick={() => {
-                                    if (parentChannelID) {
-                                        WKApp.endpoints.showConversation(new Channel(parentChannelID, parentChannelType ?? ChannelTypeGroup))
-                                    }
-                                }}
-                            >
-                                ← {parentGroupName || '父群'}
-                            </span>
-                            <span style={{ color: 'var(--semi-color-text-3)' }}>›</span>
-                            <span>{channelInfo?.title || '话题'}</span>
-                        </div>
-                    )}
 
                     <div onDragOver={(event) => {
                         event.preventDefault()
@@ -794,38 +696,17 @@ export class Conversation extends Component<ConversationProps> implements Conver
                         </div>
                     </div>
                 </div>
-                {/* 创建话题弹窗 */}
-                <Modal
-                    title="创建话题"
-                    visible={(this.state as any).createThreadVisible}
-                    onOk={() => this.submitCreateThread()}
-                    onCancel={() => this.setState({ createThreadVisible: false })}
-                    okText="创建"
-                    cancelText="取消"
-                    confirmLoading={(this.state as any).createThreadLoading}
-                >
-                    <Input
-                        placeholder="请输入话题标题"
-                        value={(this.state as any).createThreadTitle}
-                        onChange={(v: string) => this.setState({ createThreadTitle: v })}
-                    />
-                </Modal>
                 <ContextMenus onContext={(ctx) => {
                     this.contextMenusContext = ctx
-                }} menus={vm.selectMessage ? (() => {
-                    const menus = WKApp.endpoints.messageContextMenus(vm.selectMessage!, this).map((m) => ({
-                        title: m.title, onClick: () => { if (m.onClick) m.onClick() }
-                    }))
-                    // 群聊中添加"创建话题"菜单项
-                    if (channel.channelType === ChannelTypeGroup && vm.selectMessage) {
-                        menus.push({
-                            title: '创建话题', onClick: () => {
-                                this.showCreateThreadModal(vm.selectMessage!.messageID)
+                }} menus={vm.selectMessage ? WKApp.endpoints.messageContextMenus(vm.selectMessage, this).map((menus) => {
+                    return {
+                        title: menus.title, onClick: () => {
+                            if (menus.onClick) {
+                                menus.onClick()
                             }
-                        })
+                        }
                     }
-                    return menus
-                })() : []}></ContextMenus>
+                }) : []}></ContextMenus>
                 <ContextMenus onContext={(ctx) => {
                     this.avatarMenusContext = ctx
                 }} menus={[{

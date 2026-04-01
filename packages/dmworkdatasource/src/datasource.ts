@@ -1,4 +1,4 @@
-import { ChannelQrcodeResp, Contacts, IChannelDataSource, ICommonDataSource, WKApp, RequestConfig, GroupRole, hasSpacePrefix, ChannelTypeCommunityTopic } from "@dmwork/base";
+import { ChannelQrcodeResp, Contacts, IChannelDataSource, ICommonDataSource, WKApp, RequestConfig, GroupRole, hasSpacePrefix } from "@dmwork/base";
 import { Channel, ChannelInfo, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageContentType,ConversationExtra,Subscriber } from "wukongimjssdk";
 
 const MAX_GROUP_LIST_LIMIT = 100000;
@@ -123,7 +123,7 @@ export class ChannelDataSource implements IChannelDataSource {
     }
 
     async updateSetting(setting: any, channel: Channel): Promise<void> {
-        if (channel.channelType === ChannelTypeGroup || channel.channelType === ChannelTypeCommunityTopic) {
+        if (channel.channelType === ChannelTypeGroup) {
             return WKApp.apiClient.put(`groups/${channel.channelID}/setting`, setting)
         } else if (channel.channelType === ChannelTypePerson) { // 个人信息
             let uid = channel.channelID;

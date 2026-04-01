@@ -1,0 +1,236 @@
+/* ── NavRail wrapper ── */
+.wk-navrail {
+    width: 60px;
+    flex-shrink: 0;
+    height: 100%;
+    background: var(--wk-bg-deep);
+    border-right: 1px solid var(--wk-border-subtle);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--wk-sp-4, 16px) 0;
+    position: relative;
+    z-index: 10;
+    overflow: visible; /* dropdown 需要溢出 */
+}
+
+/* ── Space switcher ── */
+.wk-navrail__switcher {
+    position: relative;
+    flex-shrink: 0;
+    margin-bottom: var(--wk-sp-4, 16px);
+}
+
+/* SpaceAvatar 在 NavRail 里统一 34×34 */
+.wk-navrail__space-avatar {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: var(--wk-r-md, 10px) !important;
+    font-size: var(--wk-text-size-md, 14px) !important;
+}
+
+.wk-navrail__space-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--wk-r-md, 10px);
+    transition: transform var(--wk-dur-fast, 200ms) var(--wk-ease, cubic-bezier(0.16,1,0.3,1));
+}
+
+.wk-navrail__space-btn:hover {
+    transform: scale(1.08);
+}
+
+.wk-navrail__space-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--wk-r-md, 10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--wk-text-size-md, 14px);
+    font-weight: 700;
+    color: var(--wk-color-white, #fff);
+    letter-spacing: -0.01em;
+}
+
+.wk-navrail__space-icon--empty {
+    background: var(--wk-bg-elevated);
+    color: var(--wk-text-tertiary);
+}
+
+/* ── Dropdown ── */
+.wk-navrail__dropdown-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+}
+
+.wk-navrail__dropdown {
+    position: absolute;
+    left: calc(100% + var(--wk-sp-2, 8px));
+    top: 0;
+    width: 240px;
+    background: var(--wk-bg-elevated);
+    border: 1px solid var(--wk-border-default);
+    border-radius: var(--wk-r-md, 10px);
+    box-shadow: var(--wk-shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.24));
+    z-index: 101;
+    overflow: hidden;
+    padding: var(--wk-sp-1, 4px) 0;
+}
+
+.wk-navrail__dropdown-divider {
+    height: 1px;
+    background: var(--wk-border-subtle);
+    margin: var(--wk-sp-1, 4px) 0;
+}
+
+/* ── Nav items (middle) ── */
+.wk-navrail__items {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--wk-sp-0-5, 2px);
+    flex: 1;
+    justify-content: flex-start; /* 图标从顶部堆叠，不撑满 */
+}
+
+/* ── NavItem button ── */
+.wk-navrail__item {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--wk-r-md, 10px);
+    border: none;
+    background: transparent;
+    color: var(--wk-text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--wk-dur-fast, 200ms) var(--wk-ease, cubic-bezier(0.16,1,0.3,1)),
+                color var(--wk-dur-fast, 200ms) var(--wk-ease, cubic-bezier(0.16,1,0.3,1));
+}
+
+.wk-navrail__item:hover {
+    color: var(--wk-text-secondary);
+    background: var(--wk-bg-hover);
+}
+
+.wk-navrail__item--active {
+    color: var(--wk-text-primary);
+    background: var(--wk-bg-elevated);
+}
+
+/* active 左侧指示条 */
+.wk-navrail__item--active::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 18px;
+    border-radius: 0 var(--wk-r-xs, 4px) var(--wk-r-xs, 4px) 0;
+    background: var(--wk-brand-gradient);
+}
+
+/* ── Badge ── */
+.wk-navrail__badge {
+    position: absolute;
+    top: var(--wk-sp-1, 4px);
+    right: var(--wk-sp-1, 4px);
+    min-width: 16px;
+    height: 16px;
+    border-radius: var(--wk-r-full, 9999px);
+    background: var(--wk-color-danger, #FF5C72);
+    color: var(--wk-color-white, #fff);
+    font-size: var(--wk-text-size-badge, 9px);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 var(--wk-sp-0-5, 2px);
+    border: 2px solid var(--wk-bg-deep);
+    line-height: 1;
+}
+
+/* ── Bottom area ── */
+.wk-navrail__bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--wk-sp-0-5, 2px);
+}
+
+/* ── Settings badge ── */
+.wk-navrail__settings-badge {
+    position: absolute;
+    top: var(--wk-sp-1, 4px);
+    right: var(--wk-sp-1, 4px);
+}
+
+/* ── Settings panel (flyout) ── */
+.wk-navrail__settings-list {
+    position: fixed;
+    left: 60px;
+    bottom: var(--wk-sp-8, 32px);
+    width: 180px;
+    background: var(--wk-bg-elevated);
+    border: 1px solid var(--wk-border-default);
+    border-radius: var(--wk-r-md, 10px);
+    box-shadow: var(--wk-shadow-lg, 0 8px 32px rgba(0,0,0,0.24));
+    z-index: 200;
+    padding: var(--wk-sp-1, 4px) 0;
+    list-style: none;
+    display: none;
+}
+
+.wk-navrail__settings-list.open {
+    display: block;
+}
+
+.wk-navrail__settings-list li {
+    padding: var(--wk-sp-2, 8px) var(--wk-sp-3, 12px);
+    font-size: var(--wk-text-size-sm, 13px);
+    color: var(--wk-text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--wk-sp-2, 8px);
+    transition: background var(--wk-dur-fast, 200ms);
+}
+
+.wk-navrail__settings-list li:hover {
+    background: var(--wk-bg-hover);
+}
+
+/* ── User avatar ── */
+.wk-navrail__avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--wk-r-circle, 50%);
+    background: var(--wk-bg-elevated) center/cover no-repeat;
+    border: none;
+    cursor: pointer;
+    transition: opacity var(--wk-dur-fast, 200ms);
+    padding: 0;
+    overflow: hidden;
+}
+
+.wk-navrail__avatar:hover {
+    opacity: 0.85;
+}
+
+/* focus-visible for keyboard nav */
+.wk-navrail__item:focus-visible,
+.wk-navrail__space-btn:focus-visible,
+.wk-navrail__avatar:focus-visible {
+    outline: 2px solid var(--wk-brand-primary);
+    outline-offset: 2px;
+}

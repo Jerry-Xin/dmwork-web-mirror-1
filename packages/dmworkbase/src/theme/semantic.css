@@ -25,6 +25,7 @@
   --wk-font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
   /* ── Typography — 字号 ── */
+  --wk-text-size-badge:   9px;  /* badge/label 极小字号 */
   --wk-text-size-tiny:    10px;
   --wk-text-size-xs:      11px;
   --wk-text-size-sm:      12px;
@@ -136,6 +137,14 @@
   --wk-color-error-bg:   rgba(229, 64, 94, 0.08);
   --wk-color-info:       var(--wk-blue-light);
   --wk-color-info-bg:    rgba(74, 133, 230, 0.08);
+
+  /* Space avatar 背景色（用于 Space 首字母头像，6 种轮换） */
+  --wk-space-color-1: #667eea;
+  --wk-space-color-2: #764ba2;
+  --wk-space-color-3: #f093fb;
+  --wk-space-color-4: #4facfe;
+  --wk-space-color-5: #43e97b;
+  --wk-space-color-6: #fa709a;
 
   /* AI 专属 */
   --wk-ai-surface:   rgba(124, 92, 252, 0.03);

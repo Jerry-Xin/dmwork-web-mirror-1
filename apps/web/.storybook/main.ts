@@ -35,9 +35,9 @@ const config: StorybookConfig = {
       ],
       resolve: {
         alias: {
-          '@dmwork/base': path.resolve(__dirname, '../../../packages/dmworkbase/src'),
-          '@dmwork/contacts': path.resolve(__dirname, '../../../packages/dmworkcontacts/src'),
-          '@dmwork/login': path.resolve(__dirname, '../../../packages/dmworklogin/src'),
+          '@dmwork/base': path.resolve(__dirname, '../../../packages/dmworkbase'),
+          '@dmwork/contacts': path.resolve(__dirname, '../../../packages/dmworkcontacts'),
+          '@dmwork/login': path.resolve(__dirname, '../../../packages/dmworklogin'),
         },
         dedupe: ['react', 'react-dom'],
       },

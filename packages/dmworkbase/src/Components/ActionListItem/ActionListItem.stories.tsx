@@ -1,8 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import React from "react";
 import { IconPlus, IconSearch, IconChevronRight, IconSetting } from "@douyinfe/semi-icons";
+
+import { IconJoinSpace, IconCreateSpace } from "../NavRail/icons";
 import ActionListItem from "./index";
 import "../../theme/index.css";
+
+// compact variant story helper
+const CompactContainer = ({ children }: { children: React.ReactNode }) => (
+    <div style={{ width: 220, background: "var(--wk-bg-surface)", borderRadius: 14, padding: "8px" }}>
+        {children}
+    </div>
+);
 
 const meta: Meta<typeof ActionListItem> = {
     title: "Base/ActionListItem",
@@ -13,7 +22,7 @@ const meta: Meta<typeof ActionListItem> = {
     },
     decorators: [
         (Story) => (
-            <div style={{ width: 280, background: "#fff", borderRadius: 12, padding: "8px 8px" }}>
+            <div style={{ width: 280, background: "var(--wk-bg-surface)", borderRadius: 12, padding: "8px 8px" }}>
                 <Story />
             </div>
         ),
@@ -52,7 +61,7 @@ export const Default: Story = {
 
 export const AllVariants: Story = {
     render: () => (
-        <div style={{ width: 280, background: "#fff", borderRadius: 12, padding: "4px 8px" }}>
+        <div style={{ width: 280, background: "var(--wk-bg-surface)", borderRadius: 12, padding: "4px 8px" }}>
             <ActionListItem
                 icon={<IconSearch />}
                 label="加入 Space"
@@ -73,5 +82,25 @@ export const AllVariants: Story = {
                 variant="default"
             />
         </div>
+    ),
+};
+
+export const CompactVariants: Story = {
+    name: "Compact（NavRail Space 弹窗）",
+    render: () => (
+        <CompactContainer>
+            <ActionListItem
+                icon={<IconJoinSpace />}
+                label="加入 Space"
+                variant="join"
+                compact
+            />
+            <ActionListItem
+                icon={<IconCreateSpace />}
+                label="创建 Space"
+                variant="create"
+                compact
+            />
+        </CompactContainer>
     ),
 };

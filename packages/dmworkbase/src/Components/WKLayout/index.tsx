@@ -56,7 +56,7 @@ export class WKLayout extends Component<WKLayoutProps>{
                     onRenderTab && onRenderTab(window.innerWidth <= smallScreenWidth ? ScreenSize.small : ScreenSize.normal)
                 }
             </div>
-            <div className={classNames("wk-layout-content",this.rightContext?.viewCount()>0?"wk-layout-open":undefined)}>
+            <div className={classNames("wk-layout-content", this.rightContext?.viewCount() > 0 ? "wk-layout-open" : undefined)}>
                 <div className="wk-layout-content-left">
                     <WKViewQueue onContext={(context) => {
                         if(onLeftContext) {

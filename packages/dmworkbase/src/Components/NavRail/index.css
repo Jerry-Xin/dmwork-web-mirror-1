@@ -75,7 +75,6 @@ body[theme-mode=dark] .wk-navrail {
 .wk-navrail__switcher {
     position: relative;
     flex-shrink: 0;
-    margin-bottom: var(--wk-sp-4, 16px);
 }
 
 /* SpaceAvatar 在 NavRail 里统一 34×34 */

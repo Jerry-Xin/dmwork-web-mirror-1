@@ -361,8 +361,7 @@ body[theme-mode=dark] .wk-chat-channelsetting  {
 
 body[theme-mode=dark] .wk-chat-popover {
     background-color: var(--wk-color-secondary);
-    color: white;
-    --color-popover-bg-default: red
+    color: var(--wk-color-white);
 }
 
 .wk-chatmenuspopover li {
@@ -379,7 +378,7 @@ body[theme-mode=dark] .wk-chat-popover {
 .wk-chatmenuspopover li img {
     width: 20px;
     height: 20px;
-    color: white;
+    color: var(--wk-color-white);
 }
 
 .wk-chatmenuspopover-title {

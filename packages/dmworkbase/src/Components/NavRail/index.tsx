@@ -28,6 +28,8 @@ export interface NavRailVMProps {
     onInstallUpdate: () => void;
     onNotifyListener: () => void;
     onAvatarClick: () => void;
+    /** 用户在线状态，true 时显示绿色状态点 */
+    isOnline?: boolean;
     // Space 相关
     spaces: Space[];
     currentSpaceId?: string;
@@ -59,6 +61,7 @@ export default class NavRail extends Component<NavRailProps> {
             onInstallUpdate,
             onNotifyListener,
             onAvatarClick,
+            isOnline = false,
             spaces,
             currentSpaceId,
             onSpaceSelect,
@@ -83,7 +86,7 @@ export default class NavRail extends Component<NavRailProps> {
                                     backgroundImage: `url(${WKApp.shared.avatarUser(WKApp.loginInfo.uid || "")})`,
                                 }}
                             />
-                            <div className="wk-navrail__user-status" />
+                            {isOnline && <div className="wk-navrail__user-status" />}
                         </div>
                     </div>
 

@@ -71,7 +71,7 @@ body[theme-mode=dark] .wk-action-list-item:hover {
 
 /* ── compact variant（NavRail Space 弹窗底部操作） ── */
 .wk-action-list-item--compact {
-    padding: 7px 8px;
+    padding: var(--wk-sp-2);
     gap: 8px;
     border-radius: var(--wk-r-sm);
 }

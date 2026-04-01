@@ -260,14 +260,16 @@ export default class ChatPage extends Component<any, ChatPageState> {
                       {dropdownOpen && (
                         <div className="wk-chat-title-menu">
                           {FILTER_OPTIONS.map(opt => (
-                            <div
+                            <button
                               key={opt.key}
+                              type="button"
+                              tabIndex={0}
                               className={classNames('wk-chat-title-option', filter === opt.key ? 'wk-chat-title-option-active' : undefined)}
                               onClick={() => this.setState({ filter: opt.key, dropdownOpen: false })}
                             >
                               <span className="wk-chat-title-option-icon">{opt.icon}</span>
                               <span>{opt.label}</span>
-                            </div>
+                            </button>
                           ))}
                         </div>
                       )}

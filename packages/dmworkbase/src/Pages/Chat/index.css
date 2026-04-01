@@ -19,7 +19,7 @@
 
 .wk-chat-search {
     width: 100%;
-    padding: 12px 16px 8px;
+    padding: var(--wk-sp-3) var(--wk-sp-4) var(--wk-sp-2);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -109,6 +109,12 @@
     font-weight: 500;
     color: var(--wk-text-secondary);
     transition: background 0.15s, color 0.15s;
+    /* button reset */
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
 }
 
 .wk-chat-title-option:hover {

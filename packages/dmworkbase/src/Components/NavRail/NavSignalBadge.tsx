@@ -5,6 +5,7 @@ import WKApp from "../../App"
 interface NavSignalBadgeState {
     status: ConnectStatus
     latency: number | null
+    connectedSince: number | null
     showTooltip: boolean
 }
 
@@ -15,6 +16,7 @@ export default class NavSignalBadge extends Component<{}, NavSignalBadgeState> {
     state: NavSignalBadgeState = {
         status: WKSDK.shared().connectManager.status,
         latency: null,
+        connectedSince: null,
         showTooltip: false,
     }
 
@@ -22,15 +24,17 @@ export default class NavSignalBadge extends Component<{}, NavSignalBadgeState> {
         this.statusListener = (status: ConnectStatus) => {
             if (status === ConnectStatus.Connected) {
                 this.startPing()
+                this.setState({ status, connectedSince: Date.now() })
             } else {
                 this.stopPing()
+                this.setState({ status, latency: null, connectedSince: null })
             }
-            this.setState({ status, latency: status === ConnectStatus.Connected ? this.state.latency : null })
         }
         WKSDK.shared().connectManager.addConnectStatusListener(this.statusListener)
 
         if (WKSDK.shared().connectManager.status === ConnectStatus.Connected) {
             this.startPing()
+            this.setState({ connectedSince: Date.now() })
         }
     }
 
@@ -79,13 +83,14 @@ export default class NavSignalBadge extends Component<{}, NavSignalBadgeState> {
         return "#ef4444"
     }
 
-    getTooltipText(): string {
-        const { status, latency } = this.state
-        if (status === ConnectStatus.Connected) {
-            return latency !== null ? `已连接 · ${latency}ms` : "已连接"
-        }
-        if (status === ConnectStatus.Connecting) return "连接中..."
-        return "已断开 · 点击重连"
+    formatDuration(since: number | null): string {
+        if (!since) return ""
+        const sec = Math.floor((Date.now() - since) / 1000)
+        if (sec < 60) return `${sec}秒`
+        const min = Math.floor(sec / 60)
+        if (min < 60) return `${min}分钟`
+        const hr = Math.floor(min / 60)
+        return `${hr}小时${min % 60}分`
     }
 
     handleClick = () => {
@@ -107,17 +112,19 @@ export default class NavSignalBadge extends Component<{}, NavSignalBadgeState> {
                 onClick={this.handleClick}
                 onMouseEnter={() => this.setState({ showTooltip: true })}
                 onMouseLeave={() => this.setState({ showTooltip: false })}
-                title={this.getTooltipText()}
                 style={{ cursor: connected ? "default" : "pointer" }}
             >
-                <svg width="10" height="10" viewBox="0 0 16 16">
-                    <rect x="1" y="11" width="3" height="5" rx="0.5" fill={bars >= 1 ? color : "#d1d5db"} />
-                    <rect x="6" y="7" width="3" height="9" rx="0.5" fill={bars >= 2 ? color : "#d1d5db"} />
-                    <rect x="11" y="3" width="3" height="13" rx="0.5" fill={bars >= 3 ? color : "#d1d5db"} />
+                <svg width="12" height="12" viewBox="0 0 16 16">
+                    <rect x="1" y="11" width="3" height="5" rx="0.5" fill={bars >= 1 ? color : "var(--wk-border-default)"} />
+                    <rect x="6" y="7" width="3" height="9" rx="0.5" fill={bars >= 2 ? color : "var(--wk-border-default)"} />
+                    <rect x="11" y="3" width="3" height="13" rx="0.5" fill={bars >= 3 ? color : "var(--wk-border-default)"} />
                 </svg>
                 {showTooltip && (
-                    <div className="wk-navrail__signal-tooltip" style={{ whiteSpace: 'nowrap' }}>
-                        {this.getTooltipText()}
+                    <div className="wk-navrail__signal-tooltip">
+                        <div>状态：{connected ? "已连接" : connecting ? "连接中" : "已断开"}</div>
+                        {connected && latency !== null && <div>延迟：{latency}ms</div>}
+                        {connected && this.state.connectedSince && <div>已连接：{this.formatDuration(this.state.connectedSince)}</div>}
+                        {!connected && !connecting && <div style={{ color: "var(--wk-brand-primary)", marginTop: 4 }}>点击重连</div>}
                     </div>
                 )}
             </div>

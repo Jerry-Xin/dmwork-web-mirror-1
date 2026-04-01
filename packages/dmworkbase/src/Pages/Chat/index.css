@@ -65,8 +65,10 @@
     left: auto;
     right: 0;
     white-space: nowrap;
-    font-size: 12px;
-    padding: var(--wk-sp-1) var(--wk-sp-2);
+    font-size: 11px;
+    line-height: 1.6;
+    min-width: 100px;
+    padding: var(--wk-sp-1-5) var(--wk-sp-2);
 }
 
 /* ── Title Dropdown ── */

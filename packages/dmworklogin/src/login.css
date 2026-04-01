@@ -67,7 +67,7 @@
     left: 56px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 4px;
     z-index: 2;
 }
 
@@ -96,7 +96,7 @@
     color: var(--wk-text-inverse, #fff);
     letter-spacing: 0.5px;
     display: inline-block;
-    margin-bottom: -10px;
+    margin-bottom: -18px;
 }
 
 .wk-login-brand-headline {

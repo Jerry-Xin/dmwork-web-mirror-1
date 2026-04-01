@@ -107,7 +107,7 @@
     cursor: pointer;
     font-size: 13.5px;
     font-weight: 500;
-    color: var(--wk-text-secondary, #5C6070);
+    color: var(--wk-text-secondary);
     transition: background 0.15s, color 0.15s;
 }
 

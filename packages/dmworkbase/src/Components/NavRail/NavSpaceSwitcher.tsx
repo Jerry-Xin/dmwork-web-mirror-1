@@ -78,49 +78,59 @@ export default class NavSpaceSwitcher extends Component<NavSpaceSwitcherProps, N
                             onClick={this.handleClose}
                         />
                         <div className="wk-navrail__dropdown" onClick={e => e.stopPropagation()}>
-                            {spaces.map(space => (
-                                <SpaceItem
-                                    key={space.space_id}
-                                    name={space.name}
-                                    logo={space.logo}
-                                    meta={space.max_users > 0
-                                        ? `${space.member_count}/${space.max_users} 人`
-                                        : `${space.member_count} 人`}
-                                    selected={space.space_id === currentSpaceId}
-                                    onClick={() => {
-                                        onSpaceSelect(space.space_id);
-                                        this.handleClose();
-                                    }}
-                                    actions={onCopyInviteLink && (
-                                        <WKButton
-                                            variant="ghost"
-                                            size="sm"
-                                            iconOnly
-                                            icon={<IconLink />}
-                                            title="复制邀请链接"
-                                            onClick={(e) => onCopyInviteLink(space.space_id, e)}
-                                        />
-                                    )}
-                                />
-                            ))}
-                            <div className="wk-navrail__dropdown-divider" />
-                            {onJoinSpace && (
-                                <ActionListItem
-                                    icon={<IconSearch />}
-                                    label="加入 Space"
-                                    desc="通过邀请码或链接加入"
-                                    variant="join"
-                                    onClick={() => { this.handleClose(); onJoinSpace(); }}
-                                />
-                            )}
-                            {onCreateSpace && (
-                                <ActionListItem
-                                    icon={<IconPlus />}
-                                    label="创建 Space"
-                                    desc="新建你自己的工作空间"
-                                    variant="create"
-                                    onClick={() => { this.handleClose(); onCreateSpace(); }}
-                                />
+                            {/* 可滚动的 Space 列表 */}
+                            <div className="wk-navrail__dropdown-spaces">
+                                {spaces.map(space => (
+                                    <SpaceItem
+                                        key={space.space_id}
+                                        name={space.name}
+                                        logo={space.logo}
+                                        meta={space.max_users > 0
+                                            ? `${space.member_count}/${space.max_users} 人`
+                                            : `${space.member_count} 人`}
+                                        selected={space.space_id === currentSpaceId}
+                                        onClick={() => {
+                                            onSpaceSelect(space.space_id);
+                                            this.handleClose();
+                                        }}
+                                        actions={onCopyInviteLink && (
+                                            <WKButton
+                                                variant="ghost"
+                                                size="sm"
+                                                iconOnly
+                                                icon={<IconLink />}
+                                                title="复制邀请链接"
+                                                onClick={(e) => onCopyInviteLink(space.space_id, e)}
+                                            />
+                                        )}
+                                    />
+                                ))}
+                            </div>
+                            {/* 固定底部操作区 */}
+                            {(onJoinSpace || onCreateSpace) && (
+                                <>
+                                    <div className="wk-navrail__dropdown-divider" />
+                                    <div className="wk-navrail__dropdown-actions">
+                                        {onJoinSpace && (
+                                            <ActionListItem
+                                                icon={<IconSearch />}
+                                                label="加入 Space"
+                                                desc="通过邀请码或链接加入"
+                                                variant="join"
+                                                onClick={() => { this.handleClose(); onJoinSpace(); }}
+                                            />
+                                        )}
+                                        {onCreateSpace && (
+                                            <ActionListItem
+                                                icon={<IconPlus />}
+                                                label="创建 Space"
+                                                desc="新建你自己的工作空间"
+                                                variant="create"
+                                                onClick={() => { this.handleClose(); onCreateSpace(); }}
+                                            />
+                                        )}
+                                    </div>
+                                </>
                             )}
                         </div>
                     </>

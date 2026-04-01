@@ -74,20 +74,36 @@
     position: absolute;
     left: calc(100% + var(--wk-sp-2, 8px));
     top: 0;
-    width: 240px;
-    background: var(--wk-bg-elevated);
-    border: 1px solid var(--wk-border-default);
+    width: 248px;
+    background: var(--wk-bg-surface);
+    border: 1px solid var(--wk-border-subtle);
     border-radius: var(--wk-r-md, 10px);
     box-shadow: var(--wk-shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.24));
     z-index: 101;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     padding: var(--wk-sp-1, 4px) 0;
+}
+
+/* 可滚动 Space 列表区 */
+.wk-navrail__dropdown-spaces {
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+    padding: 0 var(--wk-sp-1, 4px);
 }
 
 .wk-navrail__dropdown-divider {
     height: 1px;
     background: var(--wk-border-subtle);
     margin: var(--wk-sp-1, 4px) 0;
+    flex-shrink: 0;
+}
+
+/* 固定底部操作区 */
+.wk-navrail__dropdown-actions {
+    flex-shrink: 0;
+    padding: 0 var(--wk-sp-1, 4px) var(--wk-sp-1, 4px);
 }
 
 /* ── Nav items (middle) ── */

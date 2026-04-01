@@ -99,8 +99,14 @@ export default interface ConversationContext {
 
     /**
      * 定位消息
-     * @param messageSeq 
+     * @param messageSeq
      * @param tip 是否提醒
      */
     locateMessage(messageSeq: number): any
+
+    /**
+     * 获取缓存的用户选区文本（在 showContextMenus 时捕获）
+     * 如果选区完全在当前消息气泡内则返回选区文本，否则返回 null
+     */
+    getCachedSelectedText(): string | null
 }

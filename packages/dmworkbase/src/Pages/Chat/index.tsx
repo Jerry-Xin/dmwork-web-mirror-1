@@ -278,7 +278,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
                         vm.showGlobalSearch = true;
                       }}
                     >
-                      <Search size={20} color="#666" className="wk-chat-header-icon" />
+                      <Search size={16} color="var(--wk-text-tertiary)" className="wk-chat-header-icon" />
                     </div>
                     <Popover
                       onClickOutSide={() => {
@@ -304,7 +304,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           vm.showAddPopover = !vm.showAddPopover;
                         }}
                       >
-                        <Plus size={20} color="#666" className="wk-chat-header-icon" />
+                        <Plus size={16} color="var(--wk-text-tertiary)" className="wk-chat-header-icon" />
                       </div>
                       {/* <Button icon={<IconPlus></IconPlus>} onClick={() => {
                                     vm.showAddPopover = true

@@ -103,4 +103,6 @@ export default interface ConversationContext {
      * @param tip 是否提醒
      */
     locateMessage(messageSeq: number): any
+
+    forceStandaloneMessage?(message: Message): boolean
 }

@@ -55,8 +55,23 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
         WKSDK.shared().channelManager.removeListener(this.channelInfoListener)
     }
 
+    forceStandalone() {
+        const { context, message } = this.props
+        return context.forceStandaloneMessage?.(message.message) || false
+    }
+
+    getDisplayBubblePosition(): BubblePosition {
+        if (this.forceStandalone()) {
+            return BubblePosition.single
+        }
+        return this.props.message.bubblePosition
+    }
+
     // 消息是否连续的
     isContinue(): boolean {
+        if (this.forceStandalone()) {
+            return false
+        }
         const { message } = this.props
         if (message.preMessage) {
             if (message.fromUID === message.preMessage.fromUID) {
@@ -69,6 +84,9 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
     getMessageStyle(hasContinue: boolean, message: MessageWrap) {
         const messageStyle: any = {}
         messageStyle.marginBottom = "15px"
+        if (this.forceStandalone()) {
+            return messageStyle
+        }
         if (hasContinue && message.send) {
             messageStyle.marginTop = "4px"
             messageStyle.marginBottom = "0px"
@@ -132,6 +150,7 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
 
     getBubbleBoxClassName() {
         const { message, hiddeBubble } = this.props
+        const bubblePosition = this.getDisplayBubblePosition()
         let messageBubble = "wk-message-base-bubble-box"
 
         if (hiddeBubble) {
@@ -148,13 +167,13 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                 messageBubble += " ai-panel"
             }
         }
-        if (message.bubblePosition === BubblePosition.first) {
+        if (bubblePosition === BubblePosition.first) {
             messageBubble += " first"
-        } else if (message.bubblePosition === BubblePosition.middle) {
+        } else if (bubblePosition === BubblePosition.middle) {
             messageBubble += " middle"
-        } else if (message.bubblePosition === BubblePosition.last) {
+        } else if (bubblePosition === BubblePosition.last) {
             messageBubble += " last"
-        } else if (message.bubblePosition === BubblePosition.single) {
+        } else if (bubblePosition === BubblePosition.single) {
             messageBubble += " single"
         }
         return messageBubble
@@ -169,13 +188,13 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
 
     needAvatar() {
         const { message } = this.props
-        const channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(message.fromUID, ChannelTypePerson))
-        return (message.bubblePosition === BubblePosition.first || message.bubblePosition === BubblePosition.single) && channelInfo
+        const bubblePosition = this.getDisplayBubblePosition()
+        return (bubblePosition === BubblePosition.first || bubblePosition === BubblePosition.single) && !!message.fromUID
     }
 
     needHead() {
-        const { message } = this.props
-        return message.bubblePosition === BubblePosition.first || message.bubblePosition === BubblePosition.single
+        const bubblePosition = this.getDisplayBubblePosition()
+        return bubblePosition === BubblePosition.first || bubblePosition === BubblePosition.single
     }
 
     getMessageErrorReason() {
@@ -209,6 +228,8 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
         const { message, context, hiddeBubble, bubbleStyle } = this.props
         const hasContinue = this.isContinue()
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(message.fromUID, ChannelTypePerson))
+        const avatarChannel = channelInfo?.channel || new Channel(message.fromUID, ChannelTypePerson)
+        const displayName = channelInfo?.orgData?.displayName || channelInfo?.title || message.fromUID
         if (!channelInfo && message.fromUID && message.fromUID !== "") {
             WKSDK.shared().channelManager.fetchChannelInfo(new Channel(message.fromUID, ChannelTypePerson))
         }
@@ -222,9 +243,11 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
             <div className={classNames("wk-message-base", context.editOn() ? "wk-message-base-check-open" : undefined)} onClick={context.editOn() ? (event) => {
                 context.checkeMessage(message.message, !message.checked)
             } : undefined}>
-                <div className="wk-message-base-checkBox" style={{ "marginBottom": messageStyle.marginBottom }}>
-                    <Checkbox checked={message.checked} />
-                </div>
+                {context.editOn() ? (
+                    <div className="wk-message-base-checkBox" style={{ "marginBottom": messageStyle.marginBottom }}>
+                        <Checkbox checked={message.checked} />
+                    </div>
+                ) : null}
                 <div className={message.send ? "wk-message-base-send" : "wk-message-base-recv"} style={messageStyle}>
 
                     <div className={"wk-message-base-box"} style={{ "pointerEvents": context.editOn() ? "none" : undefined }}>
@@ -244,7 +267,7 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                         <div className={classNames("senderAvatar", showAvatar ? undefined : "senderAvatar-placeholder")} onClick={showAvatar ? (el) => {
                             context.onTapAvatar(message.fromUID, el)
                         } : undefined}>
-                            {showAvatar && <WKAvatar channel={channelInfo?.channel} style={{ width: "32px", height: "32px" }} />}
+                            {showAvatar && <WKAvatar channel={avatarChannel} style={{ width: "32px", height: "32px" }} />}
                         </div>
 
                         {/* 消息体列 */}
@@ -252,8 +275,8 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                             {/* Head 行：name + time，在气泡外面 */}
                             {showHead && !message.send && !isAi && (
                                 <div className="wk-msg-head">
-                                    <span className="wk-msg-head-name" style={{ color: getTitleColor(channelInfo?.orgData?.displayName) }}>
-                                        {channelInfo?.orgData?.displayName}
+                                    <span className="wk-msg-head-name" style={{ color: getTitleColor(displayName) }}>
+                                        {displayName}
                                     </span>
                                     {channelInfo?.orgData?.robot === 1 && <AiBadge size="small" />}
                                     <span className="wk-msg-head-time">{timeStr}</span>
@@ -273,7 +296,7 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                                     {/* AI 面板头部 */}
                                     {isAi && showHead && (
                                         <div className="wk-ai-panel-head">
-                                            <span className="wk-ai-panel-agent-name">{channelInfo?.orgData?.displayName}</span>
+                                            <span className="wk-ai-panel-agent-name">{displayName}</span>
                                             <AiBadge size="small" />
                                         </div>
                                     )}

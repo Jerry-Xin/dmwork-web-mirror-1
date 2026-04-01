@@ -3,7 +3,9 @@ import React, { Component, HTMLProps } from "react";
 import Provider from "../../Service/Provider";
 import ConversationVM from "./vm";
 import "./index.css"
-import { MessageWrap } from "../../Service/Model";
+import { EmojiInfo, MentionInfo } from "../../Messages/Text/MarkdownContent";
+import MarkdownContent from "../../Messages/Text/MarkdownContent";
+import { MessageWrap, Part, PartType } from "../../Service/Model";
 import WKApp from "../../App";
 import { RevokeCell } from "../../Messages/Revoke";
 import { MessageContentTypeConst } from "../../Service/Const";
@@ -17,6 +19,9 @@ import AiBadge from "../AiBadge";
 import { IconClose, IconEdit, IconReply } from "@douyinfe/semi-icons";
 import { Toast, Spin } from "@douyinfe/semi-ui";
 import { FlameMessageCell } from "../../Messages/Flame";
+import FoldSessionCard, { FoldSessionCardParticipant } from "./FoldSessionCard";
+import { ConversationRenderItem, FoldSessionViewModel } from "./vm";
+import moment from "moment";
 
 export interface ConversationProps {
     channel: Channel
@@ -124,20 +129,32 @@ export class Conversation extends Component<ConversationProps> implements Conver
     // 定位消息
     locateMessage(messageSeq: number) {
         const messageWrap = this.vm.findMessageWithMessageSeq(messageSeq)
-        if (messageWrap) { // 本地存在则直接滚动到消息位置即可
+        if (messageWrap) {
+            const foldSession = this.vm.findFoldSessionByMessageSeq(messageSeq)
+            if (foldSession) {
+                const isSummaryMessage = !foldSession.isActive && foldSession.lastMessage.messageSeq === messageSeq
+                if (isSummaryMessage) {
+                    this.vm.highlightFoldSessionSummary(foldSession.sessionId, () => {
+                        this.vm.scrollToFoldSession(foldSession.sessionId)
+                    })
+                    return
+                }
+                this.vm.setFoldSessionExpanded(foldSession.sessionId, true, false, () => {
+                    messageWrap.locateRemind = true
+                    this.vm.scrollToMessage(messageWrap)
+                    this.vm.notifyListener()
+                })
+                return
+            }
             this.vm.scrollToMessage(messageWrap)
             messageWrap.locateRemind = true
             this.vm.notifyListener()
             return
         }
-        // 本地不存在，则需要远程获取后再定位到消息
         this.vm.requestMessagesOfFirstPage(messageSeq, () => {
-            const newMessageWrap = this.vm.findMessageWithMessageSeq(messageSeq)
-            if (newMessageWrap) {
-                newMessageWrap.locateRemind = true
-                this.vm.notifyListener()
+            if (this.vm.findMessageWithMessageSeq(messageSeq)) {
+                this.locateMessage(messageSeq)
             }
-            return
         })
     }
 
@@ -193,6 +210,27 @@ export class Conversation extends Component<ConversationProps> implements Conver
 
     messageInputContext(): MessageInputContext {
         return this._messageInputContext
+    }
+
+    forceStandaloneMessage(message: Message): boolean {
+        // 紧跟在折叠卡片后的消息，强制独立（避免 preMessage 仍指向卡片内消息导致头像丢失）
+        if (this.vm.afterFoldSessionClientMsgNos.has(message.clientMsgNo)) {
+            return true
+        }
+
+        const foldSession = message.messageSeq > 0 ? this.vm.findFoldSessionByMessageSeq(message.messageSeq) : undefined
+        if (foldSession?.isExpanded) {
+            return foldSession.expandedMessages.some((expandedMessage) => expandedMessage.clientMsgNo === message.clientMsgNo)
+        }
+        for (const item of this.vm.renderItems) {
+            if (item.type !== "foldSession" || !item.session.isExpanded) {
+                continue
+            }
+            if (item.session.expandedMessages.some((expandedMessage) => expandedMessage.clientMsgNo === message.clientMsgNo)) {
+                return true
+            }
+        }
+        return false
     }
 
     componentDidMount() {
@@ -284,7 +322,159 @@ export class Conversation extends Component<ConversationProps> implements Conver
         this.contextMenusContext.show(event)
     }
 
-    messageUI(message: MessageWrap, last: boolean) {
+    getMessageElement(message: Message | MessageWrap) {
+        const element = document.getElementById(message.clientMsgNo)
+        if (element) {
+            return element
+        }
+        if (!message.messageSeq || message.messageSeq <= 0) {
+            return null
+        }
+        const foldSession = this.vm.findFoldSessionByMessageSeq(message.messageSeq)
+        if (!foldSession) {
+            return null
+        }
+        return document.getElementById(foldSession.anchorId)
+    }
+
+    getMessageMentions(message: MessageWrap): MentionInfo[] {
+        return message.parts
+            ?.filter((part: Part) => part.type === PartType.mention && part.data?.uid)
+            .map((part: Part) => ({ name: part.text, uid: part.data.uid })) ?? []
+    }
+
+    getMessageEmojis(message: MessageWrap): EmojiInfo[] {
+        return message.parts
+            ?.filter((part: Part) => part.type === PartType.emoji)
+            .reduce((acc: EmojiInfo[], part: Part) => {
+                const url = WKApp.emojiService.getImage(part.text)
+                if (url && !acc.find((emoji) => emoji.key === part.text)) {
+                    acc.push({ key: part.text, url })
+                }
+                return acc
+            }, []) ?? []
+    }
+
+    getMessageTextContent(message: MessageWrap) {
+        if (message.streamOn) {
+            return message.fullStreamContent
+        }
+        const rawContent = message.remoteExtra?.isEdit
+            ? message.remoteExtra?.contentEdit as any
+            : message.content as any
+        return rawContent?.text || message.parts?.map((part: Part) => part.text).join("") || ""
+    }
+
+    renderFoldSessionSummary(message: MessageWrap) {
+        if (message.contentType === MessageContentType.text || message.streamOn) {
+            return (
+                <MarkdownContent
+                    content={this.getMessageTextContent(message)}
+                    isSend={message.send}
+                    isStreaming={message.isStreaming}
+                    mentions={this.getMessageMentions(message)}
+                    onMentionClick={(uid) => this.showUser(uid)}
+                    emojis={this.getMessageEmojis(message)}
+                />
+            )
+        }
+        const digest = message.remoteExtra?.isEdit
+            ? message.remoteExtra?.contentEdit?.conversationDigest
+            : message.content?.conversationDigest
+        return digest || ""
+    }
+
+    renderFoldSessionExpandedList(messages: MessageWrap[]) {
+        return messages.map((message) => {
+            const senderName = message.from?.title || message.fromUID
+            const timeStr = moment(message.timestamp * 1000).format("HH:mm")
+            const digest = this.getMessageDigestText(message)
+            return (
+                <div key={message.clientMsgNo} className="wk-fold-msg">
+                    <span className="wk-fold-msg-ava">
+                        <WKAvatar
+                            channel={new Channel(message.fromUID, ChannelTypePerson)}
+                            style={{ width: "100%", height: "100%" }}
+                        />
+                    </span>
+                    <div className="wk-fold-msg-body">
+                        <div className="wk-fold-msg-head">
+                            <span className="wk-fold-msg-name">{senderName}</span>
+                            <span className="wk-fold-msg-time">{timeStr}</span>
+                        </div>
+                        <div className="wk-fold-msg-text">{digest}</div>
+                    </div>
+                </div>
+            )
+        })
+    }
+
+    getMessageDigestText(message: MessageWrap): string {
+        if (message.streamOn) {
+            return message.fullStreamContent || ""
+        }
+        const rawContent = message.remoteExtra?.isEdit
+            ? message.remoteExtra?.contentEdit as any
+            : message.content as any
+        return rawContent?.text || rawContent?.conversationDigest || message.parts?.map((part: Part) => part.text).join("") || ""
+    }
+
+    foldSessionUI(session: FoldSessionViewModel, last: boolean) {
+        const participants: FoldSessionCardParticipant[] = session.participants.map((participant) => ({
+            id: participant.uid,
+            name: participant.name,
+            avatar: <WKAvatar channel={participant.channel} style={{ width: "100%", height: "100%" }} />,
+        }))
+
+        return (
+            <div
+                key={session.sessionId}
+                id={session.anchorId}
+                className={classNames("wk-message-item", "wk-message-item-fold-session", last ? "wk-message-item-last" : undefined)}
+            >
+                <FoldSessionCard
+                    className="wk-message-item-fold-session-card"
+                    participants={participants}
+                    count={session.count}
+                    isActive={session.isActive}
+                    isExpanded={session.isExpanded}
+                    appearing={session.shouldAppear}
+                    flash={session.shouldMergeFlash}
+                    showSummary={session.showSummary}
+                    highlightSummary={session.highlightSummary}
+                    summaryId={session.showSummary ? session.lastMessage.clientMsgNo : undefined}
+                    summarySender={session.lastMessage.from?.title || session.lastMessage.fromUID}
+                    summaryContent={this.renderFoldSessionSummary(session.lastMessage)}
+                    expandedContent={this.renderFoldSessionExpandedList(session.expandedMessages)}
+                    onToggle={() => {
+                        this.vm.toggleFoldSession(session.sessionId)
+                    }}
+                    onAnimationEnd={(event) => {
+                        if (event.target === event.currentTarget) {
+                            if (event.animationName === "wk-fold-session-appear" && session.shouldMergeFlash) {
+                                return
+                            }
+                            this.vm.clearFoldSessionAnimation(session.sessionId)
+                        }
+                    }}
+                    onSummaryAnimationEnd={(event) => {
+                        if (event.target === event.currentTarget) {
+                            this.vm.clearFoldSessionSummaryHighlight(session.sessionId)
+                        }
+                    }}
+                />
+            </div>
+        )
+    }
+
+    renderConversationItem(item: ConversationRenderItem, last: boolean) {
+        if (item.type === "foldSession") {
+            return this.foldSessionUI(item.session, last)
+        }
+        return this.messageUI(item.message, last)
+    }
+
+    messageUI(message: MessageWrap, last: boolean, extraClassName?: string) {
         let MessageCell: React.ElementType | undefined
         if (message.revoke) {
             MessageCell = RevokeCell
@@ -298,7 +488,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         return <div onAnimationEnd={() => {
             message.locateRemind = false;
             this.setState({})
-        }} key={message.clientMsgNo} id={`${message.contentType === MessageContentTypeConst.time ? "time-" : ""}${message.clientMsgNo}`} className={classNames("wk-message-item", last ? "wk-message-item-last" : undefined, message.locateRemind ? 'wk-message-item-reminder' : undefined, isSystemMessage ? 'wk-message-item-system' : undefined)} >
+        }} key={message.clientMsgNo} id={`${message.contentType === MessageContentTypeConst.time ? "time-" : ""}${message.clientMsgNo}`} className={classNames("wk-message-item", extraClassName, last ? "wk-message-item-last" : undefined, message.locateRemind ? 'wk-message-item-reminder' : undefined, isSystemMessage ? 'wk-message-item-system' : undefined)} >
             {
                 MessageCell ? <MessageCell key={message.clientMsgNo} message={message} context={this} /> : null
             }
@@ -323,7 +513,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
             this.vm.pullupMessages()
         }
         if (this.vm.lastMessage) {
-            this.vm.lastLocalMessageElement = document.getElementById(this.vm.lastMessage?.clientMsgNo) // 最新消息
+            this.vm.lastLocalMessageElement = this.getMessageElement(this.vm.lastMessage) // 最新消息
             if (this.vm.lastLocalMessageElement) { // 如果有最新消息的dom则判断是否在可见范围内
                 if (scrollOffsetTop > this.vm.lastLocalMessageElement.clientHeight + 20) { // 如果滚动距离超过了第一个元素则显示“滚动到底部”
                     this.vm.showScrollToBottomBtn = true
@@ -421,7 +611,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         const targetScrollTop = viewport.scrollTop;
         const scrollOffsetTop = viewport.scrollHeight - (targetScrollTop + viewport.clientHeight);
 
-        const element = document.getElementById(message.clientMsgNo)
+        const element = this.getMessageElement(message)
         if (element) {
             if (viewport.scrollHeight - element.offsetTop > scrollOffsetTop && element.offsetTop + element.clientHeight > targetScrollTop) {
                 return true
@@ -445,7 +635,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
 
         for (let index = this.vm.messages.length - 1; index >= 0; index--) {
             const message = this.vm.messages[index];
-            const element = document.getElementById(message.clientMsgNo)
+            const element = this.getMessageElement(message)
             if (element) {
                 if (viewport.scrollHeight - element.offsetTop > scrollOffsetTop) {
                     return message
@@ -470,7 +660,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         // const scrollOffsetTop = viewport.scrollHeight - (targetScrollTop + viewport.clientHeight);
         for (let index = 0; index < this.vm.messages.length; index++) {
             const message = this.vm.messages[index];
-            const element = document.getElementById(message.clientMsgNo)
+            const element = this.getMessageElement(message)
             if (element) {
                 if (element.offsetTop + element.clientHeight > targetScrollTop) {
                     return message
@@ -495,7 +685,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         const targetScrollTop = viewport.scrollTop;
         for (let index = 0; index < this.vm.messages.length; index++) {
             const message = this.vm.messages[index];
-            const element = document.getElementById(message.clientMsgNo)
+            const element = this.getMessageElement(message)
             if (element) {
                 if (element.offsetTop + element.clientHeight / 2 > targetScrollTop) { // message 要漏出来一半才算可见
                     visiableMessages.push(message)
@@ -564,12 +754,12 @@ export class Conversation extends Component<ConversationProps> implements Conver
                     }} className={classNames("wk-conversation-content")}>
                         <div className="wk-conversation-messages" id={vm.messageContainerId} onScroll={this.handleScroll.bind(this)}>
                             {
-                                vm.messages.map((message, i) => {
+                                vm.renderItems.map((item, i) => {
                                     let last = false
-                                    if (i === vm.messages.length - 1) {
+                                    if (i === vm.renderItems.length - 1) {
                                         last = true
                                     }
-                                    return this.messageUI(message, last)
+                                    return this.renderConversationItem(item, last)
                                 })
                             }
 
@@ -578,11 +768,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                 return this.vm.onDownArrow()
                             }} onReminder={(reminder) => {
                                 return this.vm.syncMessages(reminder.messageSeq, () => {
-                                    const newMessageWrap = this.vm.findMessageWithMessageSeq(reminder.messageSeq)
-                                    if (newMessageWrap) {
-                                        newMessageWrap.locateRemind = true // 设置为闪烁提醒
-                                        this.vm.notifyListener()
-                                    }
+                                    this.locateMessage(reminder.messageSeq)
                                 })
                             }} showScrollToBottom={vm.showScrollToBottomBtn || false} unreadCount={vm.unreadCount} reminders={vm.currentConversation?.reminders?.filter(r => !r.done)}>
 

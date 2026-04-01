@@ -20,6 +20,13 @@
   --wk-brand-gradient-subtle: linear-gradient(135deg, var(--wk-purple-alpha-12), var(--wk-teal-alpha-08));
   --wk-brand-glow:            var(--wk-purple-alpha-30);
 
+  /* ── Status & Fixed ── */
+  --wk-color-online:      var(--wk-green-light);   /* 在线状态绿点 */
+  --wk-color-white:       #ffffff;                 /* 固定白色（不跟主题走） */
+  --wk-color-danger:      #FF5C72;                 /* 危险/角标红色 */
+  --wk-success-tint-10:   rgba(0, 184, 148, 0.10); /* success 色半透明背景 */
+  --wk-shadow-dropdown:   0 12px 32px var(--wk-black-alpha-12); /* 弹窗阴影 */
+
   /* ── Brand tint（品牌色半透明，禁止在组件里硬编码 rgba(124,92,252,...)） ── */
   --wk-brand-tint-06: rgba(124, 92, 252, 0.06);
   --wk-brand-tint-08: rgba(124, 92, 252, 0.08);

@@ -4,7 +4,7 @@
     justify-content: center;
     flex-shrink: 0;
     border-radius: 8px;
-    color: #fff;
+    color: var(--wk-color-white);
     font-weight: 700;
     object-fit: cover;
 }

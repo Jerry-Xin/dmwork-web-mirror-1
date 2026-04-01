@@ -100,7 +100,7 @@
 
 /* 选中态：淡背景 + 左侧渐变指示条，文字不反白 */
 .wk-conversationlist-item-selected {
-    background: rgba(124, 92, 252, 0.06);
+    background: var(--wk-brand-tint-06);
     border-radius: var(--wk-r-md);
 }
 

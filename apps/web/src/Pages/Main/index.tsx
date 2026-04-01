@@ -52,6 +52,9 @@ export class MainPage extends Component<{}, MainPageState> {
     }
 
     componentDidMount() {
+        // 注册菜单刷新回调，触发父组件 re-render（原 TabNormalScreen componentDidMount 里的逻辑）
+        WKApp.menus.setRefresh = () => { this.forceUpdate(); };
+
         SpaceService.shared.getMySpaces().then(spaces => {
             this.setState({ allSpaces: spaces });
             const savedSpaceId = localStorage.getItem("currentSpaceId");
@@ -67,7 +70,12 @@ export class MainPage extends Component<{}, MainPageState> {
                 localStorage.removeItem("currentSpaceId");
                 try { WKApp.shared.notifyListener(); } catch (_) {}
             }
-        }).catch(() => {});
+        }).catch((e) => { console.error('[NavRail] Failed to load spaces:', e); });
+    }
+
+    componentWillUnmount() {
+        // 清理菜单刷新回调，避免组件卸载后触发 forceUpdate
+        WKApp.menus.setRefresh = undefined;
     }
 
     handleSpaceSelected = (spaceId: string) => {
@@ -130,9 +138,6 @@ export class MainPage extends Component<{}, MainPageState> {
 
         return (
             <Provider create={() => new MainVM()} render={(vm: MainVM) => {
-                // 注册菜单刷新（触发父组件 forceUpdate）
-                WKApp.menus.setRefresh = () => { this.forceUpdate(); };
-
                 const currentSpaceId = WKApp.shared.currentSpaceId;
 
                 return (

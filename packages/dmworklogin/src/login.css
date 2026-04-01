@@ -67,7 +67,7 @@
     left: 56px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 4px;
     z-index: 2;
 }
 
@@ -91,10 +91,12 @@
 }
 
 .wk-login-brand-logo-name {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--wk-text-inverse, #fff);
     letter-spacing: 0.5px;
+    display: inline-block;
+    margin-bottom: -18px;
 }
 
 .wk-login-brand-headline {

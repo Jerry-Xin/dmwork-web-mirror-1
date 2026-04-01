@@ -46,6 +46,7 @@
     transform: scale(1.08);
 }
 
+/* ── Online status dot ── */
 .wk-navrail__user-status {
     position: absolute;
     bottom: 0;

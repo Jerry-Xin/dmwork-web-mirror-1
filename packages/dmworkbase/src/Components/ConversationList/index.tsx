@@ -274,7 +274,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
             {/* 置顶区 */}
             {pinned.length > 0 && <>
-                <div className="wk-conv-section">📌 置顶</div>
+                <div className="wk-conv-section">置顶</div>
                 {pinned.map(c => this.conversationItem(c))}
             </>}
 

@@ -67,22 +67,4 @@
         width: 100%;
     }
 
-    /* wk-layout-tab 脱离文档流，不占横向宽度，靠 fixed 贴左边 */
-    .wk-layout-tab {
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 60px;
-        z-index: 5;
-    }
-
-    /* 进入对话后，wk-layout-content-right position:fixed 覆盖 tab（无需额外 z-index，stacking context 已足够） */
-    .wk-layout-content-right {
-        z-index: 10;
-    }
-
-    .wk-layout-content {
-        width: 100%;
-    }
 }

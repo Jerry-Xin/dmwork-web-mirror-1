@@ -67,7 +67,8 @@
         width: 100%;
     }
 
-    .wk-layout-tab {
+    /* 进入对话后隐藏 NavRail + tab 容器 */
+    .wk-layout-conversation-open .wk-layout-tab {
         display: none;
     }
 

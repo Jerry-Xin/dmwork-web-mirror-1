@@ -6,7 +6,6 @@ import NavSpaceSwitcher from "./NavSpaceSwitcher";
 import NavItem from "./NavItem";
 import NavBottom from "./NavBottom";
 import NavSettingsPanel from "./NavSettingsPanel";
-import { Badge } from "@douyinfe/semi-ui";
 import "./index.css";
 
 export type NavRailItem = "messages";
@@ -71,15 +70,24 @@ export default class NavRail extends Component<NavRailProps> {
         return (
             <>
                 <nav className="wk-navrail" aria-label="主导航">
-                    {/* 顶部：Space 切换器 */}
-                    <NavSpaceSwitcher
-                        spaces={spaces}
-                        currentSpaceId={currentSpaceId}
-                        onSpaceSelect={onSpaceSelect}
-                        onCopyInviteLink={onCopyInviteLink}
-                        onJoinSpace={onJoinSpace}
-                        onCreateSpace={onCreateSpace}
-                    />
+                    {/* 顶部：用户头像（含在线状态点） */}
+                    <div className="wk-navrail__top">
+                        <div className="wk-navrail__user-wrap">
+                            <button
+                                type="button"
+                                className="wk-navrail__user-avatar"
+                                title="我的信息"
+                                aria-label="我的信息"
+                                onClick={onAvatarClick}
+                                style={{
+                                    backgroundImage: `url(${WKApp.shared.avatarUser(WKApp.loginInfo.uid || "")})`,
+                                }}
+                            />
+                            <div className="wk-navrail__user-status" />
+                        </div>
+                    </div>
+
+                    <div className="wk-navrail__sep" />
 
                     {/* 中部：动态导航菜单 */}
                     <div className="wk-navrail__items">
@@ -95,12 +103,17 @@ export default class NavRail extends Component<NavRailProps> {
                         ))}
                     </div>
 
-                    {/* 底部：设置 + 用户头像 */}
+                    {/* 底部：分割线 + 设置 + Space */}
                     <NavBottom
                         hasNewVersion={hasNewVersion}
                         settingSelected={settingSelected}
                         onSettingsClick={onToggleSetting}
-                        onAvatarClick={onAvatarClick}
+                        spaces={spaces}
+                        currentSpaceId={currentSpaceId}
+                        onSpaceSelect={onSpaceSelect}
+                        onCopyInviteLink={onCopyInviteLink}
+                        onJoinSpace={onJoinSpace}
+                        onCreateSpace={onCreateSpace}
                     />
                 </nav>
 

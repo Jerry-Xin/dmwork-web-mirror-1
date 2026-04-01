@@ -3,7 +3,7 @@
     width: 60px;
     flex-shrink: 0;
     height: 100%;
-    background: #E8E9EE;
+    background: var(--wk-bg-navrail);
     border-right: 1px solid var(--wk-border-subtle);
     display: flex;
     flex-direction: column;
@@ -12,10 +12,6 @@
     position: relative;
     z-index: 10;
     overflow: visible; /* dropdown 需要溢出 */
-}
-
-body[theme-mode=dark] .wk-navrail {
-    background: var(--wk-bg-deep);
 }
 
 /* ── Top user avatar ── */
@@ -130,23 +126,31 @@ body[theme-mode=dark] .wk-navrail {
     position: fixed;
     bottom: 52px;
     left: 12px;
-    width: 220px;
+    width: 240px;
     background: var(--wk-bg-surface);
     border: 1px solid var(--wk-border-subtle);
-    border-radius: var(--wk-r-md, 10px);
-    box-shadow: var(--wk-shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.24));
+    border-radius: var(--wk-r-lg, 14px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
     z-index: 101;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: var(--wk-sp-1, 4px) 0;
+    padding: var(--wk-sp-2, 8px);
+}
+
+.wk-navrail__dropdown-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--wk-text-tertiary);
+    padding: 4px 8px 6px;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
 }
 
 /* 可滚动 Space 列表区 */
 .wk-navrail__dropdown-spaces {
     overflow-y: auto;
     max-height: calc(100vh - 200px);
-    padding: 0 var(--wk-sp-1, 4px);
 }
 
 .wk-navrail__dropdown-divider {
@@ -159,7 +163,6 @@ body[theme-mode=dark] .wk-navrail {
 /* 固定底部操作区 */
 .wk-navrail__dropdown-actions {
     flex-shrink: 0;
-    padding: 0 var(--wk-sp-1, 4px) var(--wk-sp-1, 4px);
 }
 
 /* ── Nav items (middle) ── */
@@ -252,8 +255,8 @@ body[theme-mode=dark] .wk-navrail {
     width: 34px;
     height: 34px;
     border-radius: var(--wk-r-sm, 6px);
-    border: 1px solid rgba(124, 92, 252, 0.15);
-    background: rgba(124, 92, 252, 0.06);
+    border: 1px solid var(--wk-brand-tint-15);
+    background: var(--wk-brand-tint-06);
     color: var(--wk-brand-primary, #7C5CFC);
     cursor: pointer;
     display: flex;
@@ -265,8 +268,8 @@ body[theme-mode=dark] .wk-navrail {
 }
 
 .wk-navrail__space-icon-btn:hover {
-    border-color: rgba(124, 92, 252, 0.35);
-    background: rgba(124, 92, 252, 0.10);
+    border-color: var(--wk-brand-tint-35);
+    background: var(--wk-brand-tint-10);
 }
 
 /* ── Settings badge ── */

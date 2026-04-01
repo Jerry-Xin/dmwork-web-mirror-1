@@ -1,24 +1,24 @@
 .wk-space-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 6px 12px;
-    border-radius: 10px;
+    gap: 12px;
+    padding: 8px;
+    border-radius: var(--wk-r-sm, 6px);
     cursor: pointer;
     transition: background 0.15s;
     outline: none;
 }
 
 .wk-space-item:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--wk-bg-hover, #EAEBF0);
 }
 
 .wk-space-item--selected {
-    background: rgba(124, 92, 252, 0.08);
+    background: var(--wk-brand-tint-08);
 }
 
 .wk-space-item--selected:hover {
-    background: rgba(124, 92, 252, 0.12);
+    background: var(--wk-brand-tint-12);
 }
 
 body[theme-mode=dark] .wk-space-item:hover {
@@ -26,7 +26,7 @@ body[theme-mode=dark] .wk-space-item:hover {
 }
 
 body[theme-mode=dark] .wk-space-item--selected {
-    background: rgba(124, 92, 252, 0.15);
+    background: var(--wk-brand-tint-15);
 }
 
 /* info */
@@ -39,7 +39,7 @@ body[theme-mode=dark] .wk-space-item--selected {
 }
 
 .wk-space-item__name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--wk-color-text-main, #1A1C24);
     white-space: nowrap;
@@ -49,7 +49,7 @@ body[theme-mode=dark] .wk-space-item--selected {
 }
 
 .wk-space-item--selected .wk-space-item__name {
-    color: #6B4FD8;
+    color: var(--wk-brand-accent);
     font-weight: 600;
 }
 
@@ -62,14 +62,31 @@ body[theme-mode=dark] .wk-space-item__name { color: #e0e0e0; }
     margin-top: 1px;
 }
 
-/* actions slot（hover 时显示） */
-.wk-space-item__actions {
-    display: none;
+/* trailing slot（checkmark + actions） */
+.wk-space-item__trailing {
+    display: flex;
     align-items: center;
     gap: 2px;
     flex-shrink: 0;
 }
 
-.wk-space-item:hover .wk-space-item__actions {
+/* checkmark（选中时显示） */
+.wk-space-item__check {
     display: flex;
+    align-items: center;
+    color: var(--wk-brand-accent);
+}
+
+/* actions slot：opacity 0 默认，hover 时 opacity 1，不用 display:none 避免位置跳动 */
+.wk-space-item__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.wk-space-item:hover .wk-space-item__actions {
+    opacity: 1;
 }

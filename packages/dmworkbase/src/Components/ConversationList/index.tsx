@@ -19,18 +19,19 @@ import { RevokeCell } from "../../Messages/Revoke";
 import { FlameMessageCell } from "../../Messages/Flame";
 import WKAvatar from "../WKAvatar";
 import AiBadge from "../AiBadge";
+export type ConvFilter = 'all' | 'human' | 'ai' | 'group'
+
 export interface ConversationListProps {
     conversations: ConversationWrap[]
     select?: Channel
+    /** 外部控制过滤，不传则内部默认 'all' */
+    filter?: ConvFilter
     onClick?: (conversation: ConversationWrap) => void
     onClearMessages?: (channel: Channel) => void
 }
 
-type ConvFilter = 'all' | 'human' | 'ai' | 'group'
-
 export interface ConversationListState {
     selectConversationWrap?: ConversationWrap
-    filter: ConvFilter
 }
 
 export default class ConversationList extends Component<ConversationListProps, ConversationListState>{
@@ -40,9 +41,7 @@ export default class ConversationList extends Component<ConversationListProps, C
     constructor(props: ConversationListProps) {
         super(props)
 
-        this.state = {
-            filter: 'all',
-        }
+        this.state = {}
     }
 
     componentDidMount() {
@@ -245,7 +244,7 @@ export default class ConversationList extends Component<ConversationListProps, C
     }
 
     filterConversation(conv: ConversationWrap): boolean {
-        const { filter } = this.state
+        const filter = this.props.filter ?? 'all'
         if (filter === 'all') return true
         const channelInfo = conv.channelInfo
         if (filter === 'group') return conv.channel.channelType === ChannelTypeGroup
@@ -266,33 +265,13 @@ export default class ConversationList extends Component<ConversationListProps, C
 
     render() {
         const { conversations, select } = this.props
-        const { selectConversationWrap, filter } = this.state
+        const { selectConversationWrap } = this.state
 
         const filtered = conversations?.filter(c => this.filterConversation(c)) ?? []
         const pinned = filtered.filter(c => c.channelInfo?.top)
         const recent = filtered.filter(c => !c.channelInfo?.top)
 
-        const filters: { key: ConvFilter; label: string }[] = [
-            { key: 'all', label: '全部' },
-            { key: 'human', label: '人类' },
-            { key: 'ai', label: 'AI' },
-            { key: 'group', label: '群组' },
-        ]
-
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
-            {/* Filter chips */}
-            <div className="wk-conv-filters">
-                {filters.map(f => (
-                    <button
-                        key={f.key}
-                        className={classNames('wk-conv-filter-chip', filter === f.key ? 'wk-conv-filter-chip-active' : undefined)}
-                        onClick={() => this.setState({ filter: f.key })}
-                    >
-                        {f.label}
-                    </button>
-                ))}
-            </div>
-
             {/* 置顶区 */}
             {pinned.length > 0 && <>
                 <div className="wk-conv-section">📌 置顶</div>

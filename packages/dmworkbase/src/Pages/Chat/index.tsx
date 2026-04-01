@@ -1,6 +1,6 @@
 import React, { Component, ReactNode } from "react";
 import { Conversation } from "../../Components/Conversation";
-import ConversationList from "../../Components/ConversationList";
+import ConversationList, { ConvFilter } from "../../Components/ConversationList";
 import Provider from "../../Service/Provider";
 import { ErrorBoundary } from "../../Components/ErrorBoundary";
 
@@ -177,16 +177,52 @@ export class ChatContentPage extends Component<
   }
 }
 
-export default class ChatPage extends Component<any> {
+interface ChatPageState {
+  filter: ConvFilter
+  dropdownOpen: boolean
+}
+
+const FILTER_OPTIONS: { key: ConvFilter; label: string; icon: ReactNode }[] = [
+  {
+    key: 'all', label: '全部会话',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  },
+  {
+    key: 'group', label: '群聊',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  },
+  {
+    key: 'ai', label: 'AI',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+  },
+  {
+    key: 'human', label: '人类',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  },
+]
+
+export default class ChatPage extends Component<any, ChatPageState> {
   vm!: ChatVM;
   spaceListRef: SpaceList | null = null;
   constructor(props: any) {
     super(props);
+    this.state = { filter: 'all', dropdownOpen: false }
   }
 
-  componentDidMount() {}
+  componentDidMount() {
+    document.addEventListener('click', this._handleDocClick)
+  }
 
-  componentWillUnmount() { }
+  componentWillUnmount() {
+    document.removeEventListener('click', this._handleDocClick)
+  }
+
+  _handleDocClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.wk-chat-title-dropdown')) {
+      this.setState({ dropdownOpen: false })
+    }
+  }
 
 
 
@@ -198,6 +234,8 @@ export default class ChatPage extends Component<any> {
           return this.vm;
         }}
         render={(vm: ChatVM) => {
+          const { filter, dropdownOpen } = this.state
+          const activeOption = FILTER_OPTIONS.find(o => o.key === filter)!
           return (
             <div className="wk-chat">
               <div
@@ -208,7 +246,32 @@ export default class ChatPage extends Component<any> {
               >
                 <div className="wk-chat-content-left">
                   <div className="wk-chat-search">
-                    <div className="wk-chat-title">会话</div>
+                    {/* 标题下拉菜单 */}
+                    <div className="wk-chat-title-dropdown">
+                      <button
+                        className={classNames('wk-chat-title-btn', dropdownOpen ? 'wk-chat-title-btn-open' : undefined)}
+                        onClick={() => this.setState(s => ({ dropdownOpen: !s.dropdownOpen }))}
+                      >
+                        {activeOption.label}
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
+                      {dropdownOpen && (
+                        <div className="wk-chat-title-menu">
+                          {FILTER_OPTIONS.map(opt => (
+                            <div
+                              key={opt.key}
+                              className={classNames('wk-chat-title-option', filter === opt.key ? 'wk-chat-title-option-active' : undefined)}
+                              onClick={() => this.setState({ filter: opt.key, dropdownOpen: false })}
+                            >
+                              <span className="wk-chat-title-option-icon">{opt.icon}</span>
+                              <span>{opt.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div
                       style={{ marginRight: '20px', alignItems: 'center', display: 'flex', cursor: 'pointer' }}
                       onClick={() => {
@@ -279,6 +342,7 @@ export default class ChatPage extends Component<any> {
                         <ConversationList
                           select={WKApp.shared.openChannel}
                           conversations={vm.filteredConversations}
+                          filter={filter}
                           onClearMessages={this.vm.clearMessages.bind(this.vm)}
                           onClick={(conversation: ConversationWrap) => {
                             vm.selectedConversation = conversation;

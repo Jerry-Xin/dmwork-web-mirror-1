@@ -38,13 +38,96 @@
     color: var(--text-primary) !important;
 }
 
-.wk-chat-title {
-    width: 250px;
-    font-size: 16px;
+/* ── Title Dropdown ── */
+.wk-chat-title-dropdown {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.wk-chat-title-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 15px;
     font-weight: 600;
+    color: var(--wk-text-primary, var(--text-primary));
+    cursor: pointer;
+    transition: color 0.15s;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+}
+
+.wk-chat-title-btn:hover {
+    color: var(--wk-text-accent, #6B4FD8);
+}
+
+.wk-chat-title-btn-open {
+    color: var(--wk-text-accent, #6B4FD8);
+}
+
+.wk-chat-title-btn-open svg {
+    transform: rotate(180deg);
+}
+
+.wk-chat-title-btn svg {
+    transition: transform 0.2s cubic-bezier(0.16,1,0.3,1);
+    flex-shrink: 0;
+}
+
+.wk-chat-title-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 160px;
+    background: var(--wk-bg-surface, #fff);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--wk-r-md, 10px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    padding: 4px;
+    z-index: 200;
+    animation: wkDropIn 0.18s cubic-bezier(0.16,1,0.3,1);
+}
+
+@keyframes wkDropIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.wk-chat-title-option {
     display: flex;
     align-items: center;
-    color: var(--text-primary);
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: var(--wk-r-sm, 6px);
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--wk-text-secondary, #5C6070);
+    transition: background 0.15s, color 0.15s;
+}
+
+.wk-chat-title-option:hover {
+    background: var(--wk-bg-hover, rgba(0,0,0,0.05));
+    color: var(--wk-text-primary, #1A1C24);
+}
+
+.wk-chat-title-option-active {
+    color: var(--wk-text-accent, #6B4FD8);
+    background: rgba(124,92,252,0.06);
+}
+
+.wk-chat-title-option-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: inherit;
 }
 
 .wk-chat-conversation-list {

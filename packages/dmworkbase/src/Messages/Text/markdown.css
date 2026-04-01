@@ -175,11 +175,6 @@
     opacity: 0.8;
 }
 
-/* 发送气泡内链接 */
-.wk-markdown-send a {
-    color: rgba(255, 255, 255, 0.9);
-}
-
 /* ── 图片 ── */
 .wk-markdown img {
     max-width: 100%;

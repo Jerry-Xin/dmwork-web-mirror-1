@@ -91,7 +91,7 @@ export default class NavRail extends Component<NavRailProps> {
 
                     {/* 中部：动态导航菜单 */}
                     <div className="wk-navrail__items">
-                        {menusList.map((menus) => (
+                        {(menusList ?? []).map((menus) => (
                             <NavItem
                                 key={menus.id}
                                 icon={menus.id === currentMenus?.id ? menus.selectedIcon : menus.icon}

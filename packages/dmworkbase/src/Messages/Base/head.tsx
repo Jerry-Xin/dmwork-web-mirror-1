@@ -1,4 +1,5 @@
 import { Channel, ChannelTypePerson, ChannelTypeGroup, WKSDK } from "wukongimjssdk";
+import { ChannelTypeCommunityTopic } from "../../Service/Const";
 import React from "react";
 import { Component } from "react";
 import { BubblePosition, MessageWrap } from "../../Service/Model";
@@ -50,7 +51,7 @@ export default class MessageHead extends Component<MessageHeadProps> {
     render() {
         const { message } = this.props
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(message.fromUID, ChannelTypePerson))
-        const isGroupMsg = message.channel.channelType === ChannelTypeGroup
+        const isGroupMsg = message.channel.channelType === ChannelTypeGroup || message.channel.channelType === ChannelTypeCommunityTopic
         const isBot = channelInfo?.orgData?.robot === 1
         return <>
            {

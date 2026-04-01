@@ -1,4 +1,5 @@
 import WKSDK, { Channel, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
+import { ChannelTypeCommunityTopic } from "../../Service/Const";
 import React from "react";
 import { Component, CSSProperties } from "react";
 import classNames from "classnames";
@@ -68,7 +69,7 @@ export default class WKAvatar extends Component<WKAvatarProps, WKAvatarState> {
     getAvatarClass() {
         const { channel } = this.props
         if (!channel) return ""
-        if (channel.channelType === ChannelTypeGroup) return "wk-avatar-group"
+        if (channel.channelType === ChannelTypeGroup || channel.channelType === ChannelTypeCommunityTopic) return "wk-avatar-group"
         if (channel.channelType === ChannelTypePerson) {
             const info = WKSDK.shared().channelManager.getChannelInfo(channel)
             if (info?.orgData?.robot === 1) return "wk-avatar-ai"

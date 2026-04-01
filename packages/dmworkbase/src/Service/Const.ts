@@ -128,3 +128,4 @@ export enum MessageReasonCode {
 export const OrderFactor = 10000 // 排序因子
 
 export const ChannelTypeCustomerService = 3 // 客服频道
+export const ChannelTypeCommunityTopic = 5 // 话题频道

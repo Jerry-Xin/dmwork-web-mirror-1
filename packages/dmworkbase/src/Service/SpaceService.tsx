@@ -1,6 +1,7 @@
 import WKApp from "../App"
 import { ChannelTypePerson, ChannelTypeGroup, Channel, Conversation } from "wukongimjssdk"
 import { hasSpacePrefix } from "./SpacePrefix"
+import { ChannelTypeCommunityTopic } from "./Const"
 
 export { hasSpacePrefix } from "./SpacePrefix"
 
@@ -27,8 +28,8 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
     // 无前缀的私聊 → 不过滤（旧数据兼容）
     if (channel.channelType === ChannelTypePerson) return false
 
-    // 无前缀的群聊 → 查 channelSpaceMap 缓存
-    if (channel.channelType === ChannelTypeGroup) {
+    // 无前缀的群聊/话题频道 → 查 channelSpaceMap 缓存
+    if (channel.channelType === ChannelTypeGroup || channel.channelType === ChannelTypeCommunityTopic) {
         const key = `${cid}_${channel.channelType}`
         const cachedSpaceId = WKApp.shared.channelSpaceMap.get(key)
         if (cachedSpaceId && cachedSpaceId !== currentSpaceId) {

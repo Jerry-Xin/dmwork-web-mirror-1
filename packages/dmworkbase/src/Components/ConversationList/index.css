@@ -33,7 +33,7 @@
 
 /* 置顶：用高优先级选择器，不用 !important */
 .wk-conversationlist .wk-conversationlist-item-top {
-    background: var(--wk-bg-elevated);
+    /* 置顶 item 不做特殊背景处理，和普通 item 保持一致 */
 }
 
 .wk-conversationlist-item-content {
@@ -100,7 +100,7 @@
 
 /* 选中态：淡背景 + 左侧渐变指示条，文字不反白 */
 .wk-conversationlist-item-selected {
-    background: var(--wk-bg-elevated);
+    background: rgba(124, 92, 252, 0.06);
     border-radius: var(--wk-r-md);
 }
 

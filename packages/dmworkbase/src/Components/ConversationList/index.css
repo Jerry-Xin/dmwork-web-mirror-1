@@ -39,7 +39,6 @@
 .wk-conversationlist-item-content {
     display: flex;
     align-items: center;
-    min-height: 56px;
 }
 
 .wk-conversationlist-item-left {

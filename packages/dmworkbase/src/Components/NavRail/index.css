@@ -55,7 +55,7 @@
     height: 10px;
     border-radius: var(--wk-r-circle, 50%);
     background: var(--wk-color-online);
-    border: 2px solid var(--wk-bg-navrail);
+    border: 2px solid var(--wk-bg-deep);
     pointer-events: none;
 }
 

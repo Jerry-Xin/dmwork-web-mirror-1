@@ -7,6 +7,12 @@
     user-select: none;
 }
 
+/* compact mode：NavRail 信号格，padding 更小 */
+.wk-conn-status--compact {
+    padding: 0 4px;
+    gap: 2px;
+}
+
 .wk-conn-text {
     font-size: 11px;
     font-weight: 500;
@@ -14,6 +20,10 @@
 }
 
 .wk-conn-blink {
+    animation: wk-conn-pulse 1.2s ease-in-out infinite;
+}
+
+.wk-conn-blink-wrap svg {
     animation: wk-conn-pulse 1.2s ease-in-out infinite;
 }
 
@@ -28,15 +38,16 @@
     left: 50%;
     transform: translateX(-50%);
     margin-top: 8px;
-    background: #1f2937;
-    color: #f3f4f6;
+    background: var(--wk-bg-elevated);
+    color: var(--wk-text-primary);
+    border: 1px solid var(--wk-border-subtle);
     padding: 8px 12px;
     border-radius: 6px;
     font-size: 12px;
     line-height: 1.6;
     white-space: nowrap;
     z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--wk-shadow-md);
 }
 
 .wk-conn-tooltip::before {
@@ -46,5 +57,5 @@
     left: 50%;
     transform: translateX(-50%);
     border: 5px solid transparent;
-    border-bottom-color: #1f2937;
+    border-bottom-color: var(--wk-border-subtle);
 }

@@ -10,7 +10,7 @@ import MarkdownContent from "../Text/MarkdownContent"
 
 export { FileContent } from "./FileContent"
 
-function formatFileSize(bytes: number): string {
+export function formatFileSize(bytes: number): string {
     if (bytes <= 0) return "0 B"
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -18,7 +18,7 @@ function formatFileSize(bytes: number): string {
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-function getFileIconInfo(extension: string, name?: string): { color: string; label: string } {
+export function getFileIconInfo(extension: string, name?: string): { color: string; label: string } {
     const ext = getExtension(extension, name)
     switch (ext) {
         case "pdf":
@@ -152,8 +152,9 @@ export class FileCell extends MessageCell<any, FileCellState> {
     }
 
     getFileURL(content: FileContent): string {
-        if (content.url && content.url !== "") {
-            const fileUrl = WKApp.dataSource.commonDataSource.getFileURL(content.url)
+        const rawUrl = content.url || content.remoteUrl || ""
+        if (rawUrl !== "") {
+            const fileUrl = WKApp.dataSource.commonDataSource.getFileURL(rawUrl)
             // Ensure we have an absolute URL
             if (fileUrl && !fileUrl.startsWith("http")) {
                 return window.location.origin + "/" + fileUrl.replace(/^\//, "")

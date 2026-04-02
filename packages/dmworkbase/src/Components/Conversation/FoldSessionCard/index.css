@@ -195,13 +195,16 @@
     gap: var(--wk-sp-2);
     overflow: hidden;
     min-height: 0;
-    padding: 0;
+    /* 水平 padding 常驻，避免收起时内容左移 */
+    padding: 0 var(--wk-sp-4) 0 calc(var(--wk-sp-4) + 6px);
     border-top: 0 solid var(--wk-border-subtle);
     border-bottom: 0 solid var(--wk-border-subtle);
+    transition: padding 0.4s var(--wk-ease), border-top-width 0.4s var(--wk-ease), border-bottom-width 0.4s var(--wk-ease);
 }
 
 .wk-fold-session-card-expanded-show .wk-fold-session-card-expanded-inner {
-    padding: var(--wk-sp-2) var(--wk-sp-4) var(--wk-sp-3) calc(var(--wk-sp-4) + 6px);
+    padding-top: var(--wk-sp-2);
+    padding-bottom: var(--wk-sp-3);
     border-top-width: 1px;
     border-bottom-width: 1px;
 }

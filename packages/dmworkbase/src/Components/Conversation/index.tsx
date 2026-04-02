@@ -22,6 +22,28 @@ import { FlameMessageCell } from "../../Messages/Flame";
 import FoldSessionCard, { FoldSessionCardParticipant } from "./FoldSessionCard";
 import { ConversationRenderItem, FoldSessionViewModel } from "./vm";
 import moment from "moment";
+import { FileContent, formatFileSize, getFileIconInfo } from "../../Messages/File";
+import { ImageContent } from "../../Messages/Image";
+import Lightbox from "yet-another-react-lightbox";
+import Download from "yet-another-react-lightbox/plugins/download";
+
+const FoldImage: React.FC<{ src: string }> = ({ src }) => {
+    const [open, setOpen] = React.useState(false)
+    return (
+        <div className="wk-fold-img" onClick={() => setOpen(true)}>
+            <img src={src} alt="" />
+            <Lightbox
+                open={open}
+                close={() => setOpen(false)}
+                slides={[{ src, alt: "", download: src }]}
+                plugins={[Download]}
+                carousel={{ finite: true }}
+                controller={{ closeOnBackdropClick: true }}
+                render={{ buttonPrev: () => null, buttonNext: () => null }}
+            />
+        </div>
+    )
+}
 
 export interface ConversationProps {
     channel: Channel
@@ -388,7 +410,6 @@ export class Conversation extends Component<ConversationProps> implements Conver
         return messages.map((message) => {
             const senderName = message.from?.title || message.fromUID
             const timeStr = moment(message.timestamp * 1000).format("HH:mm")
-            const digest = this.getMessageDigestText(message)
             return (
                 <div key={message.clientMsgNo} className="wk-fold-msg">
                     <span className="wk-fold-msg-ava">
@@ -402,11 +423,77 @@ export class Conversation extends Component<ConversationProps> implements Conver
                             <span className="wk-fold-msg-name">{senderName}</span>
                             <span className="wk-fold-msg-time">{timeStr}</span>
                         </div>
-                        <div className="wk-fold-msg-text">{digest}</div>
+                        {this.renderFoldMessageContent(message)}
                     </div>
                 </div>
             )
         })
+    }
+
+    renderFoldMessageContent(message: MessageWrap) {
+        // 文本消息（含 Markdown 表格、代码块、链接）
+        if (message.contentType === MessageContentType.text || message.streamOn) {
+            return (
+                <div className="wk-fold-msg-text">
+                    <MarkdownContent
+                        content={this.getMessageTextContent(message)}
+                        isSend={message.send}
+                        isStreaming={message.isStreaming}
+                        mentions={this.getMessageMentions(message)}
+                        onMentionClick={(uid) => this.showUser(uid)}
+                        emojis={this.getMessageEmojis(message)}
+                    />
+                </div>
+            )
+        }
+
+        // 文件消息
+        if (message.contentType === MessageContentTypeConst.file) {
+            const content = message.content as FileContent
+            const iconInfo = getFileIconInfo(content.extension, content.name)
+            return (
+                <div className="wk-fold-file" onClick={() => {
+                    const rawUrl = content.url || content.remoteUrl || ""
+                    if (!rawUrl) return
+                    const fileUrl = WKApp.dataSource.commonDataSource.getFileURL(rawUrl)
+                    if (!fileUrl) return
+                    const a = document.createElement("a")
+                    a.href = fileUrl.startsWith("http") ? fileUrl : window.location.origin + "/" + fileUrl.replace(/^\//, "")
+                    a.download = content.name || "file"
+                    a.target = "_blank"
+                    document.body.appendChild(a)
+                    a.click()
+                    document.body.removeChild(a)
+                }}>
+                    <div className="wk-fold-file-icon" style={{ backgroundColor: iconInfo.color }}>
+                        <span>{iconInfo.label}</span>
+                    </div>
+                    <div className="wk-fold-file-info">
+                        <div className="wk-fold-file-name" title={content.name}>{content.name || "未知文件"}</div>
+                        <div className="wk-fold-file-size">{formatFileSize(content.size)}</div>
+                    </div>
+                    <div className="wk-fold-file-dl" title="下载">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                    </div>
+                </div>
+            )
+        }
+
+        // 图片消息
+        if (message.contentType === MessageContentType.image) {
+            const content = message.content as ImageContent
+            const rawUrl = content.url || content.remoteUrl || ""
+            const imgUrl = rawUrl ? WKApp.dataSource.commonDataSource.getImageURL(rawUrl) : content.imgData || ""
+            return imgUrl ? <FoldImage src={imgUrl} /> : null
+        }
+
+        // 其他类型：回退到文本摘要
+        const digest = this.getMessageDigestText(message)
+        return <div className="wk-fold-msg-text">{digest}</div>
     }
 
     getMessageDigestText(message: MessageWrap): string {

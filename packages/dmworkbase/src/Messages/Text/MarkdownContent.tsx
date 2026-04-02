@@ -149,60 +149,21 @@ const baseComponents: any = {
 };
 
 /**
- * 单段文本的 inline ReactMarkdown 渲染器。
- * mention/emoji 把整段文本切成多段，每段单独送给 ReactMarkdown。
- * 这些小段通常是行内文本（不含标题/列表等块级结构），
- * 用 p → span 避免 <p> 造成的块级换行，保持与周围 mention/emoji span 同行。
+ * 递归处理 React children，将匹配 emoji/mention 的文本节点替换为对应的 React 元素。
+ * 在 ReactMarkdown 渲染后的组件树上工作，不会破坏表格等块级 markdown 结构。
  */
-const InlineMarkdown: React.FC<{ content: string }> = ({ content }) => {
-    // 如果内容包含块级结构（换行、标题、列表等），退回普通块级渲染
-    const isInline = !content.includes("\n");
-    const components = isInline
-        ? { ...baseComponents, p: ({ children }: any) => <span>{children}</span> }
-        : baseComponents;
-    return (
-        <ReactMarkdown
-            remarkPlugins={remarkPlugins}
-            rehypePlugins={rehypePlugins}
-            components={components}
-        >
-            {content}
-        </ReactMarkdown>
-    );
-};
-
-const MarkdownContent: React.FC<MarkdownContentProps> = ({
-    content,
-    isSend = false,
-    isStreaming,
-    mentions = [],
-    onMentionClick,
-    emojis = [],
-}) => {
-    const normalized = useMemo(() => normalizeContent(content), [content]);
-
-    // 无 mention 也无 emoji：整体走一个 ReactMarkdown
-    if (!mentions.length && !emojis.length) {
-        return (
-            <div className={`wk-markdown ${isSend ? "wk-markdown-send" : "wk-markdown-recv"}`}>
-                <ReactMarkdown
-                    remarkPlugins={remarkPlugins}
-                    rehypePlugins={rehypePlugins}
-                    components={baseComponents}
-                >
-                    {normalized}
-                </ReactMarkdown>
-                {isStreaming && <span className="wk-stream-cursor" />}
-            </div>
-        );
-    }
-
-    // 有 mention 或 emoji：切段渲染
-    const segments = segmentText(normalized, mentions, emojis);
-
-    return (
-        <div className={`wk-markdown ${isSend ? "wk-markdown-send" : "wk-markdown-recv"}`}>
-            {segments.map((seg, i) => {
+function processTextChildren(
+    children: React.ReactNode,
+    mentions: MentionInfo[],
+    emojis: EmojiInfo[],
+    onMentionClick?: (uid: string) => void,
+    isSend?: boolean,
+): React.ReactNode {
+    return React.Children.map(children, (child) => {
+        if (typeof child === "string") {
+            const segments = segmentText(child, mentions, emojis);
+            if (segments.length === 1 && segments[0].type === "text") return child;
+            return segments.map((seg, i) => {
                 if (seg.type === "mention") {
                     return (
                         <span
@@ -221,8 +182,61 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({
                         </span>
                     );
                 }
-                return <InlineMarkdown key={i} content={seg.content} />;
-            })}
+                return seg.content;
+            });
+        }
+        if (React.isValidElement(child) && (child.props as any).children != null) {
+            return React.cloneElement(
+                child as React.ReactElement<any>,
+                {},
+                processTextChildren((child.props as any).children, mentions, emojis, onMentionClick, isSend),
+            );
+        }
+        return child;
+    });
+}
+
+const MarkdownContent: React.FC<MarkdownContentProps> = ({
+    content,
+    isSend = false,
+    isStreaming,
+    mentions = [],
+    onMentionClick,
+    emojis = [],
+}) => {
+    const normalized = useMemo(() => normalizeContent(content), [content]);
+    const hasTokens = mentions.length > 0 || emojis.length > 0;
+
+    const components = useMemo(() => {
+        if (!hasTokens) return baseComponents;
+        const process = (children: React.ReactNode) =>
+            processTextChildren(children, mentions, emojis, onMentionClick, isSend);
+        const wrap = (Tag: string) => ({ node, children, ...props }: any) =>
+            React.createElement(Tag, props, process(children));
+        return {
+            ...baseComponents,
+            p: wrap("p"),
+            td: wrap("td"),
+            th: wrap("th"),
+            li: wrap("li"),
+            h1: wrap("h1"),
+            h2: wrap("h2"),
+            h3: wrap("h3"),
+            h4: wrap("h4"),
+            h5: wrap("h5"),
+            h6: wrap("h6"),
+        };
+    }, [hasTokens, mentions, emojis, onMentionClick, isSend]);
+
+    return (
+        <div className={`wk-markdown ${isSend ? "wk-markdown-send" : "wk-markdown-recv"}`}>
+            <ReactMarkdown
+                remarkPlugins={remarkPlugins}
+                rehypePlugins={rehypePlugins}
+                components={components}
+            >
+                {normalized}
+            </ReactMarkdown>
             {isStreaming && <span className="wk-stream-cursor" />}
         </div>
     );

@@ -17,12 +17,56 @@ import { SYSTEM_BOTS } from "../../Service/SpaceService";
 import { SuperGroup } from "../../Utils/const";
 import { SystemContent } from "wukongimjssdk";
 
+export interface FoldSessionParticipant {
+    uid: string
+    name: string
+    channel: Channel
+}
+
+interface FoldSessionUIState {
+    expanded?: boolean
+    userToggled?: boolean
+    flash?: boolean
+    appearing?: boolean
+    highlightSummary?: boolean
+}
+
+export interface FoldSessionViewModel {
+    sessionId: string
+    anchorId: string
+    participants: FoldSessionParticipant[]
+    messages: MessageWrap[]
+    expandedMessages: MessageWrap[]
+    lastMessage: MessageWrap
+    count: number
+    isActive: boolean
+    isExpanded: boolean
+    userToggled: boolean
+    shouldMergeFlash: boolean
+    shouldAppear: boolean
+    highlightSummary: boolean
+    showSummary: boolean
+}
+
+export interface ConversationRenderMessageItem {
+    type: "message"
+    message: MessageWrap
+}
+
+export interface ConversationRenderFoldSessionItem {
+    type: "foldSession"
+    session: FoldSessionViewModel
+}
+
+export type ConversationRenderItem = ConversationRenderMessageItem | ConversationRenderFoldSessionItem
+
 export default class ConversationVM extends ProviderListener {
 
     loading: boolean = false // 消息是否加载中
     channel: Channel
     channelInfo?: ChannelInfo // 当前会话的频道详情
     messages: MessageWrap[] = [] // 消息集合 
+    renderItems: ConversationRenderItem[] = [] // UI 渲染集合（消息项 + 折叠 session）
     currentConversation?: Conversation // 当前最近会话
     messagesOfOrigin: MessageWrap[] = [] // 原始消息集合（不包含时间消息等本地消息）
     browseToMessageSeq: number = 0 //  已经预览到的最新的messageSeq
@@ -49,6 +93,9 @@ export default class ConversationVM extends ProviderListener {
     lastLocalMessageElement?: HTMLElement | null // 最后一条消息的dom元素
     private _showScrollToBottomBtn?: boolean = false // 是否显示底部按钮
     subscribers: Subscriber[] = []
+    private foldSessionState: Map<string, FoldSessionUIState> = new Map()
+    private messageSeqToFoldSessionId: Map<number, string> = new Map()
+    afterFoldSessionClientMsgNos: Set<string> = new Set() // 紧跟在折叠卡片后的消息，需强制独立显示
 
     fileDragEnter?: boolean // 文件拖拽上传（拖进来了）
     fileDragLeave?: boolean // 文件拖拽上传（拖离开了）
@@ -159,6 +206,229 @@ export default class ConversationVM extends ProviderListener {
     getCheckedMessages() {
         return this.messages.filter((m) => {
             return m.checked
+        })
+    }
+
+    isBotMessage(message: MessageWrap): boolean {
+        if (this.channel.channelType !== ChannelTypeGroup) {
+            return false
+        }
+        if (message.revoke || message.send) {
+            return false
+        }
+        if (message.contentType === MessageContentTypeConst.time
+            || message.contentType === MessageContentTypeConst.historySplit
+            || message.contentType === MessageContentTypeConst.typing) {
+            return false
+        }
+        const channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(message.fromUID, ChannelTypePerson))
+        return channelInfo?.orgData?.robot === 1
+    }
+
+    getSessionParticipants(messages: MessageWrap[]): FoldSessionParticipant[] {
+        const participants = new Array<FoldSessionParticipant>()
+        const seenUIDs = new Set<string>()
+        for (const message of messages) {
+            if (seenUIDs.has(message.fromUID)) {
+                continue
+            }
+            seenUIDs.add(message.fromUID)
+            const channel = new Channel(message.fromUID, ChannelTypePerson)
+            const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
+            participants.push({
+                uid: message.fromUID,
+                name: channelInfo?.title || message.fromUID,
+                channel,
+            })
+        }
+        return participants
+    }
+
+    getFoldSessionId(message: MessageWrap): string {
+        if (message.messageSeq > 0) {
+            return `fold-session-${message.messageSeq}`
+        }
+        return `fold-session-${message.clientMsgNo}`
+    }
+
+    buildRenderItems(messages: MessageWrap[], allowFoldAnimation: boolean = false): ConversationRenderItem[] {
+        const renderItems = new Array<ConversationRenderItem>()
+        const nextFoldSessionState = new Map<string, FoldSessionUIState>()
+        const nextMessageSeqToFoldSessionId = new Map<number, string>()
+        const typingMessages = new Array<MessageWrap>()
+        const sourceMessages = new Array<MessageWrap>()
+
+        for (const message of messages) {
+            if (message.contentType === MessageContentTypeConst.typing) {
+                typingMessages.push(message)
+            } else {
+                sourceMessages.push(message)
+            }
+        }
+
+        let pendingSessionMessages = new Array<MessageWrap>()
+
+        const flushPendingSession = (isActive: boolean) => {
+            if (pendingSessionMessages.length === 0) {
+                return
+            }
+            if (pendingSessionMessages.length >= 3) {
+                const firstMessage = pendingSessionMessages[0]
+                const sessionId = this.getFoldSessionId(firstMessage)
+                const previousState = this.foldSessionState.get(sessionId)
+                const lastMessage = pendingSessionMessages[pendingSessionMessages.length - 1]
+                const shouldAnimate = allowFoldAnimation && isActive && pendingSessionMessages.length === 3 && !previousState
+                const sessionState: FoldSessionUIState = {
+                    expanded: previousState?.expanded || false,
+                    userToggled: previousState?.userToggled || false,
+                    flash: previousState?.flash || shouldAnimate,
+                    appearing: previousState?.appearing || shouldAnimate,
+                    highlightSummary: previousState?.highlightSummary || false,
+                }
+
+                nextFoldSessionState.set(sessionId, sessionState)
+                for (const message of pendingSessionMessages) {
+                    if (message.messageSeq > 0) {
+                        nextMessageSeqToFoldSessionId.set(message.messageSeq, sessionId)
+                    }
+                }
+
+                renderItems.push({
+                    type: "foldSession",
+                    session: {
+                        sessionId,
+                        anchorId: sessionId,
+                        participants: this.getSessionParticipants(pendingSessionMessages),
+                        messages: [...pendingSessionMessages],
+                        expandedMessages: isActive
+                            ? [...pendingSessionMessages]
+                            : pendingSessionMessages.slice(0, pendingSessionMessages.length - 1),
+                        lastMessage,
+                        count: pendingSessionMessages.length,
+                        isActive,
+                        isExpanded: sessionState.expanded || false,
+                        userToggled: sessionState.userToggled || false,
+                        shouldMergeFlash: sessionState.flash || false,
+                        shouldAppear: sessionState.appearing || false,
+                        highlightSummary: sessionState.highlightSummary || false,
+                        showSummary: !isActive || (sessionState.highlightSummary || false),
+                    },
+                })
+            } else {
+                for (const message of pendingSessionMessages) {
+                    renderItems.push({ type: "message", message })
+                }
+            }
+            pendingSessionMessages = []
+        }
+
+        for (const message of sourceMessages) {
+            if (this.isBotMessage(message)) {
+                if (pendingSessionMessages.length > 0) {
+                    const previousMessage = pendingSessionMessages[pendingSessionMessages.length - 1]
+                    if (message.timestamp - previousMessage.timestamp < 120) {
+                        pendingSessionMessages.push(message)
+                        continue
+                    }
+                    flushPendingSession(false)
+                }
+                pendingSessionMessages.push(message)
+                continue
+            }
+            flushPendingSession(false)
+            renderItems.push({ type: "message", message })
+        }
+
+        flushPendingSession(pendingSessionMessages.length > 0 && !this.pullupHasMore)
+
+        for (const typingMessage of typingMessages) {
+            renderItems.push({ type: "message", message: typingMessage })
+        }
+
+        this.foldSessionState = nextFoldSessionState
+        this.messageSeqToFoldSessionId = nextMessageSeqToFoldSessionId
+
+        // 标记紧跟在折叠卡片后的第一条消息，防止 isContinue() 误判导致头像丢失
+        const afterFold = new Set<string>()
+        for (let i = 1; i < renderItems.length; i++) {
+            if (renderItems[i - 1].type === "foldSession" && renderItems[i].type === "message") {
+                afterFold.add(renderItems[i].message.clientMsgNo)
+            }
+        }
+        this.afterFoldSessionClientMsgNos = afterFold
+
+        return renderItems
+    }
+
+    rebuildRenderItems(allowFoldAnimation: boolean = false) {
+        this.renderItems = this.buildRenderItems(this.messages, allowFoldAnimation)
+    }
+
+    findFoldSessionByMessageSeq(messageSeq: number): FoldSessionViewModel | undefined {
+        const sessionId = this.messageSeqToFoldSessionId.get(messageSeq)
+        if (!sessionId) {
+            return
+        }
+        const renderItem = this.renderItems.find((item) => item.type === "foldSession" && item.session.sessionId === sessionId)
+        if (renderItem && renderItem.type === "foldSession") {
+            return renderItem.session
+        }
+    }
+
+    setFoldSessionExpanded(sessionId: string, expanded: boolean, userToggled: boolean = false, stateCallback?: () => void) {
+        const state = this.foldSessionState.get(sessionId) || {}
+        state.expanded = expanded
+        if (userToggled) {
+            state.userToggled = true
+        }
+        this.foldSessionState.set(sessionId, state)
+        this.rebuildRenderItems()
+        this.notifyListener(stateCallback)
+    }
+
+    toggleFoldSession(sessionId: string) {
+        const session = this.renderItems.find((item) => item.type === "foldSession" && item.session.sessionId === sessionId)
+        if (!session || session.type !== "foldSession") {
+            return
+        }
+        this.setFoldSessionExpanded(sessionId, !session.session.isExpanded, true)
+    }
+
+    highlightFoldSessionSummary(sessionId: string, stateCallback?: () => void) {
+        const state = this.foldSessionState.get(sessionId) || {}
+        state.highlightSummary = true
+        this.foldSessionState.set(sessionId, state)
+        this.rebuildRenderItems()
+        this.notifyListener(stateCallback)
+    }
+
+    clearFoldSessionAnimation(sessionId: string) {
+        const state = this.foldSessionState.get(sessionId)
+        if (!state || (!state.flash && !state.appearing)) {
+            return
+        }
+        state.flash = false
+        state.appearing = false
+        this.foldSessionState.set(sessionId, state)
+        this.rebuildRenderItems()
+        this.notifyListener()
+    }
+
+    clearFoldSessionSummaryHighlight(sessionId: string) {
+        const state = this.foldSessionState.get(sessionId)
+        if (!state || !state.highlightSummary) {
+            return
+        }
+        state.highlightSummary = false
+        this.foldSessionState.set(sessionId, state)
+        this.rebuildRenderItems()
+        this.notifyListener()
+    }
+
+    scrollToFoldSession(sessionId: string) {
+        scroller.scrollTo(sessionId, {
+            containerId: this.messageContainerId,
+            duration: 0,
         })
     }
 
@@ -381,6 +651,9 @@ export default class ConversationVM extends ProviderListener {
                 }
                 this.messagesOfOrigin = []
                 this.messages = []
+                this.renderItems = []
+                this.foldSessionState.clear()
+                this.messageSeqToFoldSessionId.clear()
                 this.lastMessage = undefined
                 this.notifyListener()
             }
@@ -783,7 +1056,7 @@ export default class ConversationVM extends ProviderListener {
                     this.scrollToBottom(true)
                 }
             }
-        })
+        }, { allowFoldAnimation: true })
     }
 
     // 根据情况更新最后一条消息
@@ -1041,7 +1314,7 @@ export default class ConversationVM extends ProviderListener {
     }
 
     // 刷新消息列表
-    refreshMessages(messages: MessageWrap[], callback?: () => void) {
+    refreshMessages(messages: MessageWrap[], callback?: () => void, options?: { allowFoldAnimation?: boolean }) {
         let newMessages = messages
         this.distinctMessages(newMessages)
         newMessages = this.filterPersonMessagesBySpace(newMessages)
@@ -1054,6 +1327,7 @@ export default class ConversationVM extends ProviderListener {
             }
         }
         this.messages = this.genMessageLinkedData(newMessages)
+        this.rebuildRenderItems(options?.allowFoldAnimation || false)
 
         this.notifyListener(() => {
             if (callback) {

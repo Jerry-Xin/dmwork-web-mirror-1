@@ -104,6 +104,8 @@ export default interface ConversationContext {
      */
     locateMessage(messageSeq: number): any
 
+    forceStandaloneMessage?(message: Message): boolean
+
     /**
      * 获取缓存的用户选区文本（在 showContextMenus 时捕获）
      * 如果选区完全在当前消息气泡内则返回选区文本，否则返回 null

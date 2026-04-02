@@ -565,7 +565,7 @@ export default class BaseModule implements IModule {
   registerMessageContextMenus() {
     WKApp.endpoints.registerMessageContextMenus(
       "contextmenus.copy",
-      (message) => {
+      (message, context) => {
         if (message.contentType !== MessageContentType.text) {
           return null;
         }
@@ -573,13 +573,15 @@ export default class BaseModule implements IModule {
         return {
           title: "复制",
           onClick: () => {
+            const selectedText = context.getCachedSelectedText?.();
+            const textToCopy = selectedText || (message.content as MessageText).text || "";
             (function (s) {
               document.oncopy = function (e) {
                 e.clipboardData?.setData("text", s);
                 e.preventDefault();
                 document.oncopy = null;
               };
-            })((message.content as MessageText).text || "");
+            })(textToCopy);
             document.execCommand("Copy");
           },
         };

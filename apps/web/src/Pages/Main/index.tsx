@@ -165,6 +165,7 @@ export class MainPage extends Component<{}, MainPageState> {
                                     }}
                                     // 用户
                                     onAvatarClick={this.handleAvatarClick}
+                                    isOnline={navigator.onLine}
                                     // 设置
                                     settingSelected={vm.settingSelected}
                                     hasNewVersion={vm.hasNewVersion}

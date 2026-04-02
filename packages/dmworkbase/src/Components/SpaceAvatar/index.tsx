@@ -14,7 +14,7 @@ function getGradient(name: string): string {
     return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 }
 
-export type SpaceAvatarSize = "sm" | "md" | "lg";
+export type SpaceAvatarSize = "xs" | "sm" | "md" | "lg";
 
 export interface SpaceAvatarProps {
     name: string;

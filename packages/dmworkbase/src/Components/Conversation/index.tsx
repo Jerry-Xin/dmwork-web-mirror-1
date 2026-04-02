@@ -64,6 +64,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
     scrollTimer: number | null = null
     updateBrowseToMessageSeqAndReminderDoneing: boolean = false
     private _dragFileCallback?: (file: File) => void
+    private _cachedSelectedText: string | null = null
     private _beforeUnloadHandler: () => void
 
     constructor(props: any) {
@@ -224,10 +225,30 @@ export class Conversation extends Component<ConversationProps> implements Conver
     // 显示消息上下文菜单
     showContextMenus(message: Message, event: React.MouseEvent) {
         this.vm.selectMessage = message
+
+        // 缓存当前选区文本（仅当选区完全在当前消息气泡内时）
+        this._cachedSelectedText = null
+        const selection = window.getSelection()
+        if (selection && selection.rangeCount > 0) {
+            const text = selection.toString()
+            if (text.length > 0) {
+                const range = selection.getRangeAt(0)
+                const target = event.target as HTMLElement
+                const bubble = target.closest('.wk-message-base-bubble')
+                if (bubble && bubble.contains(range.commonAncestorContainer)) {
+                    this._cachedSelectedText = text
+                }
+            }
+        }
+
         this.contextMenusContext.show(event)
     }
     hideContextMenus(): void {
         this.contextMenusContext.hide()
+    }
+
+    getCachedSelectedText(): string | null {
+        return this._cachedSelectedText
     }
 
     messageInputContext(): MessageInputContext {

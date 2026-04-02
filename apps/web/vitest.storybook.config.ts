@@ -14,6 +14,7 @@ export default defineConfig({
   ],
   test: {
     name: 'storybook',
+    retry: 2, // CI 环境下 Vite HMR reload 可能导致动态 import 失败，重试2次
     browser: {
       enabled: true,
       headless: true,

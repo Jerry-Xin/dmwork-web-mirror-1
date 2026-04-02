@@ -10,6 +10,8 @@ export interface ActionListItemProps {
     desc?: string;
     /** 视觉风格：join = 绿色，create = 紫色，default = 中性 */
     variant?: "join" | "create" | "default";
+    /** compact：NavRail Space 弹窗底部简洁样式，去掉 icon 背景容器和副标签 */
+    compact?: boolean;
     /** 右侧 slot，通常放箭头或 badge */
     trailing?: ReactNode;
     onClick?: () => void;
@@ -21,6 +23,7 @@ export default function ActionListItem({
     label,
     desc,
     variant = "default",
+    compact = false,
     trailing,
     onClick,
     className,
@@ -28,6 +31,7 @@ export default function ActionListItem({
     const cls = [
         "wk-action-list-item",
         `wk-action-list-item--${variant}`,
+        compact && "wk-action-list-item--compact",
         className,
     ]
         .filter(Boolean)

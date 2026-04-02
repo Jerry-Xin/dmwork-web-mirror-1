@@ -20,6 +20,22 @@
   --wk-brand-gradient-subtle: linear-gradient(135deg, var(--wk-purple-alpha-12), var(--wk-teal-alpha-08));
   --wk-brand-glow:            var(--wk-purple-alpha-30);
 
+  /* ── Status & Fixed ── */
+  --wk-color-online:      var(--wk-green-light);   /* 在线状态绿点 */
+  --wk-color-white:       #ffffff;                 /* 固定白色（不跟主题走） */
+  --wk-color-danger:      #FF5C72;                 /* 危险/角标红色 */
+  --wk-success-tint-10:   rgba(0, 184, 148, 0.10); /* success 色半透明背景 */
+  --wk-shadow-dropdown:   0 12px 32px var(--wk-black-alpha-12); /* 弹窗阴影 */
+
+  /* ── Brand tint（品牌色半透明，禁止在组件里硬编码 rgba(124,92,252,...)） ── */
+  --wk-brand-tint-06: rgba(124, 92, 252, 0.06);
+  --wk-brand-tint-08: rgba(124, 92, 252, 0.08);
+  --wk-brand-tint-10: rgba(124, 92, 252, 0.10);
+  --wk-brand-tint-12: rgba(124, 92, 252, 0.12);
+  --wk-brand-tint-15: rgba(124, 92, 252, 0.15);
+  --wk-brand-tint-35: rgba(124, 92, 252, 0.35);
+  --wk-brand-accent:  #6B4FD8;
+
   /* ── Typography — 字体族 ── */
   --wk-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;
   --wk-font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
@@ -62,9 +78,11 @@
   --wk-text-mono-sm:      400 11px/1.4  var(--wk-font-mono);
 
   /* ── Spacing — 4px 栅格 ── */
-  --wk-sp-1:  4px;
-  --wk-sp-2:  8px;
-  --wk-sp-3:  12px;
+  --wk-sp-0-5: 2px;
+  --wk-sp-1:   4px;
+  --wk-sp-1-5: 6px;
+  --wk-sp-2:   8px;
+  --wk-sp-3:   12px;
   --wk-sp-4:  16px;
   --wk-sp-5:  20px;
   --wk-sp-6:  24px;
@@ -114,6 +132,7 @@
   --wk-bg-elevated: var(--wk-neutral-100);
   --wk-bg-hover:    var(--wk-neutral-150);
   --wk-bg-active:   var(--wk-neutral-200);
+  --wk-bg-navrail:  #E8E9EE; /* NavRail 亮色背景，比 --wk-bg-deep 略深 */
 
   /* 文字 */
   --wk-text-primary:   #1A1C24;   /* ✅ 修正：设计稿亮色是 #1A1C24，不是 #111318 */
@@ -188,6 +207,7 @@ body[theme-mode=dark] {
   --wk-bg-elevated: var(--wk-neutral-700);
   --wk-bg-hover:    var(--wk-neutral-600);
   --wk-bg-active:   var(--wk-neutral-500);
+  --wk-bg-navrail:  var(--wk-bg-deep); /* NavRail 暗色背景跟随主背景 */
 
   /* 文字 */
   --wk-text-primary:   #E4E6ED;

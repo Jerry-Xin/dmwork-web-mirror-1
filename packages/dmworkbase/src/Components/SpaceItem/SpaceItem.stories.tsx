@@ -10,7 +10,7 @@ const meta: Meta<typeof SpaceItem> = {
     parameters: { layout: "centered" },
     decorators: [
         (Story) => (
-            <div style={{ width: 280, background: "#fff", borderRadius: 12, padding: "4px 8px" }}>
+            <div style={{ width: 280, background: "var(--wk-bg-surface)", borderRadius: 12, padding: "4px 8px" }}>
                 <Story />
             </div>
         ),
@@ -55,7 +55,7 @@ export const List: Story = {
             { id: "4", name: "test0311", meta: "3/10 成员" },
         ];
         return (
-            <div style={{ width: 280, background: "#fff", borderRadius: 12, padding: "4px 8px" }}>
+            <div style={{ width: 220, background: "var(--wk-bg-surface)", borderRadius: 14, padding: "8px" }}>
                 {spaces.map((s) => (
                     <SpaceItem
                         key={s.id}

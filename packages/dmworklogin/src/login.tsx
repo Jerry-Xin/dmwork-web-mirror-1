@@ -137,8 +137,8 @@ class Login extends Component<any, LoginState> {
                 <div className="wk-login-brand">
                     {/* Logo fixed top-left */}
                     <div className="wk-login-brand-logo-top">
-                        <img src={`/logo.svg`} alt="logo" height={56} style={{ width: 'auto', display: 'inline-block', marginBottom: -10, borderRadius: 10 }} />
-                        <span className="wk-login-brand-logo-name">{WKApp.config.appName || 'DMWork'}</span>
+                        <img src={`/logo.png`} alt="logo" height={56} style={{ width: 'auto', display: 'inline-block', marginBottom: -10, borderRadius: 10 }} />
+                        <span className="wk-login-brand-logo-name">{WKApp.config.appName || 'Octo'}</span>
                     </div>
                     <div className="wk-login-brand-inner">
                         <div className="wk-login-brand-headline">
@@ -178,7 +178,7 @@ class Login extends Component<any, LoginState> {
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" /></svg>
                             </div>
                             <div className="wk-login-brand-chat-content">
-                                <div className="wk-login-brand-chat-name">DMWork AI</div>
+                                <div className="wk-login-brand-chat-name">Octo AI</div>
                                 <div className="wk-login-brand-chat-text">你好！我可以帮你整理今天的会议纪要 📝</div>
                             </div>
                         </div>
@@ -192,7 +192,7 @@ class Login extends Component<any, LoginState> {
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" /></svg>
                             </div>
                             <div className="wk-login-brand-chat-content">
-                                <div className="wk-login-brand-chat-name">DMWork AI</div>
+                                <div className="wk-login-brand-chat-name">Octo AI</div>
                                 <div className="wk-login-brand-chat-text">收到，正在生成摘要，稍等片刻 ⚡</div>
                             </div>
                         </div>
@@ -204,7 +204,7 @@ class Login extends Component<any, LoginState> {
                     <div className="wk-login-content">
                         {/* Mobile logo fallback */}
                         <div className="wk-login-content-logo">
-                            <img src={`/logo.svg`} alt="logo" height={56} style={{ width: 'auto', display: 'inline-block', marginBottom: -10 }} />
+                            <img src={`/logo.png`} alt="logo" height={56} style={{ width: 'auto', display: 'inline-block', marginBottom: -10 }} />
                         </div>
 
                         {vm.inviteInfo && (
@@ -257,7 +257,7 @@ class Login extends Component<any, LoginState> {
                         </div>
                         <div className="wk-login-content-phonelogin" style={{ "display": vm.loginType === LoginType.register ? "block" : "none" }}>
                             <div className="wk-login-content-slogan">创建账号</div>
-                            <div className="wk-login-content-slogan-sub">加入 {WKApp.config.appName || 'DMWork'}，开始高效协作</div>
+                            <div className="wk-login-content-slogan-sub">加入 {WKApp.config.appName || 'Octo'}，开始高效协作</div>
                             <div className="wk-login-content-form">
                                 <input type="email" name="reg-email" autoComplete="email" placeholder="邮箱" onChange={(v) => {
                                     vm.registerEmail = v.target.value
@@ -430,7 +430,7 @@ class Login extends Component<any, LoginState> {
                                         </div>
                                     </div>
                                 </Spin>
-                                <div className="wk-login-qr-tip">打开 {WKApp.config.appName || 'DMWork'} 扫描二维码</div>
+                                <div className="wk-login-qr-tip">打开 {WKApp.config.appName || 'Octo'} 扫描二维码</div>
                             </div>
 
                             {/* Steps - horizontal */}
@@ -443,7 +443,7 @@ class Login extends Component<any, LoginState> {
                                         </svg>
                                     </div>
                                     <div className="wk-login-qr-step-title">打开 App</div>
-                                    <div className="wk-login-qr-step-desc">手机打开 {WKApp.config.appName || 'DMWork'}</div>
+                                    <div className="wk-login-qr-step-desc">手机打开 {WKApp.config.appName || 'Octo'}</div>
                                 </div>
                                 <div className="wk-login-qr-step-divider">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c8cce0" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>

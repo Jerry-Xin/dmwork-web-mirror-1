@@ -19,6 +19,7 @@ import { RevokeCell } from "../../Messages/Revoke";
 import { FlameMessageCell } from "../../Messages/Flame";
 import WKAvatar from "../WKAvatar";
 import AiBadge from "../AiBadge";
+import ConversationVM from "../Conversation/vm";
 export type ConvFilter = 'all' | 'human' | 'ai' | 'group'
 
 export interface ConversationListProps {
@@ -86,6 +87,19 @@ export default class ConversationList extends Component<ConversationListProps, C
         const draft = conversationWrap.remoteExtra.draft
         if(draft && draft!=="") {
             return draft
+        }
+        // 检查是否有进行中的 AI 折叠 session
+        const foldPreview = ConversationVM.foldSessionPreview.get(conversationWrap.channel.getChannelKey())
+        if (foldPreview) {
+            return (
+                <span className="wk-ai-collab-preview">
+                    <span className="wk-ai-collab-tag">
+                        <span className="wk-ai-collab-pulse" />
+                        AI协作中
+                    </span>
+                    <span className="wk-ai-collab-text">{foldPreview.participants.join(' × ')} · {foldPreview.count}条</span>
+                </span>
+            )
         }
         const lastMessage = new MessageWrap(conversationWrap.lastMessage)
         if (lastMessage.isDeleted) {

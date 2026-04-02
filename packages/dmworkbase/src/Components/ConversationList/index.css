@@ -184,6 +184,48 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     font-weight: 600;
 }
 
+/* AI 协作中预览 */
+.wk-ai-collab-preview {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.wk-ai-collab-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.wk-ai-collab-tag {
+    font-size: 11px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: linear-gradient(135deg, rgba(124, 92, 252, 0.12), rgba(0, 212, 170, 0.12));
+    color: var(--wk-brand-primary, #7C5CFC);
+    font-weight: 600;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-right: 4px;
+}
+
+.wk-ai-collab-pulse {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #00B894;
+    animation: wk-collab-pulse 2s ease-in-out infinite;
+}
+
+@keyframes wk-collab-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.8); }
+}
+
 /* @我 mention tag */
 .wk-mention {
     font-size: 10px;

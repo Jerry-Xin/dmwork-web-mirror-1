@@ -46,6 +46,7 @@ export class MessageContentTypeConst {
   static typing: number = - 2 // 输入中
   static time: number = - 1 // 时间消息
   static image: number = 2 // 图片消息
+  static threadCreated: number = 1100 // 子区创建通知
   static gif: number = 3 // gif消息
   static voice: number = 4 // 语音消息
   static smallVideo: number = 5 // 小视频
@@ -128,3 +129,4 @@ export enum MessageReasonCode {
 export const OrderFactor = 10000 // 排序因子
 
 export const ChannelTypeCustomerService = 3 // 客服频道
+export const ChannelTypeCommunityTopic = 5 // 子区频道

@@ -2,9 +2,9 @@ export { default as BaseModule } from "./module"
 export { default as WKApp } from "./App"
 export * from "./App"
 export * from './Service/Const'
+export * from './Service/Thread'
 export * from './Service/Module'
 export * from './Service/Menus'
-export * from './Service/Const'
 export * from './Service/APIClient'
 export { default as Provider } from './Service/Provider'
 export * from './Service/Provider'

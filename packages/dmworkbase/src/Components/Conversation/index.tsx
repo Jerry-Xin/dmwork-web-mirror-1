@@ -432,7 +432,10 @@ export class Conversation extends Component<ConversationProps> implements Conver
             const senderName = message.from?.title || message.fromUID
             const timeStr = moment(message.timestamp * 1000).format("HH:mm")
             return (
-                <div key={message.clientMsgNo} className="wk-fold-msg">
+                <div key={message.clientMsgNo} className="wk-fold-msg"
+                     onContextMenu={(event) => {
+                         this.showContextMenus(message.message, event)
+                     }}>
                     <span className="wk-fold-msg-ava">
                         <WKAvatar
                             channel={new Channel(message.fromUID, ChannelTypePerson)}

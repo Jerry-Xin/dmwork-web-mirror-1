@@ -81,6 +81,7 @@ export default class ConversationVM extends ProviderListener {
     pendingMessages: MessageWrap[] = [] // 缓冲区：pullupHasMore 期间收到的实时消息
     messageContainerId = "viewport" // 消息容器的ID
     static sendQueue: Map<string, Array<MessageWrap>> = new Map() // 发送队列
+    static foldSessionPreview: Map<string, { participants: string[], count: number }> = new Map() // 会话列表折叠预览缓存
     private _needSetUnread: boolean = false // 是否需要设置未读数量
 
     typingListener!: TypingListener // 输入中监听
@@ -339,7 +340,9 @@ export default class ConversationVM extends ProviderListener {
             renderItems.push({ type: "message", message })
         }
 
-        flushPendingSession(pendingSessionMessages.length > 0 && !this.pullupHasMore)
+        const lastPendingMsg = pendingSessionMessages.length > 0 ? pendingSessionMessages[pendingSessionMessages.length - 1] : null
+        const isStillActive = lastPendingMsg !== null && !this.pullupHasMore
+        flushPendingSession(isStillActive)
 
         for (const typingMessage of typingMessages) {
             renderItems.push({ type: "message", message: typingMessage })
@@ -356,6 +359,18 @@ export default class ConversationVM extends ProviderListener {
             }
         }
         this.afterFoldSessionClientMsgNos = afterFold
+
+        // 更新会话列表折叠预览缓存
+        const channelKey = this.channel.getChannelKey()
+        const lastNonTypingItem = renderItems.filter(item => !(item.type === "message" && item.message.contentType === MessageContentTypeConst.typing)).pop()
+        if (lastNonTypingItem && lastNonTypingItem.type === "foldSession" && lastNonTypingItem.session.isActive) {
+            ConversationVM.foldSessionPreview.set(channelKey, {
+                participants: lastNonTypingItem.session.participants.map(p => p.name),
+                count: lastNonTypingItem.session.count,
+            })
+        } else {
+            ConversationVM.foldSessionPreview.delete(channelKey)
+        }
 
         return renderItems
     }

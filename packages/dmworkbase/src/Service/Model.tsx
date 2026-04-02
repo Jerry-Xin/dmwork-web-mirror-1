@@ -409,6 +409,14 @@ export class MessageWrap {
                 continue
             }
 
+            // Defensive check: @all / @所有人 should not have personal entity
+            const mentionName = mentionText.slice(1)
+            if (mentionName.toLowerCase() === 'all' || mentionName === '所有人') {
+                parts.push(new Part(PartType.text, mentionText))
+                cursor = entity.offset + entity.length
+                continue
+            }
+
             parts.push(new Part(PartType.mention, mentionText, { uid: entity.uid }))
             cursor = entity.offset + entity.length
         }
@@ -430,6 +438,12 @@ export class MessageWrap {
         while ((match = mentionRegex.exec(text)) !== null && i < uids.length) {
             const matchStart = match.index
             const matchText = match[0]
+            const mentionName = matchText.slice(1)
+
+            // Skip @all / @所有人 — these correspond to mentionAll, not individual uid
+            if (mentionName.toLowerCase() === 'all' || mentionName === '所有人') {
+                continue
+            }
 
             if (matchStart > 0) {
                 const charBefore = text.charCodeAt(matchStart - 1)

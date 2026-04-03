@@ -55,19 +55,23 @@ export default class InputStyle {
         control: {
           fontFamily: 'monospace',
           border: '0px solid silver',
-          height: "100%"
+          height: expanded ? '100%' : (inputHeight ?? calcInputHeight(INPUT_DEFAULT_ROWS)),
         },
     
         highlighter: {
           padding: 9,
+          height: expanded ? '100%' : (inputHeight ?? calcInputHeight(INPUT_DEFAULT_ROWS)),
+          overflow: 'hidden',
+          boxSizing: 'border-box',
         },
     
         input: {
           padding: 10,
-          minHeight: 63,
+          height: expanded ? '100%' : (inputHeight ?? calcInputHeight(INPUT_DEFAULT_ROWS)),
           outline: 0,
           border: 0,
-          overflowY: 'auto', // 超出 max rows 后内部滚动
+          overflowY: 'auto',
+          boxSizing: 'border-box',
         },
       },
     

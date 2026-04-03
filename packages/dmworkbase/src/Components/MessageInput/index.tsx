@@ -344,21 +344,25 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             return calcInputHeight(defaultRows)
         }
 
-        // 通过换行符计算实际行数
-        const newlines = (value.match(/\n/g) || []).length + 1
-        // 同时参考 textarea 的 scrollHeight（如果 ref 存在）
-        let scrollRows = defaultRows
+        // 估算容器宽度（避免操作 DOM height 导致滚动条闪烁）
+        let containerWidth = 500
         if (this.inputRef) {
-            // 临时重置高度以获取真实 scrollHeight
-            const el = this.inputRef as HTMLTextAreaElement
-            const prevHeight = el.style.height
-            el.style.height = 'auto'
-            const scrollH = el.scrollHeight
-            el.style.height = prevHeight
-            scrollRows = Math.ceil((scrollH - INPUT_PADDING_V * 2) / INPUT_LINE_HEIGHT)
+            const el = this.inputRef as HTMLElement
+            const w = el.offsetWidth || el.parentElement?.offsetWidth
+            if (w && w > 0) containerWidth = w - INPUT_PADDING_V * 2
         }
 
-        const rows = Math.max(defaultRows, Math.max(newlines, scrollRows))
+        // 逐行估算行数（中文 14px/字，英文 8px/字）
+        const lines = value.split('\n')
+        let totalRows = 0
+        for (const line of lines) {
+            const cjkCount = (line.match(/[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/g) || []).length
+            const otherCount = line.length - cjkCount
+            const estimatedWidth = cjkCount * 14 + otherCount * 8
+            totalRows += Math.max(1, Math.ceil(estimatedWidth / containerWidth))
+        }
+
+        const rows = Math.max(defaultRows, totalRows)
         const clampedRows = Math.min(rows, INPUT_MAX_ROWS)
         return calcInputHeight(clampedRows)
     }

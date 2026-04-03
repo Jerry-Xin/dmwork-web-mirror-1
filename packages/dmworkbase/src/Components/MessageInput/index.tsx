@@ -344,27 +344,26 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             return calcInputHeight(defaultRows)
         }
 
-        // 估算容器宽度（避免操作 DOM height 导致滚动条闪烁）
-        let containerWidth = 500
-        if (this.inputRef) {
-            const el = this.inputRef as HTMLElement
-            const w = el.offsetWidth || el.parentElement?.offsetWidth
-            if (w && w > 0) containerWidth = w - INPUT_PADDING_V * 2
-        }
+        // 第一步：用换行符快速估算（当帧立即应用，无闪烁）
+        const newlines = (value.match(/\n/g) || []).length + 1
+        const quickRows = Math.min(Math.max(defaultRows, newlines), INPUT_MAX_ROWS)
+        const quickHeight = calcInputHeight(quickRows)
 
-        // 逐行估算行数（中文 14px/字，英文 8px/字）
-        const lines = value.split('\n')
-        let totalRows = 0
-        for (const line of lines) {
-            const cjkCount = (line.match(/[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/g) || []).length
-            const otherCount = line.length - cjkCount
-            const estimatedWidth = cjkCount * 14 + otherCount * 8
-            totalRows += Math.max(1, Math.ceil(estimatedWidth / containerWidth))
-        }
+        // 第二步：下一帧用真实 scrollHeight 修正（此时 textarea 已按 quickHeight 渲染好）
+        requestAnimationFrame(() => {
+            if (!this.inputRef) return
+            const el = this.inputRef as HTMLTextAreaElement
+            // 直接读 scrollHeight，不改 el.style.height，不触发重排闪烁
+            const scrollH = el.scrollHeight
+            const realRows = Math.ceil((scrollH - INPUT_PADDING_V * 2) / INPUT_LINE_HEIGHT)
+            const clampedRows = Math.min(Math.max(defaultRows, realRows), INPUT_MAX_ROWS)
+            const realHeight = calcInputHeight(clampedRows)
+            if (realHeight !== this.state.inputHeight) {
+                this.setState({ inputHeight: realHeight })
+            }
+        })
 
-        const rows = Math.max(defaultRows, totalRows)
-        const clampedRows = Math.min(rows, INPUT_MAX_ROWS)
-        return calcInputHeight(clampedRows)
+        return quickHeight
     }
 
     getFilteredSlashCommands(): BotCommand[] {

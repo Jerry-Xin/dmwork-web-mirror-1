@@ -25,6 +25,7 @@ export interface FoldSessionCardProps extends HTMLProps<HTMLDivElement> {
     expandedContent?: ReactNode
     onToggle?: () => void
     onSummaryAnimationEnd?: React.AnimationEventHandler<HTMLDivElement>
+    onSummaryContextMenu?: React.MouseEventHandler<HTMLDivElement>
 }
 
 const FoldSessionCard: React.FC<FoldSessionCardProps> = ({
@@ -45,6 +46,7 @@ const FoldSessionCard: React.FC<FoldSessionCardProps> = ({
     expandedContent,
     onToggle,
     onSummaryAnimationEnd,
+    onSummaryContextMenu,
     ...rest
 }) => {
     const participantLabel = participants.map((participant) => participant.name).join(" × ")
@@ -109,6 +111,7 @@ const FoldSessionCard: React.FC<FoldSessionCardProps> = ({
                     highlightSummary && "wk-fold-session-card-summary-highlight",
                 )}
                 onAnimationEnd={onSummaryAnimationEnd}
+                onContextMenu={onSummaryContextMenu}
             >
                 {summarySender ? <div className="wk-fold-session-card-summary-sender">{summarySender}</div> : null}
                 {summaryContent ? <div className="wk-fold-session-card-summary-content">{summaryContent}</div> : null}

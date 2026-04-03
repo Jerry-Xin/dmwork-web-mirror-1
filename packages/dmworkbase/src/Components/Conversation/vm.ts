@@ -369,7 +369,10 @@ export default class ConversationVM extends ProviderListener {
 
         for (const typingMessage of typingMessages) {
             const lastItem = renderItems[renderItems.length - 1]
-            if (lastItem?.type === "foldSession" && lastItem.session.isActive && this.isBotMessage(typingMessage)) {
+            // isBotMessage() excludes typing content type, so check fromUID directly
+            const typingFromBot = typingMessage.fromUID
+                && WKSDK.shared().channelManager.getChannelInfo(new Channel(typingMessage.fromUID, ChannelTypePerson))?.orgData?.robot === 1
+            if (lastItem?.type === "foldSession" && lastItem.session.isActive && typingFromBot) {
                 lastItem.session.typing = typingMessage
                 lastItem.session.expandedMessages = getFoldSessionExpandedMessages({
                     messages: lastItem.session.messages,

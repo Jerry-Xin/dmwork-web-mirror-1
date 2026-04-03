@@ -14,6 +14,7 @@ import SlashCommandMenu, { BotCommand } from "../SlashCommandMenu";
 import AiBadge from "../AiBadge";
 import VoiceInputIndicator from "./VoiceInputIndicator";
 import { Maximize2, Minimize2 } from 'lucide-react';
+import IconClick from '../IconClick';
 
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -498,13 +499,16 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
 
                             {/* 展开/收起按钮 */}
-                            <div
-                                className={clazz("wk-messageinput-actionitem", "wk-messageinput-expand-btn", expanded ? "wk-messageinput-expand-btn--active" : undefined)}
-                                onClick={this.toggleExpand}
+                            <IconClick
+                                size="sm"
                                 title={expanded ? "收起" : "展开输入框"}
-                            >
-                                {expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-                            </div>
+                                onClick={this.toggleExpand}
+                                className={expanded ? "wk-messageinput-expand-btn--active" : undefined}
+                                icon={expanded
+                                    ? <Minimize2 size={15} color="var(--wk-text-secondary)" />
+                                    : <Maximize2 size={15} color="var(--wk-text-secondary)" />
+                                }
+                            />
                         </div>
 
                     </div>

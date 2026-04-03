@@ -1093,7 +1093,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                             vm.unCheckAllMessages()
                         }}></MultiplePanel>
                     </div>
-                    <div className="wk-conversation-footer" style={this._inputExpanded ? { flex: 1, paddingTop: 50 } : undefined}>
+                    <div className="wk-conversation-footer" style={this._inputExpanded ? { flex: 1, paddingTop: 10 } : undefined}>
                         {vm.pendingAttachments.length > 0 && (
                             <AttachmentPreview
                                 conversationContext={this}

@@ -683,6 +683,9 @@ export default class ConversationVM extends ProviderListener {
 
         // 监听 channelInfo 变化，确保 bot 身份信息到达后重建折叠卡片
         this.channelInfoListener = (channelInfo: ChannelInfo) => {
+            if (this.loading) {
+                return
+            }
             if (this.channel.channelType !== ChannelTypeGroup) {
                 return
             }

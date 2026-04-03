@@ -491,7 +491,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                         </div>
                     </div>
                 </div>
-                <div className="wk-messageinput-inputbox" style={{ position: 'relative' }}>
+                <div className="wk-messageinput-inputbox" style={{ position: 'relative', height: inputHeight + 15 + 'px' }}>
                     {botCommands && botCommands.length > 0 && (
                         <SlashCommandMenu
                             commands={botCommands}

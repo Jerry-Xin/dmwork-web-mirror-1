@@ -26,6 +26,7 @@ import { FileContent, formatFileSize, getFileIconInfo } from "../../Messages/Fil
 import { ImageContent } from "../../Messages/Image";
 import Lightbox from "yet-another-react-lightbox";
 import Download from "yet-another-react-lightbox/plugins/download";
+import AttachmentPreview from "../AttachmentPreview";
 
 const FoldImage: React.FC<{ src: string }> = ({ src }) => {
     const [open, setOpen] = React.useState(false)
@@ -218,6 +219,63 @@ export class Conversation extends Component<ConversationProps> implements Conver
         this._dragFileCallback = f
     }
 
+    // ── Attachment Queue (#143 / #144) ──────────────────────────────────────
+
+    getPendingAttachments(): File[] {
+        return this.vm.pendingAttachments
+    }
+
+    addPendingAttachments(files: File[]): string | null {
+        const BLOCKED_EXTENSIONS = [
+            "exe", "bat", "sh", "cmd", "msi", "dll", "php", "jsp", "apk",
+            "com", "scr", "pif", "vbs", "wsf", "ps1",
+        ]
+        const current = this.vm.pendingAttachments
+        const incoming = Array.from(files)
+
+        // 检查数量上限
+        if (current.length + incoming.length > ConversationVM.MAX_ATTACHMENTS) {
+            return `最多只能同时发送 ${ConversationVM.MAX_ATTACHMENTS} 个文件`
+        }
+
+        // 检查类型黑名单
+        for (const f of incoming) {
+            const ext = f.name.substring(f.name.lastIndexOf('.') + 1).toLowerCase()
+            if (BLOCKED_EXTENSIONS.includes(ext)) {
+                return `不允许发送 .${ext} 类型的文件`
+            }
+        }
+
+        // 检查总大小
+        const totalSize = [...current, ...incoming].reduce((sum, f) => sum + f.size, 0)
+        if (totalSize > ConversationVM.MAX_TOTAL_SIZE) {
+            return `所有文件总大小不能超过 100MB`
+        }
+
+        // 同名文件提示（不阻止，产品要求轻量提示）
+        const currentNames = new Set(current.map(f => f.name))
+        const hasDuplicate = incoming.some(f => currentNames.has(f.name))
+        if (hasDuplicate) {
+            // 由调用方弹提示，这里直接加入
+        }
+
+        this.vm.pendingAttachments = [...current, ...incoming]
+        this.vm.update()
+        return null
+    }
+
+    removePendingAttachment(index: number): void {
+        const arr = [...this.vm.pendingAttachments]
+        arr.splice(index, 1)
+        this.vm.pendingAttachments = arr
+        this.vm.update()
+    }
+
+    clearPendingAttachments(): void {
+        this.vm.pendingAttachments = []
+        this.vm.update()
+    }
+
     channel(): Channel {
         return this.vm.channel
     }
@@ -309,7 +367,29 @@ export class Conversation extends Component<ConversationProps> implements Conver
 
     componentWillUnmount() {
         window.removeEventListener('beforeunload', this._beforeUnloadHandler)
+        if (this.vm.pendingAttachments.length > 0) {
+            this.vm.pendingAttachments = []
+        }
         this.dealloc()
+    }
+
+    componentDidUpdate(prevProps: ConversationProps) {
+        const { channel } = this.props
+        if (
+            prevProps.channel.channelID !== channel.channelID ||
+            prevProps.channel.channelType !== channel.channelType
+        ) {
+            // 切换会话：清空附件队列（切换前未确认的直接丢弃，符合产品设计）
+            if (this.vm.pendingAttachments.length > 0) {
+                const discard = window.confirm('有未发送的附件，切换会话后将丢弃，是否继续？')
+                if (!discard) {
+                    // 用户取消：无法阻止切换（React 不支持阻止 props 变化），只记录日志
+                    // 实际上切换已发生，这里清空附件
+                }
+                this.vm.pendingAttachments = []
+                this.vm.update()
+            }
+        }
     }
     dealloc() {
         if (this.scrollTimer) {
@@ -953,6 +1033,12 @@ export class Conversation extends Component<ConversationProps> implements Conver
                         }}></MultiplePanel>
                     </div>
                     <div className="wk-conversation-footer">
+                        {vm.pendingAttachments.length > 0 && (
+                            <AttachmentPreview
+                                conversationContext={this}
+                                files={vm.pendingAttachments}
+                            />
+                        )}
                         <div className="wk-conversation-footer-content">
 
                             <MessageInput botCommands={botCommands} members={this.vm.subscribers.filter((s) => s.uid !== WKApp.loginInfo.uid)} onContext={(ctx) => {
@@ -997,7 +1083,36 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                     content.reply = reply
                                     vm.currentReplyMessage = undefined
                                 }
-                                this.sendMessage(content)
+
+                                // ── 附件队列发送 (#143 / #144) ──────────────
+                                const attachments = [...vm.pendingAttachments]
+                                if (attachments.length > 0) {
+                                    this.clearPendingAttachments()
+                                    for (const file of attachments) {
+                                        try {
+                                            if (file.type && file.type.startsWith('image/')) {
+                                                const reader = new FileReader()
+                                                const previewUrl = await new Promise<string>((resolve) => {
+                                                    reader.onloadend = () => resolve(reader.result as string)
+                                                    reader.readAsDataURL(file)
+                                                })
+                                                await this.sendMessage(new ImageContent(file, previewUrl, 0, 0))
+                                            } else {
+                                                const name = file.name || "unknown"
+                                                const dotIndex = name.lastIndexOf(".")
+                                                const ext = dotIndex > 0 ? name.substring(dotIndex + 1) : ""
+                                                await this.sendMessage(new FileContent(file, name, ext, file.size))
+                                            }
+                                        } catch (err) {
+                                            Toast.error(`文件「${file.name}」发送失败`)
+                                        }
+                                    }
+                                }
+
+                                // 文字（有内容才发）
+                                if (text && text.trim() !== "") {
+                                    this.sendMessage(content)
+                                }
                             }}>
 
                             </MessageInput>

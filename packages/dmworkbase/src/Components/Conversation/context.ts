@@ -91,6 +91,20 @@ export default interface ConversationContext {
      */
     setDragFileCallback(f: (file: File) => void): void
 
+    // ── Attachment Queue (#143 / #144) ──────────────────────────────────────
+
+    /** 当前待发送附件列表（只读快照） */
+    getPendingAttachments(): File[]
+
+    /** 追加文件到待发送队列（超限时返回错误描述，成功返回 null） */
+    addPendingAttachments(files: File[]): string | null
+
+    /** 移除指定索引的待发送附件 */
+    removePendingAttachment(index: number): void
+
+    /** 清空所有待发送附件 */
+    clearPendingAttachments(): void
+
     /**
      * 转发消息给指定的最近会话
      * @param message 

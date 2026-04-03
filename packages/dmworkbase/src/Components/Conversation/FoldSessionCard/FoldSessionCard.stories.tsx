@@ -46,7 +46,7 @@ const meta: Meta<typeof FoldSessionCard> = {
 - 头部展示这段 session 的参与 Bot 集合，而不是最后一条消息发送者
 - 中间过程消息可展开查看
 - 已完成态保留最后一条完整消息作为结论区
-- 进行中态默认不展示结论区
+- 进行中态始终占住底部摘要位，typing 时由业务层渲染 loading
                 `,
             },
         },
@@ -71,10 +71,17 @@ const expandedContent = (
 )
 
 export const ActiveCollapsed: Story = {
-    name: "进行中 / 默认收起",
+    name: "进行中 / 收起展示最新消息",
     render: () => (
         <div style={{ padding: "var(--wk-sp-6)", background: "var(--wk-bg-base)" }}>
-            <FoldSessionCard participants={participants} count={3} isActive />
+            <FoldSessionCard
+                participants={participants}
+                count={3}
+                isActive
+                showSummary
+                summarySender="Claude"
+                summaryContent="正在继续补充数据库选型建议，下一条输出会直接接在这里。"
+            />
         </div>
     ),
 }
@@ -89,6 +96,24 @@ export const CompletedCollapsed: Story = {
                 summarySender="JOJO"
                 showSummary
                 summaryContent="结论：主库 PostgreSQL + 缓存 Redis + 搜索 Elasticsearch，三层架构。"
+            />
+        </div>
+    ),
+}
+
+export const ActiveExpanded: Story = {
+    name: "进行中 / 展开仍保留底部最新消息",
+    render: () => (
+        <div style={{ padding: "var(--wk-sp-6)", background: "var(--wk-bg-base)" }}>
+            <FoldSessionCard
+                participants={participants}
+                count={4}
+                isActive
+                isExpanded
+                expandedContent={expandedContent}
+                summarySender="Claude"
+                showSummary
+                summaryContent="最新一条 AI 输出继续固定在底部摘要区，不和上面的过程列表重复。"
             />
         </div>
     ),

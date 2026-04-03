@@ -16,6 +16,7 @@ import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
 import { SYSTEM_BOTS } from "../../Service/SpaceService";
 import { SuperGroup } from "../../Utils/const";
 import { SystemContent } from "wukongimjssdk";
+import { getFoldSessionExpandedMessages } from "./foldSessionSummary";
 
 export interface FoldSessionParticipant {
     uid: string
@@ -46,6 +47,7 @@ export interface FoldSessionViewModel {
     shouldAppear: boolean
     highlightSummary: boolean
     showSummary: boolean
+    typing?: MessageWrap
 }
 
 export interface ConversationRenderMessageItem {
@@ -303,9 +305,7 @@ export default class ConversationVM extends ProviderListener {
                         anchorId: sessionId,
                         participants: this.getSessionParticipants(pendingSessionMessages),
                         messages: [...pendingSessionMessages],
-                        expandedMessages: isActive
-                            ? [...pendingSessionMessages]
-                            : pendingSessionMessages.slice(0, pendingSessionMessages.length - 1),
+                        expandedMessages: getFoldSessionExpandedMessages({ messages: pendingSessionMessages }),
                         lastMessage,
                         count: pendingSessionMessages.length,
                         isActive,
@@ -367,7 +367,16 @@ export default class ConversationVM extends ProviderListener {
         }
 
         for (const typingMessage of typingMessages) {
-            renderItems.push({ type: "message", message: typingMessage })
+            const lastItem = renderItems[renderItems.length - 1]
+            if (lastItem?.type === "foldSession" && lastItem.session.isActive && this.isBotMessage(typingMessage)) {
+                lastItem.session.typing = typingMessage
+                lastItem.session.expandedMessages = getFoldSessionExpandedMessages({
+                    messages: lastItem.session.messages,
+                    typing: typingMessage,
+                })
+            } else {
+                renderItems.push({ type: "message", message: typingMessage })
+            }
         }
 
         this.foldSessionState = nextFoldSessionState

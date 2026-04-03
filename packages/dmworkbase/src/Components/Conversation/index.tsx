@@ -20,7 +20,9 @@ import { IconClose, IconEdit, IconReply } from "@douyinfe/semi-icons";
 import { Toast, Spin } from "@douyinfe/semi-ui";
 import { FlameMessageCell } from "../../Messages/Flame";
 import FoldSessionCard, { FoldSessionCardParticipant } from "./FoldSessionCard";
+import { BeatLoader } from "react-spinners";
 import { ConversationRenderItem, FoldSessionViewModel } from "./vm";
+import { getFoldSessionSummaryState, isFoldSessionSummaryMessage } from "./foldSessionSummary";
 import moment from "moment";
 import { FileContent, formatFileSize, getFileIconInfo } from "../../Messages/File";
 import { ImageContent } from "../../Messages/Image";
@@ -155,7 +157,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         if (messageWrap) {
             const foldSession = this.vm.findFoldSessionByMessageSeq(messageSeq)
             if (foldSession) {
-                const isSummaryMessage = !foldSession.isActive && foldSession.lastMessage.messageSeq === messageSeq
+                const isSummaryMessage = isFoldSessionSummaryMessage(foldSession, messageSeq)
                 if (isSummaryMessage) {
                     this.vm.highlightFoldSessionSummary(foldSession.sessionId, () => {
                         this.vm.scrollToFoldSession(foldSession.sessionId)
@@ -409,6 +411,13 @@ export class Conversation extends Component<ConversationProps> implements Conver
     }
 
     renderFoldSessionSummary(message: MessageWrap) {
+        if (message.contentType === MessageContentTypeConst.typing) {
+            return (
+                <span className="wk-fold-session-summary-loading">
+                    <BeatLoader size={8} margin={4} color="var(--wk-color-theme)" />
+                </span>
+            )
+        }
         if (message.contentType === MessageContentType.text || message.streamOn) {
             return (
                 <MarkdownContent
@@ -536,6 +545,11 @@ export class Conversation extends Component<ConversationProps> implements Conver
             name: participant.name,
             avatar: <WKAvatar channel={participant.channel} style={{ width: "100%", height: "100%" }} />,
         }))
+        const { showSummary, summaryId, summaryMessage } = getFoldSessionSummaryState(session)
+        const typingSender = summaryMessage.contentType === MessageContentTypeConst.typing
+            ? (summaryMessage.content as { fromName?: string })?.fromName
+            : undefined
+        const summarySender = summaryMessage.from?.title || typingSender || summaryMessage.fromUID
 
         return (
             <div
@@ -551,11 +565,11 @@ export class Conversation extends Component<ConversationProps> implements Conver
                     isExpanded={session.isExpanded}
                     appearing={session.shouldAppear}
                     flash={session.shouldMergeFlash}
-                    showSummary={session.showSummary}
+                    showSummary={showSummary}
                     highlightSummary={session.highlightSummary}
-                    summaryId={session.showSummary ? session.lastMessage.clientMsgNo : undefined}
-                    summarySender={session.lastMessage.from?.title || session.lastMessage.fromUID}
-                    summaryContent={this.renderFoldSessionSummary(session.lastMessage)}
+                    summaryId={summaryId}
+                    summarySender={summarySender}
+                    summaryContent={this.renderFoldSessionSummary(summaryMessage)}
                     expandedContent={this.renderFoldSessionExpandedList(session.expandedMessages)}
                     onToggle={() => {
                         this.vm.toggleFoldSession(session.sessionId)

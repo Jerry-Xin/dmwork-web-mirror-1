@@ -1,4 +1,4 @@
-import { Channel, ChannelTypeGroup, ChannelTypePerson, ConversationAction, WKSDK, Mention, Message, MessageContent, Reminder, ReminderType, Reply, MessageText, MessageContentType } from "wukongimjssdk";
+import { Channel, ChannelTypeGroup, ChannelTypePerson, ConversationAction, WKSDK, Mention, Message, MessageContent, Reminder, ReminderType, Reply, MessageText, MessageContentType, MediaMessageContent, TaskStatus, MessageTask } from "wukongimjssdk";
 import React, { Component, HTMLProps } from "react";
 import Provider from "../../Service/Provider";
 import ConversationVM from "./vm";
@@ -116,6 +116,47 @@ export class Conversation extends Component<ConversationProps> implements Conver
         await this.vm.deleteMessagesFromLocal([message])
         const newMessage = await this.vm.sendMessage(message.content, message.channel)
         return newMessage
+    }
+
+    /**
+     * 发送媒体消息并等待上传完成后才返回，保证多附件严格顺序发送。
+     * 普通文字消息直接 sendMessage 返回。
+     * 超时 30s 自动 resolve（避免网络断开时永久阻塞）。
+     */
+    private async sendMediaAndWait(content: MessageContent, channel?: Channel): Promise<void> {
+        const message = await this.sendMessage(content, channel)
+
+        // 非媒体消息（或无文件需上传）无需等待
+        if (!(content instanceof MediaMessageContent) || !(content as MediaMessageContent).file) {
+            return
+        }
+
+        await new Promise<void>((resolve) => {
+            const TIMEOUT = 30_000
+            let settled = false
+
+            const done = () => {
+                if (settled) return
+                settled = true
+                WKSDK.shared().taskManager.removeListener(listener)
+                clearTimeout(timer)
+                resolve()
+            }
+
+            // 超时兜底：30s 后强制 resolve，不阻塞后续附件
+            const timer = setTimeout(done, TIMEOUT)
+
+            const listener = (task: any) => {
+                if (
+                    task instanceof MessageTask &&
+                    task.message.clientSeq === message.clientSeq &&
+                    (task.status === TaskStatus.success || task.status === TaskStatus.fail)
+                ) {
+                    done()
+                }
+            }
+            WKSDK.shared().taskManager.addListener(listener)
+        })
     }
     scrollToBottom(animate?: boolean): void {
         this.vm.scrollToBottom(animate || false)
@@ -1103,12 +1144,12 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                                     img.onerror = () => resolve({ width: 0, height: 0 })
                                                     img.src = previewUrl
                                                 })
-                                                await this.sendMessage(new ImageContent(file, previewUrl, width, height))
+                                                await this.sendMediaAndWait(new ImageContent(file, previewUrl, width, height))
                                             } else {
                                                 const name = file.name || "unknown"
                                                 const dotIndex = name.lastIndexOf(".")
                                                 const ext = dotIndex > 0 ? name.substring(dotIndex + 1) : ""
-                                                await this.sendMessage(new FileContent(file, name, ext, file.size))
+                                                await this.sendMediaAndWait(new FileContent(file, name, ext, file.size))
                                             }
                                         } catch (err) {
                                             Toast.error(`文件「${file.name}」发送失败`)

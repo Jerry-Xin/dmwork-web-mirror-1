@@ -17,6 +17,7 @@ import { SYSTEM_BOTS } from "../../Service/SpaceService";
 import { SuperGroup } from "../../Utils/const";
 import { SystemContent } from "wukongimjssdk";
 import { getFoldSessionExpandedMessages } from "./foldSessionSummary";
+import { getPulldownRestoredScrollTop } from "./historyScroll";
 
 export interface FoldSessionParticipant {
     uid: string
@@ -1424,6 +1425,10 @@ export default class ConversationVM extends ProviderListener {
             return
         }
 
+        const viewport = document.getElementById(this.messageContainerId) as HTMLElement | null
+        const previousScrollTop = viewport?.scrollTop || 0
+        const previousScrollHeight = viewport?.scrollHeight || 0
+
         this.loading = true
         const opts = new SyncMessageOptions()
         opts.limit = WKApp.config.pageSizeOfMessage
@@ -1444,7 +1449,15 @@ export default class ConversationVM extends ProviderListener {
         }
         this.messagesOfOrigin = [...this.toMessageWraps(newMessages), ...this.messagesOfOrigin]
         this.messagesOfOrigin = this.sortMessages(this.messagesOfOrigin)
-        this.refreshAndLocateMessages(this.messagesOfOrigin, minMessage, false, () => {
+        this.refreshMessages(this.messagesOfOrigin, () => {
+            const nextViewport = document.getElementById(this.messageContainerId) as HTMLElement | null
+            if (nextViewport) {
+                nextViewport.scrollTop = getPulldownRestoredScrollTop({
+                    previousScrollHeight,
+                    previousScrollTop,
+                    nextScrollHeight: nextViewport.scrollHeight,
+                })
+            }
             this.loading = false
         })
     }

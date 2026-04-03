@@ -23,6 +23,7 @@ import FoldSessionCard, { FoldSessionCardParticipant } from "./FoldSessionCard";
 import { BeatLoader } from "react-spinners";
 import { ConversationRenderItem, FoldSessionViewModel } from "./vm";
 import { getFoldSessionSummaryState, isFoldSessionSummaryMessage } from "./foldSessionSummary";
+import { shouldPulldownOnWheel, TOP_HISTORY_TRIGGER_OFFSET } from "./historyScroll";
 import moment from "moment";
 import { FileContent, formatFileSize, getFileIconInfo } from "../../Messages/File";
 import { ImageContent } from "../../Messages/Image";
@@ -632,7 +633,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         this.contextMenusContext.hide()
         const targetScrollTop = e.target.scrollTop;
         const scrollOffsetTop = e.target.scrollHeight - (targetScrollTop + e.target.clientHeight);
-        if (targetScrollTop <= 250 && !this.vm.loading && !this.vm.pulldownFinished) { // 下拉
+        if (targetScrollTop <= TOP_HISTORY_TRIGGER_OFFSET && !this.vm.loading && !this.vm.pulldownFinished) { // 下拉
             this.vm.pulldownMessages()
         } else if (scrollOffsetTop <= 500 && !this.vm.loading && this.vm.pullupHasMore) { // 上拉
             this.vm.pullupMessages()
@@ -656,10 +657,10 @@ export class Conversation extends Component<ConversationProps> implements Conver
 
     // 内容不满屏时，wheel 向上滚动触发加载更多历史（折叠卡片压缩内容可能导致不满屏无法触发 onScroll）
     handleWheel(e: React.WheelEvent) {
-        if (e.deltaY >= 0) return // 只处理向上滚动
         const viewport = e.currentTarget as HTMLElement
-        if (this.isFullScreen(viewport)) return // 满屏时由 onScroll 处理
-        if (!this.vm.loading && !this.vm.pulldownFinished) {
+        if (!this.vm.loading
+            && !this.vm.pulldownFinished
+            && shouldPulldownOnWheel(e.deltaY, viewport.scrollTop, this.isFullScreen(viewport))) {
             this.vm.pulldownMessages()
         }
     }

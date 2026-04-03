@@ -36,8 +36,9 @@ export default class AttachmentPreview extends Component<AttachmentPreviewProps>
                 <div className="wk-attachment-preview-list">
                     {files.map((file, index) => {
                         const iconInfo = getFileIconInfo(file)
+                        const fileKey = `${file.name}-${file.size}-${file.lastModified}`
                         return (
-                            <div key={index} className="wk-attachment-preview-item">
+                            <div key={fileKey} className="wk-attachment-preview-item">
                                 <div className="wk-attachment-preview-icon" style={{ backgroundColor: iconInfo.color }}>
                                     <span className="wk-attachment-preview-icon-label">{iconInfo.label}</span>
                                 </div>

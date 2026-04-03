@@ -269,7 +269,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
     addPendingAttachments(files: File[]): string | null {
         const BLOCKED_EXTENSIONS = [
             "exe", "bat", "sh", "cmd", "msi", "dll", "php", "jsp", "apk",
-            "com", "scr", "pif", "vbs", "wsf", "ps1",
+            "com", "scr", "pif", "vbs", "js", "wsf", "ps1",
         ]
         const current = this.vm.pendingAttachments
         const incoming = Array.from(files)
@@ -382,6 +382,10 @@ export class Conversation extends Component<ConversationProps> implements Conver
             onContext(this)
         }
         WKApp.shared.openChannel = channel
+
+        // 注册附件发送守卫：返回 false 表示有未发送附件，需弹确认
+        WKApp.shared.pendingAttachmentGuard = () => this.vm.pendingAttachments.length === 0
+
         if (this.vm.hasDraft()) {
             this.insertText(this.vm.draft())
         }
@@ -408,29 +412,13 @@ export class Conversation extends Component<ConversationProps> implements Conver
 
     componentWillUnmount() {
         window.removeEventListener('beforeunload', this._beforeUnloadHandler)
+        // 注销附件守卫
+        WKApp.shared.pendingAttachmentGuard = undefined
+        // 清空附件队列（用户已通过 Chat 层 confirm 确认丢弃）
         if (this.vm.pendingAttachments.length > 0) {
             this.vm.pendingAttachments = []
         }
         this.dealloc()
-    }
-
-    componentDidUpdate(prevProps: ConversationProps) {
-        const { channel } = this.props
-        if (
-            prevProps.channel.channelID !== channel.channelID ||
-            prevProps.channel.channelType !== channel.channelType
-        ) {
-            // 切换会话：清空附件队列（切换前未确认的直接丢弃，符合产品设计）
-            if (this.vm.pendingAttachments.length > 0) {
-                const discard = window.confirm('有未发送的附件，切换会话后将丢弃，是否继续？')
-                if (!discard) {
-                    // 用户取消：无法阻止切换（React 不支持阻止 props 变化），只记录日志
-                    // 实际上切换已发生，这里清空附件
-                }
-                this.vm.pendingAttachments = []
-                this.vm.notifyListener()
-            }
-        }
     }
     dealloc() {
         if (this.scrollTimer) {

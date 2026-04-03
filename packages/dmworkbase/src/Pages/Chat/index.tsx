@@ -337,11 +337,24 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           filter={filter}
                           onClearMessages={this.vm.clearMessages.bind(this.vm)}
                           onClick={(conversation: ConversationWrap) => {
-                            vm.selectedConversation = conversation;
-                            WKApp.endpoints.showConversation(
-                              conversation.channel
-                            );
-                            vm.notifyListener();
+                            const doSwitch = () => {
+                              vm.selectedConversation = conversation;
+                              WKApp.endpoints.showConversation(conversation.channel);
+                              vm.notifyListener();
+                            }
+                            // 附件发送守卫：有未发送附件时弹确认
+                            const guard = WKApp.shared.pendingAttachmentGuard
+                            if (guard && !guard()) {
+                              Modal.confirm({
+                                title: '有未发送的附件',
+                                content: '切换会话后附件将被丢弃，是否继续？',
+                                okText: '继续切换',
+                                cancelText: '取消',
+                                onOk: doSwitch,
+                              })
+                              return
+                            }
+                            doSwitch()
                           }}
                         ></ConversationList>
                       </ErrorBoundary>

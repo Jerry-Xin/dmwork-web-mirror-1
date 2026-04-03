@@ -247,6 +247,13 @@ export default class WKApp extends ProviderListener {
   openChannel?: Channel; // 当前打开的会话频道
   content?: JSX.Element;
 
+  /**
+   * 附件发送守卫（#143/#144）
+   * Conversation 在有未发送附件时注册此回调，返回 true 表示可以切换，false 表示有附件待确认。
+   * componentDidMount 注册，componentWillUnmount 清空。
+   */
+  pendingAttachmentGuard?: () => boolean
+
   baseContext!: WKBaseContext; // DMWork基础上下文
 
   private _notificationIsClose: boolean = false; // 通知是否关闭

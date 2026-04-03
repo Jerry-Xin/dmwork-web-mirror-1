@@ -505,8 +505,8 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                                 onClick={this.toggleExpand}
                                 className={expanded ? "wk-messageinput-expand-btn--active" : undefined}
                                 icon={expanded
-                                    ? <Minimize2 size={15} color="var(--wk-text-secondary)" />
-                                    : <Maximize2 size={15} color="var(--wk-text-secondary)" />
+                                    ? <Minimize2 size={15} color="currentColor" />
+                                    : <Maximize2 size={15} color="currentColor" />
                                 }
                             />
                         </div>

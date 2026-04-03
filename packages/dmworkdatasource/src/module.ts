@@ -1,4 +1,4 @@
-import { Convert, GroupRole, IModule, WKApp, hasSpacePrefix } from "@dmwork/base"
+import { Convert, GroupRole, IModule, WKApp, hasSpacePrefix, ChannelTypeCommunityTopic, parseThreadChannelId } from "@dmwork/base"
 import { Channel, ChannelInfo, ChannelTypeGroup, ChannelTypePerson, Conversation, WKSDK, Message, Subscriber, ConversationExtra, Reminder } from "wukongimjssdk";
 import { MessageTask } from "wukongimjssdk";
 import { ConversationProvider } from "./conversation";
@@ -40,6 +40,36 @@ export default class DataSourceModule implements IModule {
         WKSDK.shared().config.provider.channelInfoCallback = async function (channel: Channel): Promise<ChannelInfo> {
             let channelInfo = new ChannelInfo(),
                 isUsers = channel.channelType === ChannelTypePerson;
+
+            // 子区频道特殊处理
+            if (channel.channelType === ChannelTypeCommunityTopic) {
+                const parsed = parseThreadChannelId(channel.channelID);
+                if (!parsed) {
+                    channelInfo.channel = channel;
+                    channelInfo.title = channel.channelID;
+                    channelInfo.orgData = {};
+                    return channelInfo;
+                }
+                try {
+                    const thread = await WKApp.dataSource.channelDataSource.threadGet(parsed.groupNo, parsed.shortId);
+                    channelInfo.channel = channel;
+                    channelInfo.title = thread.name;
+                    channelInfo.logo = `groups/${parsed.groupNo}/avatar`; // 使用父群头像
+                    channelInfo.orgData = {
+                        displayName: thread.name,
+                        thread: thread,
+                        parentGroupNo: parsed.groupNo,
+                    };
+                    return channelInfo;
+                } catch (err) {
+                    console.warn(`thread info not found: ${channel.channelID}`);
+                    channelInfo.channel = channel;
+                    channelInfo.title = channel.channelID;
+                    channelInfo.orgData = {};
+                    return channelInfo;
+                }
+            }
+
             const realUID = DataSourceModule.extractUID(channel.channelID);
             let resp: any;
             try {

@@ -51,6 +51,7 @@ import { UnknownCell } from "./Messages/Unknown";
 import { UnsupportCell, UnsupportContent } from "./Messages/Unsupport";
 import {
   ChannelTypeCustomerService,
+  ChannelTypeCommunityTopic,
   EndpointCategory,
   EndpointID,
   GroupRole,
@@ -70,7 +71,7 @@ import { VideoCell, VideoContent } from "./Messages/Video";
 import { TypingCell } from "./Messages/Typing";
 import { LottieSticker, LottieStickerCell } from "./Messages/LottieSticker";
 import { LocationCell, LocationContent } from "./Messages/Location";
-import { Toast } from "@douyinfe/semi-ui";
+import { Toast, Modal } from "@douyinfe/semi-ui";
 import { ChannelSettingManager } from "./Service/ChannelSetting";
 import { DefaultEmojiService } from "./Service/EmojiService";
 import IconClick from "./Components/IconClick";
@@ -94,6 +95,9 @@ import { handleGlobalSearchClick } from "./Pages/Chat/vm";
 import { ApproveGroupMemberCell } from "./Messages/ApproveGroupMember";
 import { notificationUtil } from "./Utils/NotificationUtil";
 import { shouldSkipMessageForSpace } from "./Service/SpaceService";
+import { ThreadList } from "./Components/ThreadList";
+import { ThreadCreatedCell, ThreadCreatedContent } from "./Messages/ThreadCreated";
+import { parseThreadChannelId } from "./Service/Thread";
 
 export default class BaseModule implements IModule {
   messageTone?: Howl;
@@ -129,6 +133,8 @@ export default class BaseModule implements IModule {
             return MergeforwardCell;
           case MessageContentTypeConst.joinOrganization: // 加入组织
             return JoinOrganizationCell;
+          case MessageContentTypeConst.threadCreated: // 子区创建通知
+            return ThreadCreatedCell;
           case MessageContentTypeConst.smallVideo: // 小视频
             return VideoCell;
           case MessageContentTypeConst.file: // 文件
@@ -203,6 +209,11 @@ export default class BaseModule implements IModule {
     WKSDK.shared().register(
       MessageContentTypeConst.joinOrganization,
       () => new JoinOrganizationContent()
+    );
+    // 子区创建通知
+    WKSDK.shared().register(
+      MessageContentTypeConst.threadCreated,
+      () => new ThreadCreatedContent()
     );
 
     // 未知消息
@@ -668,6 +679,76 @@ export default class BaseModule implements IModule {
         };
       },
       4000
+    );
+
+    // 从消息创建子区（仅群组消息）
+    WKApp.endpoints.registerMessageContextMenus(
+      "contextmenus.createThread",
+      (message, context) => {
+        // 只有群组消息才显示
+        if (message.channel.channelType !== ChannelTypeGroup) {
+          return null;
+        }
+        // 系统消息不显示
+        if (WKSDK.shared().isSystemMessage(message.contentType)) {
+          return null;
+        }
+        return {
+          title: "创建子区",
+          onClick: () => {
+            // 使用消息内容作为默认名称，截取前20个字符
+            const defaultName = (message.content?.conversationDigest || "").slice(0, 20);
+            let threadName = defaultName;
+            Modal.confirm({
+              title: "创建子区",
+              content: (
+                <input
+                  type="text"
+                  placeholder="请输入子区名称"
+                  defaultValue={defaultName}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "4px",
+                    fontSize: "14px",
+                  }}
+                  onChange={(e) => {
+                    threadName = e.target.value;
+                  }}
+                  autoFocus
+                />
+              ),
+              okText: "创建",
+              cancelText: "取消",
+              onOk: async () => {
+                if (!threadName || threadName.trim() === "") {
+                  Toast.error("子区名称不能为空");
+                  return;
+                }
+                try {
+                  const resp = await WKApp.apiClient.post(
+                    `groups/${message.channel.channelID}/threads`,
+                    {
+                      name: threadName.trim(),
+                      source_message_id: parseInt(message.messageID),
+                    }
+                  );
+                  Toast.success("子区创建成功");
+                  // 打开新创建的子区
+                  if (resp && resp.channel_id) {
+                    const channel = new Channel(resp.channel_id, ChannelTypeCommunityTopic);
+                    WKApp.endpoints.showConversation(channel);
+                  }
+                } catch (err: any) {
+                  Toast.error(err.msg || "创建失败");
+                }
+              },
+            });
+          },
+        };
+      },
+      5000
     );
   }
 
@@ -1236,6 +1317,26 @@ export default class BaseModule implements IModule {
             })
           );
 
+          rows.push(
+            new Row({
+              cell: ListItem,
+              properties: {
+                title: "子区",
+                onClick: () => {
+                  context.push(
+                    <ThreadList
+                      channel={channel}
+                      context={context}
+                    />,
+                    new RouteContextConfig({
+                      title: "子区",
+                    })
+                  );
+                },
+              },
+            })
+          );
+
           const latestData2 = context.routeData() as ChannelSettingRouteData;
           const subscriberOfMe2 = latestData2?.subscriberOfMe;
           if (subscriberOfMe2 && (subscriberOfMe2.role === 1 || subscriberOfMe2.role === 2)) {
@@ -1336,7 +1437,8 @@ export default class BaseModule implements IModule {
         const channel = data.channel;
         const rows = new Array<Row>();
 
-        if (channel.channelType === ChannelTypeCustomerService) {
+        // 客服频道和子区使用各自的设置
+        if (channel.channelType === ChannelTypeCustomerService || channel.channelType === ChannelTypeCommunityTopic) {
           return;
         }
 
@@ -1553,6 +1655,182 @@ export default class BaseModule implements IModule {
                       WKApp.conversationProvider.deleteConversation(
                         data.channel
                       );
+                    },
+                  });
+                },
+              },
+            }),
+          ],
+        });
+      },
+      90000
+    );
+
+    // 子区 (Thread) 设置项
+    WKApp.shared.channelSettingRegister(
+      "thread.base.info",
+      (context) => {
+        const data = context.routeData() as ChannelSettingRouteData;
+        const channel = data.channel;
+        const channelInfo = data.channelInfo;
+        if (channel.channelType !== ChannelTypeCommunityTopic) {
+          return undefined;
+        }
+        const threadInfo = parseThreadChannelId(channel.channelID);
+        const rows = new Array<Row>();
+        rows.push(
+          new Row({
+            cell: ListItem,
+            properties: {
+              title: "子区名称",
+              subTitle: channelInfo?.title,
+            },
+          })
+        );
+        if (threadInfo) {
+          const groupChannel = new Channel(threadInfo.groupNo, ChannelTypeGroup);
+          const groupInfo = WKSDK.shared().channelManager.getChannelInfo(groupChannel);
+          if (!groupInfo) {
+            WKSDK.shared().channelManager.fetchChannelInfo(groupChannel);
+          }
+          const groupName = groupInfo?.title || threadInfo.groupNo;
+          rows.push(
+            new Row({
+              cell: ListItemButton,
+              properties: {
+                title: `返回群聊「${groupName}」`,
+                onClick: () => {
+                  WKApp.endpoints.showConversation(groupChannel);
+                },
+              },
+            })
+          );
+        }
+        return new Section({
+          rows: rows,
+        });
+      },
+      500
+    );
+
+    WKApp.shared.channelSettingRegister(
+      "thread.setting",
+      (context) => {
+        const data = context.routeData() as ChannelSettingRouteData;
+        const channel = data.channel;
+        const channelInfo = data.channelInfo;
+        if (channel.channelType !== ChannelTypeCommunityTopic) {
+          return undefined;
+        }
+        const rows = new Array<Row>();
+        rows.push(
+          new Row({
+            cell: ListItemSwitch,
+            properties: {
+              title: "消息免打扰",
+              checked: channelInfo?.mute,
+              onCheck: (v: boolean, ctx: ListItemSwitchContext) => {
+                ctx.loading = true;
+                ChannelSettingManager.shared
+                  .mute(v, channel)
+                  .then(() => {
+                    ctx.loading = false;
+                    data.refresh();
+                  })
+                  .catch(() => {
+                    ctx.loading = false;
+                  });
+              },
+            },
+          })
+        );
+        rows.push(
+          new Row({
+            cell: ListItemSwitch,
+            properties: {
+              title: "聊天置顶",
+              checked: channelInfo?.top,
+              onCheck: (v: boolean, ctx: ListItemSwitchContext) => {
+                ctx.loading = true;
+                ChannelSettingManager.shared
+                  .top(v, channel)
+                  .then(() => {
+                    ctx.loading = false;
+                    data.refresh();
+                  })
+                  .catch(() => {
+                    ctx.loading = false;
+                  });
+              },
+            },
+          })
+        );
+        return new Section({
+          rows: rows,
+        });
+      },
+      3000
+    );
+
+    WKApp.shared.channelSettingRegister(
+      "thread.actions",
+      (context) => {
+        const data = context.routeData() as ChannelSettingRouteData;
+        const channel = data.channel;
+        if (channel.channelType !== ChannelTypeCommunityTopic) {
+          return undefined;
+        }
+        const threadInfo = parseThreadChannelId(channel.channelID);
+        return new Section({
+          rows: [
+            new Row({
+              cell: ListItemButton,
+              properties: {
+                title: "清空聊天记录",
+                type: ListItemButtonType.warn,
+                onClick: () => {
+                  WKApp.shared.baseContext.showAlert({
+                    content: "是否清空此子区的所有消息？",
+                    onOk: async () => {
+                      const conversation =
+                        WKSDK.shared().conversationManager.findConversation(
+                          data.channel
+                        );
+                      if (!conversation) {
+                        return;
+                      }
+                      await WKApp.conversationProvider.clearConversationMessages(
+                        conversation
+                      );
+                      conversation.lastMessage = undefined;
+                      WKApp.endpointManager.invoke(
+                        EndpointID.clearChannelMessages,
+                        data.channel
+                      );
+                    },
+                  });
+                },
+              },
+            }),
+            new Row({
+              cell: ListItemButton,
+              properties: {
+                title: "离开子区",
+                type: ListItemButtonType.warn,
+                onClick: () => {
+                  WKApp.shared.baseContext.showAlert({
+                    content: "确定要离开此子区吗？",
+                    onOk: async () => {
+                      if (threadInfo) {
+                        await WKApp.apiClient
+                          .post(`threads/${threadInfo.shortId}/leave`)
+                          .catch((err: any) => {
+                            Toast.error(err.msg || "离开失败");
+                          });
+                        WKApp.conversationProvider.deleteConversation(
+                          data.channel
+                        );
+                      }
                     },
                   });
                 },

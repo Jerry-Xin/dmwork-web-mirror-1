@@ -1,0 +1,39 @@
+.wk-thread-create {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.wk-thread-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wk-thread-create-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wk-thread-create-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wk-color-text-0, rgba(9, 30, 66, 0.87));
+}
+
+.wk-thread-create-input {
+  width: 100%;
+}
+
+.wk-thread-create-hint {
+  font-size: 12px;
+  color: var(--wk-text-tertiary, #999);
+}
+
+.wk-thread-create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}

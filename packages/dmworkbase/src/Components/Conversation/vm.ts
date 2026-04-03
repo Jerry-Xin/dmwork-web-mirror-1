@@ -16,6 +16,8 @@ import { ProhibitwordsService } from "../../Service/ProhibitwordsService";
 import { SYSTEM_BOTS } from "../../Service/SpaceService";
 import { SuperGroup } from "../../Utils/const";
 import { SystemContent } from "wukongimjssdk";
+import { getFoldSessionExpandedMessages } from "./foldSessionSummary";
+import { getPulldownRestoredScrollTop } from "./historyScroll";
 
 export interface FoldSessionParticipant {
     uid: string
@@ -46,6 +48,7 @@ export interface FoldSessionViewModel {
     shouldAppear: boolean
     highlightSummary: boolean
     showSummary: boolean
+    typing?: MessageWrap
 }
 
 export interface ConversationRenderMessageItem {
@@ -303,9 +306,7 @@ export default class ConversationVM extends ProviderListener {
                         anchorId: sessionId,
                         participants: this.getSessionParticipants(pendingSessionMessages),
                         messages: [...pendingSessionMessages],
-                        expandedMessages: isActive
-                            ? [...pendingSessionMessages]
-                            : pendingSessionMessages.slice(0, pendingSessionMessages.length - 1),
+                        expandedMessages: getFoldSessionExpandedMessages({ messages: pendingSessionMessages }),
                         lastMessage,
                         count: pendingSessionMessages.length,
                         isActive,
@@ -367,7 +368,16 @@ export default class ConversationVM extends ProviderListener {
         }
 
         for (const typingMessage of typingMessages) {
-            renderItems.push({ type: "message", message: typingMessage })
+            const lastItem = renderItems[renderItems.length - 1]
+            if (lastItem?.type === "foldSession" && lastItem.session.isActive && this.isBotMessage(typingMessage)) {
+                lastItem.session.typing = typingMessage
+                lastItem.session.expandedMessages = getFoldSessionExpandedMessages({
+                    messages: lastItem.session.messages,
+                    typing: typingMessage,
+                })
+            } else {
+                renderItems.push({ type: "message", message: typingMessage })
+            }
         }
 
         this.foldSessionState = nextFoldSessionState
@@ -683,6 +693,9 @@ export default class ConversationVM extends ProviderListener {
 
         // 监听 channelInfo 变化，确保 bot 身份信息到达后重建折叠卡片
         this.channelInfoListener = (channelInfo: ChannelInfo) => {
+            if (this.loading) {
+                return
+            }
             if (this.channel.channelType !== ChannelTypeGroup) {
                 return
             }
@@ -1412,6 +1425,10 @@ export default class ConversationVM extends ProviderListener {
             return
         }
 
+        const viewport = document.getElementById(this.messageContainerId) as HTMLElement | null
+        const previousScrollTop = viewport?.scrollTop || 0
+        const previousScrollHeight = viewport?.scrollHeight || 0
+
         this.loading = true
         const opts = new SyncMessageOptions()
         opts.limit = WKApp.config.pageSizeOfMessage
@@ -1432,7 +1449,15 @@ export default class ConversationVM extends ProviderListener {
         }
         this.messagesOfOrigin = [...this.toMessageWraps(newMessages), ...this.messagesOfOrigin]
         this.messagesOfOrigin = this.sortMessages(this.messagesOfOrigin)
-        this.refreshAndLocateMessages(this.messagesOfOrigin, minMessage, false, () => {
+        this.refreshMessages(this.messagesOfOrigin, () => {
+            const nextViewport = document.getElementById(this.messageContainerId) as HTMLElement | null
+            if (nextViewport) {
+                nextViewport.scrollTop = getPulldownRestoredScrollTop({
+                    previousScrollHeight,
+                    previousScrollTop,
+                    nextScrollHeight: nextViewport.scrollHeight,
+                })
+            }
             this.loading = false
         })
     }

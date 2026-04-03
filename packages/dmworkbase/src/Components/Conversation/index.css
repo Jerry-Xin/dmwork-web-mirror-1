@@ -116,6 +116,12 @@ body[theme-mode=dark] .wk-conversation-content {
     line-height: 1.6;
 }
 
+.wk-fold-session-summary-loading {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--wk-sp-4);
+}
+
 /* 折叠内·文件卡片 */
 .wk-fold-file {
     display: flex;

@@ -134,6 +134,7 @@ export interface MessageInputContext {
 export default class MessageInput extends Component<MessageInputProps, MessageInputState> implements MessageInputContext {
     toolbars: Array<ElementType>
     inputRef: any
+    private _mentionsDiv: HTMLDivElement | null = null
     eventListener: any
     private previousScope: string = 'all'
     constructor(props: MessageInputProps) {
@@ -157,6 +158,13 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     }
 
     componentDidMount() {
+        // 找到 wk-messageinput-input div，用于 CSS grid trick 的 data-value 同步
+        if (this.inputRef) {
+            const el = this.inputRef as HTMLElement
+            const mentionsDiv = el.closest?.('.wk-messageinput-input') as HTMLDivElement | null
+            if (mentionsDiv) this._mentionsDiv = mentionsDiv
+        }
+
         const self = this;
         const scope = "messageInput"
         // Save the previous scope to restore on unmount (fix for scope pollution)
@@ -279,6 +287,9 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             quickReplySelectIndex: 0,
             expanded: false,
         });
+        if (this._mentionsDiv) {
+            this._mentionsDiv.dataset.value = ''
+        }
         // 发送后收起展开状态
         if (this.state.expanded) {
             this.props.onExpandChange?.(false)
@@ -289,7 +300,10 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         const value = stripInvisibleChars(event.target.value)
         const { botCommands } = this.props
 
-        // 高度由 CSS field-sizing: content 自动管理，JS 不再干预
+        // 同步 data-value 到镜像 div，驱动 CSS grid trick 自动扩展高度
+        if (this._mentionsDiv) {
+            this._mentionsDiv.dataset.value = value
+        }
 
         // 只在输入 / 前缀且没有空格时弹出斜杠命令菜单（避免粘贴完整命令时弹出）
         if (botCommands && botCommands.length > 0 && value.startsWith('/') && !value.includes(' ') && !value.includes('\n')) {

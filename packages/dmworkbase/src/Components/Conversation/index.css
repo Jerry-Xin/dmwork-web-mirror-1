@@ -364,6 +364,7 @@ body[theme-mode=dark] .wk-conversation-content {
     width: 100%;
     z-index: 999;
     flex-shrink: 0;
+    position: relative; /* 保证内部 absolute 定位元素（close 按钮）正确定位 */
     max-height: 0;
     overflow: hidden;
     transition: max-height var(--wk-layer-transition);

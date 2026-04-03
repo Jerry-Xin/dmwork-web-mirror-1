@@ -13,6 +13,7 @@ import { Notification, Button } from '@douyinfe/semi-ui';
 import SlashCommandMenu, { BotCommand } from "../SlashCommandMenu";
 import AiBadge from "../AiBadge";
 import VoiceInputIndicator from "./VoiceInputIndicator";
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -502,23 +503,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                                 onClick={this.toggleExpand}
                                 title={expanded ? "收起" : "展开输入框"}
                             >
-                                {expanded ? (
-                                    // 收起：向内箭头（和展开完全相反方向）
-                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="20 20 14 20 14 14"/>
-                                        <polyline points="4 4 10 4 10 10"/>
-                                        <line x1="14" y1="14" x2="21" y2="21"/>
-                                        <line x1="3" y1="3" x2="10" y2="10"/>
-                                    </svg>
-                                ) : (
-                                    // 展开：向外箭头
-                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="15 3 21 3 21 9"/>
-                                        <polyline points="9 21 3 21 3 15"/>
-                                        <line x1="21" y1="3" x2="14" y2="10"/>
-                                        <line x1="3" y1="21" x2="10" y2="14"/>
-                                    </svg>
-                                )}
+                                {expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
                             </div>
                         </div>
 

@@ -583,6 +583,9 @@ export class Conversation extends Component<ConversationProps> implements Conver
                             this.vm.clearFoldSessionAnimation(session.sessionId)
                         }
                     }}
+                    onSummaryContextMenu={summaryMessage.contentType !== MessageContentTypeConst.typing ? (event) => {
+                        this.showContextMenus(summaryMessage.message, event)
+                    } : undefined}
                     onSummaryAnimationEnd={(event) => {
                         if (event.target === event.currentTarget) {
                             this.vm.clearFoldSessionSummaryHighlight(session.sessionId)

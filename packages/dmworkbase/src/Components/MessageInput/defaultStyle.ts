@@ -5,8 +5,8 @@ import WKApp,{ThemeMode} from "../../App";
 export const INPUT_LINE_HEIGHT = 21 // px，font-size 14px * line-height 1.5
 export const INPUT_PADDING_V = 10  // px，上下 padding 各 10px
 export const INPUT_MIN_ROWS = 1
-export const INPUT_DEFAULT_ROWS = 8
-export const INPUT_MAX_ROWS = 5
+export const INPUT_DEFAULT_ROWS = 2
+export const INPUT_MAX_ROWS = 10
 
 export function calcInputHeight(rows: number): number {
   return rows * INPUT_LINE_HEIGHT + INPUT_PADDING_V * 2

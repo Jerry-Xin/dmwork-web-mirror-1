@@ -640,6 +640,16 @@ export class Conversation extends Component<ConversationProps> implements Conver
 
     }
 
+    // 内容不满屏时，wheel 向上滚动触发加载更多历史（折叠卡片压缩内容可能导致不满屏无法触发 onScroll）
+    handleWheel(e: React.WheelEvent) {
+        if (e.deltaY >= 0) return // 只处理向上滚动
+        const viewport = e.currentTarget as HTMLElement
+        if (this.isFullScreen(viewport)) return // 满屏时由 onScroll 处理
+        if (!this.vm.loading && !this.vm.pulldownFinished) {
+            this.vm.pulldownMessages()
+        }
+    }
+
     // 判断内容是否满一屏幕
     isFullScreen(viewport: HTMLElement | null) {
         if (!viewport) {
@@ -647,6 +657,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         }
         return viewport.scrollHeight > viewport.clientHeight
     }
+
 
     handleScrollEnd() {
         this.uploadReadedIfNeed()
@@ -863,7 +874,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                         this.dragStart()
 
                     }} className={classNames("wk-conversation-content")}>
-                        <div className="wk-conversation-messages" id={vm.messageContainerId} onScroll={this.handleScroll.bind(this)}>
+                        <div className="wk-conversation-messages" id={vm.messageContainerId} onScroll={this.handleScroll.bind(this)} onWheel={this.handleWheel.bind(this)}>
                             {
                                 vm.renderItems.map((item, i) => {
                                     let last = false

@@ -29,8 +29,12 @@ export default meta
 type Story = StoryObj<typeof AttachmentPreview>
 
 // Mock context，只实现 story 需要的方法
-const mockFile = (name: string, size: number, type = '') =>
-  new File(['x'.repeat(size)], name, { type })
+// 用 size 作为元数据，不实际分配内存
+const mockFile = (name: string, size: number, type = '') => {
+  const f = new File(['x'], name, { type })
+  Object.defineProperty(f, 'size', { value: size })
+  return f
+}
 
 const mockFiles = [
   mockFile('会议纪要.pdf', 1_240_000, 'application/pdf'),

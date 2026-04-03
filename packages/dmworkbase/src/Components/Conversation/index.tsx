@@ -145,6 +145,9 @@ export class Conversation extends Component<ConversationProps> implements Conver
             }
 
             // 超时兜底：30s 后强制 resolve，不阻塞后续附件
+            // ⚠️ 注意：WKSDK 的 BaseTask.cancel() 是空实现，超时后上传仍在后台继续。
+            // 若超时触发，下一条附件会立即开始上传，两者并发，顺序无法保证。
+            // 30s 是网络极差时的最后防线，正常情况下 task.success/fail 会在此之前触发。
             const timer = setTimeout(done, TIMEOUT)
 
             const listener = (task: any) => {
@@ -294,13 +297,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
             return `所有文件总大小不能超过 100MB`
         }
 
-        // 同名文件提示（不阻止，产品要求轻量提示）
-        const currentNames = new Set(current.map(f => f.name))
-        const hasDuplicate = incoming.some(f => currentNames.has(f.name))
-        if (hasDuplicate) {
-            // 由调用方弹提示，这里直接加入
-        }
-
+        // 同名文件检查由调用方（FileToolbar）负责弹提示，此处直接追加
         this.vm.pendingAttachments = [...current, ...incoming]
         this.vm.notifyListener()
         return null
@@ -1121,6 +1118,8 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                 // ── 附件队列发送 (#143 / #144) ──────────────
                                 const attachments = [...vm.pendingAttachments]
                                 if (attachments.length > 0) {
+                                    // 先清空预览区，发送过程中不允许继续追加（防止重复）
+                                    // 注意：清空在循环前，失败文件不会自动回滚到队列（设计如此，符合 IM 惯例）
                                     this.clearPendingAttachments()
                                     for (const file of attachments) {
                                         try {

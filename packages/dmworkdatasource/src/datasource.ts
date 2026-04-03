@@ -1,4 +1,4 @@
-import { ChannelQrcodeResp, Contacts, IChannelDataSource, ICommonDataSource, WKApp, RequestConfig, GroupRole, hasSpacePrefix } from "@dmwork/base";
+import { ChannelQrcodeResp, Contacts, IChannelDataSource, ICommonDataSource, WKApp, RequestConfig, GroupRole, hasSpacePrefix, Thread, ChannelTypeCommunityTopic, buildThreadChannelId } from "@dmwork/base";
 import { Channel, ChannelInfo, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageContentType,ConversationExtra,Subscriber } from "wukongimjssdk";
 
 const MAX_GROUP_LIST_LIMIT = 100000;
@@ -179,6 +179,90 @@ export class ChannelDataSource implements IChannelDataSource {
             "draft": conversationExtra.draft||""
 
         })
+    }
+
+    // Thread (子区) API
+    async threadList(groupNo: string): Promise<Thread[]> {
+        const resp = await WKApp.apiClient.get(`groups/${groupNo}/threads`)
+        if (!resp || !Array.isArray(resp)) {
+            return []
+        }
+        return resp.map((item: any) => this.toThread(item, groupNo))
+    }
+
+    async threadCreate(groupNo: string, name: string, sourceMessageId?: number): Promise<Thread> {
+        const body: any = { name }
+        if (sourceMessageId !== undefined) {
+            body.source_message_id = sourceMessageId
+        }
+        const resp = await WKApp.apiClient.post(`groups/${groupNo}/threads`, body)
+        return this.toThread(resp, groupNo)
+    }
+
+    async threadGet(groupNo: string, shortId: string): Promise<Thread> {
+        const resp = await WKApp.apiClient.get(`groups/${groupNo}/threads/${shortId}`)
+        return this.toThread(resp, groupNo)
+    }
+
+    async threadArchive(groupNo: string, shortId: string): Promise<void> {
+        return WKApp.apiClient.post(`groups/${groupNo}/threads/${shortId}/archive`)
+    }
+
+    async threadDelete(groupNo: string, shortId: string): Promise<void> {
+        return WKApp.apiClient.delete(`groups/${groupNo}/threads/${shortId}`)
+    }
+
+    async threadJoin(shortId: string): Promise<void> {
+        return WKApp.apiClient.post(`threads/${shortId}/join`)
+    }
+
+    async threadLeave(shortId: string): Promise<void> {
+        return WKApp.apiClient.post(`threads/${shortId}/leave`)
+    }
+
+    async threadMembers(shortId: string, req?: {
+        keyword?: string
+        limit?: number
+        page?: number
+    }): Promise<Subscriber[]> {
+        const resp = await WKApp.apiClient.get(`threads/${shortId}/members`, {
+            param: req
+        })
+        const members: Subscriber[] = []
+        if (resp) {
+            for (let i = 0; i < resp.length; i++) {
+                const memberMap = resp[i]
+                const member = new Subscriber()
+                member.uid = memberMap.uid
+                member.name = memberMap.name
+                member.remark = memberMap.remark
+                member.role = memberMap.role
+                member.version = memberMap.version
+                member.isDeleted = memberMap.is_deleted
+                member.status = memberMap.status
+                member.orgData = memberMap
+                member.avatar = WKApp.shared.avatarUser(member.uid)
+                members.push(member)
+            }
+        }
+        return members
+    }
+
+    private toThread(data: any, groupNo: string): Thread {
+        return {
+            short_id: data.short_id,
+            group_no: groupNo,
+            channel_id: buildThreadChannelId(groupNo, data.short_id),
+            channel_type: ChannelTypeCommunityTopic,
+            name: data.name,
+            creator_uid: data.creator_uid,
+            source_message_id: data.source_message_id,
+            status: data.status,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+            is_member: data.is_member,
+            member_count: data.member_count,
+        }
     }
 }
 

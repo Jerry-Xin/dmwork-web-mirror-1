@@ -287,3 +287,10 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 .wk-onlinestatusbadge-empty .wk-onlinestatusbadge-content-tip {
     padding: 8px;
 }
+
+/* Thread prefix */
+.wk-thread-prefix {
+    color: var(--wk-color-primary, #1890ff);
+    margin-right: 2px;
+    font-weight: 600;
+}

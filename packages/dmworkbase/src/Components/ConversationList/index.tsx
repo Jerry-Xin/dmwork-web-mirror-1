@@ -1,6 +1,7 @@
 import WKSDK from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { Channel, ChannelInfo, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
+import { ChannelTypeCommunityTopic } from "../../Service/Const";
 import React, { Component } from "react";
 import { Modal } from "@douyinfe/semi-ui";
 import { ConversationWrap, MessageWrap } from "../../Service/Model";
@@ -114,7 +115,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         if (lastMessage.channel.channelType === ChannelTypePerson) {
             return lastMessage.content?.conversationDigest
         } else {
-
+            // 群组和子区频道都显示发送者名称
             let from = ""
             if (lastMessage.fromUID && lastMessage.fromUID !== "") {
                 const fromChannel = new Channel(lastMessage.fromUID, ChannelTypePerson)
@@ -125,7 +126,6 @@ export default class ConversationList extends Component<ConversationListProps, C
                     WKSDK.shared().channelManager.fetchChannelInfo(fromChannel)
                 }
             }
-
 
             return `${from}${lastMessage.content?.conversationDigest || ""}`
         }
@@ -193,6 +193,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                     <div className="wk-conversationlist-item-right-first-line">
                         <div className="wk-conversationlist-item-name">
                             <h3>
+                                {conversationWrap.channel.channelType === ChannelTypeCommunityTopic && <span className="wk-thread-prefix">#</span>}
                                 {channelInfo?.orgData.displayName}
                             </h3>
                             {channelInfo?.orgData?.robot === 1 && <AiBadge />}
@@ -261,7 +262,8 @@ export default class ConversationList extends Component<ConversationListProps, C
         const filter = this.props.filter ?? 'all'
         if (filter === 'all') return true
         const channelInfo = conv.channelInfo
-        if (filter === 'group') return conv.channel.channelType === ChannelTypeGroup
+        // 群组和子区频道都归类到 group 过滤器
+        if (filter === 'group') return conv.channel.channelType === ChannelTypeGroup || conv.channel.channelType === ChannelTypeCommunityTopic
         if (filter === 'ai') {
             if (conv.channel.channelType !== ChannelTypePerson) return false
             // channelInfo 未加载时隐藏，等 channelInfoListener 触发重渲后再显示

@@ -429,10 +429,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         }
         return (
             <div className="wk-messageinput-box" style={expanded ? { display: 'flex', flexDirection: 'column' } : undefined}>
-                {/* hover 边缘展开/收起条 */}
-                <div className="wk-messageinput-expand-edge" onClick={this.toggleExpand} title={expanded ? "收起" : "展开"}>
-                    <span className="wk-messageinput-expand-edge-icon">{expanded ? '》' : '《'}</span>
-                </div>
+
                 {
                     topView ? <div className="wk-messageinput-box-top">
                         {topView}
@@ -499,6 +496,24 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
 
 
+                            {/* 展开/收起按钮 */}
+                            <div
+                                className={clazz("wk-messageinput-actionitem", "wk-messageinput-expand-btn", expanded ? "wk-messageinput-expand-btn--active" : undefined)}
+                                onClick={this.toggleExpand}
+                                title={expanded ? "收起" : "展开输入框"}
+                            >
+                                {expanded ? (
+                                    // 收起：向下箭头
+                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                                    </svg>
+                                ) : (
+                                    // 展开：向外箭头
+                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                                    </svg>
+                                )}
+                            </div>
                         </div>
 
                     </div>

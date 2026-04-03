@@ -221,39 +221,20 @@
 }
 
 
-/* 展开/收起 hover 边缘条 (#145) */
-.wk-messageinput-expand-edge {
-    position: absolute;
-    top: -10px;
-    left: 0;
-    right: 0;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* 展开/收起按钮 (#145) */
+.wk-messageinput-expand-btn {
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.15s;
-    z-index: 10;
-}
-
-.wk-messageinput-box:hover .wk-messageinput-expand-edge {
-    opacity: 1;
-}
-
-.wk-messageinput-expand-edge-icon {
-    background: var(--wk-bg-base);
-    border: 1px solid var(--wk-border-subtle);
-    border-radius: var(--wk-r-sm, 4px);
     color: var(--wk-text-secondary);
-    font-size: var(--wk-text-size-xs, 11px);
-    padding: 1px 10px;
-    line-height: 1.4;
-    transition: background 0.15s, color 0.15s;
-    user-select: none;
+    opacity: 0.6;
+    transition: opacity 0.15s, color 0.15s;
 }
 
-.wk-messageinput-expand-edge:hover .wk-messageinput-expand-edge-icon {
-    background: var(--wk-bg-hover);
+.wk-messageinput-expand-btn:hover {
+    opacity: 1;
     color: var(--wk-text-primary);
+}
+
+.wk-messageinput-expand-btn--active {
+    color: var(--wk-brand-primary, var(--wk-color-theme));
+    opacity: 1;
 }

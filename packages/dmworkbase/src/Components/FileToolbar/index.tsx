@@ -2,6 +2,7 @@ import React from "react"
 import { Component, ReactNode } from "react"
 import ConversationContext from "../Conversation/context"
 import { Toast } from "@douyinfe/semi-ui"
+import IconClick from "../IconClick"
 
 import "./index.css"
 
@@ -53,19 +54,19 @@ export default class FileToolbar extends Component<FileToolbarProps> {
 
         return (
             <div className="wk-filetoolbar">
-                <div className="wk-filetoolbar-content" onClick={this.chooseFile}>
-                    <div className="wk-filetoolbar-content-icon">
-                        {typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
-                        <input
-                            onClick={this.onFileClick}
-                            onChange={this.onFileChange}
-                            ref={(ref) => { this.$fileInput = ref }}
-                            type="file"
-                            multiple={true}
-                            style={{ display: "none" }}
-                        />
-                    </div>
-                </div>
+                <IconClick
+                    icon={typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
+                    onClick={this.chooseFile}
+                    size="sm"
+                />
+                <input
+                    onClick={this.onFileClick}
+                    onChange={this.onFileChange}
+                    ref={(ref) => { this.$fileInput = ref }}
+                    type="file"
+                    multiple={true}
+                    style={{ display: "none" }}
+                />
             </div>
         )
     }

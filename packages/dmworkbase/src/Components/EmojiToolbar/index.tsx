@@ -8,6 +8,7 @@ import ConversationContext from "../Conversation/context";
 
 import "./index.css"
 import { LottieSticker } from "../../Messages/LottieSticker";
+import IconClick from "../IconClick";
 
 interface EmojiToolbarProps {
     conversationContext: ConversationContext
@@ -33,14 +34,14 @@ export default class EmojiToolbar extends Component<EmojiToolbarProps, EmojiTool
         const { show, animationStart } = this.state
         const { icon, conversationContext } = this.props
         return <div className="wk-emojitoolbar" >
-            <div className="wk-emojitoolbar-content" onClick={() => {
-                this.setState({
-                    show: !show,
-                    animationStart: true
-                })
-            }}>
-                {typeof icon === 'string' ? <img src={icon}></img> : icon}
-                <div onAnimationEnd={() => {
+            <IconClick
+                size="sm"
+                icon={typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
+                onClick={() => {
+                    this.setState({ show: !show, animationStart: true })
+                }}
+            />
+            <div onAnimationEnd={() => {
                     // this.setState({
                     //     animationStart: false
                     // })
@@ -66,7 +67,6 @@ export default class EmojiToolbar extends Component<EmojiToolbarProps, EmojiTool
                         })
                         conversationContext.messageInputContext().insertText(emoji.key)
                     }}></EmojiPanel>
-                </div>
             </div>
             {
                 show ? <div className="wk-emojitoolbar-mask" onClick={()=>{

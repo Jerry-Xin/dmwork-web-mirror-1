@@ -2,6 +2,7 @@ import type ConversationContext from "../Conversation/context";
 import React from "react";
 import { Component, ReactNode } from "react";
 import { Toast } from "@douyinfe/semi-ui";
+import IconClick from "../IconClick";
 
 import "./index.css"
 
@@ -60,20 +61,20 @@ export default class ImageToolbar extends Component<ImageToolbarProps> {
         const { icon } = this.props
         return (
             <div className="wk-imagetoolbar">
-                <div className="wk-imagetoolbar-content" onClick={this.chooseFile}>
-                    <div className="wk-imagetoolbar-content-icon">
-                        {typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
-                        <input
-                            onClick={this.onFileClick}
-                            onChange={this.onFileChange}
-                            ref={(ref) => { this.$fileInput = ref }}
-                            type="file"
-                            multiple={true}
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                        />
-                    </div>
-                </div>
+                <IconClick
+                    icon={typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
+                    onClick={this.chooseFile}
+                    size="sm"
+                />
+                <input
+                    onClick={this.onFileClick}
+                    onChange={this.onFileChange}
+                    ref={(ref) => { this.$fileInput = ref }}
+                    type="file"
+                    multiple={true}
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                />
             </div>
         )
     }

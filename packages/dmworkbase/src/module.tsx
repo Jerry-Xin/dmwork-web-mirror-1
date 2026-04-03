@@ -504,8 +504,8 @@ export default class BaseModule implements IModule {
       return (
         <EmojiToolbar
           conversationContext={ctx}
-          icon={<Smile size={20} color="var(--wk-text-secondary)" className="wk-toolbar-icon" />}
-        ></EmojiToolbar>
+          icon={<Smile size={18} color="currentColor" />}
+        />
       );
     });
 
@@ -516,18 +516,20 @@ export default class BaseModule implements IModule {
       }
       return (
         <IconClick
-          icon={<AtSign size={20} color="#ee9278" className="wk-toolbar-icon" />}
+          size="sm"
+          icon={<AtSign size={18} color="#ee9278" />}
           onClick={() => {
             ctx.messageInputContext().insertText("@");
           }}
-        ></IconClick>
+        />
       );
     });
 
     WKApp.endpoints.registerChatToolbar("chattoolbar.screenshot", (ctx) => {
       return (
         <IconClick
-          icon={<Scissors size={20} color="var(--wk-text-secondary)" className="wk-toolbar-icon" />}
+          size="sm"
+          icon={<Scissors size={18} color="currentColor" />}
           onClick={() => {
             if ((window as any).__POWERED_ELECTRON__) {
               (window as any).ipc.send('screenshots-start', {})
@@ -535,23 +537,23 @@ export default class BaseModule implements IModule {
               window.open("https://www.snipaste.com");
             }
           }}
-        ></IconClick>
+        />
       );
     });
     WKApp.endpoints.registerChatToolbar("chattoolbar.image", (ctx) => {
       return (
         <ImageToolbar
-          icon={<ImagePlus size={20} color="var(--wk-text-secondary)" className="wk-toolbar-icon" />}
+          icon={<ImagePlus size={18} color="currentColor" />}
           conversationContext={ctx}
-        ></ImageToolbar>
+        />
       );
     });
     WKApp.endpoints.registerChatToolbar("chattoolbar.file", (ctx) => {
       return (
         <FileToolbar
-          icon={<Paperclip size={20} color="var(--wk-text-secondary)" className="wk-toolbar-icon" />}
+          icon={<Paperclip size={18} color="currentColor" />}
           conversationContext={ctx}
-        ></FileToolbar>
+        />
       );
     });
   }

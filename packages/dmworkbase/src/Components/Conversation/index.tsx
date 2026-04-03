@@ -974,10 +974,10 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                 }} onDrop={(event) => {
                                     event.preventDefault()
                                     this.dragEnd()
-                                    const file = event.dataTransfer.files[0]
-                                    if (this._dragFileCallback) {
-                                        this._dragFileCallback(file)
-                                    }
+                                    const files = Array.from(event.dataTransfer.files)
+                                    if (files.length === 0) return
+                                    const err = this.addPendingAttachments(files)
+                                    if (err) Toast.error(err)
                                 }}>
                                     <div className="wk-conversation-content-fileupload-mask-content">
                                         发送给 &nbsp; {channelInfo?.title}

@@ -15,7 +15,6 @@ export function calcInputHeight(rows: number): number {
 export default class InputStyle {
 
   static getStyle(inputHeight?: number, expanded?: boolean) {
-    const h = inputHeight ?? calcInputHeight(INPUT_DEFAULT_ROWS)
     return { 
       control: {
         fontSize: 14,
@@ -24,12 +23,14 @@ export default class InputStyle {
       },
       highlighter: {
         overflow: 'hidden',
-        height: expanded ? '100%' : h,
+        // 高度由 CSS field-sizing: content 接管，JS 不再控制
+        minHeight: expanded ? '100%' : calcInputHeight(INPUT_DEFAULT_ROWS),
       },
     
       input: {
-        overflow: 'auto',
-        height: expanded ? '100%' : h,
+        // 高度由 CSS field-sizing: content 接管
+        overflow: expanded ? 'auto' : undefined,
+        height: expanded ? '100%' : undefined,
       },
     
       '&singleLine': {

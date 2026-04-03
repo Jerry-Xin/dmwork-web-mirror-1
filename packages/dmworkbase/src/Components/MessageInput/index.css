@@ -14,12 +14,12 @@
 } */
 
 .wk-messageinput-inputbox {
-    height: 77px;
     width: 100%;
     padding: 0px 15px 15px 15px;
     box-sizing: border-box;
     display: flex;
     align-items: flex-start;
+    transition: height 0.1s ease;
 }
 
 .wk-messageinput-menu-btn {
@@ -79,7 +79,7 @@
 }
 
 .wk-messageinput-bar {
-    height: 40px;
+    min-height: 40px;
     width: 100%;
     display: flex;
     top: 0px;

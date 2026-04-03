@@ -7,7 +7,7 @@ import WKSDK, { Channel, ChannelTypePerson, Subscriber } from "wukongimjssdk";
 import hotkeys from 'hotkeys-js';
 import WKApp from "../../App";
 import "./index.css"
-import InputStyle from "./defaultStyle";
+import InputStyle, { calcInputHeight, INPUT_LINE_HEIGHT, INPUT_PADDING_V, INPUT_MIN_ROWS, INPUT_DEFAULT_ROWS, INPUT_MAX_ROWS } from "./defaultStyle";
 import {IconSend} from '@douyinfe/semi-icons';
 import { Notification, Button } from '@douyinfe/semi-ui';
 import SlashCommandMenu, { BotCommand } from "../SlashCommandMenu";
@@ -49,6 +49,7 @@ interface MessageInputState {
     slashMenuVisible: boolean
     slashFilter: string
     slashActiveIndex: number
+    inputHeight: number // 输入框当前高度（px），随内容自动扩展
 }
 
 export interface MentionEntity {
@@ -143,6 +144,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             slashMenuVisible: false,
             slashFilter: "",
             slashActiveIndex: 0,
+            inputHeight: calcInputHeight(INPUT_DEFAULT_ROWS),
         }
         if (props.onAddMention) {
             props.onAddMention(this.addMention.bind(this))
@@ -185,6 +187,17 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     //     const { quickReplyModels } = this.state
     //     return quickReplyModels && quickReplyModels.length > 0
     // }
+    componentDidUpdate(prevProps: any) {
+        // 有附件状态变化时，重新计算默认高度（内容为空时跟着调整）
+        if (prevProps.hasPendingAttachments !== this.props.hasPendingAttachments) {
+            const { value } = this.state
+            if (!value || value.trim() === '') {
+                const defaultRows = this.props.hasPendingAttachments ? INPUT_MIN_ROWS : INPUT_DEFAULT_ROWS
+                this.setState({ inputHeight: calcInputHeight(defaultRows) })
+            }
+        }
+    }
+
     componentWillUnmount() {
         const scope = "messageInput"
         hotkeys.unbind('ctrl+enter', scope);
@@ -267,15 +280,21 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             const { content, mention } = formatMentionTextV2(value || "");
             this.props.onSend(content, mention);
         }
+        const defaultRows = this.props.hasPendingAttachments ? INPUT_MIN_ROWS : INPUT_DEFAULT_ROWS
         this.setState({
             value: '',
             quickReplySelectIndex: 0,
+            inputHeight: calcInputHeight(defaultRows),
         });
     }
 
     handleChange = (event: { target: { value: string } }) => {
         const value = stripInvisibleChars(event.target.value)
         const { botCommands } = this.props
+
+        // 计算输入框自适应高度
+        const inputHeight = this.calcAutoHeight(value)
+
         // 只在输入 / 前缀且没有空格时弹出斜杠命令菜单（避免粘贴完整命令时弹出）
         if (botCommands && botCommands.length > 0 && value.startsWith('/') && !value.includes(' ') && !value.includes('\n')) {
             const filter = value.slice(1)
@@ -284,6 +303,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                 slashMenuVisible: true,
                 slashFilter: filter,
                 slashActiveIndex: 0,
+                inputHeight,
             })
         } else {
             this.setState({
@@ -291,8 +311,40 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                 slashMenuVisible: false,
                 slashFilter: "",
                 slashActiveIndex: 0,
+                inputHeight,
             })
         }
+    }
+
+    /**
+     * 根据内容计算输入框高度
+     * 有附件时默认 1 行，无附件默认 2 行，最大 MAX_ROWS 行
+     */
+    calcAutoHeight(value?: string): number {
+        const { hasPendingAttachments } = this.props
+        const defaultRows = hasPendingAttachments ? INPUT_MIN_ROWS : INPUT_DEFAULT_ROWS
+
+        if (!value || value.trim() === '') {
+            return calcInputHeight(defaultRows)
+        }
+
+        // 通过换行符计算实际行数
+        const newlines = (value.match(/\n/g) || []).length + 1
+        // 同时参考 textarea 的 scrollHeight（如果 ref 存在）
+        let scrollRows = defaultRows
+        if (this.inputRef) {
+            // 临时重置高度以获取真实 scrollHeight
+            const el = this.inputRef as HTMLTextAreaElement
+            const prevHeight = el.style.height
+            el.style.height = 'auto'
+            const scrollH = el.scrollHeight
+            el.style.height = prevHeight
+            scrollRows = Math.ceil((scrollH - INPUT_PADDING_V * 2) / INPUT_LINE_HEIGHT)
+        }
+
+        const rows = Math.max(defaultRows, Math.max(newlines, scrollRows))
+        const clampedRows = Math.min(rows, INPUT_MAX_ROWS)
+        return calcInputHeight(clampedRows)
     }
 
     getFilteredSlashCommands(): BotCommand[] {
@@ -349,7 +401,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
     render() {
         const { members, onInputRef, topView, toolbar, botCommands } = this.props
-        const { value, slashMenuVisible, slashFilter, slashActiveIndex } = this.state
+        const { value, slashMenuVisible, slashFilter, slashActiveIndex, inputHeight } = this.state
         const hasValue = (value && value.length > 0) || this.props.hasPendingAttachments
         let selectedItems = new Array<MemberSuggestionDataItem>();
         if (members && members.length > 0) {
@@ -459,7 +511,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                         </div>
                     )}
                     <MentionsInput
-                        style={InputStyle.getStyle()}
+                        style={InputStyle.getStyle(inputHeight)}
                         value={value}
                         onKeyPress={this.handleKeyPressed}
                         onKeyDown={this.handleKeyDown}

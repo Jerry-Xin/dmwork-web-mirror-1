@@ -2,24 +2,33 @@ import WKApp,{ThemeMode} from "../../App";
 
 /* eslint import/no-anonymous-default-export: [2, {"allowObject": true}] */
 
+export const INPUT_LINE_HEIGHT = 21 // px，font-size 14px * line-height 1.5
+export const INPUT_PADDING_V = 10  // px，上下 padding 各 10px
+export const INPUT_MIN_ROWS = 1
+export const INPUT_DEFAULT_ROWS = 2
+export const INPUT_MAX_ROWS = 5
+
+export function calcInputHeight(rows: number): number {
+  return rows * INPUT_LINE_HEIGHT + INPUT_PADDING_V * 2
+}
+
 export default class InputStyle {
 
-  static getStyle() {
-    
+  static getStyle(inputHeight?: number) {
+    const h = inputHeight ?? calcInputHeight(INPUT_DEFAULT_ROWS)
     return { 
       control: {
-    
         fontSize: 14,
         fontWeight: 'normal',
       },
       highlighter: {
         overflow: 'hidden',
-        height: 53,
+        height: h,
       },
     
       input: {
         overflow: 'auto',
-        height: 53,
+        height: h,
       },
     
       '&singleLine': {

@@ -417,7 +417,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
     render() {
         const { members, onInputRef, topView, toolbar, botCommands } = this.props
-        const { value, slashMenuVisible, slashFilter, slashActiveIndex, inputHeight } = this.state
+        const { value, slashMenuVisible, slashFilter, slashActiveIndex, inputHeight, expanded } = this.state
         const hasValue = (value && value.length > 0) || this.props.hasPendingAttachments
         let selectedItems = new Array<MemberSuggestionDataItem>();
         if (members && members.length > 0) {

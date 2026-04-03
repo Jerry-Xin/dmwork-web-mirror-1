@@ -1,4 +1,4 @@
-import { Channel, ChannelTypeGroup, ChannelTypePerson, ConversationAction, WKSDK, Message, MessageContent, MessageStatus, Subscriber, Conversation, MessageExtra, CMDContent, PullMode, MessageContentType, ChannelInfo, ConversationListener } from "wukongimjssdk";
+import { Channel, ChannelTypeGroup, ChannelTypePerson, ConversationAction, WKSDK, Message, MessageContent, MessageStatus, Subscriber, Conversation, MessageExtra, CMDContent, PullMode, MessageContentType, ChannelInfo, ChannelInfoListener, ConversationListener } from "wukongimjssdk";
 import WKApp from "../../App";
 import { SyncMessageOptions } from "../../Service/DataSource/DataProvider";
 import { MessageWrap } from "../../Service/Model";
@@ -89,6 +89,7 @@ export default class ConversationVM extends ProviderListener {
     cmdListener!: MessageListener // cmd消息监听
     messageStatusListener!: MessageStatusListener // 消息状态监听
     conversationListener!: ConversationListener // 会话监听
+    private channelInfoListener!: ChannelInfoListener // channelInfo 变化监听（bot 身份识别）
     subscriberChangeListener!: (channel: Channel) => void // 订阅者变化监听
     lastMessage?: MessageWrap // 此会话的最后一条最新的消息
     lastLocalMessageElement?: HTMLElement | null // 最后一条消息的dom元素
@@ -97,6 +98,7 @@ export default class ConversationVM extends ProviderListener {
     private foldSessionState: Map<string, FoldSessionUIState> = new Map()
     private messageSeqToFoldSessionId: Map<number, string> = new Map()
     afterFoldSessionClientMsgNos: Set<string> = new Set() // 紧跟在折叠卡片后的消息，需强制独立显示
+    private foldSessionActiveTimer: ReturnType<typeof setTimeout> | null = null // 协作态超时自动结束
 
     fileDragEnter?: boolean // 文件拖拽上传（拖进来了）
     fileDragLeave?: boolean // 文件拖拽上传（拖离开了）
@@ -341,8 +343,28 @@ export default class ConversationVM extends ProviderListener {
         }
 
         const lastPendingMsg = pendingSessionMessages.length > 0 ? pendingSessionMessages[pendingSessionMessages.length - 1] : null
-        const isStillActive = lastPendingMsg !== null && !this.pullupHasMore
+        const nowSec = Math.floor(Date.now() / 1000)
+        const isStillActive = lastPendingMsg !== null && !this.pullupHasMore && (nowSec - lastPendingMsg.timestamp < 120)
         flushPendingSession(isStillActive)
+
+        // 协作态超时自动结束：active 时设一次性定时器，到期重建刷新状态
+        if (this.foldSessionActiveTimer) {
+            clearTimeout(this.foldSessionActiveTimer)
+            this.foldSessionActiveTimer = null
+        }
+        if (isStillActive && lastPendingMsg) {
+            const remainMs = (120 - (nowSec - lastPendingMsg.timestamp)) * 1000
+            this.foldSessionActiveTimer = setTimeout(() => {
+                this.foldSessionActiveTimer = null
+                this.rebuildRenderItems()
+                this.notifyListener()
+                // 通知会话列表刷新，清除 "AI协作中" 预览
+                const conversation = WKSDK.shared().conversationManager.findConversation(this.channel)
+                if (conversation) {
+                    WKSDK.shared().conversationManager.notifyConversationListeners(conversation, ConversationAction.update)
+                }
+            }, remainMs)
+        }
 
         for (const typingMessage of typingMessages) {
             renderItems.push({ type: "message", message: typingMessage })
@@ -659,6 +681,25 @@ export default class ConversationVM extends ProviderListener {
         }
         WKSDK.shared().chatManager.addMessageStatusListener(this.messageStatusListener)
 
+        // 监听 channelInfo 变化，确保 bot 身份信息到达后重建折叠卡片
+        this.channelInfoListener = (channelInfo: ChannelInfo) => {
+            if (this.channel.channelType !== ChannelTypeGroup) {
+                return
+            }
+            if (channelInfo.channel.channelType !== ChannelTypePerson) {
+                return
+            }
+            if (channelInfo.orgData?.robot !== 1) {
+                return
+            }
+            const hasBotMsg = this.messagesOfOrigin.some(m => m.fromUID === channelInfo.channel.channelID)
+            if (hasBotMsg) {
+                this.rebuildRenderItems()
+                this.notifyListener()
+            }
+        }
+        WKSDK.shared().channelManager.addListener(this.channelInfoListener)
+
         WKApp.endpointManager.setMethod(EndpointID.clearChannelMessages, (channel: Channel) => {
             if (channel.isEqual(this.channel)) {
                 if (this.messagesOfOrigin.length > 0) {
@@ -669,6 +710,10 @@ export default class ConversationVM extends ProviderListener {
                 this.renderItems = []
                 this.foldSessionState.clear()
                 this.messageSeqToFoldSessionId.clear()
+                if (this.foldSessionActiveTimer) {
+                    clearTimeout(this.foldSessionActiveTimer)
+                    this.foldSessionActiveTimer = null
+                }
                 this.lastMessage = undefined
                 this.notifyListener()
             }
@@ -761,6 +806,11 @@ export default class ConversationVM extends ProviderListener {
         TypingManager.shared.removeTypingListener(this.typingListener)
         WKSDK.shared().conversationManager.removeConversationListener(this.conversationListener)
         WKSDK.shared().channelManager.removeSubscriberChangeListener(this.subscriberChangeListener)
+        WKSDK.shared().channelManager.removeListener(this.channelInfoListener)
+        if (this.foldSessionActiveTimer) {
+            clearTimeout(this.foldSessionActiveTimer)
+            this.foldSessionActiveTimer = null
+        }
         this.pendingMessages = [] // 清理缓冲区
 
         WKApp.mittBus.off("task-upload-failed", this._taskUploadFailedHandler)

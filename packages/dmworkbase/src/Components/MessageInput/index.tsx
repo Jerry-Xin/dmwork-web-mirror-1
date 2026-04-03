@@ -503,14 +503,20 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                                 title={expanded ? "收起" : "展开输入框"}
                             >
                                 {expanded ? (
-                                    // 收起：向下箭头
+                                    // 收起：向内箭头（和展开完全相反方向）
                                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                                        <polyline points="20 20 14 20 14 14"/>
+                                        <polyline points="4 4 10 4 10 10"/>
+                                        <line x1="14" y1="14" x2="21" y2="21"/>
+                                        <line x1="3" y1="3" x2="10" y2="10"/>
                                     </svg>
                                 ) : (
                                     // 展开：向外箭头
                                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                                        <polyline points="15 3 21 3 21 9"/>
+                                        <polyline points="9 21 3 21 3 15"/>
+                                        <line x1="21" y1="3" x2="14" y2="10"/>
+                                        <line x1="3" y1="21" x2="10" y2="14"/>
                                     </svg>
                                 )}
                             </div>

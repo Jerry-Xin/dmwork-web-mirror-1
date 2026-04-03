@@ -1116,9 +1116,9 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                     }
                                 }
 
-                                // 文字（有内容才发）
+                                // 文字（有内容才发，await 保证在附件全部发完后才发）
                                 if (text && text.trim() !== "") {
-                                    this.sendMessage(content)
+                                    await this.sendMessage(content)
                                 }
                             }}>
 

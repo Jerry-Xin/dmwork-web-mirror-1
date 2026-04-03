@@ -71,11 +71,12 @@ export class Conversation extends Component<ConversationProps> implements Conver
     private _cachedSelectedText: string | null = null
     private _beforeUnloadHandler: () => void
     private _guardId: symbol = Symbol('pendingAttachmentGuard')
-    private _inputExpanded: boolean = false
+
 
     constructor(props: any) {
         super(props)
         this.state = {
+            inputExpanded: false,
         }
         this._beforeUnloadHandler = () => {
             // Use sendBeacon for reliable delivery during page unload
@@ -1093,7 +1094,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                             vm.unCheckAllMessages()
                         }}></MultiplePanel>
                     </div>
-                    <div className="wk-conversation-footer" style={this._inputExpanded ? { flex: 1, paddingTop: 10 } : undefined}>
+                    <div className="wk-conversation-footer" style={this.state.inputExpanded ? { flex: 1, paddingTop: 'var(--wk-sp-2)' } : undefined}>
                         {vm.pendingAttachments.length > 0 && (
                             <AttachmentPreview
                                 conversationContext={this}
@@ -1103,8 +1104,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                         <div className="wk-conversation-footer-content">
 
                             <MessageInput botCommands={botCommands} hasPendingAttachments={vm.pendingAttachments.length > 0} members={this.vm.subscribers.filter((s) => s.uid !== WKApp.loginInfo.uid)} onExpandChange={(expanded) => {
-                                this._inputExpanded = expanded
-                                this.vm.notifyListener()
+                                this.setState({ inputExpanded: expanded })
                             }} onContext={(ctx) => {
                                 this._messageInputContext = ctx
                             }} toolbar={this.chatToolbarUI()} context={this} getChatContext={() => {

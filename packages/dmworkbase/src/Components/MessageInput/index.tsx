@@ -7,7 +7,7 @@ import WKSDK, { Channel, ChannelTypePerson, Subscriber } from "wukongimjssdk";
 import hotkeys from 'hotkeys-js';
 import WKApp from "../../App";
 import "./index.css"
-import InputStyle, { calcInputHeight, INPUT_MIN_ROWS, INPUT_DEFAULT_ROWS, INPUT_MAX_ROWS, INPUT_LINE_HEIGHT } from "./defaultStyle";
+import InputStyle from "./defaultStyle";
 import {IconSend} from '@douyinfe/semi-icons';
 import { Notification, Button } from '@douyinfe/semi-ui';
 import SlashCommandMenu, { BotCommand } from "../SlashCommandMenu";
@@ -52,7 +52,6 @@ interface MessageInputState {
     slashMenuVisible: boolean
     slashFilter: string
     slashActiveIndex: number
-    inputHeight: number // 输入框高度（px），由换行符计算
     expanded: boolean  // 输入框是否展开（撑满消息列表区域）
 }
 
@@ -148,7 +147,6 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             slashMenuVisible: false,
             slashFilter: "",
             slashActiveIndex: 0,
-            inputHeight: calcInputHeight(INPUT_DEFAULT_ROWS),
             expanded: false,
         }
         if (props.onAddMention) {
@@ -278,11 +276,9 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             const { content, mention } = formatMentionTextV2(value || "");
             this.props.onSend(content, mention);
         }
-        const defaultRows = this.props.hasPendingAttachments ? INPUT_MIN_ROWS : INPUT_DEFAULT_ROWS
         this.setState({
             value: '',
             quickReplySelectIndex: 0,
-            inputHeight: calcInputHeight(defaultRows),
             expanded: false,
         });
         // 发送后收起展开状态
@@ -296,8 +292,6 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         const { botCommands } = this.props
 
         // 根据换行符计算高度（纯计算，无 DOM 操作，无闪烁）
-        const inputHeight = this.calcInputHeight(value)
-
         // 只在输入 / 前缀且没有空格时弹出斜杠命令菜单（避免粘贴完整命令时弹出）
         if (botCommands && botCommands.length > 0 && value.startsWith('/') && !value.includes(' ') && !value.includes('\n')) {
             const filter = value.slice(1)
@@ -306,7 +300,6 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                 slashMenuVisible: true,
                 slashFilter: filter,
                 slashActiveIndex: 0,
-                inputHeight,
             })
         } else {
             this.setState({
@@ -314,36 +307,8 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                 slashMenuVisible: false,
                 slashFilter: "",
                 slashActiveIndex: 0,
-                inputHeight,
             })
         }
-    }
-
-    /**
-     * 根据内容计算输入框高度
-     * 有附件时默认 1 行，无附件默认 2 行，最大 MAX_ROWS 行
-     */
-    calcInputHeight(value?: string): number {
-        const { hasPendingAttachments } = this.props
-        const defaultRows = hasPendingAttachments ? INPUT_MIN_ROWS : INPUT_DEFAULT_ROWS
-        const defaultH = calcInputHeight(defaultRows)
-        const maxH = calcInputHeight(INPUT_MAX_ROWS)
-
-        if (!value || value.trim() === '') return defaultH
-
-        // 读 textarea 的 scrollHeight（不改 style，不触发重排闪烁）
-        if (this.inputRef) {
-            const el = this.inputRef as HTMLTextAreaElement
-            const scrollH = el.scrollHeight
-            if (scrollH > 0) {
-                return Math.min(Math.max(defaultH, scrollH), maxH)
-            }
-        }
-
-        // fallback：换行符估算
-        const lines = (value.match(/\n/g) || []).length + 1
-        const rows = Math.min(Math.max(defaultRows, lines), INPUT_MAX_ROWS)
-        return calcInputHeight(rows)
     }
 
     toggleExpand = () => {
@@ -410,7 +375,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
     render() {
         const { members, onInputRef, topView, toolbar, botCommands } = this.props
-        const { value, slashMenuVisible, slashFilter, slashActiveIndex, inputHeight, expanded } = this.state
+        const { value, slashMenuVisible, slashFilter, slashActiveIndex, expanded } = this.state
         const hasValue = (value && value.length > 0) || this.props.hasPendingAttachments
         let selectedItems = new Array<MemberSuggestionDataItem>();
         if (members && members.length > 0) {
@@ -534,7 +499,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                         </div>
                     )}
                     <MentionsInput
-                        style={InputStyle.getStyle(expanded ? undefined : inputHeight, expanded)}
+                        style={InputStyle.getStyle(undefined, expanded)}
                         value={value}
                         onKeyPress={this.handleKeyPressed}
                         onKeyDown={this.handleKeyDown}

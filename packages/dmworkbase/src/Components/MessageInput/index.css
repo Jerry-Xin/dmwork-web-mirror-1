@@ -220,26 +220,39 @@
 }
 
 
-/* 展开/收起按钮 (#145) */
-.wk-messageinput-expand-btn {
+/* 展开/收起 hover 边缘条 (#145) */
+.wk-messageinput-expand-edge {
+    position: absolute;
+    top: -10px;
+    left: 0;
+    right: 0;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    margin-right: var(--wk-sp-2, 8px);
-    border-radius: var(--wk-r-xs, 4px);
     cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 10;
+}
+
+.wk-messageinput-box:hover .wk-messageinput-expand-edge {
+    opacity: 1;
+}
+
+.wk-messageinput-expand-edge-icon {
+    background: var(--wk-bg-base);
+    border: 1px solid var(--wk-border-subtle);
+    border-radius: var(--wk-r-sm, 4px);
     color: var(--wk-text-secondary);
-    flex-shrink: 0;
-    transition: color 0.15s, background 0.15s;
+    font-size: var(--wk-text-size-xs, 11px);
+    padding: 1px 10px;
+    line-height: 1.4;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
 }
 
-.wk-messageinput-expand-btn:hover {
-    color: var(--wk-text-primary);
+.wk-messageinput-expand-edge:hover .wk-messageinput-expand-edge-icon {
     background: var(--wk-bg-hover);
-}
-
-.wk-messageinput-expand-btn--active {
-    color: var(--wk-brand-primary, var(--wk-color-theme));
+    color: var(--wk-text-primary);
 }

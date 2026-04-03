@@ -438,6 +438,10 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         }
         return (
             <div className="wk-messageinput-box" style={expanded ? { display: 'flex', flexDirection: 'column' } : undefined}>
+                {/* hover 边缘展开/收起条 */}
+                <div className="wk-messageinput-expand-edge" onClick={this.toggleExpand} title={expanded ? "收起" : "展开"}>
+                    <span className="wk-messageinput-expand-edge-icon">{expanded ? '》' : '《'}</span>
+                </div>
                 {
                     topView ? <div className="wk-messageinput-box-top">
                         {topView}
@@ -505,19 +509,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
 
                         </div>
-                        {/* 展开/收起按钮 */}
-                        <div
-                            className={clazz("wk-messageinput-expand-btn", expanded ? "wk-messageinput-expand-btn--active" : undefined)}
-                            onClick={this.toggleExpand}
-                            title={expanded ? "收起" : "展开输入框"}
-                        >
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                {expanded
-                                    ? <><polyline points="18 15 12 9 6 15" /></>
-                                    : <><polyline points="6 9 12 15 18 9" /></>
-                                }
-                            </svg>
-                        </div>
+
                     </div>
                 </div>
                 <div className="wk-messageinput-inputbox" style={{ position: 'relative', ...(expanded ? { flex: 1, height: 'auto' } : { height: inputHeight + 15 + 'px' }) }}>

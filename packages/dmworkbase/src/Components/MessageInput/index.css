@@ -219,3 +219,27 @@
     background-color: var(--wk-color-item);
 }
 
+
+/* 展开/收起按钮 (#145) */
+.wk-messageinput-expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-right: var(--wk-sp-2, 8px);
+    border-radius: var(--wk-r-xs, 4px);
+    cursor: pointer;
+    color: var(--wk-text-secondary);
+    flex-shrink: 0;
+    transition: color 0.15s, background 0.15s;
+}
+
+.wk-messageinput-expand-btn:hover {
+    color: var(--wk-text-primary);
+    background: var(--wk-bg-hover);
+}
+
+.wk-messageinput-expand-btn--active {
+    color: var(--wk-brand-primary, var(--wk-color-theme));
+}

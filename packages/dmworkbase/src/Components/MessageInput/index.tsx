@@ -41,6 +41,7 @@ interface MessageInputProps extends HTMLProps<any>{
     botCommands?: BotCommand[]
     getChatContext?: () => string | undefined
     hasPendingAttachments?: boolean // 有待发送附件时，允许空文字也触发 onSend
+    onExpandChange?: (expanded: boolean) => void // 输入框展开/收起回调
 }
 
 interface MessageInputState {
@@ -50,6 +51,7 @@ interface MessageInputState {
     slashFilter: string
     slashActiveIndex: number
     inputHeight: number // 输入框当前高度（px），随内容自动扩展
+    expanded: boolean  // 输入框是否展开（撑满消息列表区域）
 }
 
 export interface MentionEntity {
@@ -145,6 +147,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             slashFilter: "",
             slashActiveIndex: 0,
             inputHeight: calcInputHeight(INPUT_DEFAULT_ROWS),
+            expanded: false,
         }
         if (props.onAddMention) {
             props.onAddMention(this.addMention.bind(this))
@@ -285,7 +288,12 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             value: '',
             quickReplySelectIndex: 0,
             inputHeight: calcInputHeight(defaultRows),
+            expanded: false,
         });
+        // 发送后收起展开状态
+        if (this.state.expanded) {
+            this.props.onExpandChange?.(false)
+        }
     }
 
     handleChange = (event: { target: { value: string } }) => {
@@ -320,6 +328,14 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
      * 根据内容计算输入框高度
      * 有附件时默认 1 行，无附件默认 2 行，最大 MAX_ROWS 行
      */
+    toggleExpand = () => {
+        const next = !this.state.expanded
+        this.setState({ expanded: next })
+        this.props.onExpandChange?.(next)
+        // 展开时聚焦输入框
+        setTimeout(() => this.inputRef?.focus(), 50)
+    }
+
     calcAutoHeight(value?: string): number {
         const { hasPendingAttachments } = this.props
         const defaultRows = hasPendingAttachments ? INPUT_MIN_ROWS : INPUT_DEFAULT_ROWS
@@ -489,9 +505,22 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
 
                         </div>
+                        {/* 展开/收起按钮 */}
+                        <div
+                            className={clazz("wk-messageinput-expand-btn", expanded ? "wk-messageinput-expand-btn--active" : undefined)}
+                            onClick={this.toggleExpand}
+                            title={expanded ? "收起" : "展开输入框"}
+                        >
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                {expanded
+                                    ? <><polyline points="18 15 12 9 6 15" /></>
+                                    : <><polyline points="6 9 12 15 18 9" /></>
+                                }
+                            </svg>
+                        </div>
                     </div>
                 </div>
-                <div className="wk-messageinput-inputbox" style={{ position: 'relative', height: inputHeight + 15 + 'px' }}>
+                <div className="wk-messageinput-inputbox" style={{ position: 'relative', height: expanded ? '100%' : (inputHeight + 15 + 'px') }}>
                     {botCommands && botCommands.length > 0 && (
                         <SlashCommandMenu
                             commands={botCommands}

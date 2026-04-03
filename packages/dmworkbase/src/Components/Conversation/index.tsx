@@ -71,6 +71,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
     private _cachedSelectedText: string | null = null
     private _beforeUnloadHandler: () => void
     private _guardId: symbol = Symbol('pendingAttachmentGuard')
+    private _inputExpanded: boolean = false
 
     constructor(props: any) {
         super(props)
@@ -1002,7 +1003,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                         event.preventDefault()
                         this.dragStart()
 
-                    }} className={classNames("wk-conversation-content")}>
+                    }} className={classNames("wk-conversation-content")} style={this.state.inputExpanded ? { visibility: 'hidden', height: 0, overflow: 'hidden', flex: 'none' } : undefined}>
                         <div className="wk-conversation-messages" id={vm.messageContainerId} onScroll={this.handleScroll.bind(this)} onWheel={this.handleWheel.bind(this)}>
                             {
                                 vm.renderItems.map((item, i) => {
@@ -1092,7 +1093,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                             vm.unCheckAllMessages()
                         }}></MultiplePanel>
                     </div>
-                    <div className="wk-conversation-footer">
+                    <div className="wk-conversation-footer" style={this._inputExpanded ? { flex: 1 } : undefined}>
                         {vm.pendingAttachments.length > 0 && (
                             <AttachmentPreview
                                 conversationContext={this}
@@ -1101,7 +1102,10 @@ export class Conversation extends Component<ConversationProps> implements Conver
                         )}
                         <div className="wk-conversation-footer-content">
 
-                            <MessageInput botCommands={botCommands} hasPendingAttachments={vm.pendingAttachments.length > 0} members={this.vm.subscribers.filter((s) => s.uid !== WKApp.loginInfo.uid)} onContext={(ctx) => {
+                            <MessageInput botCommands={botCommands} hasPendingAttachments={vm.pendingAttachments.length > 0} members={this.vm.subscribers.filter((s) => s.uid !== WKApp.loginInfo.uid)} onExpandChange={(expanded) => {
+                                this._inputExpanded = expanded
+                                this.vm.notifyListener()
+                            }} onContext={(ctx) => {
                                 this._messageInputContext = ctx
                             }} toolbar={this.chatToolbarUI()} context={this} getChatContext={() => {
                                 const messages = this.vm.messagesOfOrigin

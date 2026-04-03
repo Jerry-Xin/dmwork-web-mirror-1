@@ -499,16 +499,17 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
 
                             {/* 展开/收起按钮 */}
-                            <IconClick
-                                size="sm"
-                                title={expanded ? "收起" : "展开输入框"}
-                                onClick={this.toggleExpand}
-                                className={expanded ? "wk-messageinput-expand-btn--active" : undefined}
-                                icon={expanded
-                                    ? <Minimize2 size={15} />
-                                    : <Maximize2 size={15} />
-                                }
-                            />
+                            <div className="wk-messageinput-actionitem">
+                                <IconClick
+                                    size="sm"
+                                    title={expanded ? "收起" : "展开输入框"}
+                                    onClick={this.toggleExpand}
+                                    icon={expanded
+                                        ? <Minimize2 size={15} />
+                                        : <Maximize2 size={15} />
+                                    }
+                                />
+                            </div>
                         </div>
 
                     </div>

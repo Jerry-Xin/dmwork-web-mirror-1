@@ -221,7 +221,4 @@
 }
 
 
-/* 展开/收起按钮激活态 (#145) */
-.wk-messageinput-expand-btn--active svg {
-    color: var(--wk-brand-primary, var(--wk-color-theme)) !important;
-}
+

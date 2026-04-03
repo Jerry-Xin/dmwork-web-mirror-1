@@ -260,7 +260,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         }
 
         this.vm.pendingAttachments = [...current, ...incoming]
-        this.vm.update()
+        this.vm.notifyListener()
         return null
     }
 
@@ -268,12 +268,12 @@ export class Conversation extends Component<ConversationProps> implements Conver
         const arr = [...this.vm.pendingAttachments]
         arr.splice(index, 1)
         this.vm.pendingAttachments = arr
-        this.vm.update()
+        this.vm.notifyListener()
     }
 
     clearPendingAttachments(): void {
         this.vm.pendingAttachments = []
-        this.vm.update()
+        this.vm.notifyListener()
     }
 
     channel(): Channel {
@@ -387,7 +387,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                     // 实际上切换已发生，这里清空附件
                 }
                 this.vm.pendingAttachments = []
-                this.vm.update()
+                this.vm.notifyListener()
             }
         }
     }

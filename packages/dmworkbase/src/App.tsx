@@ -250,9 +250,10 @@ export default class WKApp extends ProviderListener {
   /**
    * 附件发送守卫（#143/#144）
    * Conversation 在有未发送附件时注册此回调，返回 true 表示可以切换，false 表示有附件待确认。
-   * componentDidMount 注册，componentWillUnmount 清空。
+   * componentDidMount 注册，componentWillUnmount 清空（仅注册者可清空，防止新实例 guard 被旧实例覆盖）。
    */
   pendingAttachmentGuard?: () => boolean
+  pendingAttachmentGuardId?: symbol
 
   baseContext!: WKBaseContext; // DMWork基础上下文
 

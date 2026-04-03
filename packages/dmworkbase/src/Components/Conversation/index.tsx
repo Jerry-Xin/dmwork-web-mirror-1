@@ -67,6 +67,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
     private _dragFileCallback?: (file: File) => void
     private _cachedSelectedText: string | null = null
     private _beforeUnloadHandler: () => void
+    private _guardId: symbol = Symbol('pendingAttachmentGuard')
 
     constructor(props: any) {
         super(props)
@@ -385,6 +386,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
 
         // 注册附件发送守卫：返回 false 表示有未发送附件，需弹确认
         WKApp.shared.pendingAttachmentGuard = () => this.vm.pendingAttachments.length === 0
+        WKApp.shared.pendingAttachmentGuardId = this._guardId
 
         if (this.vm.hasDraft()) {
             this.insertText(this.vm.draft())
@@ -412,8 +414,11 @@ export class Conversation extends Component<ConversationProps> implements Conver
 
     componentWillUnmount() {
         window.removeEventListener('beforeunload', this._beforeUnloadHandler)
-        // 注销附件守卫
-        WKApp.shared.pendingAttachmentGuard = undefined
+        // 注销附件守卫：只清除自己注册的，防止新实例 guard 被旧实例 unmount 覆盖
+        if (WKApp.shared.pendingAttachmentGuardId === this._guardId) {
+            WKApp.shared.pendingAttachmentGuard = undefined
+            WKApp.shared.pendingAttachmentGuardId = undefined
+        }
         // 清空附件队列（用户已通过 Chat 层 confirm 确认丢弃）
         if (this.vm.pendingAttachments.length > 0) {
             this.vm.pendingAttachments = []

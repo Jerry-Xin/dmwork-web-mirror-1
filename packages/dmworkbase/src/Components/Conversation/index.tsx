@@ -1096,7 +1096,14 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                                     reader.onloadend = () => resolve(reader.result as string)
                                                     reader.readAsDataURL(file)
                                                 })
-                                                await this.sendMessage(new ImageContent(file, previewUrl, 0, 0))
+                                                // 读取真实宽高，供渲染层正确计算尺寸
+                                                const { width, height } = await new Promise<{ width: number; height: number }>((resolve) => {
+                                                    const img = new Image()
+                                                    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
+                                                    img.onerror = () => resolve({ width: 0, height: 0 })
+                                                    img.src = previewUrl
+                                                })
+                                                await this.sendMessage(new ImageContent(file, previewUrl, width, height))
                                             } else {
                                                 const name = file.name || "unknown"
                                                 const dotIndex = name.lastIndexOf(".")

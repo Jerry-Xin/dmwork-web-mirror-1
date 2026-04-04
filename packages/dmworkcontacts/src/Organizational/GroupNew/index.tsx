@@ -362,7 +362,7 @@ export class OrganizationalGroupNew extends Component<
         const members = await SpaceService.shared.getMembers(spaceId, 1, 10000);
         members.forEach((m: any) => {
           if (!subscriberUids.includes(m.uid) && !systemUids.includes(m.uid) && m.uid !== WKApp.loginInfo.uid) {
-            setFriendData.push({ name: m.name, uid: m.uid });
+            setFriendData.push({ name: m.name, uid: m.uid, avatar: m.avatar });
           }
         });
       } catch {
@@ -640,7 +640,7 @@ export class OrganizationalGroupNew extends Component<
                             className="friend-opt-item"
                           >
                             <WKAvatar
-                              src={WKApp.shared.avatarUser(
+                              src={friend.avatar || WKApp.shared.avatarUser(
                                 friend.uid as string
                               )}
                               style={{

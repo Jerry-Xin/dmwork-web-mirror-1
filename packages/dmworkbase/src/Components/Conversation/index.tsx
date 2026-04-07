@@ -1094,14 +1094,14 @@ export class Conversation extends Component<ConversationProps> implements Conver
                             vm.unCheckAllMessages()
                         }}></MultiplePanel>
                     </div>
-                    <div className="wk-conversation-footer" style={this.state.inputExpanded ? { flex: 1, paddingTop: 'var(--wk-sp-2)' } : undefined}>
+                    <div className="wk-conversation-footer" style={this.state.inputExpanded ? { flex: 1, minHeight: 0, overflow: 'hidden', paddingTop: 'var(--wk-sp-2)' } : undefined}>
                         {vm.pendingAttachments.length > 0 && (
                             <AttachmentPreview
                                 conversationContext={this}
                                 files={vm.pendingAttachments}
                             />
                         )}
-                        <div className="wk-conversation-footer-content">
+                        <div className="wk-conversation-footer-content" style={this.state.inputExpanded ? { height: '100%', overflow: 'hidden' } : undefined}>
 
                             <MessageInput botCommands={botCommands} hasPendingAttachments={vm.pendingAttachments.length > 0} members={this.vm.subscribers.filter((s) => s.uid !== WKApp.loginInfo.uid)} onExpandChange={(expanded) => {
                                 this.setState({ inputExpanded: expanded })

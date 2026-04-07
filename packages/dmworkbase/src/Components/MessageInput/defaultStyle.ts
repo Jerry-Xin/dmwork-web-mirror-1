@@ -58,7 +58,7 @@ export default class InputStyle {
           height: expanded ? '100%' : 'auto',
           minHeight: expanded ? undefined : calcInputHeight(INPUT_DEFAULT_ROWS),
           maxHeight: expanded ? undefined : calcInputHeight(INPUT_MAX_ROWS),
-          overflowY: expanded ? undefined : 'auto',
+          overflowY: 'hidden',
         },
     
         highlighter: {

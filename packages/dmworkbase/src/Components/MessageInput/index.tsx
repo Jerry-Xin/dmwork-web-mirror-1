@@ -13,6 +13,8 @@ import { Notification, Button } from '@douyinfe/semi-ui';
 import SlashCommandMenu, { BotCommand } from "../SlashCommandMenu";
 import AiBadge from "../AiBadge";
 import VoiceInputIndicator from "./VoiceInputIndicator";
+import { Maximize2, Minimize2 } from 'lucide-react';
+import IconClick from '../IconClick';
 
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -41,6 +43,7 @@ interface MessageInputProps extends HTMLProps<any>{
     botCommands?: BotCommand[]
     getChatContext?: () => string | undefined
     hasPendingAttachments?: boolean // 有待发送附件时，允许空文字也触发 onSend
+    onExpandChange?: (expanded: boolean) => void // 输入框展开/收起回调
 }
 
 interface MessageInputState {
@@ -49,6 +52,7 @@ interface MessageInputState {
     slashMenuVisible: boolean
     slashFilter: string
     slashActiveIndex: number
+    expanded: boolean  // 输入框是否展开（撑满消息列表区域）
 }
 
 export interface MentionEntity {
@@ -143,6 +147,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             slashMenuVisible: false,
             slashFilter: "",
             slashActiveIndex: 0,
+            expanded: false,
         }
         if (props.onAddMention) {
             props.onAddMention(this.addMention.bind(this))
@@ -264,12 +269,18 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         this.setState({
             value: '',
             quickReplySelectIndex: 0,
+            expanded: false,
         });
+        // 发送后收起展开状态
+        if (this.state.expanded) {
+            this.props.onExpandChange?.(false)
+        }
     }
 
     handleChange = (event: { target: { value: string } }) => {
         const value = stripInvisibleChars(event.target.value)
         const { botCommands } = this.props
+
         // 只在输入 / 前缀且没有空格时弹出斜杠命令菜单（避免粘贴完整命令时弹出）
         if (botCommands && botCommands.length > 0 && value.startsWith('/') && !value.includes(' ') && !value.includes('\n')) {
             const filter = value.slice(1)
@@ -287,6 +298,15 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                 slashActiveIndex: 0,
             })
         }
+    }
+
+    toggleExpand = () => {
+        const next = !this.state.expanded
+        this.props.onExpandChange?.(next)
+        this.setState({ expanded: next }, () => {
+            // 展开时聚焦输入框（setState callback 保证 DOM 已更新）
+            if (next) this.inputRef?.focus()
+        })
     }
 
     getFilteredSlashCommands(): BotCommand[] {
@@ -343,7 +363,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
     render() {
         const { members, onInputRef, topView, toolbar, botCommands } = this.props
-        const { value, slashMenuVisible, slashFilter, slashActiveIndex } = this.state
+        const { value, slashMenuVisible, slashFilter, slashActiveIndex, expanded } = this.state
         const hasValue = (value && value.length > 0) || this.props.hasPendingAttachments
         let selectedItems = new Array<MemberSuggestionDataItem>();
         if (members && members.length > 0) {
@@ -363,7 +383,8 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             });
         }
         return (
-            <div className="wk-messageinput-box">
+            <div className="wk-messageinput-box" style={expanded ? { display: 'flex', flexDirection: 'column' } : undefined}>
+
                 {
                     topView ? <div className="wk-messageinput-box-top">
                         {topView}
@@ -430,10 +451,23 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
 
 
+                            {/* 展开/收起按钮 */}
+                            <div className="wk-messageinput-actionitem">
+                                <IconClick
+                                    size="sm"
+                                    title={expanded ? "收起" : "展开输入框"}
+                                    onClick={this.toggleExpand}
+                                    icon={expanded
+                                        ? <Minimize2 size={15} />
+                                        : <Maximize2 size={15} />
+                                    }
+                                />
+                            </div>
                         </div>
+
                     </div>
                 </div>
-                <div className="wk-messageinput-inputbox" style={{ position: 'relative' }}>
+                <div className="wk-messageinput-inputbox" style={{ position: 'relative', ...(expanded ? { flex: 1 } : {}) }}>
                     {botCommands && botCommands.length > 0 && (
                         <SlashCommandMenu
                             commands={botCommands}
@@ -453,7 +487,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                         </div>
                     )}
                     <MentionsInput
-                        style={InputStyle.getStyle()}
+                        style={InputStyle.getStyle(expanded)}
                         value={value}
                         onKeyPress={this.handleKeyPressed}
                         onKeyDown={this.handleKeyDown}

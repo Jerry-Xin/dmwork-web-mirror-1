@@ -7,20 +7,21 @@
 .wk-conversation {
     width: 100%;
     height: 100%;
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
-
 
 .wk-conversation-hasreply {
 
 }
 
-
 .wk-conversation-content {
     width: 100%;
-    height: calc(100% - var(--wk-conversation-footer));
+    flex: 1;
+    min-height: 0; /* 必须，让 flex 子元素可以收缩 */
     position: relative;
-    transition: height 150ms ease-out,opacity 150ms ease-out;
+    transition: opacity 150ms ease-out;
 }
 
 body[theme-mode=dark] .wk-conversation-content {
@@ -28,9 +29,8 @@ body[theme-mode=dark] .wk-conversation-content {
 }
 
 .wk-conversation-hasreply .wk-conversation-content {
-    height: calc(100% - var(--wk-conversation-footer) - var(--wk-height-conversation-replyview));
+    /* flex 布局下不需要 calc，由 flex: 1 自动计算 */
 }
-
 
 .wk-conversation-messages {
     width: 100%;
@@ -228,12 +228,10 @@ body[theme-mode=dark] .wk-conversation-content {
 
 .wk-conversation-footer {
     width: 100%;
-    height: var(--wk-conversation-footer);
+    flex-shrink: 0;
     display: flex;
     justify-content: center;
     flex-direction: column;
-    position: absolute;
-    bottom: 0px;
 }
 
 
@@ -362,19 +360,18 @@ body[theme-mode=dark] .wk-conversation-content {
 
 
 .wk-conversation-multiplepanel {
-    height: var(--wk-conversation-footer);
     background-color: var(--wk-color-secondary);
     width: 100%;
     z-index: 999;
-    position: absolute;
-    bottom: 0px;
-    transform: translate3d(0, var(--wk-conversation-footer), 0);
-    transition: transform var(--wk-layer-transition);
+    flex-shrink: 0;
+    position: relative; /* 保证内部 absolute 定位元素（close 按钮）正确定位 */
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--wk-layer-transition);
 }
 
 .wk-conversation-multiplepanel-show {
-    transform: translate3d(0, 0, 0);
-
+    max-height: var(--wk-height-multiplepanel, 120px);
 }
 
 .wk-multiplepanel {

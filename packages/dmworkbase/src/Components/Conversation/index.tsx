@@ -72,9 +72,11 @@ export class Conversation extends Component<ConversationProps> implements Conver
     private _beforeUnloadHandler: () => void
     private _guardId: symbol = Symbol('pendingAttachmentGuard')
 
+
     constructor(props: any) {
         super(props)
         this.state = {
+            inputExpanded: false,
         }
         this._beforeUnloadHandler = () => {
             // Use sendBeacon for reliable delivery during page unload
@@ -1002,7 +1004,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                         event.preventDefault()
                         this.dragStart()
 
-                    }} className={classNames("wk-conversation-content")}>
+                    }} className={classNames("wk-conversation-content")} style={this.state.inputExpanded ? { height: 0, overflow: 'hidden', flex: 'none' } : undefined} {...(this.state.inputExpanded ? { inert: '' } : {})}>
                         <div className="wk-conversation-messages" id={vm.messageContainerId} onScroll={this.handleScroll.bind(this)} onWheel={this.handleWheel.bind(this)}>
                             {
                                 vm.renderItems.map((item, i) => {
@@ -1092,7 +1094,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                             vm.unCheckAllMessages()
                         }}></MultiplePanel>
                     </div>
-                    <div className="wk-conversation-footer">
+                    <div className="wk-conversation-footer" style={this.state.inputExpanded ? { flex: 1, paddingTop: 'var(--wk-sp-2)' } : undefined}>
                         {vm.pendingAttachments.length > 0 && (
                             <AttachmentPreview
                                 conversationContext={this}
@@ -1101,7 +1103,9 @@ export class Conversation extends Component<ConversationProps> implements Conver
                         )}
                         <div className="wk-conversation-footer-content">
 
-                            <MessageInput botCommands={botCommands} hasPendingAttachments={vm.pendingAttachments.length > 0} members={this.vm.subscribers.filter((s) => s.uid !== WKApp.loginInfo.uid)} onContext={(ctx) => {
+                            <MessageInput botCommands={botCommands} hasPendingAttachments={vm.pendingAttachments.length > 0} members={this.vm.subscribers.filter((s) => s.uid !== WKApp.loginInfo.uid)} onExpandChange={(expanded) => {
+                                this.setState({ inputExpanded: expanded })
+                            }} onContext={(ctx) => {
                                 this._messageInputContext = ctx
                             }} toolbar={this.chatToolbarUI()} context={this} getChatContext={() => {
                                 const messages = this.vm.messagesOfOrigin
@@ -1156,8 +1160,13 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                                 const reader = new FileReader()
                                                 const previewUrl = await new Promise<string>((resolve) => {
                                                     reader.onloadend = () => resolve(reader.result as string)
+                                                    reader.onerror = () => resolve('') // 文件损坏时不阻塞后续附件
                                                     reader.readAsDataURL(file)
                                                 })
+                                                if (!previewUrl) {
+                                                    Toast.error(`图片「${file.name}」读取失败`)
+                                                    continue
+                                                }
                                                 // 读取真实宽高，供渲染层正确计算尺寸
                                                 const { width, height } = await new Promise<{ width: number; height: number }>((resolve) => {
                                                     const img = new Image()

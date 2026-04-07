@@ -48,6 +48,10 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "@tiptap/core": "3.22.2",
+      "@tiptap/suggestion": "3.22.2"
+    }
   }
 }

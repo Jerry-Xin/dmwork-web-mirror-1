@@ -1101,7 +1101,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                 files={vm.pendingAttachments}
                             />
                         )}
-                        <div className="wk-conversation-footer-content" style={this.state.inputExpanded ? { height: '100%', overflow: 'hidden' } : undefined}>
+                        <div className="wk-conversation-footer-content" style={this.state.inputExpanded ? { height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' } : undefined}>
 
                             <MessageInput botCommands={botCommands} hasPendingAttachments={vm.pendingAttachments.length > 0} members={this.vm.subscribers.filter((s) => s.uid !== WKApp.loginInfo.uid)} onExpandChange={(expanded) => {
                                 this.setState({ inputExpanded: expanded })

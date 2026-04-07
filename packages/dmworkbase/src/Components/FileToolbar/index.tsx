@@ -1,7 +1,7 @@
 import React from "react"
 import { Component, ReactNode } from "react"
 import ConversationContext from "../Conversation/context"
-import { FileContent } from "../../Messages/File/FileContent"
+import { Toast } from "@douyinfe/semi-ui"
 
 import "./index.css"
 
@@ -10,125 +10,46 @@ interface FileToolbarProps {
     icon: string | React.ReactNode
 }
 
-const BLOCKED_EXTENSIONS = [
-    "exe", "bat", "sh", "cmd", "msi", "dll", "php", "jsp", "apk",
-    "com", "scr", "pif", "vbs", "js", "wsf", "ps1",
-]
-
-const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
-
-interface FileToolbarState {
-    showDialog: boolean
-    file?: File
-    fileName?: string
-    fileSize?: number
-    fileExtension?: string
-    sending: boolean
-    caption: string
-}
-
-export default class FileToolbar extends Component<FileToolbarProps, FileToolbarState> {
+export default class FileToolbar extends Component<FileToolbarProps> {
     $fileInput: any
-
-    constructor(props: any) {
-        super(props)
-        this.state = {
-            showDialog: false,
-            sending: false,
-            caption: '',
-        }
-    }
 
     onFileClick = (event: any) => {
         event.target.value = ""
     }
 
-    onFileChange() {
-        const file = this.$fileInput.files[0]
-        if (!file) return
+    onFileChange = () => {
+        const { conversationContext } = this.props
+        const files = Array.from(this.$fileInput.files as FileList)
+        if (!files || files.length === 0) return
 
-        if (file.size > MAX_FILE_SIZE) {
-            alert(`文件大小不能超过 100MB，当前文件大小为 ${this.formatFileSize(file.size)}`)
-            return
+        // 同名文件轻量提示
+        const currentNames = new Set(conversationContext.getPendingAttachments().map(f => f.name))
+        const hasDuplicate = files.some(f => currentNames.has(f.name))
+        if (hasDuplicate) {
+            Toast.warning("包含同名文件，已追加到待发送列表")
         }
 
-        const name = file.name || ""
-        const dotIndex = name.lastIndexOf(".")
-        const ext = dotIndex > 0 ? name.substring(dotIndex + 1).toLowerCase() : ""
-        if (BLOCKED_EXTENSIONS.includes(ext)) {
-            alert(`不允许发送 .${ext} 类型的文件`)
-            return
+        const err = conversationContext.addPendingAttachments(files)
+        if (err) {
+            Toast.error(err)
         }
-
-        this.showFile(file)
     }
 
     chooseFile = () => {
         this.$fileInput.click()
     }
 
-    showFile(file: File) {
-        const name = file.name || "unknown"
-        const dotIndex = name.lastIndexOf(".")
-        const extension = dotIndex > 0 ? name.substring(dotIndex + 1) : ""
-
-        this.setState({
-            file: file,
-            fileName: name,
-            fileSize: file.size,
-            fileExtension: extension,
-            showDialog: true,
-            caption: '',
-        })
-    }
-
-    onSend = async () => {
+    // 供拖拽入队使用（被 Conversation 的 onDrop 调用）
+    addFiles = (files: File[]) => {
         const { conversationContext } = this.props
-        const { file, fileName, fileExtension, fileSize, caption } = this.state
-
-        if (!file) return
-
-        this.setState({ sending: true })
-
-        try {
-            const trimmedCaption = caption?.trim() || undefined
-            const content = new FileContent(file, fileName, fileExtension, fileSize, trimmedCaption)
-            await conversationContext.sendMessage(content)
-            this.setState({ showDialog: false, sending: false, caption: '' })
-        } catch (err) {
-            this.setState({ sending: false })
-            alert("文件发送失败，请重试")
-        }
-    }
-
-    onClose = () => {
-        this.setState({ showDialog: false, caption: '' })
-    }
-
-    formatFileSize(bytes: number): string {
-        if (bytes <= 0) return "0 B"
-        if (bytes < 1024) return `${bytes} B`
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-        if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-        return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
-    }
-
-    getFileIconInfo(extension: string): { color: string; label: string } {
-        const ext = (extension || "").toLowerCase()
-        switch (ext) {
-            case "pdf": return { color: "#EF4444", label: "PDF" }
-            case "doc": case "docx": return { color: "#3B82F6", label: "DOC" }
-            case "xls": case "xlsx": return { color: "#22C55E", label: "XLS" }
-            case "ppt": case "pptx": return { color: "#F97316", label: "PPT" }
-            case "zip": case "rar": case "7z": return { color: "#EAB308", label: "ZIP" }
-            default: return { color: "#9CA3AF", label: "FILE" }
+        const err = conversationContext.addPendingAttachments(files)
+        if (err) {
+            Toast.error(err)
         }
     }
 
     render(): ReactNode {
         const { icon } = this.props
-        const { showDialog, fileName, fileSize, fileExtension, sending, caption } = this.state
-        const iconInfo = this.getFileIconInfo(fileExtension || "")
 
         return (
             <div className="wk-filetoolbar">
@@ -137,52 +58,14 @@ export default class FileToolbar extends Component<FileToolbarProps, FileToolbar
                         {typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
                         <input
                             onClick={this.onFileClick}
-                            onChange={this.onFileChange.bind(this)}
+                            onChange={this.onFileChange}
                             ref={(ref) => { this.$fileInput = ref }}
                             type="file"
-                            multiple={false}
+                            multiple={true}
                             style={{ display: "none" }}
                         />
                     </div>
                 </div>
-                {showDialog ? (
-                    <div className="wk-filedialog">
-                        <div className="wk-filedialog-mask" onClick={this.onClose}></div>
-                        <div className="wk-filedialog-content">
-                            <div className="wk-filedialog-content-close" onClick={this.onClose}>
-                                <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M568.92178541 508.23169412l299.36805789-299.42461715a39.13899415 39.13899415 0 0 0 0-55.1452591L866.64962537 152.02159989a39.13899415 39.13899415 0 0 0-55.08869988 0L512.19286756 451.84213173 212.76825042 151.90848141a39.13899415 39.13899415 0 0 0-55.0886999 0L155.98277331 153.54869938a38.46028327 38.46028327 0 0 0 0 55.08869987L455.46394971 508.23169412 156.03933259 807.71287052a39.13899415 39.13899415 0 0 0 0 55.08869986l1.64021795 1.6967772a39.13899415 39.13899415 0 0 0 55.08869988 0l299.42461714-299.48117638 299.36805793 299.42461714a39.13899415 39.13899415 0 0 0 55.08869984 0l1.6967772-1.64021796a39.13899415 39.13899415 0 0 0 0-55.08869987L568.86522614 508.17513487z" />
-                                </svg>
-                            </div>
-                            <div className="wk-filedialog-content-title">发送文件</div>
-                            <div className="wk-filedialog-content-body">
-                                <div className="wk-filedialog-preview">
-                                    <div className="wk-filedialog-preview-icon" style={{ backgroundColor: iconInfo.color }}>
-                                        <span className="wk-filedialog-preview-icon-label">{iconInfo.label}</span>
-                                    </div>
-                                    <div className="wk-filedialog-preview-info">
-                                        <div className="wk-filedialog-preview-name">{fileName}</div>
-                                        <div className="wk-filedialog-preview-size">{this.formatFileSize(fileSize || 0)}</div>
-                                    </div>
-                                </div>
-                                <div className="wk-filedialog-caption">
-                                    <input
-                                        type="text"
-                                        className="wk-filedialog-caption-input"
-                                        placeholder="添加说明文字..."
-                                        value={caption}
-                                        onChange={(e) => this.setState({ caption: e.target.value })}
-                                        maxLength={500}
-                                    />
-                                </div>
-                                <div className="wk-filedialog-footer">
-                                    <button onClick={this.onClose} disabled={sending}>取消</button>
-                                    <button className="wk-filedialog-footer-okbtn" onClick={this.onSend} disabled={sending} style={{ backgroundColor: "var(--wk-color-theme)", opacity: sending ? 0.6 : 1 }}>{sending ? "发送中..." : "发送"}</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ) : null}
             </div>
         )
     }

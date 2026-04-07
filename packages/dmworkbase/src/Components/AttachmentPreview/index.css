@@ -1,0 +1,97 @@
+.wk-attachment-preview {
+    width: 100%;
+    border-top: 1px solid var(--wk-border-subtle);
+    background: var(--wk-bg-surface);
+    padding: var(--wk-sp-2) var(--wk-sp-3);
+    box-sizing: border-box;
+}
+
+.wk-attachment-preview-list {
+    display: flex;
+    flex-direction: row;
+    gap: var(--wk-sp-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 2px;
+}
+
+.wk-attachment-preview-list::-webkit-scrollbar {
+    display: none;
+}
+
+.wk-attachment-preview-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--wk-sp-2);
+    background: var(--wk-bg-base);
+    border-radius: var(--wk-r-md);
+    padding: var(--wk-sp-2) var(--wk-sp-3);
+    min-width: 180px;
+    max-width: 220px;
+    flex-shrink: 0;
+}
+
+.wk-attachment-preview-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: var(--wk-r-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wk-attachment-preview-icon-label {
+    color: var(--wk-text-inverse);
+    font-size: var(--wk-text-size-tiny);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.wk-attachment-preview-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.wk-attachment-preview-name {
+    font-size: var(--wk-text-size-base);
+    color: var(--wk-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.wk-attachment-preview-size {
+    font-size: var(--wk-text-size-xs);
+    color: var(--wk-text-secondary);
+    line-height: 1.3;
+}
+
+.wk-attachment-preview-remove {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.4;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.wk-attachment-preview-remove:hover {
+    opacity: 0.9;
+}
+
+.wk-attachment-preview-remove svg {
+    width: 12px;
+    height: 12px;
+    fill: var(--wk-text-primary);
+}

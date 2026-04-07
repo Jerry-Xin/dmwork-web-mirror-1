@@ -106,6 +106,12 @@ export default class ConversationVM extends ProviderListener {
     fileDragEnter?: boolean // 文件拖拽上传（拖进来了）
     fileDragLeave?: boolean // 文件拖拽上传（拖离开了）
 
+    // ── Attachment Queue (#143 / #144) ──────────────────────────────────────
+    pendingAttachments: File[] = [] // 待发送附件队列
+
+    static readonly MAX_ATTACHMENTS = 20
+    static readonly MAX_TOTAL_SIZE = 100 * 1024 * 1024 // 100MB
+
     private _selectMessage?: Message // 右键选中的消息
 
     selectUID?: string // 点击头像的用户uid

@@ -232,6 +232,21 @@ body[theme-mode=dark] .wk-conversation-content {
     display: flex;
     justify-content: center;
     flex-direction: column;
+    min-height: 0;
+}
+
+/* 展开时 footer 撑满，内容不超出 */
+.wk-conversation-footer.wk-conversation-footer--expanded {
+    flex: 1;
+    overflow: hidden;
+}
+
+.wk-conversation-footer.wk-conversation-footer--expanded .wk-conversation-footer-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 

@@ -19,6 +19,7 @@
     box-sizing: border-box;
     display: flex;
     align-items: flex-start;
+    overflow: hidden;
 }
 
 
@@ -59,7 +60,7 @@
     border: none;
     color: var(--wk-text-primary, var(--text-primary));
     font-size: 14px;
-    overflow-y: scroll;
+    overflow: hidden;
     display: inline-block;
     -webkit-user-modify: read-write-plaintext-only;
     outline: none;

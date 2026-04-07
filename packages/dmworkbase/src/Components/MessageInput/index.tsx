@@ -16,6 +16,42 @@ import VoiceInputIndicator from "./VoiceInputIndicator";
 import { Maximize2, Minimize2 } from 'lucide-react';
 import IconClick from '../IconClick';
 
+/**
+ * 用镜像 div 精确测量 textarea 光标的 Y 坐标（相对于 textarea 内容顶部）。
+ * 避免比例估算的误差（折行、padding 等影响）。
+ */
+function getCursorY(textarea: HTMLTextAreaElement): number {
+    const computed = window.getComputedStyle(textarea)
+    const mirror = document.createElement('div')
+    mirror.style.cssText = [
+        'position:fixed', 'top:-9999px', 'left:-9999px', 'visibility:hidden',
+        `width:${textarea.clientWidth}px`,
+        `font-size:${computed.fontSize}`,
+        `font-family:${computed.fontFamily}`,
+        `font-weight:${computed.fontWeight}`,
+        `line-height:${computed.lineHeight}`,
+        `padding:${computed.padding}`,
+        `border:${computed.border}`,
+        `box-sizing:${computed.boxSizing}`,
+        'white-space:pre-wrap',
+        'word-wrap:break-word',
+    ].join(';')
+
+    const textBeforeCursor = textarea.value.substring(0, textarea.selectionEnd)
+    mirror.textContent = textBeforeCursor
+
+    // 加一个 span 标记光标位置
+    const cursor = document.createElement('span')
+    cursor.textContent = '|'
+    mirror.appendChild(cursor)
+
+    document.body.appendChild(mirror)
+    const cursorY = cursor.offsetTop
+    document.body.removeChild(mirror)
+
+    return cursorY
+}
+
 
 const MAX_MESSAGE_LENGTH = 5000;
 
@@ -138,6 +174,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     inputRef: any
     eventListener: any
     private previousScope: string = 'all'
+    private _pasteScrollRAF: number = 0
     constructor(props: MessageInputProps) {
         super(props)
         this.toolbars = []
@@ -178,6 +215,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             onContext(this)
         }
         // this.inputRef.focus(); // 自动聚焦在iOS手机端体验不好
+
     }
 
     // quickReplyPanelIsShow() { // 快捷回复面板是否显示
@@ -193,6 +231,11 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             document.removeEventListener("keydown", this.eventListener)
         }
 
+        // 清理粘贴滚动的 RAF
+        if (this._pasteScrollRAF) {
+            cancelAnimationFrame(this._pasteScrollRAF)
+            this._pasteScrollRAF = 0
+        }
     }
 
     handleKeyDown = (e: React.KeyboardEvent) => {
@@ -343,6 +386,78 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     }
 
 
+    /**
+     * 粘贴后滚动到光标位置。
+     *
+     * 背景：react-mentions 的 handlePaste 会 preventDefault()，手动拼文本后
+     * 通过 setState + componentDidUpdate 调 setSelectionRange。这触发
+     * handleSelect → updateHighlighterScroll（highlighter.scrollTop = input.scrollTop）。
+     * 但 React re-render 更新 textarea value 后，浏览器会把 scrollTop 重置为 0，
+     * 而 setSelectionRange 虽然能设对光标位置，但浏览器不一定在同一帧内自动滚到那里。
+     *
+     * 方案：用 RAF 循环持续将 scrollTop 设置到光标所在位置，持续约 300ms（约 18 帧）。
+     * 因为 react-mentions 的 updateHighlighterScroll 绑在 textarea 的 onScroll 上，
+     * 我们设 scrollTop 后 highlighter 也会自动同步。
+     */
+    /**
+     * 粘贴后滚动到光标可见位置。
+     * @param scrollTopBefore 粘贴前的 scrollTop（用于中间插入时的"最小滚动"计算）
+     * @param isAppend 是否在末尾粘贴
+     */
+    scrollToCursorAfterPaste = (scrollTopBefore: number = 0, isAppend: boolean = true) => {
+        if (this._pasteScrollRAF) {
+            cancelAnimationFrame(this._pasteScrollRAF)
+            this._pasteScrollRAF = 0
+        }
+
+        const startTime = performance.now()
+        const MAX_DURATION = 300
+
+        const tick = () => {
+            const el = this.inputRef as HTMLTextAreaElement | null
+            if (!el) return
+
+            const { scrollHeight, clientHeight, selectionEnd, value } = el
+            const maxScroll = scrollHeight - clientHeight
+            if (maxScroll <= 0) {
+                this._pasteScrollRAF = 0
+                return
+            }
+
+            let targetScrollTop: number
+
+            if (isAppend) {
+                // 尾部粘贴 → 滚到底
+                targetScrollTop = maxScroll
+            } else {
+                // 中间粘贴：用镜像 div 精确测量光标 Y 坐标
+                const cursorY = getCursorY(el)
+
+                if (cursorY >= scrollTopBefore && cursorY <= scrollTopBefore + clientHeight) {
+                    targetScrollTop = scrollTopBefore
+                } else if (cursorY > scrollTopBefore + clientHeight) {
+                    // 留一行余量，避免光标刚好被压在底部边缘
+                    targetScrollTop = cursorY - clientHeight + 21
+                } else {
+                    targetScrollTop = cursorY
+                }
+                targetScrollTop = Math.max(0, Math.min(maxScroll, targetScrollTop))
+            }
+
+            if (Math.abs(el.scrollTop - targetScrollTop) > 2) {
+                el.scrollTop = targetScrollTop
+            }
+
+            if (performance.now() - startTime < MAX_DURATION) {
+                this._pasteScrollRAF = requestAnimationFrame(tick)
+            } else {
+                this._pasteScrollRAF = 0
+            }
+        }
+
+        this._pasteScrollRAF = requestAnimationFrame(tick)
+    }
+
     insertText(text: string): void {
         let newText = this.state.value + text;
         this.setState(
@@ -383,7 +498,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
             });
         }
         return (
-            <div className="wk-messageinput-box" style={expanded ? { display: 'flex', flexDirection: 'column' } : undefined}>
+            <div className="wk-messageinput-box" style={expanded ? { display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1, overflow: 'hidden' } : undefined}>
 
                 {
                     topView ? <div className="wk-messageinput-box-top">
@@ -467,7 +582,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
 
                     </div>
                 </div>
-                <div className="wk-messageinput-inputbox" style={{ position: 'relative', ...(expanded ? { flex: 1 } : {}) }}>
+                <div className="wk-messageinput-inputbox" style={{ position: 'relative', ...(expanded ? { flex: 1, height: 'auto', minHeight: 0 } : {}) }}>
                     {botCommands && botCommands.length > 0 && (
                         <SlashCommandMenu
                             commands={botCommands}
@@ -492,6 +607,12 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
                         onKeyPress={this.handleKeyPressed}
                         onKeyDown={this.handleKeyDown}
                         onChange={this.handleChange}
+                        onPaste={(e: any) => {
+                            const ta = e.target as HTMLTextAreaElement
+                            const scrollTopBefore = ta.scrollTop
+                            const isAppend = ta.selectionStart >= ta.value.length
+                            this.scrollToCursorAfterPaste(scrollTopBefore, isAppend)
+                        }}
                         className="wk-messageinput-input"
                         placeholder={`按 Shift + Enter 换行，按 Enter 发送`}
                         allowSuggestionsAboveCursor={true}

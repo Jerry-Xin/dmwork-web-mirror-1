@@ -160,12 +160,6 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
         hotkeys.filter = function (event) {
             return true;
         }
-        hotkeys('ctrl+enter', scope, function (event, handler) {
-            const { value } = self.state;
-            self.setState({
-                value: value + '\n',
-            });
-        });
         hotkeys.setScope(scope);
 
         const { onInsertText } = this.props
@@ -186,7 +180,6 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     // }
     componentWillUnmount() {
         const scope = "messageInput"
-        hotkeys.unbind('ctrl+enter', scope);
         // Restore the previous scope to prevent scope pollution
         hotkeys.setScope(this.previousScope);
 
@@ -234,7 +227,7 @@ export default class MessageInput extends Component<MessageInputProps, MessageIn
     }
 
     handleKeyPressed = (e: any) => {
-        if (e.charCode !== 13) { //非回车
+        if (e.key !== 'Enter') { // 非回车
             return;
         }
         // Shift+Enter 换行，其他修饰键（Ctrl/Alt/Meta）一律不处理

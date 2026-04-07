@@ -41,6 +41,19 @@ export default class WKAvatar extends Component<WKAvatarProps, WKAvatarState> {
             loadedErr: false,
         };
     }
+
+    componentDidUpdate(prevProps: WKAvatarProps) {
+        // Update src when props change
+        if (prevProps.src !== this.props.src || 
+            prevProps.channel !== this.props.channel || 
+            prevProps.random !== this.props.random) {
+            this.setState({ 
+                src: this.getImageSrc(),
+                loadedErr: false 
+            });
+        }
+    }
+
     getImageSrc() {
         const { channel, src, random } = this.props
         let imgSrc = ""

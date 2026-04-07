@@ -362,21 +362,21 @@ export class OrganizationalGroupNew extends Component<
         const members = await SpaceService.shared.getMembers(spaceId, 1, 10000);
         members.forEach((m: any) => {
           if (!subscriberUids.includes(m.uid) && !systemUids.includes(m.uid) && m.uid !== WKApp.loginInfo.uid) {
-            setFriendData.push({ name: m.name, uid: m.uid });
+            setFriendData.push({ name: m.name, uid: m.uid, avatar: m.avatar });
           }
         });
       } catch {
         // fallback to contacts list
         WKApp.dataSource.contactsList.forEach((item) => {
           if (!subscriberUids.includes(item.uid) && !systemUids.includes(item.uid)) {
-            setFriendData.push({ name: item.name, uid: item.uid });
+            setFriendData.push({ name: item.name, uid: item.uid, avatar: WKApp.shared.avatarUser(item.uid) });
           }
         });
       }
     } else {
       WKApp.dataSource.contactsList.forEach((item) => {
         if (!subscriberUids.includes(item.uid) && !systemUids.includes(item.uid)) {
-          setFriendData.push({ name: item.name, uid: item.uid });
+          setFriendData.push({ name: item.name, uid: item.uid, avatar: WKApp.shared.avatarUser(item.uid) });
         }
       });
     }
@@ -640,7 +640,7 @@ export class OrganizationalGroupNew extends Component<
                             className="friend-opt-item"
                           >
                             <WKAvatar
-                              src={WKApp.shared.avatarUser(
+                              src={friend.avatar || WKApp.shared.avatarUser(
                                 friend.uid as string
                               )}
                               style={{
@@ -706,7 +706,7 @@ export class OrganizationalGroupNew extends Component<
                     <div key={item.uid} className="opt-personnel-item">
                       <div className="user-info">
                         <WKAvatar
-                          src={WKApp.shared.avatarUser(item.uid as string)}
+                          src={item.avatar || WKApp.shared.avatarUser(item.uid as string)}
                           style={{
                             width: "24px",
                             height: "24px",

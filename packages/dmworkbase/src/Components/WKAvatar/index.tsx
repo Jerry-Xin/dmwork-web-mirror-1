@@ -41,6 +41,23 @@ export default class WKAvatar extends Component<WKAvatarProps, WKAvatarState> {
             loadedErr: false,
         };
     }
+
+    componentDidUpdate(prevProps: WKAvatarProps) {
+        // Update src when props change
+        const srcChanged = prevProps.src !== this.props.src;
+        const randomChanged = prevProps.random !== this.props.random;
+        const channelChanged = 
+            prevProps.channel?.channelID !== this.props.channel?.channelID ||
+            prevProps.channel?.channelType !== this.props.channel?.channelType;
+        
+        if (srcChanged || channelChanged || randomChanged) {
+            this.setState({ 
+                src: this.getImageSrc(),
+                loadedErr: false 
+            });
+        }
+    }
+
     getImageSrc() {
         const { channel, src, random } = this.props
         let imgSrc = ""
@@ -59,12 +76,7 @@ export default class WKAvatar extends Component<WKAvatarProps, WKAvatarState> {
     handleImgError = () => {
         this.setState({ src: defaultAvatarSVG, loadedErr: true });
     };
-    handleLoad = () => {
-        if(!this.state.loadedErr) {
-            this.setState({ src: this.getImageSrc() })
-        }
-
-    }
+    
     getAvatarClass() {
         const { channel } = this.props
         if (!channel) return ""
@@ -78,6 +90,6 @@ export default class WKAvatar extends Component<WKAvatarProps, WKAvatarState> {
 
     render() {
         const { style } = this.props
-        return <img alt="" style={style} className={classNames("wk-avatar", this.getAvatarClass())} src={this.state.src} onLoad={this.handleLoad} onError={this.handleImgError} />
+        return <img alt="" style={style} className={classNames("wk-avatar", this.getAvatarClass())} src={this.state.src} onError={this.handleImgError} />
     }
 }

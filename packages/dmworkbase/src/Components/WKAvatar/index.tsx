@@ -60,10 +60,7 @@ export default class WKAvatar extends Component<WKAvatarProps, WKAvatarState> {
         this.setState({ src: defaultAvatarSVG, loadedErr: true });
     };
     handleLoad = () => {
-        if(!this.state.loadedErr) {
-            this.setState({ src: this.getImageSrc() })
-        }
-
+        // Do nothing - src is already set correctly in constructor/componentDidUpdate
     }
     getAvatarClass() {
         const { channel } = this.props

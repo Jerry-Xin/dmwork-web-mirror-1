@@ -1,0 +1,28 @@
+.mention-list {
+  background-color: var(--wk-color-item);
+  box-shadow: var(--wk-shadow-md);
+  border-radius: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 5px 0;
+  min-width: 420px;
+}
+
+.mention-list-item {
+  display: flex;
+  align-items: center;
+  padding: 5px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  margin-bottom: 10px;
+}
+
+.mention-list-item:hover,
+.mention-list-item.is-selected {
+  background-color: var(--wk-color-theme);
+  color: var(--wk-text-inverse);
+}
+
+.mention-list-item .wk-messageinput-iconbox {
+  margin-right: 8px;
+}

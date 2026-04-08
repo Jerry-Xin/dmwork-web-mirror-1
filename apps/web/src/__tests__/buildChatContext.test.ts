@@ -1,0 +1,442 @@
+import { describe, it, expect } from "vitest"
+import {
+    buildChatContext,
+    ChatContextMember,
+    ChatContextMessage,
+    ChatContextChannelInfo,
+} from "@dmwork/base/src/Components/Conversation/chatContext"
+
+const ChannelTypePerson = 1
+const ChannelTypeGroup = 2
+
+const LOGIN_UID = "me"
+
+function makeMember(uid: string, name?: string, remark?: string, isDeleted?: number): ChatContextMember {
+    return { uid, name, remark, isDeleted: isDeleted ?? 0 }
+}
+
+function makeMessage(fromUID: string, text?: string, senderTitle?: string): ChatContextMessage {
+    return {
+        fromUID,
+        from: senderTitle ? { title: senderTitle } : undefined,
+        content: text ? { text } : undefined,
+    }
+}
+
+describe("buildChatContext", () => {
+    describe("group chat with ≤100 members (strategy 1)", () => {
+        it("should collect all member names", () => {
+            const subscribers = [
+                makeMember("u1", "Alice"),
+                makeMember("u2", "Bob"),
+            ]
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("聊天成员：Alice,Bob")
+        })
+
+        it("should collect both name and remark when different", () => {
+            const subscribers = [
+                makeMember("u1", "Alice", "小A"),
+            ]
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("聊天成员：Alice,小A")
+        })
+
+        it("should not duplicate when remark equals name", () => {
+            const subscribers = [
+                makeMember("u1", "Alice", "Alice"),
+            ]
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("聊天成员：Alice")
+        })
+
+        it("should exclude current user", () => {
+            const subscribers = [
+                makeMember(LOGIN_UID, "Me"),
+                makeMember("u1", "Alice"),
+            ]
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("聊天成员：Alice")
+        })
+
+        it("should exclude deleted members", () => {
+            const subscribers = [
+                makeMember("u1", "Alice", undefined, 1),
+                makeMember("u2", "Bob"),
+            ]
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("聊天成员：Bob")
+        })
+
+        it("should skip empty/whitespace names", () => {
+            const subscribers = [
+                makeMember("u1", "", "Nickname"),
+                makeMember("u2", "  ", "  "),
+            ]
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("聊天成员：Nickname")
+        })
+
+        it("should deduplicate names across members", () => {
+            const subscribers = [
+                makeMember("u1", "Alice"),
+                makeMember("u2", "Alice"),
+            ]
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("聊天成员：Alice")
+        })
+
+        it("should append messages after member names line", () => {
+            const subscribers = [makeMember("u1", "Alice")]
+            const messages = [makeMessage("u1", "hello", "Alice")]
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("聊天成员：Alice\n[Alice]: hello")
+        })
+
+        it("should handle exactly 100 members (still strategy 1)", () => {
+            const subscribers: ChatContextMember[] = []
+            for (let i = 0; i < 100; i++) {
+                subscribers.push(makeMember(`u${i}`, `User${i}`))
+            }
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toContain("聊天成员：")
+            expect(result!.split(",").length).toBe(100)
+        })
+    })
+
+    describe("group chat with >100 members (strategy 2)", () => {
+        function makeLargeGroup(count: number): ChatContextMember[] {
+            const subs: ChatContextMember[] = []
+            for (let i = 0; i < count; i++) {
+                subs.push(makeMember(`u${i}`, `User${i}`))
+            }
+            return subs
+        }
+
+        it("should only collect names of active senders from messages", () => {
+            const subscribers = makeLargeGroup(150)
+            const messages = [
+                makeMessage("u0", "hi", "User0"),
+                makeMessage("u5", "hello", "User5"),
+            ]
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toContain("聊天成员：")
+            const nameLine = result!.split("\n")[0]
+            expect(nameLine).toContain("User0")
+            expect(nameLine).toContain("User5")
+            expect(nameLine).not.toContain("User1,")
+        })
+
+        it("should exclude current user from active senders", () => {
+            const subscribers = makeLargeGroup(150)
+            subscribers.push(makeMember(LOGIN_UID, "MeUser"))
+            const messages = [
+                makeMessage(LOGIN_UID, "my message"),
+                makeMessage("u0", "reply", "User0"),
+            ]
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            const nameLine = result!.split("\n")[0]
+            expect(nameLine).not.toContain("MeUser")
+            expect(nameLine).toContain("User0")
+        })
+
+        it("should limit active UIDs to 100", () => {
+            const subscribers = makeLargeGroup(200)
+            const messages: ChatContextMessage[] = []
+            for (let i = 0; i < 120; i++) {
+                messages.push(makeMessage(`u${i}`, `msg${i}`))
+            }
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            const nameLine = result!.split("\n")[0]
+            const names = nameLine.replace("聊天成员：", "").split(",")
+            expect(names.length).toBeLessThanOrEqual(100)
+        })
+
+        it("should return only messages when no active senders match subscribers", () => {
+            const subscribers = makeLargeGroup(150)
+            const messages = [makeMessage("unknown_uid", "hello", "Unknown")]
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("[Unknown]: hello")
+        })
+
+        it("should handle no messages in large group", () => {
+            const subscribers = makeLargeGroup(150)
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBeUndefined()
+        })
+
+        it("should exclude deleted active senders", () => {
+            const subscribers = makeLargeGroup(150)
+            subscribers[5].isDeleted = 1
+            const messages = [
+                makeMessage("u5", "hi", "User5"),
+                makeMessage("u10", "hey", "User10"),
+            ]
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            const nameLine = result!.split("\n")[0]
+            expect(nameLine).not.toContain("User5")
+            expect(nameLine).toContain("User10")
+        })
+
+        it("should collect remark for active senders when different from name", () => {
+            const subscribers = makeLargeGroup(150)
+            subscribers[5].remark = "五号"
+            const messages = [makeMessage("u5", "hi", "User5")]
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            const nameLine = result!.split("\n")[0]
+            expect(nameLine).toContain("User5")
+            expect(nameLine).toContain("五号")
+        })
+    })
+
+    describe("DM (person) chat", () => {
+        it("should inject partner name from channelInfo title", () => {
+            const channelInfo: ChatContextChannelInfo = { title: "Alice" }
+            const result = buildChatContext({
+                messages: [],
+                subscribers: [],
+                channelType: ChannelTypePerson,
+                loginUID: LOGIN_UID,
+                channelInfo,
+            })
+            expect(result).toBe("聊天成员：Alice")
+        })
+
+        it("should inject both title and remark when different", () => {
+            const channelInfo: ChatContextChannelInfo = {
+                title: "Alice",
+                orgData: { remark: "小A" },
+            }
+            const result = buildChatContext({
+                messages: [],
+                subscribers: [],
+                channelType: ChannelTypePerson,
+                loginUID: LOGIN_UID,
+                channelInfo,
+            })
+            expect(result).toBe("聊天成员：Alice,小A")
+        })
+
+        it("should not duplicate when remark equals title", () => {
+            const channelInfo: ChatContextChannelInfo = {
+                title: "Alice",
+                orgData: { remark: "Alice" },
+            }
+            const result = buildChatContext({
+                messages: [],
+                subscribers: [],
+                channelType: ChannelTypePerson,
+                loginUID: LOGIN_UID,
+                channelInfo,
+            })
+            expect(result).toBe("聊天成员：Alice")
+        })
+
+        it("should handle missing channelInfo", () => {
+            const result = buildChatContext({
+                messages: [],
+                subscribers: [],
+                channelType: ChannelTypePerson,
+                loginUID: LOGIN_UID,
+                channelInfo: null,
+            })
+            expect(result).toBeUndefined()
+        })
+
+        it("should skip whitespace-only title", () => {
+            const channelInfo: ChatContextChannelInfo = {
+                title: "  ",
+                orgData: { remark: "Nickname" },
+            }
+            const result = buildChatContext({
+                messages: [],
+                subscribers: [],
+                channelType: ChannelTypePerson,
+                loginUID: LOGIN_UID,
+                channelInfo,
+            })
+            expect(result).toBe("聊天成员：Nickname")
+        })
+
+        it("should append messages after partner name", () => {
+            const channelInfo: ChatContextChannelInfo = { title: "Alice" }
+            const messages = [makeMessage("alice_uid", "hi", "Alice")]
+            const result = buildChatContext({
+                messages,
+                subscribers: [],
+                channelType: ChannelTypePerson,
+                loginUID: LOGIN_UID,
+                channelInfo,
+            })
+            expect(result).toBe("聊天成员：Alice\n[Alice]: hi")
+        })
+    })
+
+    describe("message formatting", () => {
+        it("should include last 10 messages", () => {
+            const messages: ChatContextMessage[] = []
+            for (let i = 0; i < 15; i++) {
+                messages.push(makeMessage(`u${i}`, `msg${i}`, `User${i}`))
+            }
+            const result = buildChatContext({
+                messages,
+                subscribers: [],
+                channelType: ChannelTypePerson,
+                loginUID: LOGIN_UID,
+            })!
+            const lines = result.split("\n")
+            expect(lines.length).toBe(10)
+            expect(lines[0]).toBe("[User5]: msg5")
+            expect(lines[9]).toBe("[User14]: msg14")
+        })
+
+        it("should fallback to fromUID when sender title is missing", () => {
+            const messages = [makeMessage("uid123", "hello")]
+            const result = buildChatContext({
+                messages,
+                subscribers: [],
+                channelType: ChannelTypePerson,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("[uid123]: hello")
+        })
+
+        it("should handle empty message text", () => {
+            const messages = [makeMessage("u1", undefined, "Alice")]
+            const result = buildChatContext({
+                messages,
+                subscribers: [],
+                channelType: ChannelTypePerson,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("[Alice]: ")
+        })
+    })
+
+    describe("edge cases", () => {
+        it("should return undefined when no subscribers and no messages", () => {
+            const result = buildChatContext({
+                messages: [],
+                subscribers: [],
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBeUndefined()
+        })
+
+        it("should return only messages when no names to inject (all excluded)", () => {
+            const subscribers = [makeMember(LOGIN_UID, "Me")]
+            const messages = [makeMessage("u1", "hello", "User1")]
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("[User1]: hello")
+        })
+
+        it("should handle unknown channel type (no name injection)", () => {
+            const subscribers = [makeMember("u1", "Alice")]
+            const messages = [makeMessage("u1", "hello", "Alice")]
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: 99, // unknown
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBe("[Alice]: hello")
+        })
+
+        it("should handle member with undefined name and remark", () => {
+            const subscribers = [makeMember("u1")]
+            const result = buildChatContext({
+                messages: [],
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            expect(result).toBeUndefined()
+        })
+    })
+})

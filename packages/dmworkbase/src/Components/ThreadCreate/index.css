@@ -19,7 +19,7 @@
 .wk-thread-create-label {
   font-size: 14px;
   font-weight: 500;
-  color: var(--wk-color-text-0, rgba(9, 30, 66, 0.87));
+  color: var(--wk-text-primary);
 }
 
 .wk-thread-create-input {
@@ -28,7 +28,7 @@
 
 .wk-thread-create-hint {
   font-size: 12px;
-  color: var(--wk-text-tertiary, #999);
+  color: var(--wk-text-tertiary);
 }
 
 .wk-thread-create-actions {

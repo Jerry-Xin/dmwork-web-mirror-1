@@ -64,14 +64,11 @@ export class ThreadCreatedCell extends MessageCell {
           `groups/${threadInfo.groupNo}/threads/${threadInfo.shortId}`
         )
         // status: 1=活跃, 2=归档, 3=删除
-        if (resp.status === 2) {
-          Toast.warning("该子区已归档")
-          return
-        }
         if (resp.status === 3) {
           Toast.warning("该子区已删除")
           return
         }
+        // 归档状态允许进入查看，但会在聊天界面禁用发送
       } catch (err: any) {
         Toast.warning("该子区已删除或不存在")
         return

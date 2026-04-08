@@ -13,7 +13,8 @@ import { ConversationWrap } from "../../Service/Model";
 import WKApp, { ThemeMode } from "../../App";
 import ChannelSetting from "../../Components/ChannelSetting";
 import classNames from "classnames";
-import { Channel, ChannelInfo, WKSDK } from "wukongimjssdk";
+import { Channel, ChannelInfo, ChannelTypeGroup, WKSDK } from "wukongimjssdk";
+import { ChannelTypeCommunityTopic } from "../../Service/Const";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ChatMenus } from "../../App";
 import ConversationContext from "../../Components/Conversation/context";
@@ -38,6 +39,8 @@ export class ChatContentPage extends Component<
 > {
   channelInfoListener!: ChannelInfoListener;
   conversationContext!: ConversationContext;
+  private parentGroupChannel?: Channel;
+
   constructor(props: any) {
     super(props);
     this.state = {
@@ -48,11 +51,42 @@ export class ChatContentPage extends Component<
   componentDidMount() {
     const { channel } = this.props;
     this.channelInfoListener = (channelInfo: ChannelInfo) => {
-      if (channelInfo.channel.isEqual(channel)) {
+      // 监听当前频道或父群组的变化
+      if (
+        channelInfo.channel.isEqual(channel) ||
+        (this.parentGroupChannel && channelInfo.channel.isEqual(this.parentGroupChannel))
+      ) {
         this.setState({});
       }
     };
     WKSDK.shared().channelManager.addListener(this.channelInfoListener);
+
+    // 子区：预先获取父群组信息
+    if (channel.channelType === ChannelTypeCommunityTopic) {
+      const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
+      const parentGroupNo = channelInfo?.orgData?.parentGroupNo;
+      if (parentGroupNo) {
+        this.parentGroupChannel = new Channel(parentGroupNo, ChannelTypeGroup);
+        if (!WKSDK.shared().channelManager.getChannelInfo(this.parentGroupChannel)) {
+          WKSDK.shared().channelManager.fetchChannelInfo(this.parentGroupChannel);
+        }
+      }
+    }
+  }
+
+  componentDidUpdate(prevProps: ChatContentPageProps) {
+    const { channel } = this.props;
+    // 子区 channelInfo 加载后，检查是否需要获取父群组信息
+    if (channel.channelType === ChannelTypeCommunityTopic && !this.parentGroupChannel) {
+      const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
+      const parentGroupNo = channelInfo?.orgData?.parentGroupNo;
+      if (parentGroupNo) {
+        this.parentGroupChannel = new Channel(parentGroupNo, ChannelTypeGroup);
+        if (!WKSDK.shared().channelManager.getChannelInfo(this.parentGroupChannel)) {
+          WKSDK.shared().channelManager.fetchChannelInfo(this.parentGroupChannel);
+        }
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -101,7 +135,17 @@ export class ChatContentPage extends Component<
                   </div>
                   <div className="wk-chat-conversation-header-channel-info">
                     <div className="wk-chat-conversation-header-channel-info-name">
-                      {channelInfo?.orgData?.displayName}
+                      {channel.channelType === ChannelTypeCommunityTopic && channelInfo?.orgData?.parentGroupNo ? (
+                        <>
+                          <span className="wk-chat-conversation-header-parent-group">
+                            {WKSDK.shared().channelManager.getChannelInfo(new Channel(channelInfo.orgData.parentGroupNo, ChannelTypeGroup))?.title || channelInfo.orgData.parentGroupNo}
+                          </span>
+                          <span className="wk-chat-conversation-header-separator">&gt;</span>
+                          <span>{channelInfo?.orgData?.displayName}</span>
+                        </>
+                      ) : (
+                        channelInfo?.orgData?.displayName
+                      )}
                     </div>
                     <div className="wk-chat-conversation-header-channel-info-tip"></div>
                   </div>

@@ -24,7 +24,8 @@ import { IConversationProvider } from "./Service/DataSource/DataProvider";
 import MessageManager from "./Service/MessageManager";
 import { DefaultEmojiService, EmojiService } from "./Service/EmojiService";
 import SectionManager, { Row, Section } from "./Service/Section";
-import { EndpointCategory } from "./Service/Const";
+import { EndpointCategory, ChannelTypeCommunityTopic } from "./Service/Const";
+import { parseThreadChannelId } from "./Service/Thread";
 import { DataSource } from "./Service/DataSource/DataSource";
 import { ConnectAddrCallback } from "wukongimjssdk";
 
@@ -479,6 +480,12 @@ export default class WKApp extends ProviderListener {
       return `${baseURL}users/${uid}/avatar?v=${avatarTag}`;
     } else if (channel.channelType === ChannelTypeGroup) {
       return `${baseURL}groups/${channel.channelID}/avatar?v=${avatarTag}`;
+    } else if (channel.channelType === ChannelTypeCommunityTopic) {
+      // 子区使用父群头像
+      const parsed = parseThreadChannelId(channel.channelID);
+      if (parsed) {
+        return `${baseURL}groups/${parsed.groupNo}/avatar?v=${avatarTag}`;
+      }
     }
     return "";
   }

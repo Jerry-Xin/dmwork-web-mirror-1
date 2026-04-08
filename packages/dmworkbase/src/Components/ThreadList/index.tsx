@@ -1,6 +1,7 @@
 import React, { Component } from "react"
-import { Button, Spin, Modal, Toast } from "@douyinfe/semi-ui"
+import { Button, Spin, Modal, Toast, Tooltip } from "@douyinfe/semi-ui"
 import { Channel } from "wukongimjssdk"
+import { UserPlus, LogOut, Trash2 } from "lucide-react"
 import { Thread, ThreadStatus } from "../../Service/Thread"
 import { ChannelTypeCommunityTopic } from "../../Service/Const"
 import WKApp from "../../App"
@@ -50,22 +51,6 @@ export class ThreadList extends Component<ThreadListProps, ThreadListState> {
       />,
       { title: "新建子区" }
     )
-  }
-
-  handleArchive = (thread: Thread, e: React.MouseEvent) => {
-    e.stopPropagation()
-    Modal.confirm({
-      title: "归档子区",
-      content: `确定要归档子区 "${thread.name}" 吗？归档后将不再显示在列表中。`,
-      onOk: async () => {
-        try {
-          await this.vm.archive(thread.short_id)
-          Toast.success("已归档")
-        } catch (err: any) {
-          Toast.error(err.message)
-        }
-      },
-    })
   }
 
   handleDelete = (thread: Thread, e: React.MouseEvent) => {
@@ -177,7 +162,7 @@ export class ThreadList extends Component<ThreadListProps, ThreadListState> {
                 <div className="wk-thread-item-icon">#</div>
                 <div className="wk-thread-item-content">
                   <div className="wk-thread-item-name">
-                    {thread.name}
+                    <span className="wk-thread-item-name-text">{thread.name}</span>
                     {thread.is_member && (
                       <span className="wk-thread-item-badge">已加入</span>
                     )}
@@ -191,38 +176,38 @@ export class ThreadList extends Component<ThreadListProps, ThreadListState> {
                 </div>
                 <div className="wk-thread-item-actions">
                   {thread.is_member ? (
-                    <Button
-                      size="small"
-                      type="tertiary"
-                      onClick={(e) => this.handleLeave(thread, e)}
-                    >
-                      离开
-                    </Button>
+                    <Tooltip content="离开">
+                      <Button
+                        size="small"
+                        type="tertiary"
+                        icon={<LogOut size={14} />}
+                        aria-label="离开子区"
+                        onClick={(e) => this.handleLeave(thread, e)}
+                      />
+                    </Tooltip>
                   ) : (
-                    <Button
-                      size="small"
-                      type="primary"
-                      onClick={(e) => this.handleJoin(thread, e)}
-                    >
-                      加入
-                    </Button>
+                    <Tooltip content="加入">
+                      <Button
+                        size="small"
+                        type="primary"
+                        icon={<UserPlus size={14} />}
+                        aria-label="加入子区"
+                        onClick={(e) => this.handleJoin(thread, e)}
+                      />
+                    </Tooltip>
                   )}
-                  <Button
-                    size="small"
-                    type="tertiary"
-                    className="wk-thread-item-action-btn"
-                    onClick={(e) => this.handleArchive(thread, e)}
-                  >
-                    归档
-                  </Button>
-                  <Button
-                    size="small"
-                    type="danger"
-                    className="wk-thread-item-action-btn"
-                    onClick={(e) => this.handleDelete(thread, e)}
-                  >
-                    删除
-                  </Button>
+                  {thread.creator_uid === WKApp.loginInfo.uid && (
+                    <Tooltip content="删除">
+                      <Button
+                        size="small"
+                        type="danger"
+                        icon={<Trash2 size={14} />}
+                        aria-label="删除子区"
+                        className="wk-thread-item-action-btn"
+                        onClick={(e) => this.handleDelete(thread, e)}
+                      />
+                    </Tooltip>
+                  )}
                 </div>
               </div>
             ))

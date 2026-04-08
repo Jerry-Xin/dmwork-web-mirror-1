@@ -733,11 +733,15 @@ export default class BaseModule implements IModule {
                   return;
                 }
                 try {
+                  // 构造源消息 payload，用于拷贝到子区作为首条消息
+                  const sourcePayload = message.content.contentObj
+                    ?? { ...message.content.encodeJSON(), type: message.content.contentType };
                   const resp = await WKApp.apiClient.post(
                     `groups/${message.channel.channelID}/threads`,
                     {
                       name: threadName.trim(),
                       source_message_id: parseInt(message.messageID),
+                      source_message_payload: sourcePayload,
                     }
                   );
                   Toast.success("子区创建成功");
@@ -1063,7 +1067,8 @@ export default class BaseModule implements IModule {
       const data = context.routeData() as ChannelSettingRouteData;
       const channel = data.channel;
 
-      if (channel.channelType === ChannelTypeCustomerService) {
+      // 客服频道和子区不显示成员管理
+      if (channel.channelType === ChannelTypeCustomerService || channel.channelType === ChannelTypeCommunityTopic) {
         return;
       }
 
@@ -1721,65 +1726,10 @@ export default class BaseModule implements IModule {
       500
     );
 
-    WKApp.shared.channelSettingRegister(
-      "thread.setting",
-      (context) => {
-        const data = context.routeData() as ChannelSettingRouteData;
-        const channel = data.channel;
-        const channelInfo = data.channelInfo;
-        if (channel.channelType !== ChannelTypeCommunityTopic) {
-          return undefined;
-        }
-        const rows = new Array<Row>();
-        rows.push(
-          new Row({
-            cell: ListItemSwitch,
-            properties: {
-              title: "消息免打扰",
-              checked: channelInfo?.mute,
-              onCheck: (v: boolean, ctx: ListItemSwitchContext) => {
-                ctx.loading = true;
-                ChannelSettingManager.shared
-                  .mute(v, channel)
-                  .then(() => {
-                    ctx.loading = false;
-                    data.refresh();
-                  })
-                  .catch(() => {
-                    ctx.loading = false;
-                  });
-              },
-            },
-          })
-        );
-        rows.push(
-          new Row({
-            cell: ListItemSwitch,
-            properties: {
-              title: "聊天置顶",
-              checked: channelInfo?.top,
-              onCheck: (v: boolean, ctx: ListItemSwitchContext) => {
-                ctx.loading = true;
-                ChannelSettingManager.shared
-                  .top(v, channel)
-                  .then(() => {
-                    ctx.loading = false;
-                    data.refresh();
-                  })
-                  .catch(() => {
-                    ctx.loading = false;
-                  });
-              },
-            },
-          })
-        );
-        return new Section({
-          rows: rows,
-        });
-      },
-      3000
-    );
-
+    // 子区设置说明：
+    // - 消息免打扰/聊天置顶：子区继承父群组设置，暂不支持单独配置
+    // - 清空聊天记录/归档：子区管理由父群组统一处理，暂不开放
+    // - 成员管理：子区成员通过加入/离开操作，不支持手动添加
     WKApp.shared.channelSettingRegister(
       "thread.actions",
       (context) => {
@@ -1791,35 +1741,6 @@ export default class BaseModule implements IModule {
         const threadInfo = parseThreadChannelId(channel.channelID);
         return new Section({
           rows: [
-            new Row({
-              cell: ListItemButton,
-              properties: {
-                title: "清空聊天记录",
-                type: ListItemButtonType.warn,
-                onClick: () => {
-                  WKApp.shared.baseContext.showAlert({
-                    content: "是否清空此子区的所有消息？",
-                    onOk: async () => {
-                      const conversation =
-                        WKSDK.shared().conversationManager.findConversation(
-                          data.channel
-                        );
-                      if (!conversation) {
-                        return;
-                      }
-                      await WKApp.conversationProvider.clearConversationMessages(
-                        conversation
-                      );
-                      conversation.lastMessage = undefined;
-                      WKApp.endpointManager.invoke(
-                        EndpointID.clearChannelMessages,
-                        data.channel
-                      );
-                    },
-                  });
-                },
-              },
-            }),
             new Row({
               cell: ListItemButton,
               properties: {

@@ -354,6 +354,19 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wk-chat-conversation-header-parent-group {
+    color: var(--wk-text-secondary);
+    font-weight: 500;
+}
+
+.wk-chat-conversation-header-separator {
+    color: var(--wk-text-tertiary);
+    font-weight: 400;
 }
 
 .wk-chat-conversation-header-content {

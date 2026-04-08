@@ -683,75 +683,79 @@ export default class BaseModule implements IModule {
       4000
     );
 
-    // 从消息创建子区（仅群组消息）- 暂时隐藏
-    // WKApp.endpoints.registerMessageContextMenus(
-    //   "contextmenus.createThread",
-    //   (message, context) => {
-    //     // 只有群组消息才显示
-    //     if (message.channel.channelType !== ChannelTypeGroup) {
-    //       return null;
-    //     }
-    //     // 系统消息不显示
-    //     if (WKSDK.shared().isSystemMessage(message.contentType)) {
-    //       return null;
-    //     }
-    //     return {
-    //       title: "创建子区",
-    //       onClick: () => {
-    //         // 使用消息内容作为默认名称，截取前20个字符
-    //         const defaultName = (message.content?.conversationDigest || "").slice(0, 20);
-    //         let threadName = defaultName;
-    //         Modal.confirm({
-    //           title: "创建子区",
-    //           content: (
-    //             <input
-    //               type="text"
-    //               placeholder="请输入子区名称"
-    //               defaultValue={defaultName}
-    //               style={{
-    //                 width: "100%",
-    //                 padding: "8px 12px",
-    //                 border: "1px solid #d9d9d9",
-    //                 borderRadius: "4px",
-    //                 fontSize: "14px",
-    //               }}
-    //               onChange={(e) => {
-    //                 threadName = e.target.value;
-    //               }}
-    //               autoFocus
-    //             />
-    //           ),
-    //           okText: "创建",
-    //           cancelText: "取消",
-    //           onOk: async () => {
-    //             if (!threadName || threadName.trim() === "") {
-    //               Toast.error("子区名称不能为空");
-    //               return;
-    //             }
-    //             try {
-    //               const resp = await WKApp.apiClient.post(
-    //                 `groups/${message.channel.channelID}/threads`,
-    //                 {
-    //                   name: threadName.trim(),
-    //                   source_message_id: parseInt(message.messageID),
-    //                 }
-    //               );
-    //               Toast.success("子区创建成功");
-    //               // 打开新创建的子区
-    //               if (resp && resp.channel_id) {
-    //                 const channel = new Channel(resp.channel_id, ChannelTypeCommunityTopic);
-    //                 WKApp.endpoints.showConversation(channel);
-    //               }
-    //             } catch (err: any) {
-    //               Toast.error(err.msg || "创建失败");
-    //             }
-    //           },
-    //         });
-    //       },
-    //     };
-    //   },
-    //   5000
-    // );
+    // 从消息创建子区（仅群组消息）
+    WKApp.endpoints.registerMessageContextMenus(
+      "contextmenus.createThread",
+      (message, context) => {
+        // 服务端未开启子区功能则隐藏
+        if (!WKApp.remoteConfig.threadOn) {
+          return null;
+        }
+        // 只有群组消息才显示
+        if (message.channel.channelType !== ChannelTypeGroup) {
+          return null;
+        }
+        // 系统消息不显示
+        if (WKSDK.shared().isSystemMessage(message.contentType)) {
+          return null;
+        }
+        return {
+          title: "创建子区",
+          onClick: () => {
+            // 使用消息内容作为默认名称，截取前20个字符
+            const defaultName = (message.content?.conversationDigest || "").slice(0, 20);
+            let threadName = defaultName;
+            Modal.confirm({
+              title: "创建子区",
+              content: (
+                <input
+                  type="text"
+                  placeholder="请输入子区名称"
+                  defaultValue={defaultName}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "4px",
+                    fontSize: "14px",
+                  }}
+                  onChange={(e) => {
+                    threadName = e.target.value;
+                  }}
+                  autoFocus
+                />
+              ),
+              okText: "创建",
+              cancelText: "取消",
+              onOk: async () => {
+                if (!threadName || threadName.trim() === "") {
+                  Toast.error("子区名称不能为空");
+                  return;
+                }
+                try {
+                  const resp = await WKApp.apiClient.post(
+                    `groups/${message.channel.channelID}/threads`,
+                    {
+                      name: threadName.trim(),
+                      source_message_id: parseInt(message.messageID),
+                    }
+                  );
+                  Toast.success("子区创建成功");
+                  // 打开新创建的子区
+                  if (resp && resp.channel_id) {
+                    const channel = new Channel(resp.channel_id, ChannelTypeCommunityTopic);
+                    WKApp.endpoints.showConversation(channel);
+                  }
+                } catch (err: any) {
+                  Toast.error(err.msg || "创建失败");
+                }
+              },
+            });
+          },
+        };
+      },
+      5000
+    );
   }
 
   registerUserInfo() {
@@ -1319,26 +1323,27 @@ export default class BaseModule implements IModule {
             })
           );
 
-          // 子区选项暂时隐藏
-          // rows.push(
-          //   new Row({
-          //     cell: ListItem,
-          //     properties: {
-          //       title: "子区",
-          //       onClick: () => {
-          //         context.push(
-          //           <ThreadList
-          //             channel={channel}
-          //             context={context}
-          //           />,
-          //           new RouteContextConfig({
-          //             title: "子区",
-          //           })
-          //         );
-          //       },
-          //     },
-          //   })
-          // );
+          if (WKApp.remoteConfig.threadOn) {
+            rows.push(
+              new Row({
+                cell: ListItem,
+                properties: {
+                  title: "子区",
+                  onClick: () => {
+                    context.push(
+                      <ThreadList
+                        channel={channel}
+                        context={context}
+                      />,
+                      new RouteContextConfig({
+                        title: "子区",
+                      })
+                    );
+                  },
+                },
+              })
+            );
+          }
 
           const latestData2 = context.routeData() as ChannelSettingRouteData;
           const subscriberOfMe2 = latestData2?.subscriberOfMe;

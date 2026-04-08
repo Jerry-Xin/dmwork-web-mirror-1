@@ -76,6 +76,7 @@ export class WKConfig {
 
 export class WKRemoteConfig {
   revokeSecond: number = 2 * 60; // 撤回时间
+  threadOn: boolean = false; // 子区功能开关，默认关闭
   requestSuccess: boolean = false;
   private retryCount: number = 0;
   private maxRetries: number = 5; // 最大重试次数
@@ -97,6 +98,7 @@ export class WKRemoteConfig {
     return WKApp.apiClient.get("common/appconfig").then((result) => {
       this.requestSuccess = true;
       this.revokeSecond = result["revoke_second"];
+      this.threadOn = !!result["thread_on"];
     });
   }
 }

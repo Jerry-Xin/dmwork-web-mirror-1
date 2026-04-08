@@ -65,12 +65,14 @@ export default forwardRef((props: MentionListProps, ref) => {
   }))
 
   return (
-    <div className="mention-list">
+    <div className="mention-list" role="listbox">
       {props.items.length ? (
         props.items.map((item, index) => (
           <div
             className={`mention-list-item ${index === selectedIndex ? 'is-selected' : ''}`}
             key={item.uid || item.id || index}
+            role="option"
+            aria-selected={index === selectedIndex}
             onClick={() => selectItem(index)}
           >
             <div className="wk-messageinput-iconbox">

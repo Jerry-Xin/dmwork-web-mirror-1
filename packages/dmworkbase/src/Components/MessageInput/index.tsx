@@ -153,6 +153,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     const membersRef = useRef(props.members)
     const sendRef = useRef<(() => void) | null>(null)
     const mentionActiveRef = useRef(false)
+    const botCommandsRef = useRef(props.botCommands)
     // editorHandleKeyDownRef 持有最新的键盘处理函数，通过 useEffect 更新
     const editorHandleKeyDownRef = useRef<((view: any, event: KeyboardEvent) => boolean) | null>(null)
 
@@ -160,6 +161,11 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     useEffect(() => {
         membersRef.current = props.members
     }, [props.members])
+
+    // 更新 botCommandsRef
+    useEffect(() => {
+        botCommandsRef.current = props.botCommands
+    }, [props.botCommands])
 
     // 创建编辑器
     const editor = useEditor({
@@ -229,7 +235,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
             const text = stripInvisibleChars(editor.getText())
 
             // 检查 slash 命令
-            if (props.botCommands && text.startsWith('/') && !text.includes(' ') && !text.includes('\n')) {
+            if (botCommandsRef.current && text.startsWith('/') && !text.includes(' ') && !text.includes('\n')) {
                 const filter = text.slice(1)
                 setSlashMenuVisible(true)
                 setSlashFilter(filter)
@@ -402,7 +408,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
         if (next && editor) {
             setTimeout(() => editor.commands.focus(), 100)
         }
-    }, [expanded, editor, props])
+    }, [expanded, editor, props.onExpandChange])
 
     const { onInputRef, topView, toolbar, botCommands, hasPendingAttachments } = props
     const hasValue = (editor?.getText().length || 0) > 0 || hasPendingAttachments

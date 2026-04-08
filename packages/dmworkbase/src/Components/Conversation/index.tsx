@@ -65,6 +65,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
     contextMenusContext!: ContextMenusContext
     avatarMenusContext!: ContextMenusContext // 点击头像弹出的菜单
     _messageInputContext!: MessageInputContext
+    private _pendingInsertText?: string
     scrollTimer: number | null = null
     updateBrowseToMessageSeqAndReminderDoneing: boolean = false
     private _dragFileCallback?: (file: File) => void
@@ -171,7 +172,13 @@ export class Conversation extends Component<ConversationProps> implements Conver
         this.vm.scrollToBottom(animate || false)
     }
     insertText(text: string): void {
-        this.messageInputContext().insertText(text)
+        const ctx = this.messageInputContext()
+        if (ctx) {
+            ctx.insertText(text)
+        } else {
+            // MessageInput 的 useEffect 尚未执行，延迟重试
+            this._pendingInsertText = text
+        }
     }
     editOn(): boolean {
         return this.vm.editOn
@@ -254,7 +261,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
             if (channelInfo) {
                 name = channelInfo.title
             }
-            this._messageInputContext.addMention(message.fromUID, name)
+            this._messageInputContext?.addMention(message.fromUID, name)
 
         }
         if (handlerType === 2) {
@@ -353,7 +360,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
         return this._cachedSelectedText
     }
 
-    messageInputContext(): MessageInputContext {
+    messageInputContext(): MessageInputContext | undefined {
         return this._messageInputContext
     }
 
@@ -456,7 +463,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
     }
 
     markConversationExtra() {
-        let draft = this.messageInputContext().text()
+        let draft = this.messageInputContext()?.text()
         const conversationLastMessageSeq = this.vm.conversationLastMessageSeq()
         const lastVisiableMessage = this.lastVisiableMessage(null)
         let keepMessageSeq = 0
@@ -1107,6 +1114,11 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                 this.setState({ inputExpanded: expanded })
                             }} onContext={(ctx) => {
                                 this._messageInputContext = ctx
+                                // flush 延迟的 insertText（componentDidMount 时 context 可能还没就绪）
+                                if (this._pendingInsertText) {
+                                    ctx.insertText(this._pendingInsertText)
+                                    this._pendingInsertText = undefined
+                                }
                             }} toolbar={this.chatToolbarUI()} context={this} getChatContext={() => {
                                 const messages = this.vm.messagesOfOrigin
                                 if (!messages || messages.length === 0) return undefined
@@ -1219,7 +1231,7 @@ export class Conversation extends Component<ConversationProps> implements Conver
                         const channel = new Channel(this.vm.selectUID, ChannelTypePerson)
                         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
 
-                        this.messageInputContext().addMention(this.vm.selectUID, channelInfo?.title || "")
+                        this.messageInputContext()?.addMention(this.vm.selectUID, channelInfo?.title || "")
                     }
                 }, {
                     title: "查看用户信息",

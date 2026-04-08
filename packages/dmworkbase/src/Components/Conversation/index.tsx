@@ -30,6 +30,7 @@ import { ImageContent } from "../../Messages/Image";
 import Lightbox from "yet-another-react-lightbox";
 import Download from "yet-another-react-lightbox/plugins/download";
 import AttachmentPreview from "../AttachmentPreview";
+import { buildChatContext, ChatContextChannelInfo } from "./chatContext";
 
 const FoldImage: React.FC<{ src: string }> = ({ src }) => {
     const [open, setOpen] = React.useState(false)
@@ -1120,15 +1121,16 @@ export class Conversation extends Component<ConversationProps> implements Conver
                                     this._pendingInsertText = undefined
                                 }
                             }} toolbar={this.chatToolbarUI()} context={this} getChatContext={() => {
-                                const messages = this.vm.messagesOfOrigin
-                                if (!messages || messages.length === 0) return undefined
-                                const last10 = messages.slice(-10)
-                                const lines = last10.map(m => {
-                                    const senderName = m.from?.title || m.fromUID
-                                    const text = m.content?.text || ''
-                                    return `[${senderName}]: ${text}`
+                                const { channel } = this.props
+                                return buildChatContext({
+                                    messages: this.vm.messagesOfOrigin || [],
+                                    subscribers: this.vm.subscribers,
+                                    channelType: channel.channelType,
+                                    loginUID: WKApp.loginInfo.uid,
+                                    channelInfo: channel.channelType === ChannelTypePerson
+                                        ? WKSDK.shared().channelManager.getChannelInfo(channel) as ChatContextChannelInfo | null
+                                        : undefined,
                                 })
-                                return lines.join('\n')
                             }} onSend={async (text: string, mention?: MentionModel) => {
                                 const content = new MessageText(text)
                                 if (mention) {

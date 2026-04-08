@@ -48,7 +48,7 @@ export function buildChatContext(params: {
                 }
             }
             for (const sub of subscribers) {
-                if (activeUIDs.has(sub.uid)) {
+                if (activeUIDs.has(sub.uid) && !sub.isDeleted) {
                     if (sub.name?.trim()) names.push(sub.name)
                     if (sub.remark?.trim() && sub.remark !== sub.name) {
                         names.push(sub.remark)

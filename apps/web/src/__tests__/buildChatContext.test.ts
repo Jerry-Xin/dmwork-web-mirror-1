@@ -235,6 +235,24 @@ describe("buildChatContext", () => {
             expect(result).toBeUndefined()
         })
 
+        it("should exclude deleted active senders", () => {
+            const subscribers = makeLargeGroup(150)
+            subscribers[5].isDeleted = 1
+            const messages = [
+                makeMessage("u5", "hi", "User5"),
+                makeMessage("u10", "hey", "User10"),
+            ]
+            const result = buildChatContext({
+                messages,
+                subscribers,
+                channelType: ChannelTypeGroup,
+                loginUID: LOGIN_UID,
+            })
+            const nameLine = result!.split("\n")[0]
+            expect(nameLine).not.toContain("User5")
+            expect(nameLine).toContain("User10")
+        })
+
         it("should collect remark for active senders when different from name", () => {
             const subscribers = makeLargeGroup(150)
             subscribers[5].remark = "五号"

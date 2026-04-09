@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from "vitest"
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest"
 
 // Mock APIClient before importing VoiceService
 vi.mock("@dmwork/base/src/Service/APIClient", () => {
@@ -31,7 +31,7 @@ describe("VoiceService", () => {
 
             const result = await VoiceService.shared.getConfig()
 
-            expect(APIClient.shared.get).toHaveBeenCalledWith("/api/voice/config")
+            expect(APIClient.shared.get).toHaveBeenCalledWith("/voice/config")
             expect(result).toEqual(mockConfig)
         })
 
@@ -62,9 +62,9 @@ describe("VoiceService", () => {
 
             expect(APIClient.shared.post).toHaveBeenCalledTimes(1)
             const [url, formData] = vi.mocked(APIClient.shared.post).mock.calls[0]
-            expect(url).toBe("/api/voice/transcribe")
+            expect(url).toBe("/voice/transcribe")
             expect(formData).toBeInstanceOf(FormData)
-            expect((formData as FormData).get("file")).toBeTruthy()
+            expect((formData as FormData).get("audio")).toBeTruthy()
             expect(result).toEqual(mockResult)
         })
 
@@ -96,7 +96,7 @@ describe("VoiceService", () => {
             await VoiceService.shared.transcribe(audioBlob)
 
             const [, formData] = vi.mocked(APIClient.shared.post).mock.calls[0]
-            const file = (formData as FormData).get("file") as File
+            const file = (formData as FormData).get("audio") as File
             expect(file.name).toBe("recording.webm")
         })
 
@@ -107,7 +107,7 @@ describe("VoiceService", () => {
             await VoiceService.shared.transcribe(audioBlob)
 
             const [, formData] = vi.mocked(APIClient.shared.post).mock.calls[0]
-            const file = (formData as FormData).get("file") as File
+            const file = (formData as FormData).get("audio") as File
             expect(file.name).toBe("recording.mp4")
         })
 
@@ -148,6 +148,161 @@ describe("VoiceService", () => {
             const [, formData] = vi.mocked(APIClient.shared.post).mock.calls[0]
             expect((formData as FormData).get("context_text")).toBe("input text")
             expect((formData as FormData).get("chat_context")).toBe("[Alice]: hi")
+        })
+    })
+
+    describe("getVoiceContext", () => {
+        beforeEach(() => {
+            VoiceService.shared.clearVoiceContextCache()
+            vi.useFakeTimers()
+        })
+
+        afterEach(() => {
+            vi.useRealTimers()
+        })
+
+        it("should send GET /voice/context with space_id param", async () => {
+            vi.mocked(APIClient.shared.get).mockResolvedValueOnce({
+                status: 200,
+                has_context: true,
+                context: "纠错词",
+                updated_at: "2026-04-09T13:00:00+08:00",
+            })
+
+            const result = await VoiceService.shared.getVoiceContext("space1")
+
+            expect(APIClient.shared.get).toHaveBeenCalledWith("/voice/context", {
+                param: { space_id: "space1" },
+            })
+            expect(result.has_context).toBe(true)
+            expect(result.context).toBe("纠错词")
+            expect(result.updated_at).toBe("2026-04-09T13:00:00+08:00")
+        })
+
+        it("should return cached result within TTL", async () => {
+            vi.mocked(APIClient.shared.get).mockResolvedValueOnce({
+                status: 200,
+                has_context: true,
+                context: "纠错词",
+                updated_at: "",
+            })
+
+            await VoiceService.shared.getVoiceContext("space1")
+            await VoiceService.shared.getVoiceContext("space1")
+
+            expect(APIClient.shared.get).toHaveBeenCalledTimes(1)
+        })
+
+        it("should re-fetch after cache TTL expires", async () => {
+            vi.mocked(APIClient.shared.get).mockResolvedValue({
+                status: 200,
+                has_context: true,
+                context: "纠错词",
+                updated_at: "",
+            })
+
+            await VoiceService.shared.getVoiceContext("space1")
+            expect(APIClient.shared.get).toHaveBeenCalledTimes(1)
+
+            vi.advanceTimersByTime(5 * 60 * 1000 + 1)
+
+            await VoiceService.shared.getVoiceContext("space1")
+            expect(APIClient.shared.get).toHaveBeenCalledTimes(2)
+        })
+
+        it("should deduplicate concurrent requests for the same spaceId", async () => {
+            let resolveRequest!: (v: any) => void
+            vi.mocked(APIClient.shared.get).mockReturnValueOnce(
+                new Promise((r) => { resolveRequest = r })
+            )
+
+            const p1 = VoiceService.shared.getVoiceContext("space1")
+            const p2 = VoiceService.shared.getVoiceContext("space1")
+
+            resolveRequest({ status: 200, has_context: false, context: "", updated_at: "" })
+
+            const [r1, r2] = await Promise.all([p1, p2])
+            expect(r1).toEqual(r2)
+            expect(APIClient.shared.get).toHaveBeenCalledTimes(1)
+        })
+
+        it("should re-fetch after clearVoiceContextCache(spaceId)", async () => {
+            vi.mocked(APIClient.shared.get).mockResolvedValue({
+                status: 200,
+                has_context: false,
+                context: "",
+                updated_at: "",
+            })
+
+            await VoiceService.shared.getVoiceContext("space1")
+            VoiceService.shared.clearVoiceContextCache("space1")
+            await VoiceService.shared.getVoiceContext("space1")
+
+            expect(APIClient.shared.get).toHaveBeenCalledTimes(2)
+        })
+
+        it("should clear all caches when clearVoiceContextCache() is called without args", async () => {
+            vi.mocked(APIClient.shared.get).mockResolvedValue({
+                status: 200,
+                has_context: false,
+                context: "",
+                updated_at: "",
+            })
+
+            await VoiceService.shared.getVoiceContext("space1")
+            await VoiceService.shared.getVoiceContext("space2")
+            VoiceService.shared.clearVoiceContextCache()
+            await VoiceService.shared.getVoiceContext("space1")
+            await VoiceService.shared.getVoiceContext("space2")
+
+            expect(APIClient.shared.get).toHaveBeenCalledTimes(4)
+        })
+
+        it("should not cache on request failure", async () => {
+            vi.mocked(APIClient.shared.get).mockRejectedValueOnce(new Error("network error"))
+            await expect(VoiceService.shared.getVoiceContext("space1")).rejects.toThrow()
+
+            vi.mocked(APIClient.shared.get).mockResolvedValueOnce({
+                status: 200,
+                has_context: false,
+                context: "",
+                updated_at: "",
+            })
+            const result = await VoiceService.shared.getVoiceContext("space1")
+            expect(result.has_context).toBe(false)
+        })
+
+        it("should timeout and reject after 3 seconds", async () => {
+            vi.mocked(APIClient.shared.get).mockReturnValueOnce(new Promise(() => {}))
+
+            const promise = VoiceService.shared.getVoiceContext("space1")
+
+            vi.advanceTimersByTime(3000)
+
+            await expect(promise).rejects.toThrow("voice context request timeout")
+        })
+
+        it("should maintain independent caches per spaceId", async () => {
+            vi.mocked(APIClient.shared.get)
+                .mockResolvedValueOnce({
+                    status: 200,
+                    has_context: true,
+                    context: "Space A 纠错词",
+                    updated_at: "",
+                })
+                .mockResolvedValueOnce({
+                    status: 200,
+                    has_context: true,
+                    context: "Space B 纠错词",
+                    updated_at: "",
+                })
+
+            const r1 = await VoiceService.shared.getVoiceContext("spaceA")
+            const r2 = await VoiceService.shared.getVoiceContext("spaceB")
+
+            expect(r1.context).toBe("Space A 纠错词")
+            expect(r2.context).toBe("Space B 纠错词")
+            expect(APIClient.shared.get).toHaveBeenCalledTimes(2)
         })
     })
 })

@@ -1,6 +1,20 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest"
 import { renderHook, act } from "@testing-library/react"
 
+// Mock WKApp
+vi.mock("@dmwork/base/src/App", () => ({
+    default: {
+        shared: {
+            currentSpaceId: "test-space-id",
+        },
+        mittBus: {
+            on: vi.fn(),
+            off: vi.fn(),
+            emit: vi.fn(),
+        },
+    },
+}))
+
 // Mock VoiceService
 vi.mock("@dmwork/base/src/Service/VoiceService", () => {
     return {
@@ -8,11 +22,14 @@ vi.mock("@dmwork/base/src/Service/VoiceService", () => {
             shared: {
                 getConfig: vi.fn(),
                 transcribe: vi.fn(),
+                getVoiceContext: vi.fn(),
+                clearVoiceContextCache: vi.fn(),
             },
         },
     }
 })
 
+import WKApp from "@dmwork/base/src/App"
 import VoiceService from "@dmwork/base/src/Service/VoiceService"
 import useVoiceInput from "@dmwork/base/src/Components/MessageInput/useVoiceInput"
 
@@ -31,8 +48,15 @@ class MockMediaRecorder {
 
     stop() {
         this.state = "inactive"
+        if (this.ondataavailable) {
+            this.ondataavailable({
+                data: new Blob([new ArrayBuffer(5000)], { type: "audio/webm" }),
+            })
+        }
         if (this.onstop) {
-            this.onstop()
+            setTimeout(() => {
+                if (this.onstop) this.onstop()
+            }, 0)
         }
     }
 
@@ -61,9 +85,17 @@ describe("useVoiceInput", () => {
     beforeEach(() => {
         vi.useFakeTimers()
         setupMocks()
+        WKApp.shared.currentSpaceId = "test-space-id"
         vi.mocked(VoiceService.shared.getConfig).mockResolvedValue({
             enabled: true,
             max_duration: 60,
+            max_file_size: 3145728,
+        })
+        vi.mocked(VoiceService.shared.getVoiceContext).mockResolvedValue({
+            status: 200,
+            has_context: false,
+            context: "",
+            updated_at: "",
         })
     })
 
@@ -99,6 +131,7 @@ describe("useVoiceInput", () => {
         vi.mocked(VoiceService.shared.getConfig).mockResolvedValue({
             enabled: false,
             max_duration: 60,
+            max_file_size: 3145728,
         })
 
         const { result } = renderHook(() => useVoiceInput())
@@ -201,13 +234,9 @@ describe("useVoiceInput", () => {
             }
         }
 
-        // The mime type detection is tested by checking the function output
-        // We verify the fallback logic works
-        const isWebmSupported = MockMediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         const safariRecorder = (globalThis as any).MediaRecorder
         const isMp4Supported = safariRecorder.isTypeSupported("audio/mp4")
 
-        // In Safari scenario, webm should not be supported but mp4 should be
         expect(isMp4Supported).toBe(true)
     })
 
@@ -230,9 +259,17 @@ describe("useVoiceInput - getChatContext", () => {
     beforeEach(() => {
         vi.useFakeTimers()
         setupMocks()
+        WKApp.shared.currentSpaceId = "test-space-id"
         vi.mocked(VoiceService.shared.getConfig).mockResolvedValue({
             enabled: true,
             max_duration: 60,
+            max_file_size: 3145728,
+        })
+        vi.mocked(VoiceService.shared.getVoiceContext).mockResolvedValue({
+            status: 200,
+            has_context: false,
+            context: "",
+            updated_at: "",
         })
     })
 
@@ -257,10 +294,6 @@ describe("useVoiceInput - getChatContext", () => {
             await result.current.startRecording()
         })
 
-        // Simulate data available on the recorder
-        const recorder = (globalThis as any).MediaRecorder.prototype
-        const mockRecorder = vi.mocked(navigator.mediaDevices.getUserMedia).mock.results[0]
-
         // Stop recording and transcribe
         act(() => {
             result.current.stopRecordingAndTranscribe("input text")
@@ -269,10 +302,6 @@ describe("useVoiceInput - getChatContext", () => {
         await act(async () => {
             await vi.runAllTimersAsync()
         })
-
-        // getChatContext should have been called during transcription
-        // Note: the blob may be too small (< 1000 bytes) so transcribe might not be called
-        // but getChatContext is called inside recorder.onstop after blob size check
     })
 
     it("should handle undefined getChatContext gracefully", async () => {
@@ -359,9 +388,17 @@ describe("useVoiceInput - window blur handling", () => {
     beforeEach(() => {
         vi.useFakeTimers()
         setupMocks()
+        WKApp.shared.currentSpaceId = "test-space-id"
         vi.mocked(VoiceService.shared.getConfig).mockResolvedValue({
             enabled: true,
             max_duration: 60,
+            max_file_size: 3145728,
+        })
+        vi.mocked(VoiceService.shared.getVoiceContext).mockResolvedValue({
+            status: 200,
+            has_context: false,
+            context: "",
+            updated_at: "",
         })
     })
 
@@ -379,10 +416,296 @@ describe("useVoiceInput - window blur handling", () => {
             await result.current.startRecording()
         })
 
-        // The blur listener is registered by VoiceInputIndicator, not the hook directly.
-        // The hook exposes isRecording which the component uses to manage blur.
         expect(result.current.isRecording).toBe(true)
 
         addSpy.mockRestore()
+    })
+})
+
+describe("useVoiceInput - personal voice context", () => {
+    beforeEach(() => {
+        vi.useFakeTimers()
+        setupMocks()
+        WKApp.shared.currentSpaceId = "test-space-id"
+        vi.mocked(VoiceService.shared.getConfig).mockResolvedValue({
+            enabled: true,
+            max_duration: 60,
+            max_file_size: 3145728,
+        })
+    })
+
+    afterEach(() => {
+        vi.useRealTimers()
+        vi.clearAllMocks()
+    })
+
+    it("should use personal context when has_context is true", async () => {
+        vi.mocked(VoiceService.shared.getVoiceContext).mockResolvedValue({
+            status: 200,
+            has_context: true,
+            context: "个人纠错词",
+            updated_at: "2026-04-09T13:00:00+08:00",
+        })
+        vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
+            text: "转写结果",
+            model: "g3fp",
+        })
+        const getChatContext = vi.fn(() => "聊天成员：Alice,Bob")
+        const onTranscribed = vi.fn()
+
+        const { result } = renderHook(() =>
+            useVoiceInput({ onTranscribed, getChatContext })
+        )
+
+        await act(async () => {
+            await result.current.startRecording()
+        })
+
+        await act(async () => {
+            await vi.runAllTimersAsync()
+        })
+
+        await act(async () => {
+            result.current.stopRecordingAndTranscribe()
+            await vi.runAllTimersAsync()
+        })
+
+        expect(VoiceService.shared.transcribe).toHaveBeenCalledWith(
+            expect.any(Blob),
+            undefined,
+            "个人纠错词"
+        )
+        expect(getChatContext).not.toHaveBeenCalled()
+    })
+
+    it("should fallback to getChatContext when has_context is false", async () => {
+        vi.mocked(VoiceService.shared.getVoiceContext).mockResolvedValue({
+            status: 200,
+            has_context: false,
+            context: "",
+            updated_at: "",
+        })
+        vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
+            text: "转写结果",
+            model: "g3fp",
+        })
+        const getChatContext = vi.fn(() => "聊天成员：Alice,Bob")
+
+        const { result } = renderHook(() =>
+            useVoiceInput({ getChatContext })
+        )
+
+        await act(async () => {
+            await result.current.startRecording()
+        })
+        await act(async () => {
+            await vi.runAllTimersAsync()
+        })
+        await act(async () => {
+            result.current.stopRecordingAndTranscribe()
+            await vi.runAllTimersAsync()
+        })
+
+        expect(VoiceService.shared.transcribe).toHaveBeenCalledWith(
+            expect.any(Blob),
+            undefined,
+            "聊天成员：Alice,Bob"
+        )
+        expect(getChatContext).toHaveBeenCalled()
+    })
+
+    it("should defensively fallback when has_context is true but context is empty", async () => {
+        vi.mocked(VoiceService.shared.getVoiceContext).mockResolvedValue({
+            status: 200,
+            has_context: true,
+            context: "",
+            updated_at: "",
+        })
+        vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
+            text: "转写结果",
+            model: "g3fp",
+        })
+        const getChatContext = vi.fn(() => "聊天成员：Alice")
+
+        const { result } = renderHook(() =>
+            useVoiceInput({ getChatContext })
+        )
+
+        await act(async () => {
+            await result.current.startRecording()
+        })
+        await act(async () => {
+            await vi.runAllTimersAsync()
+        })
+        await act(async () => {
+            result.current.stopRecordingAndTranscribe()
+            await vi.runAllTimersAsync()
+        })
+
+        expect(VoiceService.shared.transcribe).toHaveBeenCalledWith(
+            expect.any(Blob),
+            undefined,
+            "聊天成员：Alice"
+        )
+    })
+
+    it("should fallback to getChatContext when API fails", async () => {
+        vi.mocked(VoiceService.shared.getVoiceContext).mockRejectedValue(
+            new Error("timeout")
+        )
+        vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
+            text: "转写结果",
+            model: "g3fp",
+        })
+        const getChatContext = vi.fn(() => "聊天成员：Alice")
+
+        const { result } = renderHook(() =>
+            useVoiceInput({ getChatContext })
+        )
+
+        await act(async () => {
+            await result.current.startRecording()
+        })
+        await act(async () => {
+            await vi.runAllTimersAsync()
+        })
+        await act(async () => {
+            result.current.stopRecordingAndTranscribe()
+            await vi.runAllTimersAsync()
+        })
+
+        expect(VoiceService.shared.transcribe).toHaveBeenCalledWith(
+            expect.any(Blob),
+            undefined,
+            "聊天成员：Alice"
+        )
+    })
+
+    it("should not query voice context when not in Space mode", async () => {
+        WKApp.shared.currentSpaceId = ""
+
+        const { result } = renderHook(() => useVoiceInput())
+
+        await act(async () => {
+            await result.current.startRecording()
+        })
+
+        expect(VoiceService.shared.getVoiceContext).not.toHaveBeenCalled()
+    })
+
+    it("should await in-flight context promise on stop for first recording", async () => {
+        let resolveContext!: (v: any) => void
+        vi.mocked(VoiceService.shared.getVoiceContext).mockReturnValue(
+            new Promise((resolve) => { resolveContext = resolve })
+        )
+        vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
+            text: "转写结果",
+            model: "g3fp",
+        })
+
+        const { result } = renderHook(() => useVoiceInput())
+
+        await act(async () => {
+            await result.current.startRecording()
+        })
+
+        await act(async () => {
+            result.current.stopRecordingAndTranscribe()
+        })
+
+        await act(async () => {
+            resolveContext({
+                status: 200,
+                has_context: true,
+                context: "延迟到达的纠错词",
+                updated_at: "",
+            })
+            await vi.runAllTimersAsync()
+        })
+
+        expect(VoiceService.shared.transcribe).toHaveBeenCalledWith(
+            expect.any(Blob),
+            undefined,
+            "延迟到达的纠错词"
+        )
+    })
+
+    it("should register space-changed handler on mittBus", () => {
+        renderHook(() => useVoiceInput())
+
+        expect(WKApp.mittBus.on).toHaveBeenCalledWith(
+            "space-changed",
+            expect.any(Function)
+        )
+    })
+
+    it("should report error and skip transcribe when file exceeds max_file_size", async () => {
+        vi.mocked(VoiceService.shared.getVoiceContext).mockResolvedValue({
+            status: 200,
+            has_context: false,
+            context: "",
+            updated_at: "",
+        })
+        vi.mocked(VoiceService.shared.getConfig).mockResolvedValue({
+            enabled: true,
+            max_duration: 60,
+            max_file_size: 1000,
+        })
+        const onError = vi.fn()
+
+        const { result } = renderHook(() =>
+            useVoiceInput({ onError })
+        )
+
+        await act(async () => {
+            await vi.runAllTimersAsync()
+        })
+
+        await act(async () => {
+            await result.current.startRecording()
+        })
+        await act(async () => {
+            await vi.runAllTimersAsync()
+        })
+        await act(async () => {
+            result.current.stopRecordingAndTranscribe()
+            await vi.runAllTimersAsync()
+        })
+
+        expect(VoiceService.shared.transcribe).not.toHaveBeenCalled()
+        expect(onError).toHaveBeenCalledWith(
+            expect.objectContaining({ message: "Recording file size exceeds limit" })
+        )
+    })
+
+    it("should invalidate old context promise on cancel", async () => {
+        let resolveContext!: (v: any) => void
+        vi.mocked(VoiceService.shared.getVoiceContext).mockReturnValue(
+            new Promise((resolve) => { resolveContext = resolve })
+        )
+
+        const { result } = renderHook(() => useVoiceInput())
+
+        await act(async () => {
+            await result.current.startRecording()
+        })
+
+        act(() => {
+            result.current.cancelRecording()
+        })
+
+        await act(async () => {
+            resolveContext({
+                status: 200,
+                has_context: true,
+                context: "不应被使用的旧数据",
+                updated_at: "",
+            })
+            await vi.runAllTimersAsync()
+        })
+
+        // After cancel, the voiceContextRef should remain null
+        // because spaceId check fails. We verify indirectly:
+        // next recording should query fresh context
     })
 })

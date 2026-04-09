@@ -37,6 +37,8 @@ export interface WKModalProps {
     maskClosable?: boolean
     /** 是否显示遮罩，默认 true */
     mask?: boolean
+    /** 按 Esc 是否关闭，默认 true */
+    closeOnEsc?: boolean
   }
   className?: string
   children?: React.ReactNode
@@ -92,6 +94,7 @@ const WKModal: React.FC<WKModalProps> = ({
   const closable = options?.closable ?? true
   const maskClosable = options?.maskClosable ?? true
   const mask = options?.mask ?? true
+  const closeOnEsc = options?.closeOnEsc ?? true
   const width = SIZE_MAP[size as WKModalSize]
   const resolvedFooter = resolveFooter(footer, footerConfig, onCancel)
 
@@ -107,6 +110,7 @@ const WKModal: React.FC<WKModalProps> = ({
       closable={closable}
       maskClosable={maskClosable}
       mask={mask}
+      closeOnEsc={closeOnEsc}
       centered
       className={cls}
     >

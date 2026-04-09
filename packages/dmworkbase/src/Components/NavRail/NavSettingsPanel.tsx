@@ -100,7 +100,7 @@ export default class NavSettingsPanel extends Component<NavSettingsPanelProps> {
                 <WKModal
                     title="检测更新"
                     visible={showAppVersion}
-                    options={{ maskClosable: false }}
+                    options={{ maskClosable: false, closeOnEsc: false }}
                     onCancel={() => { onSetShowAppVersion(false); onNotifyListener(); }}
                     footer={showAppUpdateOperation ? (
                         <>

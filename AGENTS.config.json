@@ -1,0 +1,12 @@
+{
+  "skill": "ui-data-separation",
+  "ui_dir": "packages/dmworkbase/src/ui/",
+  "bridge_dir": "packages/dmworkbase/src/bridge/",
+  "types_file": "packages/dmworkbase/src/bridge/types.ts",
+  "token_file": "packages/dmworkbase/src/theme/semantic.css",
+  "commands": {
+    "lint": "pnpm --filter @dmwork/base lint src/ui/",
+    "test": "pnpm test:storybook",
+    "typecheck": "pnpm --filter @dmwork/base tsc --noEmit"
+  }
+}

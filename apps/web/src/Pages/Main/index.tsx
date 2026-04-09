@@ -1,11 +1,11 @@
-import { WKApp, WKLayout, Provider } from "@dmwork/base";
+import { WKApp, WKLayout, Provider, WKModal } from "@dmwork/base";
 import React, { Component } from "react";
 import "./index.css"
 import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
 import { Space, SpaceService } from "@dmwork/base";
 import { SpaceCreate, JoinSpaceModalConnected, NavRail, MeInfo } from "@dmwork/base";
-import { Toast, Modal } from "@douyinfe/semi-ui";
+import { Toast } from "@douyinfe/semi-ui";
 
 // ─── MainContentLeft：纯路由渲染区（Sidebar + 内容） ───────────────────────
 
@@ -199,17 +199,14 @@ export class MainPage extends Component<{}, MainPageState> {
                         />
 
                         {/* MeInfo Modal */}
-                        <Modal
-                            width={400}
+                        <WKModal
                             className="wk-main-sider-modal wk-main-sider-meinfo"
-                            footer={null}
-                            closeIcon={<div />}
                             visible={showMeInfo}
-                            mask={false}
+                            options={{ mask: false, closable: false }}
                             onCancel={() => this.setState({ showMeInfo: false })}
                         >
                             <MeInfo onClose={() => this.setState({ showMeInfo: false })} />
-                        </Modal>
+                        </WKModal>
 
                         <SpaceCreate
                             visible={showSpaceCreate}

@@ -25,22 +25,10 @@ const config: StorybookConfig = {
   viteFinal: (config) =>
     mergeConfig(config, {
       optimizeDeps: {
-        include: [
-          '@douyinfe/semi-ui/lib/es/checkbox',
-          '@lottiefiles/lottie-player/dist/tgs-player',
-          '@tanstack/react-virtual',
-          '@tauri-apps/api',
-          '@tauri-apps/api/event',
-          '@tauri-apps/api/process',
-          '@tauri-apps/api/updater',
-          'benz-amr-recorder',
-          'bignumber.js',
-          'howler',
-          'qrcode.react',
-          'react-avatar-editor',
-          'react-dom',
-          'web-vitals',
-          'zxcvbn',
+        // 扫描 workspace 所有包的源码，自动发现并预编译依赖，无需手动维护列表
+        entries: [
+          path.resolve(__dirname, '../../../packages/*/src/**/*.{ts,tsx}'),
+          path.resolve(__dirname, '../src/**/*.{ts,tsx}'),
         ],
       },
       css: {

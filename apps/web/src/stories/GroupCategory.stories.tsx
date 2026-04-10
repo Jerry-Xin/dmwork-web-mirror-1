@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import React, { useState } from 'react'
+import { Modal, Button, Input } from '@douyinfe/semi-ui'
 
 import ViewToggle from '../../../../packages/dmworkbase/src/Components/ViewToggle'
 import CategoryHeader from '../../../../packages/dmworkbase/src/Components/CategoryHeader'
@@ -12,6 +13,56 @@ import UngroupedSection from '../../../../packages/dmworkbase/src/Components/Ung
 import CategoryEmptyState from '../../../../packages/dmworkbase/src/Components/CategoryEmptyState'
 import CategoryManagePanel from '../../../../packages/dmworkbase/src/Components/CategoryManagePanel'
 import ConversationListWithCategory from '../../../../packages/dmworkbase/src/Components/ConversationListWithCategory'
+
+// ── CreateCategoryModal 静态 Demo（直接展示内部状态，不依赖交互）──
+function CreateCategoryModalStaticDemo({
+  initialValue = '',
+  initialLoading = false,
+  initialError = null,
+  initialDuplicate = false,
+}: {
+  initialValue?: string
+  initialLoading?: boolean
+  initialError?: string | null
+  initialDuplicate?: boolean
+}) {
+  return (
+    <div style={{ padding: 16 }}>
+      <Modal
+        title="新建分组"
+        visible
+        onCancel={() => {}}
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <Button>取消</Button>
+            <Button
+              type="primary"
+              disabled={!initialValue || initialDuplicate}
+              loading={initialLoading}
+              style={{ opacity: (!initialValue || initialDuplicate) && !initialLoading ? 0.5 : 1 }}
+            >
+              确认
+            </Button>
+          </div>
+        }
+      >
+        <div style={{ position: 'relative' }}>
+          <Input
+            value={initialValue}
+            onChange={() => {}}
+            placeholder="例如：工作、学习、兴趣、项目名"
+            validateStatus={initialDuplicate || initialError ? 'error' : undefined}
+          />
+          {(initialDuplicate || initialError) && (
+            <div style={{ marginTop: 4, fontSize: 11, color: 'var(--wk-color-error)' }}>
+              {initialDuplicate ? '该分组名已存在' : initialError}
+            </div>
+          )}
+        </div>
+      </Modal>
+    </div>
+  )
+}
 
 // ── Mock 会话占位 ──
 const MockConvItem = ({ name, unread }: { name: string; unread?: number }) => (
@@ -176,56 +227,23 @@ export const CreateCategoryModalDefault: StoryObj = {
 
 export const CreateCategoryModalDuplicate: StoryObj = {
   name: 'CreateCategoryModal / 重复名提示',
-  render: () => {
-    const [visible, setVisible] = useState(true)
-    return (
-      <div>
-        <button onClick={() => setVisible(true)}>打开弹窗</button>
-        <CreateCategoryModal
-          visible={visible}
-          onConfirm={async () => setVisible(false)}
-          onCancel={() => setVisible(false)}
-          existingNames={['工作', '生活', '学习']}
-        />
-      </div>
-    )
-  },
+  render: () => (
+    <CreateCategoryModalStaticDemo initialValue="工作" initialDuplicate />
+  ),
 }
 
 export const CreateCategoryModalLoading: StoryObj = {
   name: 'CreateCategoryModal / 加载中',
-  render: () => {
-    const [visible, setVisible] = useState(true)
-    return (
-      <div>
-        <button onClick={() => setVisible(true)}>打开弹窗</button>
-        <CreateCategoryModal
-          visible={visible}
-          onConfirm={() => new Promise(() => {})}  // never resolves = loading
-          onCancel={() => setVisible(false)}
-          existingNames={[]}
-        />
-      </div>
-    )
-  },
+  render: () => (
+    <CreateCategoryModalStaticDemo initialValue="工作" initialLoading />
+  ),
 }
 
 export const CreateCategoryModalFail: StoryObj = {
   name: 'CreateCategoryModal / 失败态',
-  render: () => {
-    const [visible, setVisible] = useState(true)
-    return (
-      <div>
-        <button onClick={() => setVisible(true)}>打开弹窗</button>
-        <CreateCategoryModal
-          visible={visible}
-          onConfirm={async () => { throw new Error('创建失败') }}
-          onCancel={() => setVisible(false)}
-          existingNames={[]}
-        />
-      </div>
-    )
-  },
+  render: () => (
+    <CreateCategoryModalStaticDemo initialValue="工作" initialError="创建失败，请重试" />
+  ),
 }
 
 // ══════════════════════════════════════════════
@@ -253,21 +271,23 @@ export const DeleteCategoryModalDefault: StoryObj = {
 
 export const DeleteCategoryModalLoading: StoryObj = {
   name: 'DeleteCategoryModal / 加载中',
-  render: () => {
-    const [visible, setVisible] = useState(true)
-    return (
-      <div>
-        <button onClick={() => setVisible(true)}>打开弹窗</button>
-        <DeleteCategoryModal
-          visible={visible}
-          categoryName="项目 A"
-          groupCount={1}
-          onConfirm={() => new Promise(() => {})}
-          onCancel={() => setVisible(false)}
-        />
-      </div>
-    )
-  },
+  render: () => (
+    <Modal
+      title="删除分组「项目 A」？"
+      visible
+      onCancel={() => {}}
+      footer={
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Button>取消</Button>
+          <Button type="danger" loading>确认删除</Button>
+        </div>
+      }
+    >
+      <p style={{ margin: 0, color: 'var(--wk-text-secondary)', fontSize: 'var(--wk-text-size-base)', lineHeight: 1.6 }}>
+        删除后，该分组下的 <strong>1</strong> 个群聊将移到「未分组」中。群聊本身不会被删除。
+      </p>
+    </Modal>
+  ),
 }
 
 // ══════════════════════════════════════════════
@@ -427,22 +447,44 @@ export const CategoryManagePanelDefault: StoryObj = {
 
 export const CategoryManagePanelRenameFail: StoryObj = {
   name: 'CategoryManagePanel / 重命名保存失败态',
-  render: () => {
-    const [visible, setVisible] = useState(true)
-    return (
-      <div>
-        <button onClick={() => setVisible(true)}>打开管理面板</button>
-        <CategoryManagePanel
-          visible={visible}
-          categories={MOCK_CATEGORIES}
-          onClose={() => setVisible(false)}
-          onRename={async () => { throw new Error('保存失败') }}
-          onDelete={(id) => console.log('delete', id)}
-          onReorder={(ids) => console.log('reorder', ids)}
-        />
+  render: () => (
+    <Modal title="管理分组" visible onCancel={() => {}} footer={null} width={400}>
+      <div style={{ padding: '8px 0' }}>
+        {/* 第一项：重命名失败态（静态展示） */}
+        <div style={{ display: 'flex', alignItems: 'center', height: 48, padding: '0 16px', gap: 10, background: 'var(--wk-bg-hover)', borderRadius: 6, position: 'relative' }}>
+          <span style={{ color: 'var(--wk-text-tertiary)', fontSize: 16, cursor: 'grab' }}>⠿</span>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input
+              defaultValue="工作（修改中）"
+              style={{
+                flex: 1, height: 28, padding: '0 8px',
+                border: '1px solid var(--wk-color-error)',
+                borderRadius: 6, fontSize: 13,
+                fontFamily: 'var(--wk-font-sans)',
+                color: 'var(--wk-text-primary)',
+                background: 'var(--wk-bg-surface)',
+                outline: 'none',
+              }}
+              readOnly
+            />
+            <div style={{ display: 'flex', gap: 2 }}>
+              <button style={{ width: 24, height: 24, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 12, color: 'var(--wk-text-secondary)' }}>✓</button>
+              <button style={{ width: 24, height: 24, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 12, color: 'var(--wk-text-secondary)' }}>✗</button>
+            </div>
+          </div>
+          <span style={{ position: 'absolute', bottom: 4, left: 56, fontSize: 11, color: 'var(--wk-color-error)' }}>保存失败</span>
+        </div>
+        {/* 其余项正常态 */}
+        {MOCK_CATEGORIES.slice(1).map(item => (
+          <div key={item.id} style={{ display: 'flex', alignItems: 'center', height: 48, padding: '0 16px', gap: 10 }}>
+            <span style={{ color: 'var(--wk-text-tertiary)', fontSize: 16 }}>⠿</span>
+            <span style={{ flex: 1, fontSize: 13, color: 'var(--wk-text-primary)' }}>{item.name}</span>
+            <span style={{ fontSize: 12, color: 'var(--wk-text-tertiary)' }}>{item.groupCount} 个群聊</span>
+          </div>
+        ))}
       </div>
-    )
-  },
+    </Modal>
+  ),
 }
 
 // ══════════════════════════════════════════════

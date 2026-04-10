@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import WKApp from '../App'
 import { UICategoryModel, CategoryViewMode } from './types'
 
+/** 后端原始分组字段，仅供 useCategory 内部使用 */
+interface RawCategoryItem {
+  category_id: string
+  name: string
+  sort?: number
+}
+
 const VM_KEY = (spaceId: string) => `wk:cat:vm:${spaceId}`
 const CI_KEY = (spaceId: string) => `wk:cat:ci:${spaceId}`
 
@@ -25,7 +32,7 @@ export function useCategory(spaceId: string) {
     setLoading(true)
     try {
       const res = await WKApp.apiClient.get(`/v1/spaces/${spaceId}/categories`)
-      const list: UICategoryModel[] = (res.data?.list || []).map((item: any) => ({
+      const list: UICategoryModel[] = (res.data?.list || []).map((item: RawCategoryItem) => ({
         id: item.category_id,
         name: item.name,
         sort: item.sort ?? 0,

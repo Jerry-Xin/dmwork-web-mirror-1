@@ -1,0 +1,27 @@
+.wk-category-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.wk-category-section__content {
+    overflow: hidden;
+    transition: max-height 0.2s ease;
+}
+
+.wk-category-section__content--collapsed {
+    max-height: 0;
+}
+
+.wk-category-section__content--expanded {
+    max-height: 9999px;
+}
+
+.wk-category-section__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: var(--wk-text-size-xs);
+    color: var(--wk-text-tertiary);
+    font-style: italic;
+}

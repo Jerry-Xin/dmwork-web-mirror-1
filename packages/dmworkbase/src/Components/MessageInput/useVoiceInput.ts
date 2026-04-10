@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import VoiceService, { VoiceConfig } from "../../Service/VoiceService"
+import VoiceService, { VoiceConfig, VoiceContextResponse } from "../../Service/VoiceService"
+import WKApp from "../../App"
 
 export interface UseVoiceInputOptions {
     maxDuration?: number
@@ -42,15 +43,38 @@ export default function useVoiceInput(options: UseVoiceInputOptions = {}): UseVo
     getChatContextRef.current = getChatContext
     const stopFnRef = useRef<(contextText?: string) => void>(() => {})
 
+    const voiceContextRef = useRef<VoiceContextResponse | null>(null)
+    const voiceContextPromiseRef = useRef<Promise<VoiceContextResponse | null> | null>(null)
+    const voiceContextSpaceIdRef = useRef<string>("")
+    const maxFileSizeRef = useRef<number>(0)
+
     // Fetch voice config on mount
     useEffect(() => {
         VoiceService.shared.getConfig()
             .then((config: VoiceConfig) => {
                 setIsVoiceEnabled(config.enabled)
+                maxFileSizeRef.current = config.max_file_size || 0
             })
             .catch(() => {
                 setIsVoiceEnabled(false)
             })
+    }, [])
+
+    // Listen for space changes to clear stale cache
+    useEffect(() => {
+        const handler = () => {
+            const prevSpaceId = voiceContextSpaceIdRef.current
+            if (prevSpaceId) {
+                VoiceService.shared.clearVoiceContextCache(prevSpaceId)
+            }
+            voiceContextRef.current = null
+            voiceContextPromiseRef.current = null
+            voiceContextSpaceIdRef.current = ""
+        }
+        WKApp.mittBus.on('space-changed', handler)
+        return () => {
+            WKApp.mittBus.off('space-changed', handler)
+        }
     }, [])
 
     const cleanup = useCallback(() => {
@@ -69,6 +93,27 @@ export default function useVoiceInput(options: UseVoiceInputOptions = {}): UseVo
 
     const startRecording = useCallback(async () => {
         if (isRecording) return
+
+        voiceContextRef.current = null
+
+        const spaceId = WKApp.shared.currentSpaceId
+        voiceContextSpaceIdRef.current = spaceId
+
+        if (spaceId) {
+            const promise = VoiceService.shared.getVoiceContext(spaceId)
+                .then((resp) => {
+                    if (voiceContextSpaceIdRef.current === spaceId) {
+                        voiceContextRef.current = resp
+                    }
+                    return resp
+                })
+                .catch(() => {
+                    return null
+                })
+            voiceContextPromiseRef.current = promise
+        } else {
+            voiceContextPromiseRef.current = null
+        }
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -126,9 +171,26 @@ export default function useVoiceInput(options: UseVoiceInputOptions = {}): UseVo
                 return
             }
 
+            if (maxFileSizeRef.current > 0 && blob.size > maxFileSizeRef.current) {
+                if (onError) onError(new Error("Recording file size exceeds limit"))
+                return
+            }
+
             setIsTranscribing(true)
             try {
-                const chatContext = getChatContextRef.current?.()
+                if (voiceContextPromiseRef.current) {
+                    await voiceContextPromiseRef.current
+                    voiceContextPromiseRef.current = null
+                }
+
+                let chatContext: string | undefined
+                const voiceCtx = voiceContextRef.current
+                if (voiceCtx && voiceCtx.has_context === true && voiceCtx.context) {
+                    chatContext = voiceCtx.context
+                } else {
+                    chatContext = getChatContextRef.current?.()
+                }
+
                 const result = await VoiceService.shared.transcribe(blob, contextTextRef.current, chatContext)
                 if (result.text && onTranscribed) {
                     // If context_text was provided, LLM returns complete modified text - should replace
@@ -157,6 +219,9 @@ export default function useVoiceInput(options: UseVoiceInputOptions = {}): UseVo
         }
         cleanup()
         setIsRecording(false)
+        voiceContextRef.current = null
+        voiceContextPromiseRef.current = null
+        voiceContextSpaceIdRef.current = ""
     }, [cleanup])
 
     // Cleanup on unmount

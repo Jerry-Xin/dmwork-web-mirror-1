@@ -2,6 +2,7 @@ import WKSDK from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { Channel, ChannelInfo, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
 import { ChannelTypeCommunityTopic } from "../../Service/Const";
+import { parseThreadChannelId } from "../../Service/Thread";
 import React, { Component } from "react";
 import { Modal } from "@douyinfe/semi-ui";
 import { ConversationWrap, MessageWrap } from "../../Service/Model";
@@ -30,6 +31,8 @@ export interface ConversationListProps {
     filter?: ConvFilter
     onClick?: (conversation: ConversationWrap) => void
     onClearMessages?: (channel: Channel) => void
+    /** 点击 "+N 个子区" 时的回调，传入父群组 ID */
+    onThreadOverflowClick?: (groupNo: string) => void
 }
 
 export interface ConversationListState {
@@ -172,23 +175,24 @@ export default class ConversationList extends Component<ConversationListProps, C
         const { select, onClick } = this.props
         const typing = TypingManager.shared.getTyping(conversationWrap.channel)
         const selected = select && select.isEqual(conversationWrap.channel)
+        const isThread = conversationWrap.channel.channelType === ChannelTypeCommunityTopic
         return <div key={conversationWrap.channel.getChannelKey()} onClick={() => {
             if (onClick) {
                 onClick(conversationWrap)
             }
-        }} className={classNames("wk-conversationlist-item", selected ? "wk-conversationlist-item-selected" : undefined, channelInfo?.top ? "wk-conversationlist-item-top" : undefined, conversationWrap.unread > 0 ? "wk-conversationlist-item-unread" : undefined)} onContextMenu={(e) => {
+        }} className={classNames("wk-conversationlist-item", selected ? "wk-conversationlist-item-selected" : undefined, channelInfo?.top ? "wk-conversationlist-item-top" : undefined, conversationWrap.unread > 0 ? "wk-conversationlist-item-unread" : undefined, isThread ? "wk-conversationlist-item-thread" : undefined)} onContextMenu={(e) => {
             this._handleContextMenu(conversationWrap, e)
         }}>
             <div className="wk-conversationlist-item-content">
-                <div className="wk-conversationlist-item-left">
-                    <div className="wk-conversationlist-item-avatar-box">
-                        <WKAvatar  channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
-                        {
-                            channelInfo && this.needShowOnlineStatus(channelInfo) ? <OnlineStatusBadge tip={this.getOnlineTip(channelInfo)}></OnlineStatusBadge> : undefined
-                        }
-
+                {/* 子区不显示左侧图标区域 */}
+                {!isThread && (
+                    <div className="wk-conversationlist-item-left">
+                        <div className="wk-conversationlist-item-avatar-box">
+                            <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
+                            {channelInfo && this.needShowOnlineStatus(channelInfo) ? <OnlineStatusBadge tip={this.getOnlineTip(channelInfo)}></OnlineStatusBadge> : undefined}
+                        </div>
                     </div>
-                </div>
+                )}
                 <div className="wk-conversationlist-item-right">
                     <div className="wk-conversationlist-item-right-first-line">
                         <div className="wk-conversationlist-item-name">
@@ -279,25 +283,163 @@ export default class ConversationList extends Component<ConversationListProps, C
         return true
     }
 
+    // 将子区放在父群组后面，最多显示2个，超出部分用计数表示
+    private groupThreadsWithParent(convs: ConversationWrap[]): Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }> {
+        const MAX_VISIBLE_THREADS = 2
+
+        // 分离群组和子区
+        const threads: ConversationWrap[] = []
+
+        for (const conv of convs) {
+            if (conv.channel.channelType === ChannelTypeCommunityTopic) {
+                threads.push(conv)
+            }
+        }
+
+        // 按父群组分组子区
+        const threadsByParent = new Map<string, ConversationWrap[]>()
+        for (const thread of threads) {
+            const parentGroupNo = thread.channelInfo?.orgData?.parentGroupNo
+                || parseThreadChannelId(thread.channel.channelID)?.groupNo
+            if (parentGroupNo) {
+                const list = threadsByParent.get(parentGroupNo) || []
+                list.push(thread)
+                threadsByParent.set(parentGroupNo, list)
+            }
+        }
+
+        // 重新组织：群组后面跟着其子区（最多2个）
+        const result: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }> = []
+        const usedThreads = new Set<string>()
+
+        for (const conv of convs) {
+            if (conv.channel.channelType === ChannelTypeCommunityTopic) {
+                // 子区会在父群组后面添加，这里跳过
+                continue
+            }
+            result.push(conv)
+            // 如果是群组，添加其子区（最多2个）
+            if (conv.channel.channelType === ChannelTypeGroup) {
+                const groupThreads = threadsByParent.get(conv.channel.channelID) || []
+                const visibleThreads = groupThreads.slice(0, MAX_VISIBLE_THREADS)
+                const overflowCount = groupThreads.length - MAX_VISIBLE_THREADS
+
+                // 标记所有已分组的子区（包括溢出的）为已使用
+                for (const thread of groupThreads) {
+                    usedThreads.add(thread.channel.channelID)
+                }
+
+                for (const thread of visibleThreads) {
+                    result.push(thread)
+                }
+
+                // 如果有超出的子区，添加溢出提示
+                if (overflowCount > 0) {
+                    result.push({
+                        type: 'thread-overflow',
+                        parentGroupId: conv.channel.channelID,
+                        count: overflowCount
+                    })
+                }
+            }
+        }
+
+        // 收集列表中存在的群组 ID
+        const groupIdsInList = new Set(
+            convs.filter(c => c.channel.channelType === ChannelTypeGroup).map(c => c.channel.channelID)
+        )
+
+        // 孤儿子区：父群组在列表中但未被分组的先显示，父群组不在列表中的隐藏
+        for (const thread of threads) {
+            if (!usedThreads.has(thread.channel.channelID)) {
+                const parentGroupNo = thread.channelInfo?.orgData?.parentGroupNo
+                    || parseThreadChannelId(thread.channel.channelID)?.groupNo
+                if (parentGroupNo && groupIdsInList.has(parentGroupNo)) {
+                    // 父群组在列表中但子区未被分组（理论上不应该出现）
+                    result.push(thread)
+                }
+                // 父群组不在列表中（已退出等）：隐藏
+            }
+        }
+
+        return result
+    }
+
     render() {
         const { conversations, select } = this.props
         const { selectConversationWrap } = this.state
 
         const filtered = conversations?.filter(c => this.filterConversation(c)) ?? []
-        const pinned = filtered.filter(c => c.channelInfo?.top)
-        const recent = filtered.filter(c => !c.channelInfo?.top)
+
+        // 先对整个列表分组子区，再分离置顶/最近（避免置顶群组和子区断开）
+        const grouped = this.groupThreadsWithParent(filtered)
+        const groupedPinned = grouped.filter(item => {
+            if ('type' in item) return false
+            return (item as ConversationWrap).channelInfo?.top
+        })
+
+        // 子区和溢出提示跟随父群组：如果父群组被置顶，把它的子区也移到置顶区
+        const pinnedGroupIds = new Set(
+            groupedPinned
+                .filter(item => !('type' in item) && (item as ConversationWrap).channel.channelType === ChannelTypeGroup)
+                .map(item => (item as ConversationWrap).channel.channelID)
+        )
+        const finalPinned: typeof grouped = []
+        const finalRecent: typeof grouped = []
+        for (const item of grouped) {
+            if ('type' in item) {
+                // thread-overflow 跟随父群组
+                if (pinnedGroupIds.has(item.parentGroupId)) {
+                    finalPinned.push(item)
+                } else {
+                    finalRecent.push(item)
+                }
+            } else {
+                const conv = item as ConversationWrap
+                if (conv.channelInfo?.top) {
+                    finalPinned.push(item)
+                } else if (conv.channel.channelType === ChannelTypeCommunityTopic) {
+                    // 子区跟随父群组
+                    const parentGroupNo = conv.channelInfo?.orgData?.parentGroupNo
+                        || parseThreadChannelId(conv.channel.channelID)?.groupNo
+                    if (parentGroupNo && pinnedGroupIds.has(parentGroupNo)) {
+                        finalPinned.push(item)
+                    } else {
+                        finalRecent.push(item)
+                    }
+                } else {
+                    finalRecent.push(item)
+                }
+            }
+        }
+
+        const { onThreadOverflowClick } = this.props
+        const renderItem = (item: ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }) => {
+            if ('type' in item && item.type === 'thread-overflow') {
+                return (
+                    <div
+                        key={`overflow-${item.parentGroupId}`}
+                        className="wk-conversationlist-thread-overflow"
+                        onClick={() => onThreadOverflowClick?.(item.parentGroupId)}
+                    >
+                        <span>+{item.count} 个子区</span>
+                    </div>
+                )
+            }
+            return this.conversationItem(item as ConversationWrap)
+        }
 
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
             {/* 置顶区 */}
-            {pinned.length > 0 && <>
+            {finalPinned.length > 0 && <>
                 <div className="wk-conv-section">置顶</div>
-                {pinned.map(c => this.conversationItem(c))}
+                {finalPinned.map(renderItem)}
             </>}
 
             {/* 最近 */}
-            {recent.length > 0 && <>
-                {pinned.length > 0 && <div className="wk-conv-section">最近</div>}
-                {recent.map(c => this.conversationItem(c))}
+            {finalRecent.length > 0 && <>
+                {finalPinned.length > 0 && <div className="wk-conv-section">最近</div>}
+                {finalRecent.map(renderItem)}
             </>}
         
 

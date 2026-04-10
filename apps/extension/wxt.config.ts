@@ -1,0 +1,38 @@
+import { defineConfig } from "wxt";
+
+// See https://wxt.dev/api/config.html
+export default defineConfig({
+  modules: ["@wxt-dev/module-react", "@wxt-dev/auto-icons"],
+  webExt: {
+    disabled: true,
+  },
+  autoIcons: {
+    developmentIndicator: "overlay",
+  },
+  manifest: {
+    side_panel: {
+      default_path: "entrypoints/sidepanel/index.html",
+    },
+    permissions: [
+      "scripting",
+      "tabs",
+      "storage",
+      "debugger",
+      "downloads",
+      "downloads.open",
+      "webNavigation",
+      "offscreen",
+      "cookies",
+      "declarativeNetRequest",
+      "alarms",
+    ],
+    host_permissions: ["<all_urls>"],
+    web_accessible_resources: [
+      {
+        resources: ["/injected*.js"],
+        matches: ["<all_urls>"],
+      },
+    ],
+    action: {},
+  },
+});

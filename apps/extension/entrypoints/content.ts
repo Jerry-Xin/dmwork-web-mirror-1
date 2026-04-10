@@ -11,17 +11,12 @@ export default defineContentScript({
       browser.runtime.sendMessage({
         type: 'TEXT_SELECTED',
         text,
-      }).catch(() => {
-        // 侧边面板未打开时忽略错误
-      });
+      }).catch(() => {});
     });
 
-    // 选中被清除时重置记录
     document.addEventListener('selectionchange', () => {
       const text = window.getSelection()?.toString().trim();
-      if (!text) {
-        lastSentText = '';
-      }
+      if (!text) lastSentText = '';
     });
   },
 });

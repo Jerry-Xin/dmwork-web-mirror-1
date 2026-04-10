@@ -13,7 +13,7 @@ import "./index.css"
 import { Badge, Toast } from "@douyinfe/semi-ui";
 import WKApp from "../../App";
 import { EndpointID } from "../../Service/Const";
-import ContextMenus, { ContextMenusContext } from "../ContextMenus";
+import ContextMenus, { ContextMenusContext, ContextMenusData } from "../ContextMenus";
 import { ChannelSettingManager } from "../../Service/ChannelSetting";
 import { TypingListener, TypingManager } from "../../Service/TypingManager";
 import { BeatLoader } from "react-spinners";
@@ -33,6 +33,8 @@ export interface ConversationListProps {
     onClearMessages?: (channel: Channel) => void
     /** 点击 "+N 个子区" 时的回调，传入父群组 ID */
     onThreadOverflowClick?: (groupNo: string) => void
+    /** 外部注入的额外右键菜单项，追加到内置菜单之后 */
+    extraContextMenus?: (conversation: ConversationWrap | undefined) => ContextMenusData[]
 }
 
 export interface ConversationListState {
@@ -496,6 +498,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                         })
                     }
                 },
+                ...(this.props.extraContextMenus ? this.props.extraContextMenus(selectConversationWrap) : []),
             ]} />
         </div>
     }

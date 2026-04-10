@@ -1,6 +1,7 @@
 import React, { Component, ReactNode } from "react";
 import { Conversation } from "../../Components/Conversation";
 import ConversationList, { ConvFilter } from "../../Components/ConversationList";
+import ConversationListGrouped from "../../Components/ConversationListGrouped";
 import Provider from "../../Service/Provider";
 import { ErrorBoundary } from "../../Components/ErrorBoundary";
 
@@ -492,39 +493,68 @@ export default class ChatPage extends Component<any, ChatPageState> {
                       </div>
                     ) : (
                       <ErrorBoundary moduleName="会话列表">
-                        <ConversationList
-                          select={WKApp.shared.openChannel}
-                          conversations={vm.filteredConversations}
-                          filter={filter}
-                          onClearMessages={this.vm.clearMessages.bind(this.vm)}
-                          onThreadOverflowClick={(groupNo: string) => {
-                            // 切换到对应群组的会话
-                            const groupConv = vm.filteredConversations.find(
-                              c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === groupNo
-                            );
-                            if (groupConv) {
-                              // 标记待打开子区面板，ChatContentPage 挂载时检查
-                              WKApp.shared.pendingThreadPanel = groupNo;
-                              vm.selectedConversation = groupConv;
-                              WKApp.endpoints.showConversation(groupConv.channel);
-                              vm.notifyListener();
-                            }
-                          }}
-                          onClick={(conversation: ConversationWrap) => {
-                            const doSwitch = () => {
-                              vm.selectedConversation = conversation;
-                              WKApp.endpoints.showConversation(conversation.channel);
-                              vm.notifyListener();
-                            }
-                            // 附件发送守卫：有未发送附件时弹确认
-                            const guard = WKApp.shared.pendingAttachmentGuard
-                            if (guard && !guard()) {
-                              this.setState({ pendingConfirm: { onOk: doSwitch } })
-                              return
-                            }
-                            doSwitch()
-                          }}
-                        ></ConversationList>
+                        {filter === 'group' ? (
+                          <ConversationListGrouped
+                            conversations={vm.filteredConversations}
+                            select={WKApp.shared.openChannel}
+                            onConversationClick={(conversation: ConversationWrap) => {
+                              const doSwitch = () => {
+                                vm.selectedConversation = conversation;
+                                WKApp.endpoints.showConversation(conversation.channel);
+                                vm.notifyListener();
+                              }
+                              const guard = WKApp.shared.pendingAttachmentGuard
+                              if (guard && !guard()) {
+                                this.setState({ pendingConfirm: { onOk: doSwitch } })
+                                return
+                              }
+                              doSwitch()
+                            }}
+                            onClearMessages={this.vm.clearMessages.bind(this.vm)}
+                            onThreadOverflowClick={(groupNo: string) => {
+                              const groupConv = vm.filteredConversations.find(
+                                c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === groupNo
+                              );
+                              if (groupConv) {
+                                WKApp.shared.pendingThreadPanel = groupNo;
+                                vm.selectedConversation = groupConv;
+                                WKApp.endpoints.showConversation(groupConv.channel);
+                                vm.notifyListener();
+                              }
+                            }}
+                          />
+                        ) : (
+                          <ConversationList
+                            select={WKApp.shared.openChannel}
+                            conversations={vm.filteredConversations}
+                            filter={filter}
+                            onClearMessages={this.vm.clearMessages.bind(this.vm)}
+                            onThreadOverflowClick={(groupNo: string) => {
+                              const groupConv = vm.filteredConversations.find(
+                                c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === groupNo
+                              );
+                              if (groupConv) {
+                                WKApp.shared.pendingThreadPanel = groupNo;
+                                vm.selectedConversation = groupConv;
+                                WKApp.endpoints.showConversation(groupConv.channel);
+                                vm.notifyListener();
+                              }
+                            }}
+                            onClick={(conversation: ConversationWrap) => {
+                              const doSwitch = () => {
+                                vm.selectedConversation = conversation;
+                                WKApp.endpoints.showConversation(conversation.channel);
+                                vm.notifyListener();
+                              }
+                              const guard = WKApp.shared.pendingAttachmentGuard
+                              if (guard && !guard()) {
+                                this.setState({ pendingConfirm: { onOk: doSwitch } })
+                                return
+                              }
+                              doSwitch()
+                            }}
+                          />
+                        )}
                       </ErrorBoundary>
                     )}
                   </div>

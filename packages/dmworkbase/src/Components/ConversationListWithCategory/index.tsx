@@ -17,6 +17,7 @@ export interface ConversationListWithCategoryProps {
     viewMode: ViewMode
     onViewModeChange: (mode: ViewMode) => void
     categories?: CategoryData[]
+    ungroupedConversations?: React.ReactNode  // 未分组群聊，为空时不渲染 UngroupedSection
     isLoading?: boolean
     error?: string | null
     onRetry?: () => void
@@ -29,6 +30,7 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
     viewMode,
     onViewModeChange,
     categories = [],
+    ungroupedConversations,
     isLoading,
     error,
     onRetry,
@@ -87,8 +89,10 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
                         {cat.conversations}
                     </CategorySection>
                 ))}
-                {/* 未分组区域由外部判断是否传入，此处留扩展点 */}
-                <UngroupedSection />
+                {/* 未分组区域：有内容才渲染 */}
+                {ungroupedConversations && (
+                    <UngroupedSection>{ungroupedConversations}</UngroupedSection>
+                )}
             </>
         )
     }

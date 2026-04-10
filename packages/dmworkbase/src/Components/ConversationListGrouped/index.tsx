@@ -139,6 +139,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 error={error}
                 onRetry={reload}
                 allConversations={ConvListWithMenu(conversations)}
+                ungroupedConversations={ungroupedConvs.length > 0 ? ConvListWithMenu(ungroupedConvs) : undefined}
                 onCreateCategory={() => setCreateModalVisible(true)}
                 onManageCategories={() => setManagePanelVisible(true)}
             />

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react"
-import { Drawer } from "@douyinfe/semi-ui"
+import { SideSheet } from "@douyinfe/semi-ui"
 import DeleteCategoryModal from "../DeleteCategoryModal"
 import "./index.css"
 
@@ -83,10 +83,10 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
 
     return (
         <>
-            <Drawer
+            <SideSheet
                 title="管理分组"
                 visible={visible}
-                onClose={onClose}
+                onCancel={onClose}
                 placement="right"
                 width={320}
             >
@@ -145,7 +145,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
                         ))}
                     </div>
                 </div>
-            </Drawer>
+            </SideSheet>
 
             {deleteTarget && (
                 <DeleteCategoryModal

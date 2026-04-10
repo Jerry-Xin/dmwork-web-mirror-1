@@ -280,7 +280,7 @@ describe("useVoiceInput - getChatContext", () => {
 
     it("should pass getChatContext result to VoiceService.transcribe", async () => {
         const getChatContext = vi.fn().mockReturnValue("[Alice]: hi\n[Bob]: hello")
-        vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({ text: "transcribed", model: "whisper-1" })
+        vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({ text: "transcribed", m: "whisper-1" })
 
         const { result } = renderHook(() =>
             useVoiceInput({
@@ -448,7 +448,7 @@ describe("useVoiceInput - personal voice context", () => {
         })
         vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
             text: "转写结果",
-            model: "g3fp",
+            m: "g3fp",
         })
         const getChatContext = vi.fn(() => "聊天成员：Alice,Bob")
         const onTranscribed = vi.fn()
@@ -487,7 +487,7 @@ describe("useVoiceInput - personal voice context", () => {
         })
         vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
             text: "转写结果",
-            model: "g3fp",
+            m: "g3fp",
         })
         const getChatContext = vi.fn(() => "聊天成员：Alice,Bob")
 
@@ -523,7 +523,7 @@ describe("useVoiceInput - personal voice context", () => {
         })
         vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
             text: "转写结果",
-            model: "g3fp",
+            m: "g3fp",
         })
         const getChatContext = vi.fn(() => "聊天成员：Alice")
 
@@ -555,7 +555,7 @@ describe("useVoiceInput - personal voice context", () => {
         )
         vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
             text: "转写结果",
-            model: "g3fp",
+            m: "g3fp",
         })
         const getChatContext = vi.fn(() => "聊天成员：Alice")
 
@@ -600,7 +600,7 @@ describe("useVoiceInput - personal voice context", () => {
         )
         vi.mocked(VoiceService.shared.transcribe).mockResolvedValue({
             text: "转写结果",
-            model: "g3fp",
+            m: "g3fp",
         })
 
         const { result } = renderHook(() => useVoiceInput())

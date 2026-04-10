@@ -8,7 +8,7 @@ export interface VoiceConfig {
 
 export interface TranscribeResult {
     text: string
-    model: string
+    m: string   // shortened model name from backend
 }
 
 export interface VoiceContextResponse {
@@ -33,6 +33,7 @@ export default class VoiceService {
 
     private _voiceContextCache = new Map<string, VoiceContextCacheEntry>()
     private _voiceContextInflight = new Map<string, Promise<VoiceContextResponse>>()
+    private _voiceContextEpoch = new Map<string, number>()
 
     async getConfig(): Promise<VoiceConfig> {
         return APIClient.shared.get<VoiceConfig>("/voice/config")
@@ -63,6 +64,8 @@ export default class VoiceService {
         const inflight = this._voiceContextInflight.get(spaceId)
         if (inflight) return inflight
 
+        const currentEpoch = this._voiceContextEpoch.get(spaceId) ?? 0
+
         const request = Promise.race([
             APIClient.shared.get<VoiceContextResponse>("/voice/context", {
                 param: { space_id: spaceId },
@@ -72,7 +75,9 @@ export default class VoiceService {
             ),
         ])
             .then((resp: VoiceContextResponse) => {
-                this._voiceContextCache.set(spaceId, { data: resp, timestamp: Date.now() })
+                if ((this._voiceContextEpoch.get(spaceId) ?? 0) === currentEpoch) {
+                    this._voiceContextCache.set(spaceId, { data: resp, timestamp: Date.now() })
+                }
                 this._voiceContextInflight.delete(spaceId)
                 return resp
             })
@@ -87,9 +92,13 @@ export default class VoiceService {
 
     clearVoiceContextCache(spaceId?: string): void {
         if (spaceId) {
+            this._voiceContextEpoch.set(spaceId, (this._voiceContextEpoch.get(spaceId) ?? 0) + 1)
             this._voiceContextCache.delete(spaceId)
             this._voiceContextInflight.delete(spaceId)
         } else {
+            for (const key of this._voiceContextInflight.keys()) {
+                this._voiceContextEpoch.set(key, (this._voiceContextEpoch.get(key) ?? 0) + 1)
+            }
             this._voiceContextCache.clear()
             this._voiceContextInflight.clear()
         }

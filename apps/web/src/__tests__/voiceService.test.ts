@@ -54,7 +54,7 @@ describe("VoiceService", () => {
 
     describe("transcribe", () => {
         it("should POST audio blob as FormData to /api/voice/transcribe", async () => {
-            const mockResult = { text: "hello world", model: "whisper-1" }
+            const mockResult = { text: "hello world", m: "whisper-1" }
             vi.mocked(APIClient.shared.post).mockResolvedValue(mockResult)
 
             const audioBlob = new Blob(["audio-data"], { type: "audio/webm;codecs=opus" })
@@ -69,7 +69,7 @@ describe("VoiceService", () => {
         })
 
         it("should include context_text when provided", async () => {
-            const mockResult = { text: "hello", model: "whisper-1" }
+            const mockResult = { text: "hello", m: "whisper-1" }
             vi.mocked(APIClient.shared.post).mockResolvedValue(mockResult)
 
             const audioBlob = new Blob(["audio-data"], { type: "audio/webm;codecs=opus" })
@@ -80,7 +80,7 @@ describe("VoiceService", () => {
         })
 
         it("should not include context_text when not provided", async () => {
-            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "hi", model: "whisper-1" })
+            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "hi", m: "whisper-1" })
 
             const audioBlob = new Blob(["audio-data"], { type: "audio/webm;codecs=opus" })
             await VoiceService.shared.transcribe(audioBlob)
@@ -90,7 +90,7 @@ describe("VoiceService", () => {
         })
 
         it("should use .webm extension for webm audio", async () => {
-            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "", model: "" })
+            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "", m: "" })
 
             const audioBlob = new Blob(["data"], { type: "audio/webm;codecs=opus" })
             await VoiceService.shared.transcribe(audioBlob)
@@ -101,7 +101,7 @@ describe("VoiceService", () => {
         })
 
         it("should use .mp4 extension for mp4 audio", async () => {
-            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "", model: "" })
+            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "", m: "" })
 
             const audioBlob = new Blob(["data"], { type: "audio/mp4" })
             await VoiceService.shared.transcribe(audioBlob)
@@ -119,7 +119,7 @@ describe("VoiceService", () => {
         })
 
         it("should include chat_context when provided", async () => {
-            const mockResult = { text: "hello", model: "whisper-1" }
+            const mockResult = { text: "hello", m: "whisper-1" }
             vi.mocked(APIClient.shared.post).mockResolvedValue(mockResult)
 
             const audioBlob = new Blob(["audio-data"], { type: "audio/webm;codecs=opus" })
@@ -130,7 +130,7 @@ describe("VoiceService", () => {
         })
 
         it("should not include chat_context when not provided", async () => {
-            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "hi", model: "whisper-1" })
+            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "hi", m: "whisper-1" })
 
             const audioBlob = new Blob(["audio-data"], { type: "audio/webm;codecs=opus" })
             await VoiceService.shared.transcribe(audioBlob, "some context")
@@ -140,7 +140,7 @@ describe("VoiceService", () => {
         })
 
         it("should include both context_text and chat_context when both provided", async () => {
-            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "hi", model: "whisper-1" })
+            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "hi", m: "whisper-1" })
 
             const audioBlob = new Blob(["audio-data"], { type: "audio/webm;codecs=opus" })
             await VoiceService.shared.transcribe(audioBlob, "input text", "[Alice]: hi")
@@ -148,6 +148,16 @@ describe("VoiceService", () => {
             const [, formData] = vi.mocked(APIClient.shared.post).mock.calls[0]
             expect((formData as FormData).get("context_text")).toBe("input text")
             expect((formData as FormData).get("chat_context")).toBe("[Alice]: hi")
+        })
+
+        it("should return TranscribeResult with m field from backend response", async () => {
+            vi.mocked(APIClient.shared.post).mockResolvedValue({ text: "hello", m: "g3fp" })
+
+            const audioBlob = new Blob(["audio-data"], { type: "audio/webm;codecs=opus" })
+            const result = await VoiceService.shared.transcribe(audioBlob)
+
+            expect(result.m).toBe("g3fp")
+            expect(result.text).toBe("hello")
         })
     })
 
@@ -280,6 +290,34 @@ describe("VoiceService", () => {
             vi.advanceTimersByTime(3000)
 
             await expect(promise).rejects.toThrow("voice context request timeout")
+        })
+
+        it("should not write back to cache when clearVoiceContextCache is called during in-flight request", async () => {
+            let resolveRequest!: (v: any) => void
+            vi.mocked(APIClient.shared.get).mockReturnValueOnce(
+                new Promise((r) => { resolveRequest = r })
+            )
+
+            // 1. Start a request but don't resolve yet
+            const p1 = VoiceService.shared.getVoiceContext("space1")
+
+            // 2. Call clearVoiceContextCache while request is in-flight
+            VoiceService.shared.clearVoiceContextCache("space1")
+
+            // 3. Resolve the old request
+            resolveRequest({ status: 200, has_context: true, context: "stale", updated_at: "" })
+            await p1
+
+            // 4. Verify the result is NOT cached (next getVoiceContext triggers a new API call)
+            vi.mocked(APIClient.shared.get).mockResolvedValueOnce({
+                status: 200,
+                has_context: true,
+                context: "fresh",
+                updated_at: "",
+            })
+            const result = await VoiceService.shared.getVoiceContext("space1")
+            expect(result.context).toBe("fresh")
+            expect(APIClient.shared.get).toHaveBeenCalledTimes(2)
         })
 
         it("should maintain independent caches per spaceId", async () => {

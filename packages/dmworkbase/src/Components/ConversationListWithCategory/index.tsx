@@ -36,6 +36,7 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
     onRetry,
     allConversations,
     onCreateCategory,
+    onManageCategories,
 }) => {
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set())
 

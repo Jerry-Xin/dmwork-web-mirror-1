@@ -73,10 +73,13 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
   }
 
   private initVM(threadShortId: string) {
-    this.vm = new ThreadPanelVM(this.props.groupNo, threadShortId, (state) => {
-      this.setState({ vmState: state })
+    const vm = new ThreadPanelVM(this.props.groupNo, threadShortId, (state) => {
+      if (this.vm === vm) {
+        this.setState({ vmState: state })
+      }
     })
-    this.vm.load()
+    this.vm = vm
+    vm.load()
   }
 
   private async loadThreads() {
@@ -86,6 +89,8 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     this.setState({ threadsLoading: true })
     try {
       const threads = await WKApp.dataSource.channelDataSource.threadList(groupNo)
+      // 按活跃时间倒序排序
+      threads.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       this.setState({ threads, threadsLoading: false })
     } catch {
       this.setState({ threadsLoading: false })

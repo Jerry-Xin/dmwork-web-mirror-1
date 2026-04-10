@@ -2,6 +2,7 @@ import WKSDK from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { Channel, ChannelInfo, ChannelTypePerson, ChannelTypeGroup } from "wukongimjssdk";
 import { ChannelTypeCommunityTopic } from "../../Service/Const";
+import { parseThreadChannelId } from "../../Service/Thread";
 import React, { Component } from "react";
 import { Modal } from "@douyinfe/semi-ui";
 import { ConversationWrap, MessageWrap } from "../../Service/Model";
@@ -299,6 +300,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         const threadsByParent = new Map<string, ConversationWrap[]>()
         for (const thread of threads) {
             const parentGroupNo = thread.channelInfo?.orgData?.parentGroupNo
+                || parseThreadChannelId(thread.channel.channelID)?.groupNo
             if (parentGroupNo) {
                 const list = threadsByParent.get(parentGroupNo) || []
                 list.push(thread)
@@ -322,9 +324,13 @@ export default class ConversationList extends Component<ConversationListProps, C
                 const visibleThreads = groupThreads.slice(0, MAX_VISIBLE_THREADS)
                 const overflowCount = groupThreads.length - MAX_VISIBLE_THREADS
 
+                // 标记所有已分组的子区（包括溢出的）为已使用
+                for (const thread of groupThreads) {
+                    usedThreads.add(thread.channel.channelID)
+                }
+
                 for (const thread of visibleThreads) {
                     result.push(thread)
-                    usedThreads.add(thread.channel.channelID)
                 }
 
                 // 如果有超出的子区，添加溢出提示
@@ -338,10 +344,21 @@ export default class ConversationList extends Component<ConversationListProps, C
             }
         }
 
-        // 添加没有找到父群组的子区（父群组不在会话列表中）
+        // 收集列表中存在的群组 ID
+        const groupIdsInList = new Set(
+            convs.filter(c => c.channel.channelType === ChannelTypeGroup).map(c => c.channel.channelID)
+        )
+
+        // 孤儿子区：父群组在列表中但未被分组的先显示，父群组不在列表中的隐藏
         for (const thread of threads) {
             if (!usedThreads.has(thread.channel.channelID)) {
-                result.push(thread)
+                const parentGroupNo = thread.channelInfo?.orgData?.parentGroupNo
+                    || parseThreadChannelId(thread.channel.channelID)?.groupNo
+                if (parentGroupNo && groupIdsInList.has(parentGroupNo)) {
+                    // 父群组在列表中但子区未被分组（理论上不应该出现）
+                    result.push(thread)
+                }
+                // 父群组不在列表中（已退出等）：隐藏
             }
         }
 
@@ -353,12 +370,48 @@ export default class ConversationList extends Component<ConversationListProps, C
         const { selectConversationWrap } = this.state
 
         const filtered = conversations?.filter(c => this.filterConversation(c)) ?? []
-        const pinned = filtered.filter(c => c.channelInfo?.top)
-        const recent = filtered.filter(c => !c.channelInfo?.top)
 
-        // 将子区放在父群组后面（最多显示2个）
-        const groupedPinned = this.groupThreadsWithParent(pinned)
-        const groupedRecent = this.groupThreadsWithParent(recent)
+        // 先对整个列表分组子区，再分离置顶/最近（避免置顶群组和子区断开）
+        const grouped = this.groupThreadsWithParent(filtered)
+        const groupedPinned = grouped.filter(item => {
+            if ('type' in item) return false
+            return (item as ConversationWrap).channelInfo?.top
+        })
+
+        // 子区和溢出提示跟随父群组：如果父群组被置顶，把它的子区也移到置顶区
+        const pinnedGroupIds = new Set(
+            groupedPinned
+                .filter(item => !('type' in item) && (item as ConversationWrap).channel.channelType === ChannelTypeGroup)
+                .map(item => (item as ConversationWrap).channel.channelID)
+        )
+        const finalPinned: typeof grouped = []
+        const finalRecent: typeof grouped = []
+        for (const item of grouped) {
+            if ('type' in item) {
+                // thread-overflow 跟随父群组
+                if (pinnedGroupIds.has(item.parentGroupId)) {
+                    finalPinned.push(item)
+                } else {
+                    finalRecent.push(item)
+                }
+            } else {
+                const conv = item as ConversationWrap
+                if (conv.channelInfo?.top) {
+                    finalPinned.push(item)
+                } else if (conv.channel.channelType === ChannelTypeCommunityTopic) {
+                    // 子区跟随父群组
+                    const parentGroupNo = conv.channelInfo?.orgData?.parentGroupNo
+                        || parseThreadChannelId(conv.channel.channelID)?.groupNo
+                    if (parentGroupNo && pinnedGroupIds.has(parentGroupNo)) {
+                        finalPinned.push(item)
+                    } else {
+                        finalRecent.push(item)
+                    }
+                } else {
+                    finalRecent.push(item)
+                }
+            }
+        }
 
         const { onThreadOverflowClick } = this.props
         const renderItem = (item: ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }) => {
@@ -378,15 +431,15 @@ export default class ConversationList extends Component<ConversationListProps, C
 
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
             {/* 置顶区 */}
-            {groupedPinned.length > 0 && <>
+            {finalPinned.length > 0 && <>
                 <div className="wk-conv-section">置顶</div>
-                {groupedPinned.map(renderItem)}
+                {finalPinned.map(renderItem)}
             </>}
 
             {/* 最近 */}
-            {groupedRecent.length > 0 && <>
-                {groupedPinned.length > 0 && <div className="wk-conv-section">最近</div>}
-                {groupedRecent.map(renderItem)}
+            {finalRecent.length > 0 && <>
+                {finalPinned.length > 0 && <div className="wk-conv-section">最近</div>}
+                {finalRecent.map(renderItem)}
             </>}
         
 

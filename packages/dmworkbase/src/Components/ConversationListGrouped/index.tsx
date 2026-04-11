@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { flushSync } from "react-dom"
 import { ChannelTypeGroup, Channel } from "wukongimjssdk"
 import { CategoryItem } from "../../Service/CategoryService"
@@ -63,6 +63,16 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     const categoryCtxMenuRef = useRef<ContextMenusContext | null>(null)
     const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
     const ctxMenuClearRef = useRef<(() => void) | null>(null)
+
+    // 组件卸载时清理 context menu 的 mousedown 监听器
+    useEffect(() => {
+        return () => {
+            if (ctxMenuClearRef.current) {
+                document.removeEventListener('mousedown', ctxMenuClearRef.current, true)
+                ctxMenuClearRef.current = null
+            }
+        }
+    }, [])
     // 菜单数据用 ref 存，避免 state 异步导致 menus 为空时就 show()
     const [categoryMenus, setCategoryMenus] = useState<ContextMenusData[]>([])
     const [renamingCategoryId, setRenamingCategoryId] = useState<string | null>(null)

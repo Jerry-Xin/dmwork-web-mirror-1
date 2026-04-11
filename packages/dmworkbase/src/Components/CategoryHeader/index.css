@@ -56,11 +56,11 @@
     white-space: nowrap;
 }
 
-/* 折叠时括号数量 / 空分组 (空) */
+/* 折叠时括号数量 / 空分组 (空)：内联在分组名里，不是独立 flex item */
 .wk-category-header__count {
     font-size: 11px;
+    font-weight: 400;
     color: var(--wk-text-tertiary);
-    flex-shrink: 0;
 }
 
 .wk-category-header__count--empty {

@@ -179,6 +179,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 onCreateCategory={onOpenCreateCategory}
                 onManageCategories={() => setManagePanelVisible(true)}
                 onCategoryContextMenu={(categoryId, e) => {
+                    e.preventDefault()
                     setActiveCategoryId(categoryId)
                     setTimeout(() => categoryCtxMenuRef.current?.show(e), 0)
                 }}

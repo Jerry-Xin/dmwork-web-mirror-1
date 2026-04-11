@@ -35,15 +35,15 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
                 </svg>
             </span>
 
-            {/* 分组名 */}
-            <span className="wk-category-header__name">{name}</span>
-
-            {/* 折叠态：显示 (N) 数量；空分组：显示 (空) */}
-            {isEmpty ? (
-                <span className="wk-category-header__count wk-category-header__count--empty">(空)</span>
-            ) : isCollapsed && groupCount !== undefined ? (
-                <span className="wk-category-header__count">({groupCount})</span>
-            ) : null}
+            {/* 分组名 + 紧跟括号数量（紧贴分组名，同一 flex 子项） */}
+            <span className="wk-category-header__name">
+                {name}
+                {isEmpty ? (
+                    <span className="wk-category-header__count wk-category-header__count--empty"> (空)</span>
+                ) : isCollapsed && groupCount !== undefined ? (
+                    <span className="wk-category-header__count"> ({groupCount})</span>
+                ) : null}
+            </span>
 
             {/* 未读 badge（空分组不显示） */}
             {!isEmpty && !!unreadCount && unreadCount > 0 && (

@@ -55,28 +55,56 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
         }
     }
 
+    const handleConfirm = () => {
+        const val = inputRef.current?.value.trim()
+        if (val) {
+            isConfirmed.current = true
+            onRenameConfirm?.(val)
+        }
+    }
+
+    const handleCancel = () => {
+        isConfirmed.current = true
+        onRenameCancel?.()
+    }
+
     if (isEditing) {
         return (
             <div className="wk-category-header wk-category-header--editing" onClick={e => e.stopPropagation()}>
-                <span className={`wk-category-header__arrow${isCollapsed ? " wk-category-header__arrow--collapsed" : ""}`}>
-                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
-                </span>
-                <input
-                    ref={inputRef}
-                    className="wk-category-header__rename-input"
-                    defaultValue={name}
-                    onKeyDown={handleKeyDown}
-                    onBlur={e => {
-                        if (isConfirmed.current) {
-                            isConfirmed.current = false
-                            return
-                        }
-                        const val = e.target.value.trim()
-                        if (val && val !== name) onRenameConfirm?.(val)
-                        else onRenameCancel?.()
-                    }}
-                    onClick={e => e.stopPropagation()}
-                />
+                <div className="wk-category-header__rename-wrap">
+                    <input
+                        ref={inputRef}
+                        className="wk-category-header__rename-input"
+                        defaultValue={name}
+                        onKeyDown={handleKeyDown}
+                        onBlur={e => {
+                            if (isConfirmed.current) {
+                                isConfirmed.current = false
+                                return
+                            }
+                            const val = e.target.value.trim()
+                            if (val && val !== name) onRenameConfirm?.(val)
+                            else onRenameCancel?.()
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    />
+                    {/* ✓ 确认 */}
+                    <button
+                        className="wk-category-header__rename-btn wk-category-header__rename-btn--ok"
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={handleConfirm}
+                    >
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+                    </button>
+                    {/* ✗ 取消 */}
+                    <button
+                        className="wk-category-header__rename-btn wk-category-header__rename-btn--cancel"
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={handleCancel}
+                    >
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
             </div>
         )
     }

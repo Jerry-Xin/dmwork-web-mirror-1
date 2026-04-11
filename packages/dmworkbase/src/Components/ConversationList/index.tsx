@@ -377,7 +377,7 @@ export default class ConversationList extends Component<ConversationListProps, C
             }
         }
 
-        return result
+        return { items: result, threadsByParent }
     }
 
     render() {

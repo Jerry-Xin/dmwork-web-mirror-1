@@ -225,6 +225,26 @@
     color: var(--wk-color-error);
 }
 
+/* ── 空状态 ── */
+.wk-category-manage-panel__empty-state {
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.wk-category-manage-panel__empty-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--wk-text-primary);
+    margin: 0 0 6px;
+}
+
+.wk-category-manage-panel__empty-desc {
+    font-size: 12px;
+    color: var(--wk-text-tertiary);
+    margin: 0;
+    line-height: 1.6;
+}
+
 /* ── Footer ── */
 .wk-category-manage-panel__footer {
     padding: 8px 16px 12px;

@@ -112,6 +112,12 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
 
                     {/* List */}
                     <div className="wk-category-manage-panel__list">
+                        {items.length === 0 && (
+                            <div className="wk-category-manage-panel__empty-state">
+                                <p className="wk-category-manage-panel__empty-title">还没有分组</p>
+                                <p className="wk-category-manage-panel__empty-desc">点击下方按钮创建第一个分组</p>
+                            </div>
+                        )}
                         {items.map((item) => {
                             const isEditing = renamingId === item.id
                             const isDragging = dragRef.current === item.id
@@ -163,6 +169,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
                                             <div className="wk-category-manage-panel__actions">
                                                 <button
                                                     className="wk-category-manage-panel__action-btn"
+                                                    onMouseDown={e => e.stopPropagation()}
                                                     onClick={() => startRename(item)}
                                                     title="重命名"
                                                 >
@@ -170,6 +177,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
                                                 </button>
                                                 <button
                                                     className="wk-category-manage-panel__action-btn"
+                                                    onMouseDown={e => e.stopPropagation()}
                                                     onClick={() => setDeleteTarget(item)}
                                                     title="删除"
                                                 >

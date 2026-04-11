@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { ChannelTypeGroup } from "wukongimjssdk"
 import { useCategoryList } from "../../Hooks/useCategoryList"
 import { ConversationWrap } from "../../Service/Model"
@@ -48,6 +48,13 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     const categoryCtxMenuRef = useRef<ContextMenusContext | null>(null)
     const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
 
+    // 监听来自其他 filter 下右键菜单「新建分组」的事件
+    useEffect(() => {
+        const handler = () => setCreateModalVisible(true)
+        window.addEventListener("wk:open-create-category", handler)
+        return () => window.removeEventListener("wk:open-create-category", handler)
+    }, [])
+
     const {
         categories,
         isLoading,
@@ -83,15 +90,28 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
 
     const existingCategoryNames = categories.map(c => c.name)
 
-    // 右键菜单：只有群聊才加「移到分组」
+    // 右键菜单：只有群聊才加「移到分组」子菜单（含当前分组 ✓ 标识 + 新建分组入口）
     const buildExtraContextMenus = (conv: ConversationWrap | undefined): ContextMenusData[] => {
         if (!conv || conv.channel.channelType !== ChannelTypeGroup) return []
-        return categories.map(cat => ({
-            title: `移到「${cat.name}」`,
-            onClick: () => {
-                moveGroupToCategory(conv.channel.channelID, cat.category_id!)
-            },
+        if (categories.length === 0) return []
+
+        const groupNo = conv.channel.channelID
+        const currentCategoryId = categories.find(
+            cat => (cat.groups || []).some(g => g.group_no === groupNo)
+        )?.category_id
+
+        const items: ContextMenusData[] = categories.map(cat => ({
+            title: currentCategoryId === cat.category_id ? `✓ ${cat.name}` : cat.name,
+            onClick: () => moveGroupToCategory(groupNo, cat.category_id!),
         }))
+
+        items.push({ separator: true } as any)
+        items.push({
+            title: "+ 新建分组",
+            onClick: () => setCreateModalVisible(true),
+        })
+
+        return items
     }
 
     const ConvListWithMenu = (convs: ConversationWrap[]) => (

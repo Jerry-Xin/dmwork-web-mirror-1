@@ -195,21 +195,20 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 onRenameCancel={() => setRenamingCategoryId(null)}
                 onCategoryContextMenu={(categoryId, e) => {
                     e.preventDefault()
-                    setActiveCategoryId(categoryId)
-                    setTimeout(() => {
-                        categoryCtxMenuRef.current?.show(e)
-                        // 先移除旧监听器，再注册新的，避免累积
-                        if (ctxMenuClearRef.current) {
-                            document.removeEventListener('mousedown', ctxMenuClearRef.current, true)
-                        }
-                        const clear = () => {
-                            setActiveCategoryId(null)
-                            document.removeEventListener('mousedown', clear, true)
-                            ctxMenuClearRef.current = null
-                        }
-                        ctxMenuClearRef.current = clear
-                        document.addEventListener('mousedown', clear, true)
-                    }, 0)
+                    // flushSync 强制同步 re-render，确保 menus prop 更新后再 show()
+                    flushSync(() => setActiveCategoryId(categoryId))
+                    categoryCtxMenuRef.current?.show(e)
+                    // 先移除旧监听器，再注册新的，避免累积
+                    if (ctxMenuClearRef.current) {
+                        document.removeEventListener('mousedown', ctxMenuClearRef.current, true)
+                    }
+                    const clear = () => {
+                        setActiveCategoryId(null)
+                        document.removeEventListener('mousedown', clear, true)
+                        ctxMenuClearRef.current = null
+                    }
+                    ctxMenuClearRef.current = clear
+                    document.addEventListener('mousedown', clear, true)
                 }}
             />
 

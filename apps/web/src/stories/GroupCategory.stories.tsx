@@ -203,6 +203,24 @@ export const CategoryHeaderEmpty: StoryObj = {
   ),
 }
 
+export const CategoryHeaderEditing: StoryObj = {
+  name: 'CategoryHeader / 行内重命名编辑态',
+  render: () => (
+    <Wrap>
+      <CategoryHeader
+        name="工作"
+        unreadCount={5}
+        isCollapsed={false}
+        isEditing={true}
+        onToggle={() => {}}
+        onContextMenu={() => {}}
+        onRenameConfirm={(val) => console.log('confirm', val)}
+        onRenameCancel={() => console.log('cancel')}
+      />
+    </Wrap>
+  ),
+}
+
 // ══════════════════════════════════════════════
 // 3. AddCategoryButton
 // ══════════════════════════════════════════════

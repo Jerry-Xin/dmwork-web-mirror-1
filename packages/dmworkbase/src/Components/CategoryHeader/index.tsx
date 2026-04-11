@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react"
+import React, { useRef, useEffect, useCallback } from "react"
 import "./index.css"
 
 export interface CategoryHeaderProps {
@@ -31,9 +31,11 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
     onRenameCancel,
 }) => {
     const inputRef = useRef<HTMLInputElement>(null)
+    const isConfirmed = useRef(false)
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
+            isConfirmed.current = false
             inputRef.current.focus()
             inputRef.current.select()
         }
@@ -42,9 +44,13 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
             const val = inputRef.current?.value.trim()
-            if (val) onRenameConfirm?.(val)
+            if (val) {
+                isConfirmed.current = true
+                onRenameConfirm?.(val)
+            }
         }
         if (e.key === "Escape") {
+            isConfirmed.current = true  // 标记已处理，onBlur 跳过
             onRenameCancel?.()
         }
     }
@@ -61,6 +67,10 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
                     defaultValue={name}
                     onKeyDown={handleKeyDown}
                     onBlur={e => {
+                        if (isConfirmed.current) {
+                            isConfirmed.current = false
+                            return
+                        }
                         const val = e.target.value.trim()
                         if (val && val !== name) onRenameConfirm?.(val)
                         else onRenameCancel?.()

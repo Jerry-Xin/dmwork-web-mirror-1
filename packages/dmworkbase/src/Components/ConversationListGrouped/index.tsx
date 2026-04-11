@@ -61,6 +61,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     const [managePanelVisible, setManagePanelVisible] = useState(false)
     const categoryCtxMenuRef = useRef<ContextMenusContext | null>(null)
     const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
+    const ctxMenuClearRef = useRef<(() => void) | null>(null)
     const [renamingCategoryId, setRenamingCategoryId] = useState<string | null>(null)
 
     const handleViewModeChange = (mode: ViewMode) => {
@@ -197,11 +198,16 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     setActiveCategoryId(categoryId)
                     setTimeout(() => {
                         categoryCtxMenuRef.current?.show(e)
-                        // 菜单关闭时清除高亮：监听下一次点击
+                        // 先移除旧监听器，再注册新的，避免累积
+                        if (ctxMenuClearRef.current) {
+                            document.removeEventListener('mousedown', ctxMenuClearRef.current, true)
+                        }
                         const clear = () => {
                             setActiveCategoryId(null)
                             document.removeEventListener('mousedown', clear, true)
+                            ctxMenuClearRef.current = null
                         }
+                        ctxMenuClearRef.current = clear
                         document.addEventListener('mousedown', clear, true)
                     }, 0)
                 }}

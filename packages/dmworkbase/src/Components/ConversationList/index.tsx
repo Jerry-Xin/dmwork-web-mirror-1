@@ -166,7 +166,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         return false
     }
 
-    conversationItem(conversationWrap: ConversationWrap) {
+    conversationItem(conversationWrap: ConversationWrap, hasThreads = false) {
         
 
         let channelInfo = conversationWrap.channelInfo

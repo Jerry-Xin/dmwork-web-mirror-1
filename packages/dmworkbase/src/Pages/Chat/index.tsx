@@ -90,6 +90,13 @@ export class ChatContentPage extends Component<
     }
     window.addEventListener('wk:pending-thread', this._onPendingThread)
 
+    this._onCloseThreadPanel = () => {
+      if (this.state.showThreadPanel) {
+        this.setState({ showThreadPanel: false, activeThread: null })
+      }
+    }
+    window.addEventListener('wk:close-thread-panel', this._onCloseThreadPanel)
+
     // 检查是否需要自动打开子区面板（查看全部子区）
     if (WKApp.shared.pendingThreadPanel === channel.channelID) {
       this.setState({ showThreadPanel: true, activeThread: null });
@@ -178,10 +185,14 @@ export class ChatContentPage extends Component<
   }
 
   private _onPendingThread?: (e: Event) => void
+  private _onCloseThreadPanel?: () => void
 
   componentWillUnmount() {
     if (this._onPendingThread) {
       window.removeEventListener('wk:pending-thread', this._onPendingThread)
+    }
+    if (this._onCloseThreadPanel) {
+      window.removeEventListener('wk:close-thread-panel', this._onCloseThreadPanel)
     }
     WKSDK.shared().channelManager.removeListener(this.channelInfoListener);
   }

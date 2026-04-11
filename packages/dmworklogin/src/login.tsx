@@ -14,9 +14,7 @@ const AndroidDownloadButton: React.FC = () => {
     const [apkUrl, setApkUrl] = useState<string>("/download/dmwork.apk")
 
     useEffect(() => {
-        const baseUrl = WKApp.config.apiURL || ""
-        const endpoint = `${baseUrl.replace(/\/$/, "")}/common/updater/android/1.0`
-        fetch(endpoint)
+        fetch("https://im.deepminer.com.cn/api/v1/common/updater/android/1.0")
             .then(r => r.json())
             .then(data => {
                 if (data?.url) setApkUrl(data.url)

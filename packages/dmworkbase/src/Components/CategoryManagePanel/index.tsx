@@ -16,6 +16,7 @@ export interface CategoryManagePanelProps {
     onRename: (id: string, newName: string) => Promise<void> | void
     onDelete: (id: string) => void
     onReorder: (ids: string[]) => Promise<void> | void
+    onCreateCategory?: () => void
 }
 
 const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
@@ -25,6 +26,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
     onRename,
     onDelete,
     onReorder,
+    onCreateCategory,
 }) => {
     const [items, setItems] = useState<CategoryItem[]>(categories)
     const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -149,6 +151,13 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
                             </div>
                         ))}
                     </div>
+                    {onCreateCategory && (
+                        <div className="wk-category-manage__footer">
+                            <button className="wk-category-manage__create-btn" onClick={onCreateCategory}>
+                                + 新建分组
+                            </button>
+                        </div>
+                    )}
                 </div>
             </Modal>
 

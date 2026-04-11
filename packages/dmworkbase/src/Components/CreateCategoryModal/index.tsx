@@ -63,7 +63,7 @@ const CreateCategoryModal: React.FC<CreateCategoryModalProps> = ({
             onCancel={onCancel}
             footer={
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                    <Button onClick={onCancel}>取消</Button>
+                    <Button type="tertiary" onClick={onCancel}>取消</Button>
                     <Button
                         type="primary"
                         disabled={isDisabled}
@@ -85,12 +85,16 @@ const CreateCategoryModal: React.FC<CreateCategoryModalProps> = ({
                         if (error) setError(null)
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder="例如：工作、学习、兴趣、项目名"
+                    placeholder="输入分组名称"
                     validateStatus={isDuplicate || error ? "error" : undefined}
                 />
-                {(isDuplicate || error) && (
+                {(isDuplicate || error) ? (
                     <div className="wk-create-category-modal__error">
                         {isDuplicate ? "该分组名已存在" : error}
+                    </div>
+                ) : (
+                    <div className="wk-create-category-modal__help">
+                        例如：工作、学习、兴趣、项目名
                     </div>
                 )}
             </div>

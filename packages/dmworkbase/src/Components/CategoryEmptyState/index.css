@@ -27,6 +27,28 @@
     margin: 0 0 8px;
 }
 
-.wk-category-empty-state__btn-wrap {
-    width: 180px;
+.wk-category-empty-state__primary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 20px;
+    border: none;
+    border-radius: var(--wk-r-md);
+    background: var(--wk-brand-primary);
+    color: #fff;
+    font-size: var(--wk-text-size-base);
+    font-weight: var(--wk-font-medium);
+    font-family: var(--wk-font-sans);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    gap: 4px;
+}
+
+.wk-category-empty-state__primary-btn:hover {
+    background: var(--wk-brand-primary-hover);
+}
+
+.wk-category-empty-state__primary-btn:active {
+    opacity: 0.9;
 }

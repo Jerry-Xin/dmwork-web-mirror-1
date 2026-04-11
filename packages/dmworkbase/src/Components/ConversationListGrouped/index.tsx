@@ -155,6 +155,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 onRename={renameCategory}
                 onDelete={deleteCategory}
                 onReorder={sortCategories}
+                onCreateCategory={() => { setManagePanelVisible(false); setCreateModalVisible(true) }}
             />
         </>
     )

@@ -6,8 +6,8 @@
 }
 
 .wk-conv-with-category__toggle-wrap {
-    padding: 6px 8px 4px;
     flex-shrink: 0;
+    /* ViewToggle 自带 margin: 0 16px 8px，此处不加额外 padding */
 }
 
 .wk-conv-with-category__body {

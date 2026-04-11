@@ -1,44 +1,50 @@
 .wk-category-header {
     display: flex;
     align-items: center;
-    height: 32px;
-    padding: 0 8px;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: var(--wk-r-sm, 6px);
     cursor: pointer;
     user-select: none;
-    border-radius: var(--wk-r-sm);
     transition: background 0.1s ease;
-    gap: 4px;
 }
 
 .wk-category-header:hover {
     background: var(--wk-bg-hover);
 }
 
+/* 折叠箭头 */
 .wk-category-header__arrow {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     flex-shrink: 0;
-    font-size: 10px;
     color: var(--wk-text-tertiary);
     transition: transform 0.2s ease;
 }
 
-.wk-category-header__arrow--expanded {
-    transform: rotate(0deg);
+.wk-category-header__arrow svg {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .wk-category-header__arrow--collapsed {
     transform: rotate(-90deg);
 }
 
+/* 分组名 */
 .wk-category-header__name {
     flex: 1;
-    font-size: var(--wk-text-size-sm);
-    font-weight: var(--wk-font-semibold);
-    color: var(--wk-text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--wk-text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -48,41 +54,18 @@
     color: var(--wk-text-tertiary);
 }
 
+/* 未读 badge */
 .wk-category-header__badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     min-width: 16px;
     height: 16px;
-    padding: 0 4px;
-    border-radius: var(--wk-r-full);
+    border-radius: 999px;
     background: var(--wk-brand-primary);
-    color: #fff;
-    font-size: var(--wk-text-size-tiny);
-    font-weight: var(--wk-font-bold);
-    flex-shrink: 0;
-}
-
-.wk-category-header__more {
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: var(--wk-r-xs);
-    color: var(--wk-text-tertiary);
-    opacity: 0;
-    transition: opacity 0.1s ease, background 0.1s ease;
-    font-size: 14px;
+    padding: 0 4px;
     flex-shrink: 0;
-    cursor: pointer;
-}
-
-.wk-category-header:hover .wk-category-header__more {
-    opacity: 1;
-}
-
-.wk-category-header__more:hover {
-    background: var(--wk-bg-active);
-    color: var(--wk-text-primary);
 }

@@ -193,9 +193,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                     <div className="wk-conversationlist-item-left">
                         <div className="wk-conversationlist-item-avatar-box">
                             {hasThreads ? (
-                              <div className="wk-conv-group-hash-avatar">
-                                <Hash size={22} />
-                              </div>
+                              <Hash size={36} className="wk-conv-group-hash-avatar" />
                             ) : (
                               <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
                             )}
@@ -209,9 +207,6 @@ export default class ConversationList extends Component<ConversationListProps, C
                             <h3>
                                 {conversationWrap.channel.channelType === ChannelTypeCommunityTopic && (
                                   <ThreadIcon size={13} className="wk-conv-channel-icon wk-conv-thread-icon" />
-                                )}
-                                {conversationWrap.channel.channelType === ChannelTypeGroup && (
-                                  <Hash size={13} className="wk-conv-channel-icon wk-conv-hash-icon" />
                                 )}
                                 {channelInfo?.orgData.displayName}
                             </h3>

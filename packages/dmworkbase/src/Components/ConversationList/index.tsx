@@ -193,7 +193,9 @@ export default class ConversationList extends Component<ConversationListProps, C
                     <div className="wk-conversationlist-item-left">
                         <div className="wk-conversationlist-item-avatar-box">
                             {hasThreads ? (
-                              <Hash size={36} className="wk-conv-group-hash-avatar" />
+                              <div className="wk-conv-group-hash-avatar">
+                                <Hash size={20} />
+                              </div>
                             ) : (
                               <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
                             )}

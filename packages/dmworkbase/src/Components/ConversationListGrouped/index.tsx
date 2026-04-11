@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react"
+import { flushSync } from "react-dom"
 import { ChannelTypeGroup, Channel } from "wukongimjssdk"
 import { CategoryItem } from "../../Service/CategoryService"
 import { ConversationWrap } from "../../Service/Model"
@@ -62,6 +63,9 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     const categoryCtxMenuRef = useRef<ContextMenusContext | null>(null)
     const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
     const ctxMenuClearRef = useRef<(() => void) | null>(null)
+    // 菜单数据用 ref 存，避免 state 异步导致 menus 为空时就 show()
+    const categoryMenusRef = useRef<ContextMenusData[]>([])
+    const [ctxMenuKey, setCtxMenuKey] = useState(0)  // 强制重建 ContextMenus 以更新菜单
     const [renamingCategoryId, setRenamingCategoryId] = useState<string | null>(null)
 
     const handleViewModeChange = (mode: ViewMode) => {
@@ -195,9 +199,14 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 onRenameCancel={() => setRenamingCategoryId(null)}
                 onCategoryContextMenu={(categoryId, e) => {
                     e.preventDefault()
-                    // flushSync 强制同步 re-render，确保 menus prop 更新后再 show()
-                    flushSync(() => setActiveCategoryId(categoryId))
-                    categoryCtxMenuRef.current?.show(e)
+                    // 先把菜单数据写到 ref，再 show()，绕过 state 异步问题
+                    setActiveCategoryId(categoryId)
+                    categoryMenusRef.current = buildCategoryContextMenus(categoryId)
+                    setCtxMenuKey(k => k + 1)  // 强制重建 ContextMenus 以读取最新 ref
+                    // show() 在 requestAnimationFrame 后执行，确保 ContextMenus 已重建
+                    requestAnimationFrame(() => {
+                        categoryCtxMenuRef.current?.show(e)
+                    })
                     // 先移除旧监听器，再注册新的，避免累积
                     if (ctxMenuClearRef.current) {
                         document.removeEventListener('mousedown', ctxMenuClearRef.current, true)
@@ -213,8 +222,9 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             />
 
             <ContextMenus
+                key={ctxMenuKey}
                 onContext={(ctx) => { categoryCtxMenuRef.current = ctx }}
-                menus={activeCategoryId ? buildCategoryContextMenus(activeCategoryId) : []}
+                menus={categoryMenusRef.current}
             />
 
             <CategoryManagePanel

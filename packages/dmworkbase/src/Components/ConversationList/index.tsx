@@ -192,12 +192,11 @@ export default class ConversationList extends Component<ConversationListProps, C
                 {!isThread && (
                     <div className="wk-conversationlist-item-left">
                         <div className="wk-conversationlist-item-avatar-box">
-                            {hasThreads ? (
-                              <div className="wk-conv-group-hash-avatar">
-                                <Hash size={20} />
+                            <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
+                            {hasThreads && (
+                              <div className="wk-conv-group-hash-badge">
+                                <Hash size={10} strokeWidth={2.5} />
                               </div>
-                            ) : (
-                              <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
                             )}
                             {channelInfo && this.needShowOnlineStatus(channelInfo) ? <OnlineStatusBadge tip={this.getOnlineTip(channelInfo)}></OnlineStatusBadge> : undefined}
                         </div>

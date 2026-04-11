@@ -392,15 +392,18 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
   color: var(--wk-text-secondary, #666);
 }
 
-/* 有子区的主群聊头像替换为 Hash icon（仿 Discord 风格） */
-.wk-conv-group-hash-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--wk-bg-secondary, rgba(0,0,0,0.06));
+/* 有子区的主群聊头像右下角 Hash badge */
+.wk-conv-group-hash-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--wk-bg-elevated, #fff);
+  border: 1.5px solid var(--wk-bg-base, #f5f5f5);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--wk-text-secondary, #72767d);
-  flex-shrink: 0;
 }

@@ -3,7 +3,7 @@ import { Channel, ChannelTypePerson, WKSDK } from "wukongimjssdk"
 import { Modal, Toast, Spin } from "@douyinfe/semi-ui"
 import { Thread, ThreadStatus } from "../../Service/Thread"
 import { ThreadPanelVM, ThreadPanelState } from "./vm"
-import { X, List, Bell, Plus, ChevronDown } from "lucide-react"
+import { X, List, Plus, ChevronDown } from "lucide-react"
 import ThreadIcon from "../Icons/ThreadIcon"
 import classNames from "classnames"
 import { Conversation } from "../Conversation"
@@ -197,11 +197,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
               <List size={16} />
             </div>
           )}
-          {view === "list" && (
-            <div className="wk-thread-panel-header-btn" title="通知设置">
-              <Bell size={16} />
-            </div>
-          )}
+
           <div className="wk-thread-panel-header-btn" onClick={onClose}>
             <X size={18} />
           </div>

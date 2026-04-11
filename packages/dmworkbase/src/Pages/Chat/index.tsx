@@ -9,7 +9,8 @@ import { ErrorBoundary } from "../../Components/ErrorBoundary";
 import { Spin, Popover } from "@douyinfe/semi-ui";
 import WKButton from "../../Components/WKButton";
 import WKModal from "../../Components/WKModal";
-import { Search, Plus, MessageSquare } from "lucide-react";
+import { Search, Plus } from "lucide-react";
+import ThreadIcon from "../../Components/Icons/ThreadIcon";
 import { ChatVM, handleGlobalSearchClick } from "./vm";
 import "./index.css";
 import { ConversationWrap } from "../../Service/Model";
@@ -233,7 +234,7 @@ export class ChatContentPage extends Component<
                         }}
                         title="子区"
                       >
-                        <MessageSquare size={20} color={WKApp.config.themeColor} />
+                        <ThreadIcon size={20} color={WKApp.config.themeColor} />
                       </div>
                     )}
                     <div className="wk-chat-conversation-header-right-item">

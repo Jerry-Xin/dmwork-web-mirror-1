@@ -3,7 +3,8 @@ import { Channel, ChannelTypePerson, WKSDK } from "wukongimjssdk"
 import { Modal, Toast, Spin } from "@douyinfe/semi-ui"
 import { Thread, ThreadStatus } from "../../Service/Thread"
 import { ThreadPanelVM, ThreadPanelState } from "./vm"
-import { X, MessageSquare, Hash, List, Bell, Plus, ChevronDown } from "lucide-react"
+import { X, List, Bell, Plus, ChevronDown } from "lucide-react"
+import ThreadIcon from "../Icons/ThreadIcon"
 import classNames from "classnames"
 import { Conversation } from "../Conversation"
 import { ChannelTypeCommunityTopic } from "../../Service/Const"
@@ -176,12 +177,12 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
         <div className="wk-thread-panel-header-title">
           {view === "list" ? (
             <>
-              <MessageSquare className="wk-thread-panel-header-icon" size={18} />
+              <ThreadIcon className="wk-thread-panel-header-icon" size={18} />
               <span>子区</span>
             </>
           ) : (
             <>
-              <Hash className="wk-thread-panel-header-icon" size={18} />
+              <ThreadIcon className="wk-thread-panel-header-icon" size={18} />
               <span>{thread?.name || "子区"}</span>
             </>
           )}

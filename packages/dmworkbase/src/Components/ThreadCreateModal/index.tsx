@@ -1,5 +1,6 @@
 import React, { Component } from "react"
-import { X, MessageSquare } from "lucide-react"
+import { X } from "lucide-react"
+import ThreadIcon from "../Icons/ThreadIcon"
 import classNames from "classnames"
 import WKApp from "../../App"
 import "./index.css"
@@ -98,7 +99,7 @@ export default class ThreadCreateModal extends Component<
         <div className="wk-thread-modal-overlay" onClick={onClose} />
         <div className="wk-thread-modal-content">
           <div className="wk-thread-modal-header">
-            <MessageSquare className="wk-thread-modal-icon" size={24} />
+            <ThreadIcon className="wk-thread-modal-icon" size={24} />
             <div className="wk-thread-modal-title">创建子区</div>
             <div className="wk-thread-modal-close" onClick={onClose}>
               <X size={18} />

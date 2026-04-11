@@ -6,7 +6,7 @@ import ChatConversationList from "../../Components/ChatConversationList";
 import Provider from "../../Service/Provider";
 import { ErrorBoundary } from "../../Components/ErrorBoundary";
 
-import { Spin, Popover } from "@douyinfe/semi-ui";
+import { Spin, Popover, Modal, Toast } from "@douyinfe/semi-ui";
 import WKButton from "../../Components/WKButton";
 import WKModal from "../../Components/WKModal";
 import { Search, Plus } from "lucide-react";
@@ -43,7 +43,6 @@ export interface ChatContentPageState {
   showThreadPanel: boolean;
   activeThread: Thread | null;
   showThreadDropdown: boolean;
-  triggerCreateThread: boolean;
 }
 export class ChatContentPage extends Component<
   ChatContentPageProps,
@@ -62,7 +61,6 @@ export class ChatContentPage extends Component<
       showThreadPanel: false,
       activeThread: null,
       showThreadDropdown: false,
-      triggerCreateThread: false,
     };
   }
 
@@ -142,7 +140,7 @@ export class ChatContentPage extends Component<
 
   render(): React.ReactNode {
     const { channel, initLocateMessageSeq } = this.props;
-    const { showChannelSetting, selectionMode, selectedCount, showThreadPanel, activeThread, showThreadDropdown, triggerCreateThread } = this.state;
+    const { showChannelSetting, selectionMode, selectedCount, showThreadPanel, activeThread, showThreadDropdown } = this.state;
     // 子区页面不显示讨论串按钮
     const isThreadChannel = channel.channelType === ChannelTypeCommunityTopic;
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
@@ -263,17 +261,51 @@ export class ChatContentPage extends Component<
                               className="wk-thread-dropdown-item"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                this.setState({
-                                  showThreadDropdown: false,
-                                  showChannelSetting: false,
-                                }, () => {
-                                  // 先确保面板打开，再触发创建
-                                  if (this.state.showThreadPanel) {
-                                    // 面板已开，直接触发创建
-                                    this.setState({ triggerCreateThread: true })
-                                  } else {
-                                    this.setState({ showThreadPanel: true, activeThread: null, triggerCreateThread: true })
-                                  }
+                                this.setState({ showThreadDropdown: false })
+                                const groupNo = channel.channelID
+                                let threadName = ""
+                                Modal.confirm({
+                                  title: "新建子区",
+                                  icon: null,
+                                  okText: "创建",
+                                  cancelText: "取消",
+                                  content: (
+                                    <div>
+                                      <div style={{ marginBottom: "8px", fontSize: "14px", color: "var(--wk-text-secondary)" }}>
+                                        话题名称
+                                      </div>
+                                      <input
+                                        type="text"
+                                        placeholder="输入讨论话题..."
+                                        style={{
+                                          width: "100%",
+                                          padding: "10px 12px",
+                                          background: "var(--wk-bg-base)",
+                                          border: "1px solid var(--wk-border-default)",
+                                          borderRadius: "6px",
+                                          fontSize: "14px",
+                                          color: "var(--wk-text-primary)",
+                                          outline: "none",
+                                          boxSizing: "border-box" as const,
+                                        }}
+                                        onChange={(ev) => { threadName = ev.target.value }}
+                                        autoFocus
+                                      />
+                                    </div>
+                                  ),
+                                  onOk: async () => {
+                                    if (!threadName || threadName.trim() === "") {
+                                      Toast.error("话题名称不能为空")
+                                      return
+                                    }
+                                    try {
+                                      await WKApp.dataSource.channelDataSource.threadCreate(groupNo, threadName.trim())
+                                      Toast.success("子区创建成功")
+                                    } catch (err) {
+                                      const msg = err instanceof Error ? err.message : "创建失败"
+                                      Toast.error(msg)
+                                    }
+                                  },
                                 })
                               }}
                             >
@@ -396,8 +428,6 @@ export class ChatContentPage extends Component<
           <ThreadPanel
             groupNo={channel.channelID}
             thread={activeThread}
-            triggerCreate={triggerCreateThread}
-            onCreateTriggered={() => this.setState({ triggerCreateThread: false })}
             onClose={() => {
               this.setState({ showThreadPanel: false, activeThread: null });
             }}

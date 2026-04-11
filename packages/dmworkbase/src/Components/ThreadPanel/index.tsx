@@ -61,6 +61,11 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     if (this.props.thread) {
       this.initVM(this.props.thread.short_id)
     }
+    // mount 时就已经带了 triggerCreate，直接触发新建
+    if (this.props.triggerCreate) {
+      this.props.onCreateTriggered?.()
+      this.handleCreateThread()
+    }
   }
 
   componentDidUpdate(prevProps: ThreadPanelProps) {

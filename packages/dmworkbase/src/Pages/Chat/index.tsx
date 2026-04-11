@@ -261,21 +261,28 @@ export class ChatContentPage extends Component<
                           <div className="wk-thread-dropdown">
                             <div
                               className="wk-thread-dropdown-item"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 this.setState({
                                   showThreadDropdown: false,
-                                  showThreadPanel: true,
-                                  activeThread: null,
                                   showChannelSetting: false,
-                                  triggerCreateThread: true,
-                                });
+                                }, () => {
+                                  // 先确保面板打开，再触发创建
+                                  if (this.state.showThreadPanel) {
+                                    // 面板已开，直接触发创建
+                                    this.setState({ triggerCreateThread: true })
+                                  } else {
+                                    this.setState({ showThreadPanel: true, activeThread: null, triggerCreateThread: true })
+                                  }
+                                })
                               }}
                             >
                               新建子区
                             </div>
                             <div
                               className="wk-thread-dropdown-item"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 this.setState({
                                   showThreadDropdown: false,
                                   showThreadPanel: true,

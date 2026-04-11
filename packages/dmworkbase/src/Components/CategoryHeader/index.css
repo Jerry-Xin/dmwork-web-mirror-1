@@ -7,6 +7,8 @@
     cursor: pointer;
     user-select: none;
     transition: background 120ms;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .wk-category-header:hover {
@@ -26,21 +28,21 @@
 /* 行内重命名编辑态 */
 .wk-category-header--editing {
     background: var(--wk-purple-alpha-04);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .wk-category-header__rename-wrap {
-    flex: 1;
     display: flex;
     align-items: center;
     gap: 4px;
+    flex: 1;
     min-width: 0;
 }
 
 .wk-category-header__rename-input {
-    flex: 0 1 auto;
-    width: auto;
-    min-width: 60px;
-    max-width: 160px;
+    flex: 1;
+    min-width: 0;
     height: 24px;
     padding: 2px 6px;
     border: 1px solid var(--wk-brand-primary);
@@ -56,8 +58,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: var(--wk-r-xs, 4px);
     border: none;
     background: transparent;
@@ -71,8 +73,8 @@
 }
 
 .wk-category-header__rename-btn svg {
-    width: 11px;
-    height: 11px;
+    width: 14px;
+    height: 14px;
     stroke: currentColor;
     stroke-width: 2;
     fill: none;

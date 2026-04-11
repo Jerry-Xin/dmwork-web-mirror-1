@@ -386,10 +386,10 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
   color: var(--wk-text-secondary);
 }
 .wk-conv-thread-icon {
-  color: var(--wk-text-tertiary, #999);
+  color: var(--wk-text-tertiary);
 }
 .wk-conv-hash-icon {
-  color: var(--wk-text-secondary, #666);
+  color: var(--wk-text-secondary);
 }
 
 /* 有子区的主群聊头像右下角 Hash badge */
@@ -400,10 +400,10 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--wk-bg-elevated, #fff);
-  border: 1.5px solid var(--wk-bg-base, #f5f5f5);
+  background: var(--wk-bg-elevated);
+  border: 1.5px solid var(--wk-bg-base);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--wk-text-secondary, #72767d);
+  color: var(--wk-text-secondary);
 }

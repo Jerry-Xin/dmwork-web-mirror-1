@@ -642,7 +642,7 @@ body[theme-mode=dark] .wk-chat-popover {
   min-width: 140px;
   padding: 4px 0;
   border-radius: 8px;
-  background: var(--wk-bg-elevated, #fff);
+  background: var(--wk-bg-elevated);
 }
 .wk-thread-dropdown-item {
   padding: 8px 16px;
@@ -653,5 +653,5 @@ body[theme-mode=dark] .wk-chat-popover {
   transition: background 0.12s;
 }
 .wk-thread-dropdown-item:hover {
-  background: var(--wk-bg-hover, rgba(0,0,0,0.06));
+  background: var(--wk-bg-hover);
 }

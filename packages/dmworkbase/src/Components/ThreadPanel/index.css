@@ -489,7 +489,7 @@ body[theme-mode="dark"] .wk-thread-panel {
   min-width: 140px;
   padding: 4px 0;
   border-radius: 8px;
-  background: var(--wk-bg-elevated, #fff);
+  background: var(--wk-bg-elevated);
 }
 .wk-thread-more-menu-item {
   padding: 8px 16px;
@@ -500,11 +500,11 @@ body[theme-mode="dark"] .wk-thread-panel {
   transition: background 0.12s;
 }
 .wk-thread-more-menu-item:hover {
-  background: var(--wk-bg-hover, rgba(0,0,0,0.06));
+  background: var(--wk-bg-hover);
 }
 .wk-thread-more-menu-item-danger {
-  color: var(--wk-color-danger, #f93920);
+  color: var(--wk-color-danger);
 }
 .wk-thread-more-menu-item-danger:hover {
-  background: rgba(249,57,32,0.08);
+  background: var(--wk-brand-tint-08);
 }

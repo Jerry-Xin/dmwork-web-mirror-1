@@ -24,7 +24,7 @@
 }
 
 .wk-view-toggle-item--active {
-    background: var(--wk-bg-surface, white);
+    background: var(--wk-bg-surface);
     color: var(--wk-text-primary);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--wk-shadow-sm);
 }

@@ -3,7 +3,7 @@
     width: 300px;
     background: var(--wk-bg-surface);
     border-radius: var(--wk-r-lg);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+    box-shadow: var(--wk-shadow-sm), var(--wk-shadow-md);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -80,7 +80,7 @@
 }
 
 .wk-category-manage-panel__item--editing {
-    background: rgba(124, 92, 252, 0.04) !important;
+    background: var(--wk-purple-alpha-04) !important;
 }
 
 .wk-category-manage-panel__item--dragging {
@@ -183,13 +183,13 @@
     color: var(--wk-text-primary);
     background: var(--wk-bg-surface);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(124, 92, 252, 0.12);
+    box-shadow: 0 0 0 2px var(--wk-purple-alpha-12);
     min-width: 0;
 }
 
 .wk-category-manage-panel__rename-input--error {
     border-color: var(--wk-color-error);
-    box-shadow: 0 0 0 2px rgba(229, 64, 94, 0.12);
+    box-shadow: 0 0 0 2px var(--wk-error-alpha-12, rgba(229, 64, 94, 0.12));
 }
 
 .wk-category-manage-panel__rename-confirm {
@@ -200,12 +200,12 @@
 
 /* 确认按钮绿色，取消按钮红色 */
 .wk-category-manage-panel__rename-btn--ok {
-    color: #22C55E;
+    color: var(--wk-color-success);
 }
 
 .wk-category-manage-panel__rename-btn--ok:hover {
-    background: rgba(34, 197, 94, 0.1) !important;
-    color: #16A34A !important;
+    background: var(--wk-success-tint-10) !important;
+    color: var(--wk-color-success) !important;
 }
 
 .wk-category-manage-panel__rename-btn--cancel {
@@ -213,7 +213,7 @@
 }
 
 .wk-category-manage-panel__rename-btn--cancel:hover {
-    background: rgba(229, 64, 94, 0.1) !important;
+    background: var(--wk-error-tint-10, rgba(229, 64, 94, 0.1)) !important;
     color: var(--wk-color-error) !important;
 }
 
@@ -265,7 +265,7 @@
     position: fixed;
     inset: 0;
     z-index: 98;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--wk-black-alpha-14);
     display: flex;
     align-items: center;
     justify-content: center;

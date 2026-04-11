@@ -616,12 +616,18 @@ const MOCK_CATEGORY_ITEMS = [
 ]
 
 // Mock 会话 wrap（最小结构）
+const makeMockChannel = (id: string, channelType = 2) => ({
+  channelID: id,
+  channelType,
+  getChannelKey: () => `${id}-${channelType}`,
+})
+
 const makeMockConv = (id: string, name: string, unread = 0, channelType = 2 /* ChannelTypeGroup */) => ({
-  channel: { channelID: id, channelType },
+  channel: makeMockChannel(id, channelType),
   channelInfo: { top: false, mute: false, orgData: { name } },
   unread,
   lastMessage: null,
-  conversation: { channel: { channelID: id, channelType }, unread, timestamp: Date.now() },
+  conversation: { channel: makeMockChannel(id, channelType), unread, timestamp: Date.now() },
 }) as any
 
 const MOCK_CONVERSATIONS = [

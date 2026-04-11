@@ -73,7 +73,7 @@
     height: 16px;
     border-radius: 9999px;
     background: var(--wk-brand-primary);
-    color: white;
+    color: var(--wk-color-white);
     font-size: 9px;
     font-weight: 700;
     display: flex;

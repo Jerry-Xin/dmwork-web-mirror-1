@@ -77,6 +77,19 @@ export class ChatContentPage extends Component<
     };
     WKSDK.shared().channelManager.addListener(this.channelInfoListener);
 
+    // pendingThread 이벤트 리스너 등록 (같은 채널이 이미 열려있을 때 처리)
+    this._onPendingThread = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail?.groupNo === this.props.channel.channelID) {
+        this.setState({
+          showThreadPanel: true,
+          showChannelSetting: false,
+          activeThread: detail.thread || null,
+        })
+      }
+    }
+    window.addEventListener('wk:pending-thread', this._onPendingThread)
+
     // 检查是否需要自动打开子区面板（查看全部子区）
     if (WKApp.shared.pendingThreadPanel === channel.channelID) {
       this.setState({ showThreadPanel: true, activeThread: null });
@@ -164,7 +177,12 @@ export class ChatContentPage extends Component<
     }
   }
 
+  private _onPendingThread?: (e: Event) => void
+
   componentWillUnmount() {
+    if (this._onPendingThread) {
+      window.removeEventListener('wk:pending-thread', this._onPendingThread)
+    }
     WKSDK.shared().channelManager.removeListener(this.channelInfoListener);
   }
 
@@ -649,15 +667,12 @@ export default class ChatPage extends Component<any, ChatPageState> {
                                     created_at: "",
                                     updated_at: "",
                                   }
-                                  // 이미 부모 그룹이 열려있으면 바로 ThreadPanel 열기
-                                  if (this.props.channel?.channelID === parentGroupNo) {
-                                    this.setState({
-                                      showThreadPanel: true,
-                                      showChannelSetting: false,
-                                      activeThread: thread,
-                                    })
-                                  } else {
-                                    // 부모 그룹으로 전환 후 ThreadPanel 열기
+                                  // 이미 부모 그룹이 열려있거나 어디서든 event dispatch로 처리
+                                  window.dispatchEvent(new CustomEvent('wk:pending-thread', {
+                                    detail: { groupNo: parentGroupNo, thread }
+                                  }))
+                                  // 다른 채널이면 showConversation도 호출
+                                  if (this.props.channel?.channelID !== parentGroupNo) {
                                     const parentChannel = new Channel(parentGroupNo, ChannelTypeGroup)
                                     WKApp.shared.pendingThread = {
                                       groupNo: parentGroupNo,
@@ -690,21 +705,22 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           }}
                           onClearMessages={this.vm.clearMessages.bind(this.vm)}
                           onThreadOverflowClick={(groupNo: string) => {
-                            // 이미 해당 부모 그룹이 열려있으면 바로 ThreadPanel list 열기
-                            if (this.props.channel?.channelID === groupNo) {
-                              this.setState({ showThreadPanel: true, activeThread: null, showChannelSetting: false })
-                              return
+                            // event dispatch로 현재 ChatContentPage에 전달
+                            window.dispatchEvent(new CustomEvent('wk:pending-thread', {
+                              detail: { groupNo, thread: null }
+                            }))
+                            // 다른 채널이면 showConversation도 호출
+                            if (this.props.channel?.channelID !== groupNo) {
+                              WKApp.shared.pendingThreadPanel = groupNo
+                              const groupConv = vm.filteredConversations.find(
+                                c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === groupNo
+                              )
+                              if (groupConv) {
+                                vm.selectedConversation = groupConv
+                                vm.notifyListener()
+                              }
+                              WKApp.endpoints.showConversation(new Channel(groupNo, ChannelTypeGroup))
                             }
-                            // 다른 그룹으로 전환
-                            WKApp.shared.pendingThreadPanel = groupNo
-                            const groupConv = vm.filteredConversations.find(
-                              c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === groupNo
-                            )
-                            if (groupConv) {
-                              vm.selectedConversation = groupConv
-                              vm.notifyListener()
-                            }
-                            WKApp.endpoints.showConversation(new Channel(groupNo, ChannelTypeGroup))
                           }}
                         />
                       </ErrorBoundary>

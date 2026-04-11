@@ -91,7 +91,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             checked: currentCategoryId === cat.category_id,
             onClick: () => onMoveGroupToCategory(groupNo, cat.category_id!),
         }))
-        items.push({ separator: true } as any)
+        items.push({ separator: true } as ContextMenusData)
         items.push({ title: "+ 新建分组", onClick: onOpenCreateCategory })
 
         return items
@@ -155,7 +155,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     onSortCategories(newIds)
                 },
             },
-            { separator: true } as any,
+            { separator: true } as ContextMenusData,
             {
                 title: "删除分组",
                 icon: "M3 6h18 M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6 M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2",
@@ -191,6 +191,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             />
 
             <CategoryManagePanel
+                key={managePanelVisible ? 'panel-open' : 'panel-closed'}
                 visible={managePanelVisible}
                 categories={categories
                     .filter(c => c.category_id !== null)

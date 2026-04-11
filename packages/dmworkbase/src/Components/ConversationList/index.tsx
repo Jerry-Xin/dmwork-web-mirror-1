@@ -462,16 +462,10 @@ export default class ConversationList extends Component<ConversationListProps, C
                         icon: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
                         onClick: () => {
                             if (!channel) return
-                            const apiURL = WKApp.apiClient.config.apiURL
-                            const token = WKApp.loginInfo.token || ""
-                            fetch(`${apiURL}conversation/clearUnread`, {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json", token },
-                                body: JSON.stringify({
-                                    channel_id: channel.channelID,
-                                    channel_type: channel.channelType,
-                                    unread: 0,
-                                }),
+                            WKApp.apiClient.put("conversation/clearUnread", {
+                                channel_id: channel.channelID,
+                                channel_type: channel.channelType,
+                                unread: 0,
                             })
                         }
                     })
@@ -517,7 +511,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                 })
 
                 // 6. 分隔线
-                menus.push({ separator: true })
+                menus.push({ separator: true } as ContextMenusData)
 
                 // 7. 更多（子菜单：清空聊天记录 / 关闭并清空）
                 menus.push({

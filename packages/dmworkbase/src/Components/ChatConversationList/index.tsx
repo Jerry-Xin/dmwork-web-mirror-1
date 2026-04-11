@@ -65,7 +65,7 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
             checked: currentCategoryId === cat.category_id,
             onClick: () => moveGroupToCategory(groupNo, cat.category_id!),
         }))
-        items.push({ separator: true } as any)
+        items.push({ separator: true } as ContextMenusData)
         items.push({ title: "+ 新建分组", onClick: () => setCreateModalVisible(true) })
 
         return items

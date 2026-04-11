@@ -50,6 +50,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
     const [renameError, setRenameError] = useState<string | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<CategoryItem | null>(null)
     const dragRef = useRef<string | null>(null)
+    const [draggingId, setDraggingId] = useState<string | null>(null)
     // 插入指示线：{ id: string, position: 'above' | 'below' }
     const [dropIndicator, setDropIndicator] = useState<{ id: string; position: 'above' | 'below' } | null>(null)
 
@@ -65,6 +66,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
             setRenameError(null)
             setDeleteTarget(null)
             setDropIndicator(null)
+            setDraggingId(null)
             dragRef.current = null
         }
     }, [visible])
@@ -92,7 +94,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
     const cancelRename = () => { setRenamingId(null); setRenameError(null) }
 
     // HTML5 拖拽排序
-    const handleDragStart = (id: string) => { dragRef.current = id }
+    const handleDragStart = (id: string) => { dragRef.current = id; setDraggingId(id) }
 
     const handleDragOver = (e: React.DragEvent, id: string) => {
         e.preventDefault()
@@ -137,6 +139,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
 
     const handleDragEnd = async () => {
         setDropIndicator(null)
+        setDraggingId(null)
         dragRef.current = null
         try { await onReorder(items.map(i => i.id)) } catch { setItems(categories) }
     }
@@ -168,7 +171,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
                         )}
                         {items.map((item) => {
                             const isEditing = renamingId === item.id
-                            const isDragging = dragRef.current === item.id
+                            const isDragging = draggingId === item.id
                             return (
                                 <div
                                     key={item.id}

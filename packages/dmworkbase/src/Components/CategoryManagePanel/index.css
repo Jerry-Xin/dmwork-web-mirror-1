@@ -85,6 +85,21 @@
 
 .wk-category-manage-panel__item--dragging {
     opacity: 0.4;
+    background: var(--wk-bg-active);
+}
+
+/* 插入指示线 */
+.wk-category-manage-panel__item--drop-above {
+    box-shadow: 0 -2px 0 0 var(--wk-brand-primary);
+}
+
+.wk-category-manage-panel__item--drop-below {
+    box-shadow: 0 2px 0 0 var(--wk-brand-primary);
+}
+
+/* 列表项过渡动画 */
+.wk-category-manage-panel__item {
+    transition: box-shadow 80ms ease, background 0.1s ease;
 }
 
 /* ── 拖拽手柄 ── */

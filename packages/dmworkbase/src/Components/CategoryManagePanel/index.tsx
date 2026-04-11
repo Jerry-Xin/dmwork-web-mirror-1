@@ -50,6 +50,8 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
     const [renameError, setRenameError] = useState<string | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<CategoryItem | null>(null)
     const dragRef = useRef<string | null>(null)
+    // 插入指示线：{ id: string, position: 'above' | 'below' }
+    const [dropIndicator, setDropIndicator] = useState<{ id: string; position: 'above' | 'below' } | null>(null)
 
     useEffect(() => {
         setItems(categories)
@@ -62,6 +64,7 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
             setRenameValue("")
             setRenameError(null)
             setDeleteTarget(null)
+            setDropIndicator(null)
             dragRef.current = null
         }
     }, [visible])
@@ -90,20 +93,52 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
 
     // HTML5 拖拽排序
     const handleDragStart = (id: string) => { dragRef.current = id }
+
     const handleDragOver = (e: React.DragEvent, id: string) => {
         e.preventDefault()
         if (dragRef.current === id) return
+
+        // 根据鼠标位置判断插入到上方还是下方
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+        const midY = rect.top + rect.height / 2
+        const position = e.clientY < midY ? 'above' : 'below'
+        setDropIndicator({ id, position })
+    }
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        // 只有真正离开行（不是进入子元素）时清除
+        const related = e.relatedTarget as HTMLElement
+        if (!(e.currentTarget as HTMLElement).contains(related)) {
+            setDropIndicator(null)
+        }
+    }
+
+    const handleDrop = (e: React.DragEvent, id: string) => {
+        e.preventDefault()
+        if (!dragRef.current || dragRef.current === id) {
+            setDropIndicator(null)
+            return
+        }
         const from = items.findIndex(i => i.id === dragRef.current)
         const to = items.findIndex(i => i.id === id)
-        if (from < 0 || to < 0) return
+        if (from < 0 || to < 0) { setDropIndicator(null); return }
+
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+        const midY = rect.top + rect.height / 2
+        const insertAfter = e.clientY >= midY
+
         const next = [...items]
         const [moved] = next.splice(from, 1)
-        next.splice(to, 0, moved)
+        const toIdx = next.findIndex(i => i.id === id)
+        next.splice(insertAfter ? toIdx + 1 : toIdx, 0, moved)
         setItems(next)
+        setDropIndicator(null)
     }
+
     const handleDragEnd = async () => {
-        try { await onReorder(items.map(i => i.id)) } catch { setItems(categories) }
+        setDropIndicator(null)
         dragRef.current = null
+        try { await onReorder(items.map(i => i.id)) } catch { setItems(categories) }
     }
 
     return (
@@ -137,8 +172,16 @@ const CategoryManagePanel: React.FC<CategoryManagePanelProps> = ({
                             return (
                                 <div
                                     key={item.id}
-                                    className={`wk-category-manage-panel__item${isEditing ? " wk-category-manage-panel__item--editing" : ""}${isDragging ? " wk-category-manage-panel__item--dragging" : ""}`}
+                                    className={[
+                                        "wk-category-manage-panel__item",
+                                        isEditing ? "wk-category-manage-panel__item--editing" : "",
+                                        isDragging ? "wk-category-manage-panel__item--dragging" : "",
+                                        dropIndicator?.id === item.id && dropIndicator.position === 'above' ? "wk-category-manage-panel__item--drop-above" : "",
+                                        dropIndicator?.id === item.id && dropIndicator.position === 'below' ? "wk-category-manage-panel__item--drop-below" : "",
+                                    ].filter(Boolean).join(" ")}
                                     onDragOver={e => handleDragOver(e, item.id)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={e => handleDrop(e, item.id)}
                                 >
                                     {/* 只有手柄可以拖拽，整行不 draggable */}
                                     <span

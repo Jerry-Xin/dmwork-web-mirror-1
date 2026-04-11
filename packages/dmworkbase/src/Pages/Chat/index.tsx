@@ -42,6 +42,8 @@ export interface ChatContentPageState {
   selectedCount: number;
   showThreadPanel: boolean;
   activeThread: Thread | null;
+  showThreadDropdown: boolean;
+  triggerCreateThread: boolean;
 }
 export class ChatContentPage extends Component<
   ChatContentPageProps,
@@ -59,6 +61,8 @@ export class ChatContentPage extends Component<
       selectedCount: 0,
       showThreadPanel: false,
       activeThread: null,
+      showThreadDropdown: false,
+      triggerCreateThread: false,
     };
   }
 
@@ -117,7 +121,7 @@ export class ChatContentPage extends Component<
 
   render(): React.ReactNode {
     const { channel, initLocateMessageSeq } = this.props;
-    const { showChannelSetting, selectionMode, selectedCount, showThreadPanel, activeThread } = this.state;
+    const { showChannelSetting, selectionMode, selectedCount, showThreadPanel, activeThread, showThreadDropdown, triggerCreateThread } = this.state;
     // 子区页面不显示讨论串按钮
     const isThreadChannel = channel.channelType === ChannelTypeCommunityTopic;
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
@@ -224,18 +228,54 @@ export class ChatContentPage extends Component<
                           </div>
                         );
                       })}
-                    {/* 讨论串按钮 - 子区页面不显示 */}
+                    {/* 子区按钮 - 下拉菜单（新建子区 / 查看全部子区） */}
                     {!isThreadChannel && channel.channelType === ChannelTypeGroup && WKApp.remoteConfig.threadOn && (
-                      <div
-                        className="wk-chat-conversation-header-right-item"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          this.setState({ showThreadPanel: !showThreadPanel, showChannelSetting: false });
-                        }}
-                        title="子区"
+                      <Popover
+                        visible={showThreadDropdown}
+                        onVisibleChange={(v) => this.setState({ showThreadDropdown: v })}
+                        trigger="click"
+                        position="bottomRight"
+                        showArrow={false}
+                        content={
+                          <div className="wk-thread-dropdown">
+                            <div
+                              className="wk-thread-dropdown-item"
+                              onClick={() => {
+                                this.setState({
+                                  showThreadDropdown: false,
+                                  showThreadPanel: true,
+                                  activeThread: null,
+                                  showChannelSetting: false,
+                                  triggerCreateThread: true,
+                                });
+                              }}
+                            >
+                              新建子区
+                            </div>
+                            <div
+                              className="wk-thread-dropdown-item"
+                              onClick={() => {
+                                this.setState({
+                                  showThreadDropdown: false,
+                                  showThreadPanel: true,
+                                  activeThread: null,
+                                  showChannelSetting: false,
+                                });
+                              }}
+                            >
+                              查看全部子区
+                            </div>
+                          </div>
+                        }
                       >
-                        <ThreadIcon size={20} color={WKApp.config.themeColor} />
-                      </div>
+                        <div
+                          className="wk-chat-conversation-header-right-item"
+                          onClick={(e) => e.stopPropagation()}
+                          title="子区"
+                        >
+                          <ThreadIcon size={20} color={WKApp.config.themeColor} />
+                        </div>
+                      </Popover>
                     )}
                     <div className="wk-chat-conversation-header-right-item">
                       <svg
@@ -328,6 +368,8 @@ export class ChatContentPage extends Component<
           <ThreadPanel
             groupNo={channel.channelID}
             thread={activeThread}
+            triggerCreate={triggerCreateThread}
+            onCreateTriggered={() => this.setState({ triggerCreateThread: false })}
             onClose={() => {
               this.setState({ showThreadPanel: false, activeThread: null });
             }}

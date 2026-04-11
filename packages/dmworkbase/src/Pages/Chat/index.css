@@ -624,3 +624,22 @@ body[theme-mode=dark] .wk-chat-popover {
     border-color: var(--accent);
     color: var(--accent);
 }
+
+/* 子区下拉菜单 */
+.wk-thread-dropdown {
+  min-width: 140px;
+  padding: 4px 0;
+  border-radius: 8px;
+  background: var(--wk-bg-elevated, #fff);
+}
+.wk-thread-dropdown-item {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--wk-text-primary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+.wk-thread-dropdown-item:hover {
+  background: var(--wk-bg-hover, rgba(0,0,0,0.06));
+}

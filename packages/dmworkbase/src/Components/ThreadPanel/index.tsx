@@ -19,6 +19,8 @@ export interface ThreadPanelProps {
   onClose: () => void
   onThreadSelect?: (thread: Thread) => void
   onCreateThread?: () => void
+  triggerCreate?: boolean
+  onCreateTriggered?: () => void
 }
 
 interface ThreadPanelComponentState {
@@ -70,6 +72,11 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     }
     if (this.props.groupNo !== prevProps.groupNo) {
       this.loadThreads()
+    }
+    // 外部触发新建子区
+    if (this.props.triggerCreate && !prevProps.triggerCreate) {
+      this.props.onCreateTriggered?.()
+      this.handleCreateThread()
     }
   }
 

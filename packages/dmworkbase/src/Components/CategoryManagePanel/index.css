@@ -189,7 +189,7 @@
 
 .wk-category-manage-panel__rename-input--error {
     border-color: var(--wk-color-error);
-    box-shadow: 0 0 0 2px var(--wk-error-alpha-12, rgba(229, 64, 94, 0.12));
+    box-shadow: 0 0 0 2px var(--wk-purple-alpha-12);
 }
 
 .wk-category-manage-panel__rename-confirm {
@@ -213,7 +213,7 @@
 }
 
 .wk-category-manage-panel__rename-btn--cancel:hover {
-    background: var(--wk-error-tint-10, rgba(229, 64, 94, 0.1)) !important;
+    background: var(--wk-success-tint-10) !important;
     color: var(--wk-color-error) !important;
 }
 

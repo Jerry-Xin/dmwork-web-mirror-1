@@ -4,7 +4,7 @@
     background: var(--wk-bg-surface);
     border: 1px solid var(--wk-border-subtle);
     border-radius: var(--wk-r-md);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--wk-shadow-md);
 }
 
 .wk-move-to-group-menu__item {
@@ -31,6 +31,6 @@
 }
 
 .wk-move-to-group-menu__create {
-    color: var(--wk-color-primary, #5B5FC7);
+    color: var(--wk-brand-primary);
     font-weight: var(--wk-font-medium);
 }

@@ -83,7 +83,7 @@
 
 .wk-conv-with-category__retry {
     font-size: var(--wk-text-size-sm);
-    color: var(--wk-color-primary, #5B5FC7);
+    color: var(--wk-brand-primary);
     cursor: pointer;
     background: none;
     border: none;

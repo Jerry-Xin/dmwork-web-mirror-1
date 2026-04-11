@@ -524,10 +524,22 @@ body[theme-mode=dark] .wk-chat-popover {
     margin-top: 0px;
 }
 
+.wk-chatmenuspopover-avatar {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 .wk-chatmenuspopover li img {
-    width: 20px;
-    height: 20px;
-    color: var(--wk-color-white);
+    width: 22px;
+    height: 22px;
+    max-width: 22px;
+    max-height: 22px;
+    object-fit: contain;
+    display: block;
 }
 
 .wk-chatmenuspopover-title {

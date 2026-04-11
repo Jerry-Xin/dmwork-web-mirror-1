@@ -428,6 +428,7 @@ export const CategoryManagePanelDefault: StoryObj = {
           onRename={async (id, name) => { console.log('rename', id, name) }}
           onDelete={(id) => console.log('delete', id)}
           onReorder={(ids) => console.log('reorder', ids)}
+          onCreateCategory={() => console.log('create category')}
         />
       </div>
     )

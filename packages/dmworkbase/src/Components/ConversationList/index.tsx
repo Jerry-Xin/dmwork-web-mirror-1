@@ -447,59 +447,46 @@ export default class ConversationList extends Component<ConversationListProps, C
 
             <ContextMenus onContext={(ctx) => {
                 this.contextMenusContext = ctx
-            }} menus={[
-                {
-                    title: selectConversationWrap?.channelInfo?.top ? "取消置顶" : "置顶", onClick: () => {
-                        if (selectConversationWrap?.channelInfo) this.onTop(selectConversationWrap.channelInfo)
-                    }
-                },
-                {
-                    title: selectConversationWrap?.channelInfo?.mute ? "关闭免打扰" : "开启免打扰", onClick: () => {
-                        if (selectConversationWrap?.channelInfo) this.onMute(selectConversationWrap.channelInfo)
-                    }
-                },
-                {
-                    title: "关闭聊天窗口", onClick: () => {
-                        Modal.confirm({
-                            title: '确认关闭',
-                            content: '确定要关闭此聊天窗口吗？',
-                            okText: '确定',
-                            cancelText: '取消',
-                            onOk: () => {
-                                this.onCloseChat(selectConversationWrap?.channel!)
-                            },
-                        })
-                    }
-                },
-                {
-                    title: "清空聊天记录", onClick: () => {
-                        Modal.confirm({
-                            title: '确认清空',
-                            content: '确定要清空所有聊天记录吗？此操作不可撤销。',
-                            okText: '确定',
-                            cancelText: '取消',
-                            onOk: () => {
-                                this.onClearMessages(selectConversationWrap?.channel!)
-                            },
-                        })
-                    }
-                },
-                {
-                    title: "关闭窗口并清空聊天记录", onClick: () => {
-                        Modal.confirm({
-                            title: '确认关闭并清空',
-                            content: '确定要关闭窗口并清空所有聊天记录吗？此操作不可撤销。',
-                            okText: '确定',
-                            cancelText: '取消',
-                            onOk: () => {
-                                this.onCloseChat(selectConversationWrap?.channel!)
-                                this.onClearMessages(selectConversationWrap?.channel!)
-                            },
-                        })
-                    }
-                },
-                ...(this.props.extraContextMenus ? this.props.extraContextMenus(selectConversationWrap) : []),
-            ]} />
+            }} menus={(() => {
+                const extraMenus = this.props.extraContextMenus ? this.props.extraContextMenus(selectConversationWrap) : []
+                const baseMenus = [
+                    {
+                        title: "标为已读",
+                        icon: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
+                    },
+                    {
+                        title: "关闭聊天窗口",
+                        icon: "M18 6 6 18 M6 6l12 12",
+                        onClick: () => {
+                            Modal.confirm({
+                                title: '确认关闭',
+                                content: '确定要关闭此聊天窗口吗？',
+                                okText: '确定',
+                                cancelText: '取消',
+                                onOk: () => { this.onCloseChat(selectConversationWrap?.channel!) },
+                            })
+                        }
+                    },
+                    ...(extraMenus.length > 0 ? [{
+                        title: "移到分组",
+                        icon: "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z",
+                        children: extraMenus,
+                    }] : []),
+                    {
+                        title: selectConversationWrap?.channelInfo?.top ? "取消置顶" : "置顶",
+                        icon: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
+                        onClick: () => {
+                            if (selectConversationWrap?.channelInfo) this.onTop(selectConversationWrap.channelInfo)
+                        }
+                    },
+                    { separator: true } as any,
+                    {
+                        title: "更多",
+                        icon: "M12 12m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 5m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 19m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0",
+                    },
+                ]
+                return baseMenus
+            })()} />
         </div>
     }
 }

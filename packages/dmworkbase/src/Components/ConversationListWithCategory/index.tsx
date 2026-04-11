@@ -24,6 +24,7 @@ export interface ConversationListWithCategoryProps {
     allConversations?: React.ReactNode
     onCreateCategory?: () => void
     onManageCategories?: () => void
+    onCategoryContextMenu?: (categoryId: string, e: React.MouseEvent) => void
 }
 
 const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> = ({
@@ -37,6 +38,7 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
     allConversations,
     onCreateCategory,
     onManageCategories,
+    onCategoryContextMenu,
 }) => {
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set())
 
@@ -85,7 +87,7 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
                         category={cat}
                         isCollapsed={collapsedIds.has(cat.id)}
                         onToggle={() => toggleCollapse(cat.id)}
-                        onContextMenu={() => {}}
+                        onContextMenu={onCategoryContextMenu ? (e) => onCategoryContextMenu(cat.id, e) : undefined}
                     >
                         {cat.conversations}
                     </CategorySection>

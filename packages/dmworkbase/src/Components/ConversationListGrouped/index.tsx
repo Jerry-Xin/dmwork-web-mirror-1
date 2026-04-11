@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { ChannelTypeGroup } from "wukongimjssdk"
 import { useCategoryList } from "../../Hooks/useCategoryList"
 import { ConversationWrap } from "../../Service/Model"
@@ -6,7 +6,7 @@ import ConversationList from "../ConversationList"
 import ConversationListWithCategory from "../ConversationListWithCategory"
 import CreateCategoryModal from "../CreateCategoryModal"
 import CategoryManagePanel from "../CategoryManagePanel"
-import { ContextMenusData } from "../ContextMenus"
+import ContextMenus, { ContextMenusContext, ContextMenusData } from "../ContextMenus"
 import { Channel } from "wukongimjssdk"
 import WKApp from "../../App"
 
@@ -45,6 +45,8 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode)
     const [createModalVisible, setCreateModalVisible] = useState(false)
     const [managePanelVisible, setManagePanelVisible] = useState(false)
+    const categoryCtxMenuRef = useRef<ContextMenusContext | null>(null)
+    const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
 
     const {
         categories,
@@ -116,6 +118,47 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         }
     })
 
+    // 分组标题右键菜单（重命名/上移/下移/删除）
+    const buildCategoryContextMenus = (categoryId: string): ContextMenusData[] => {
+        const idx = categories.findIndex(c => c.category_id === categoryId)
+        const cat = categories[idx]
+        if (!cat) return []
+        return [
+            {
+                title: "重命名",
+                icon: "M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z m-2-2 4 4",
+                onClick: () => setManagePanelVisible(true),
+            },
+            {
+                title: "上移",
+                icon: "M18 15 12 9 6 15",
+                onClick: () => {
+                    if (idx <= 0) return
+                    const newIds = categories.map(c => c.category_id!)
+                    ;[newIds[idx - 1], newIds[idx]] = [newIds[idx], newIds[idx - 1]]
+                    sortCategories(newIds)
+                },
+            },
+            {
+                title: "下移",
+                icon: "M6 9l6 6 6-6",
+                onClick: () => {
+                    if (idx >= categories.length - 1) return
+                    const newIds = categories.map(c => c.category_id!)
+                    ;[newIds[idx], newIds[idx + 1]] = [newIds[idx + 1], newIds[idx]]
+                    sortCategories(newIds)
+                },
+            },
+            { separator: true } as any,
+            {
+                title: "删除分组",
+                icon: "M3 6h18 M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6 M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2",
+                danger: true,
+                onClick: () => deleteCategory(categoryId),
+            },
+        ]
+    }
+
     return (
         <>
             <ConversationListWithCategory
@@ -129,6 +172,17 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 ungroupedConversations={ungroupedConvs.length > 0 ? ConvListWithMenu(ungroupedConvs) : undefined}
                 onCreateCategory={() => setCreateModalVisible(true)}
                 onManageCategories={() => setManagePanelVisible(true)}
+                onCategoryContextMenu={(categoryId, e) => {
+                    setActiveCategoryId(categoryId)
+                    // 延迟一帧，确保 state 更新后菜单数据是最新的
+                    setTimeout(() => categoryCtxMenuRef.current?.show(e), 0)
+                }}
+            />
+
+            {/* 分组标题右键菜单 */}
+            <ContextMenus
+                onContext={(ctx) => { categoryCtxMenuRef.current = ctx }}
+                menus={activeCategoryId ? buildCategoryContextMenus(activeCategoryId) : []}
             />
 
             <CreateCategoryModal

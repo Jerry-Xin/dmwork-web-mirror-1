@@ -391,3 +391,15 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 .wk-conv-hash-icon {
   color: var(--wk-text-secondary, #666);
 }
+
+/* 有子区的主群聊头像替换为 Hash icon */
+.wk-conv-group-hash-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--wk-bg-secondary, #f0f0f0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wk-text-secondary, #555);
+}

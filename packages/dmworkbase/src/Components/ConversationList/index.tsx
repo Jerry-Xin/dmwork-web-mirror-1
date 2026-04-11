@@ -192,7 +192,13 @@ export default class ConversationList extends Component<ConversationListProps, C
                 {!isThread && (
                     <div className="wk-conversationlist-item-left">
                         <div className="wk-conversationlist-item-avatar-box">
-                            <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
+                            {hasThreads ? (
+                              <div className="wk-conv-group-hash-avatar">
+                                <Hash size={22} />
+                              </div>
+                            ) : (
+                              <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
+                            )}
                             {channelInfo && this.needShowOnlineStatus(channelInfo) ? <OnlineStatusBadge tip={this.getOnlineTip(channelInfo)}></OnlineStatusBadge> : undefined}
                         </div>
                     </div>
@@ -293,7 +299,7 @@ export default class ConversationList extends Component<ConversationListProps, C
     }
 
     // 将子区放在父群组后面，最多显示2个，超出部分用计数表示
-    private groupThreadsWithParent(convs: ConversationWrap[]): Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }> {
+    private groupThreadsWithParent(convs: ConversationWrap[]): { items: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }>, threadsByParent: Map<string, ConversationWrap[]> } {
         const MAX_VISIBLE_THREADS = 2
 
         // 分离群组和子区
@@ -381,7 +387,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         const filtered = conversations?.filter(c => this.filterConversation(c)) ?? []
 
         // 先对整个列表分组子区，再分离置顶/最近（避免置顶群组和子区断开）
-        const grouped = this.groupThreadsWithParent(filtered)
+        const { items: grouped, threadsByParent } = this.groupThreadsWithParent(filtered)
         const groupedPinned = grouped.filter(item => {
             if ('type' in item) return false
             return (item as ConversationWrap).channelInfo?.top
@@ -435,7 +441,10 @@ export default class ConversationList extends Component<ConversationListProps, C
                     </div>
                 )
             }
-            return this.conversationItem(item as ConversationWrap)
+            const conv = item as ConversationWrap
+            const hasThreads = conv.channel.channelType === ChannelTypeGroup
+                && threadsByParent.has(conv.channel.channelID)
+            return this.conversationItem(conv, hasThreads)
         }
 
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>

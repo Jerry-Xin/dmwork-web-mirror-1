@@ -1,9 +1,9 @@
 import React, { Component } from "react"
 import { Channel, ChannelTypePerson, WKSDK } from "wukongimjssdk"
-import { Modal, Toast, Spin } from "@douyinfe/semi-ui"
+import { Modal, Toast, Spin, Popover } from "@douyinfe/semi-ui"
 import { Thread, ThreadStatus } from "../../Service/Thread"
 import { ThreadPanelVM, ThreadPanelState } from "./vm"
-import { X, List, Plus, ChevronDown } from "lucide-react"
+import { X, Plus, ChevronDown, ArrowLeft, MoreHorizontal } from "lucide-react"
 import ThreadIcon from "../Icons/ThreadIcon"
 import classNames from "classnames"
 import { Conversation } from "../Conversation"
@@ -30,6 +30,7 @@ interface ThreadPanelComponentState {
   vmState: ThreadPanelState
   threads: Thread[]
   threadsLoading: boolean
+  showMoreMenu: boolean
 }
 
 export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanelComponentState> {
@@ -51,6 +52,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
       },
       threads: [],
       threadsLoading: true,
+      showMoreMenu: false,
     }
   }
 
@@ -118,6 +120,94 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     this.setState({ view: "list" })
   }
 
+  private handleEditThread = () => {
+    const { vmState } = this.state
+    const thread = vmState.thread
+    if (!thread) return
+    this.setState({ showMoreMenu: false })
+
+    let newName = thread.name
+    Modal.confirm({
+      title: "编辑子区名称",
+      icon: null,
+      okText: "保存",
+      cancelText: "取消",
+      content: (
+        <div>
+          <input
+            type="text"
+            defaultValue={thread.name}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              background: "var(--wk-bg-base)",
+              border: "1px solid var(--wk-border-default)",
+              borderRadius: "6px",
+              fontSize: "14px",
+              color: "var(--wk-text-primary)",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+            onChange={(e) => { newName = e.target.value }}
+            autoFocus
+          />
+        </div>
+      ),
+      onOk: async () => {
+        if (!newName || newName.trim() === "") {
+          Toast.error("子区名称不能为空")
+          return
+        }
+        try {
+          await WKApp.dataSource.channelDataSource.threadUpdate?.(
+            this.props.groupNo,
+            thread.short_id,
+            { name: newName.trim() }
+          )
+          Toast.success("修改成功")
+          this.loadThreads()
+          this.setState({
+            vmState: {
+              ...this.state.vmState,
+              thread: { ...thread, name: newName.trim() },
+            },
+          })
+        } catch {
+          Toast.error("保存失败，请重试")
+        }
+      },
+    })
+  }
+
+  private handleDeleteThread = () => {
+    const { vmState } = this.state
+    const thread = vmState.thread
+    if (!thread) return
+    this.setState({ showMoreMenu: false })
+
+    Modal.confirm({
+      title: `删除子区「${thread.name}」？`,
+      icon: null,
+      okText: "删除",
+      okType: "danger",
+      cancelText: "取消",
+      content: "删除后子区内所有消息将不可见，此操作不可恢复。",
+      onOk: async () => {
+        try {
+          await WKApp.dataSource.channelDataSource.threadDelete?.(
+            this.props.groupNo,
+            thread.short_id
+          )
+          Toast.success("子区已删除")
+          this.handleBackToList()
+          this.loadThreads()
+        } catch {
+          Toast.error("删除失败，请重试")
+        }
+      },
+    })
+  }
+
   private handleCreateThread = () => {
     const { groupNo, onCreateThread } = this.props
     if (onCreateThread) {
@@ -176,11 +266,22 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
 
   private renderHeader() {
     const { onClose } = this.props
-    const { view, vmState } = this.state
+    const { view, vmState, showMoreMenu } = this.state
     const thread = vmState.thread
 
     return (
       <div className="wk-thread-panel-header">
+        {/* detail 视图：左侧返回按钮 */}
+        {view === "detail" ? (
+          <div
+            className="wk-thread-panel-header-btn"
+            onClick={this.handleBackToList}
+            title="返回全部子区"
+          >
+            <ArrowLeft size={16} />
+          </div>
+        ) : null}
+
         <div className="wk-thread-panel-header-title">
           {view === "list" ? (
             <>
@@ -194,17 +295,32 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
             </>
           )}
         </div>
-        <div className="wk-thread-panel-header-actions">
-          {view === "detail" && (
-            <div
-              className="wk-thread-panel-header-btn"
-              onClick={this.handleBackToList}
-              title="返回列表"
-            >
-              <List size={16} />
-            </div>
-          )}
 
+        <div className="wk-thread-panel-header-actions">
+          {/* detail 视图：右侧 ··· 菜单 */}
+          {view === "detail" && (
+            <Popover
+              visible={showMoreMenu}
+              onVisibleChange={(v) => this.setState({ showMoreMenu: v })}
+              trigger="click"
+              position="bottomRight"
+              showArrow={false}
+              content={
+                <div className="wk-thread-more-menu">
+                  <div className="wk-thread-more-menu-item" onClick={this.handleEditThread}>
+                    编辑子区名称
+                  </div>
+                  <div className="wk-thread-more-menu-item wk-thread-more-menu-item-danger" onClick={this.handleDeleteThread}>
+                    删除子区
+                  </div>
+                </div>
+              }
+            >
+              <div className="wk-thread-panel-header-btn" title="更多操作">
+                <MoreHorizontal size={16} />
+              </div>
+            </Popover>
+          )}
           <div className="wk-thread-panel-header-btn" onClick={onClose}>
             <X size={18} />
           </div>

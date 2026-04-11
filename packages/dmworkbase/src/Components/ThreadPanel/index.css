@@ -483,3 +483,28 @@ body[theme-mode="dark"] .wk-thread-panel {
   color: var(--wk-text-tertiary);
   font-style: italic;
 }
+
+/* ··· 更多菜单 */
+.wk-thread-more-menu {
+  min-width: 140px;
+  padding: 4px 0;
+  border-radius: 8px;
+  background: var(--wk-bg-elevated, #fff);
+}
+.wk-thread-more-menu-item {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--wk-text-primary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+.wk-thread-more-menu-item:hover {
+  background: var(--wk-bg-hover, rgba(0,0,0,0.06));
+}
+.wk-thread-more-menu-item-danger {
+  color: var(--wk-color-danger, #f93920);
+}
+.wk-thread-more-menu-item-danger:hover {
+  background: rgba(249,57,32,0.08);
+}

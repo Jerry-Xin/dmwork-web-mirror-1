@@ -120,8 +120,9 @@ export class ChatContentPage extends Component<
   componentDidUpdate(prevProps: ChatContentPageProps) {
     const { channel } = this.props;
 
-    // channel 바뀐 경우 pendingThread 소비
+    // channel 바뀐 경우 pendingThread / pendingThreadPanel 소비
     if (channel.channelID !== prevProps.channel.channelID) {
+      // 특정 자식 채널로
       const pt = WKApp.shared.pendingThread
       if (pt && pt.groupNo === channel.channelID) {
         WKApp.shared.pendingThread = undefined
@@ -140,6 +141,12 @@ export class ChatContentPage extends Component<
             updated_at: "",
           },
         })
+        return
+      }
+      // 전체 자식 목록으로
+      if (WKApp.shared.pendingThreadPanel === channel.channelID) {
+        WKApp.shared.pendingThreadPanel = undefined
+        this.setState({ showThreadPanel: true, activeThread: null, showChannelSetting: false })
         return
       }
     }
@@ -683,15 +690,21 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           }}
                           onClearMessages={this.vm.clearMessages.bind(this.vm)}
                           onThreadOverflowClick={(groupNo: string) => {
+                            // 이미 해당 부모 그룹이 열려있으면 바로 ThreadPanel list 열기
+                            if (this.props.channel?.channelID === groupNo) {
+                              this.setState({ showThreadPanel: true, activeThread: null, showChannelSetting: false })
+                              return
+                            }
+                            // 다른 그룹으로 전환
+                            WKApp.shared.pendingThreadPanel = groupNo
                             const groupConv = vm.filteredConversations.find(
                               c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === groupNo
-                            );
+                            )
                             if (groupConv) {
-                              WKApp.shared.pendingThreadPanel = groupNo;
-                              vm.selectedConversation = groupConv;
-                              WKApp.endpoints.showConversation(groupConv.channel);
-                              vm.notifyListener();
+                              vm.selectedConversation = groupConv
+                              vm.notifyListener()
                             }
+                            WKApp.endpoints.showConversation(new Channel(groupNo, ChannelTypeGroup))
                           }}
                         />
                       </ErrorBoundary>

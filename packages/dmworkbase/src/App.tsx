@@ -5,6 +5,8 @@ export type MittEvents = {
   'friend-applys-unread-count': number;
   'space-changed': unknown;
   'task-upload-failed': { channelKey: string };
+  'wk:pending-thread': { groupNo: string; thread: import('./Service/Thread').Thread | null };
+  'wk:close-thread-panel': undefined;
 };
 import { EndpointCommon } from "./EndpointCommon";
 import APIClient from "./Service/APIClient";

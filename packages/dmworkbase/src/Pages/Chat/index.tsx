@@ -29,7 +29,7 @@ import SpaceCreate from "../../Components/SpaceCreate";
 import { Space } from "../../Service/SpaceService";
 import NavSignalBadge from "../../Components/NavRail/NavSignalBadge";
 import ThreadPanel from "../../Components/ThreadPanel";
-import { Thread, parseThreadChannelId } from "../../Service/Thread";
+import { Thread, parseThreadChannelId, buildThreadStub } from "../../Service/Thread";
 
 export interface ChatContentPageProps {
   channel: Channel;
@@ -77,9 +77,8 @@ export class ChatContentPage extends Component<
     };
     WKSDK.shared().channelManager.addListener(this.channelInfoListener);
 
-    // pendingThread 이벤트 리스너 등록 (같은 채널이 이미 열려있을 때 처리)
-    this._onPendingThread = (e: Event) => {
-      const detail = (e as CustomEvent).detail
+    // 注册 pending-thread 事件监听（当前频道已打开时直接导航到子区）
+    this._onPendingThread = (detail: { groupNo: string; thread: Thread | null }) => {
       if (detail?.groupNo === this.props.channel.channelID) {
         this.setState({
           showThreadPanel: true,
@@ -88,14 +87,15 @@ export class ChatContentPage extends Component<
         })
       }
     }
-    window.addEventListener('wk:pending-thread', this._onPendingThread)
+    WKApp.mittBus.on('wk:pending-thread', this._onPendingThread)
 
+    // 注册关闭子区面板事件监听
     this._onCloseThreadPanel = () => {
       if (this.state.showThreadPanel) {
         this.setState({ showThreadPanel: false, activeThread: null })
       }
     }
-    window.addEventListener('wk:close-thread-panel', this._onCloseThreadPanel)
+    WKApp.mittBus.on('wk:close-thread-panel', this._onCloseThreadPanel)
 
     // 检查是否需要自动打开子区面板（查看全部子区）
     if (WKApp.shared.pendingThreadPanel === channel.channelID) {
@@ -140,30 +140,20 @@ export class ChatContentPage extends Component<
   componentDidUpdate(prevProps: ChatContentPageProps) {
     const { channel } = this.props;
 
-    // channel 바뀐 경우 pendingThread / pendingThreadPanel 소비
+    // 切换频道时消费 pendingThread / pendingThreadPanel
     if (channel.channelID !== prevProps.channel.channelID) {
-      // 특정 자식 채널로
+      // 导航到特定子区
       const pt = WKApp.shared.pendingThread
       if (pt && pt.groupNo === channel.channelID) {
         WKApp.shared.pendingThread = undefined
         this.setState({
           showThreadPanel: true,
           showChannelSetting: false,
-          activeThread: {
-            short_id: pt.shortId,
-            group_no: pt.groupNo,
-            channel_id: pt.channelId,
-            channel_type: ChannelTypeCommunityTopic,
-            name: pt.name,
-            creator_uid: "",
-            status: 1,
-            created_at: "",
-            updated_at: "",
-          },
+          activeThread: buildThreadStub(pt.shortId, pt.groupNo, pt.channelId, pt.name),
         })
         return
       }
-      // 전체 자식 목록으로
+      // 打开全部子区列表
       if (WKApp.shared.pendingThreadPanel === channel.channelID) {
         WKApp.shared.pendingThreadPanel = undefined
         this.setState({ showThreadPanel: true, activeThread: null, showChannelSetting: false })
@@ -184,15 +174,15 @@ export class ChatContentPage extends Component<
     }
   }
 
-  private _onPendingThread?: (e: Event) => void
+  private _onPendingThread?: (detail: { groupNo: string; thread: Thread | null }) => void
   private _onCloseThreadPanel?: () => void
 
   componentWillUnmount() {
     if (this._onPendingThread) {
-      window.removeEventListener('wk:pending-thread', this._onPendingThread)
+      WKApp.mittBus.off('wk:pending-thread', this._onPendingThread)
     }
     if (this._onCloseThreadPanel) {
-      window.removeEventListener('wk:close-thread-panel', this._onCloseThreadPanel)
+      WKApp.mittBus.off('wk:close-thread-panel', this._onCloseThreadPanel)
     }
     WKSDK.shared().channelManager.removeListener(this.channelInfoListener);
   }
@@ -667,22 +657,15 @@ export default class ChatPage extends Component<any, ChatPageState> {
                                 const parsed = parseThreadChannelId(conversation.channel.channelID)
                                 const parentGroupNo = conversation.channelInfo?.orgData?.parentGroupNo || parsed?.groupNo
                                 if (parentGroupNo) {
-                                  const thread = {
-                                    short_id: parsed?.shortId || "",
-                                    group_no: parentGroupNo,
-                                    channel_id: conversation.channel.channelID,
-                                    channel_type: ChannelTypeCommunityTopic,
-                                    name: conversation.channelInfo?.orgData?.displayName || parsed?.shortId || "",
-                                    creator_uid: "",
-                                    status: 1,
-                                    created_at: "",
-                                    updated_at: "",
-                                  }
-                                  // 이미 부모 그룹이 열려있거나 어디서든 event dispatch로 처리
-                                  window.dispatchEvent(new CustomEvent('wk:pending-thread', {
-                                    detail: { groupNo: parentGroupNo, thread }
-                                  }))
-                                  // 다른 채널이면 showConversation도 호출
+                                  const thread = buildThreadStub(
+                                    parsed?.shortId || "",
+                                    parentGroupNo,
+                                    conversation.channel.channelID,
+                                    conversation.channelInfo?.orgData?.displayName || parsed?.shortId || ""
+                                  )
+                                  // 通过 mittBus 通知当前已打开的 ChatContentPage 导航到子区
+                                  WKApp.mittBus.emit('wk:pending-thread', { groupNo: parentGroupNo, thread })
+                                  // 若当前不是父群聊，切换频道
                                   if (this.props.channel?.channelID !== parentGroupNo) {
                                     const parentChannel = new Channel(parentGroupNo, ChannelTypeGroup)
                                     WKApp.shared.pendingThread = {
@@ -704,7 +687,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
                                 }
                               }
                               // 普通会话：关闭子区面板
-                              window.dispatchEvent(new CustomEvent('wk:close-thread-panel', {}))
+                              WKApp.mittBus.emit('wk:close-thread-panel', undefined)
                               vm.selectedConversation = conversation;
                               WKApp.endpoints.showConversation(conversation.channel);
                               vm.notifyListener();
@@ -718,11 +701,9 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           }}
                           onClearMessages={this.vm.clearMessages.bind(this.vm)}
                           onThreadOverflowClick={(groupNo: string) => {
-                            // event dispatch로 현재 ChatContentPage에 전달
-                            window.dispatchEvent(new CustomEvent('wk:pending-thread', {
-                              detail: { groupNo, thread: null }
-                            }))
-                            // 다른 채널이면 showConversation도 호출
+                            // 通过 mittBus 通知导航到父群聊子区列表
+                            WKApp.mittBus.emit('wk:pending-thread', { groupNo, thread: null })
+                            // 若当前不是目标群聊，切换频道
                             if (this.props.channel?.channelID !== groupNo) {
                               WKApp.shared.pendingThreadPanel = groupNo
                               const groupConv = vm.filteredConversations.find(

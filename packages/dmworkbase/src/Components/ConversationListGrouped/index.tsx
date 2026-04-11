@@ -87,12 +87,8 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     )
     const groupConvMap = new Map(groupConversations.map(c => [c.channel.channelID, c]))
 
-    // Thread conv: parentGroupNo → list
+    // Thread conv: parentGroupNo → 子区列表
     const threadConvsByParent = new Map<string, ConversationWrap[]>()
-    for (const conv of conversations) {
-        if (conv.channel.channelType !== ChannelTypeGroup) continue
-        // skip groups, only threads below
-    }
     for (const conv of conversations) {
         const parentGroupNo = conv.channelInfo?.orgData?.parentGroupNo
         if (parentGroupNo) {
@@ -113,6 +109,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         const groupConv = groupConvMap.get(groupNo)
         if (groupConv) {
             ungroupedConvs.push(groupConv)
+            // 将未分组群组的子区一并加入
             const threads = threadConvsByParent.get(groupNo) || []
             ungroupedConvs.push(...threads)
         }
@@ -157,7 +154,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             const groupConv = groupConvMap.get(g.group_no)
             if (groupConv) {
                 catConvs.push(groupConv)
-                // 해당 그룹의 thread conv도 포함
+                // 将该群组的子区一并加入
                 const threads = threadConvsByParent.get(g.group_no) || []
                 catConvs.push(...threads)
             }

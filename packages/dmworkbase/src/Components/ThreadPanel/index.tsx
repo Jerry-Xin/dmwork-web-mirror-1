@@ -152,7 +152,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
           return
         }
         try {
-          await WKApp.dataSource.channelDataSource.threadUpdate?.(
+          await WKApp.dataSource.channelDataSource.threadUpdate(
             this.props.groupNo,
             thread.short_id,
             { name: newName.trim() }
@@ -187,7 +187,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
       content: "删除后子区内所有消息将不可见，此操作不可恢复。",
       onOk: async () => {
         try {
-          await WKApp.dataSource.channelDataSource.threadDelete?.(
+          await WKApp.dataSource.channelDataSource.threadDelete(
             this.props.groupNo,
             thread.short_id
           )

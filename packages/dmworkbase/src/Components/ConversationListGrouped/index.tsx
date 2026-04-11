@@ -87,7 +87,8 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         )?.category_id
 
         const items: ContextMenusData[] = categories.map(cat => ({
-            title: currentCategoryId === cat.category_id ? `✓ ${cat.name}` : cat.name,
+            title: cat.name,
+            checked: currentCategoryId === cat.category_id,
             onClick: () => onMoveGroupToCategory(groupNo, cat.category_id!),
         }))
         items.push({ separator: true } as any)

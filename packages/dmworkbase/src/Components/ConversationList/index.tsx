@@ -477,33 +477,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                     })
                 }
 
-                // 2. 移到分组（仅群聊，且有分组数据时显示）
-                if (extraMenus.length > 0) {
-                    menus.push({
-                        title: "移到分组",
-                        icon: "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z",
-                        children: extraMenus,
-                    })
-                }
-
-                // 3. 置顶 / 取消置顶
-                menus.push({
-                    title: channelInfo?.top ? "取消置顶" : "置顶",
-                    icon: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
-                    onClick: () => { if (channelInfo) this.onTop(channelInfo) }
-                })
-
-                // 4. 免打扰 / 关闭免打扰
-                menus.push({
-                    title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
-                    icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
-                    onClick: () => { if (channelInfo) this.onMute(channelInfo) }
-                })
-
-                // 5. 分隔线
-                menus.push({ separator: true })
-
-                // 6. 关闭聊天窗口
+                // 2. 关闭聊天窗口
                 menus.push({
                     title: "关闭聊天窗口",
                     icon: "M18 6 6 18 M6 6l12 12",
@@ -518,6 +492,32 @@ export default class ConversationList extends Component<ConversationListProps, C
                         })
                     }
                 })
+
+                // 3. 移到分组（仅群聊，且有分组数据时显示）
+                if (extraMenus.length > 0) {
+                    menus.push({
+                        title: "移到分组",
+                        icon: "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z",
+                        children: extraMenus,
+                    })
+                }
+
+                // 4. 置顶 / 取消置顶
+                menus.push({
+                    title: channelInfo?.top ? "取消置顶" : "置顶",
+                    icon: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
+                    onClick: () => { if (channelInfo) this.onTop(channelInfo) }
+                })
+
+                // 5. 免打扰 / 关闭免打扰
+                menus.push({
+                    title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
+                    icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
+                    onClick: () => { if (channelInfo) this.onMute(channelInfo) }
+                })
+
+                // 6. 分隔线
+                menus.push({ separator: true })
 
                 // 7. 更多（子菜单：清空聊天记录 / 关闭并清空）
                 menus.push({

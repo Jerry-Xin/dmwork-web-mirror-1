@@ -31,6 +31,8 @@ export class ContextMenusData {
     separator?: boolean
     /** 子菜单项 */
     children?: ContextMenusData[]
+    /** 选中态（子菜单项右侧显示主题色 ✓） */
+    checked?: boolean
 }
 
 // ── 内部：渲染单个图标 ──
@@ -166,7 +168,16 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
                                         }}
                                     >
                                         {child.icon && <CtxIcon path={child.icon} />}
-                                        {child.title}
+                                        <span style={{ flex: 1 }}>{child.title}</span>
+                                        {child.checked && (
+                                            <span style={{
+                                                color: 'var(--wk-brand-primary, #7C5CFC)',
+                                                fontSize: 13,
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                                marginLeft: 4,
+                                            }}>✓</span>
+                                        )}
                                     </li>
                                 )
                             })}

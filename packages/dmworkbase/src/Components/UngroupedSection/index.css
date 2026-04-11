@@ -1,0 +1,19 @@
+.wk-ungrouped-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.wk-ungrouped-section__header {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 8px;
+    gap: 4px;
+}
+
+.wk-ungrouped-section__title {
+    flex: 1;
+    font-size: var(--wk-text-size-sm);
+    font-weight: var(--wk-font-semibold);
+    color: var(--wk-text-tertiary);
+}

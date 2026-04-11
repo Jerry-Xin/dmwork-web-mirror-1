@@ -17,6 +17,8 @@ export class Convert {
         }
         conversation.extra = {}
         conversation.extra.top = conversationMap["stick"]
+        conversation.extra.categoryId = conversationMap["category_id"] ?? null
+        conversation.extra.categorySort = conversationMap["category_sort"] ?? 0
         // 后端返回的 per-Space 字段
         if (conversationMap["space_unread"] !== undefined && conversationMap["space_unread"] !== null) {
             conversation.extra.spaceUnread = conversationMap["space_unread"]

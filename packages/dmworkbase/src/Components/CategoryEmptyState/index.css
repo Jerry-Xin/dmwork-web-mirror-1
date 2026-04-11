@@ -1,0 +1,74 @@
+.wk-category-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 24px;
+    text-align: center;
+}
+
+/* 48×48 圆角图标容器 */
+.wk-category-empty-state__icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--wk-r-lg, 14px);
+    background: var(--wk-purple-alpha-08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    flex-shrink: 0;
+}
+
+.wk-category-empty-state__icon-wrap svg {
+    width: 24px;
+    height: 24px;
+    stroke: var(--wk-brand-primary);
+    stroke-width: 1.6;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.wk-category-empty-state__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--wk-text-primary);
+    margin: 0 0 8px;
+}
+
+.wk-category-empty-state__desc {
+    font-size: 12px;
+    color: var(--wk-text-secondary);
+    margin: 0 0 20px;
+    line-height: 1.6;
+    max-width: 200px;
+}
+
+/* 胶囊 Primary 按钮（gradient 背景） */
+.wk-category-empty-state__primary-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 9999px;
+    background: var(--wk-brand-gradient);
+    color: var(--wk-color-white);
+    font: 500 13px var(--wk-font-sans);
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.wk-category-empty-state__primary-btn:hover {
+    opacity: 0.9;
+}
+
+.wk-category-empty-state__primary-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}

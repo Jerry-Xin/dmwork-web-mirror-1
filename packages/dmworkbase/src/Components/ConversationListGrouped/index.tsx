@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import { flushSync } from "react-dom"
 import { ChannelTypeGroup, Channel } from "wukongimjssdk"
+import { parseThreadChannelId } from "../../Service/Thread"
 import { CategoryItem } from "../../Service/CategoryService"
 import { ConversationWrap } from "../../Service/Model"
 import ConversationList from "../ConversationList"
@@ -91,6 +92,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     const threadConvsByParent = new Map<string, ConversationWrap[]>()
     for (const conv of conversations) {
         const parentGroupNo = conv.channelInfo?.orgData?.parentGroupNo
+            || parseThreadChannelId(conv.channel.channelID)?.groupNo
         if (parentGroupNo) {
             const list = threadConvsByParent.get(parentGroupNo) || []
             list.push(conv)

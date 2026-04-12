@@ -860,6 +860,10 @@ export default class ConversationVM extends ProviderListener {
                         this.subscribers = cached
                     } else {
                         WKSDK.shared().channelManager.syncSubscribes(parentChannel)
+                        // 注册前先移除旧监听器，避免多次调用时重复注册
+                        if (this.subscriberChangeListener) {
+                            WKSDK.shared().channelManager.removeSubscriberChangeListener(this.subscriberChangeListener)
+                        }
                         this.subscriberChangeListener = (channel: Channel) => {
                             if (channel.channelID !== parentGroupNo) return
                             this.subscribers = WKSDK.shared().channelManager.getSubscribes(parentChannel) || []

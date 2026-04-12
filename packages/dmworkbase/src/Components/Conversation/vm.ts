@@ -4,7 +4,7 @@ import { SyncMessageOptions } from "../../Service/DataSource/DataProvider";
 import { MessageWrap } from "../../Service/Model";
 import { ProviderListener } from "../../Service/Provider";
 import { animateScroll, scroller } from 'react-scroll';
-import { EndpointID, MessageContentTypeConst, OrderFactor } from "../../Service/Const";
+import { EndpointID, MessageContentTypeConst, OrderFactor, ChannelTypeCommunityTopic } from "../../Service/Const";
 import moment from 'moment'
 import { TimeContent } from "../../Messages/Time";
 import { HistorySplitContent } from "../../Messages/HistorySplit";
@@ -741,7 +741,7 @@ export default class ConversationVM extends ProviderListener {
             }
         }, {})
 
-        if (this.channel.channelType === ChannelTypeGroup) {
+        if (this.channel.channelType === ChannelTypeGroup || this.channel.channelType === ChannelTypeCommunityTopic) {
 
             // 加载频道信息
             this.channelInfo = WKSDK.shared().channelManager.getChannelInfo(this.channel)
@@ -840,6 +840,42 @@ export default class ConversationVM extends ProviderListener {
 
     // 加载频道信息完成
     async loadChannelInfoFinished() {
+        // 子区（ChannelTypeCommunityTopic）使用父群聊的成员列表来支持 @
+        if (this.channel.channelType === ChannelTypeCommunityTopic) {
+            const parentGroupNo = this.channelInfo?.orgData?.parentGroupNo
+            if (parentGroupNo) {
+                const parentChannel = new Channel(parentGroupNo, ChannelTypeGroup)
+                const parentChannelInfo = WKSDK.shared().channelManager.getChannelInfo(parentChannel)
+                const isSuperGroup = parentChannelInfo?.orgData?.group_type == SuperGroup
+                if (isSuperGroup) {
+                    // 超级群：只取第一页
+                    this.subscribers = await WKApp.dataSource.channelDataSource.subscribers(parentChannel, {
+                        limit: 100,
+                        page: 1,
+                    })
+                } else {
+                    // 普通群：从缓存拿，没有则同步
+                    const cached = WKSDK.shared().channelManager.getSubscribes(parentChannel)
+                    if (cached && cached.length > 0) {
+                        this.subscribers = cached
+                    } else {
+                        WKSDK.shared().channelManager.syncSubscribes(parentChannel)
+                        // 注册前先移除旧监听器，避免多次调用时重复注册
+                        if (this.subscriberChangeListener) {
+                            WKSDK.shared().channelManager.removeSubscriberChangeListener(this.subscriberChangeListener)
+                        }
+                        this.subscriberChangeListener = (channel: Channel) => {
+                            if (channel.channelID !== parentGroupNo) return
+                            this.subscribers = WKSDK.shared().channelManager.getSubscribes(parentChannel) || []
+                            this.notifyListener()
+                        }
+                        WKSDK.shared().channelManager.addSubscriberChangeListener(this.subscriberChangeListener)
+                    }
+                }
+                this.notifyListener()
+            }
+            return
+        }
         if (this.channel.channelType !== ChannelTypeGroup) {
             return
         }

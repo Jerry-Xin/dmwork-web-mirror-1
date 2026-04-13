@@ -42,16 +42,16 @@ function drawBadge(ctx: CanvasRenderingContext2D, text: string, size: number): v
   const badgeH = size * 0.50
   const ry     = badgeH / 2  // 圆角半径 = 高度一半（胶囊形）
 
-  // 宽度按位数拉伸
-  const rx = isLong ? ry * 2.2 : isTwoDigit ? ry * 1.6 : ry
+  // 宽度：撑满整个图标宽度
+  const rx = size / 2
 
-  // 贴右下角，不超出边界
-  const cx = size - rx
+  // 贴右下角，水平居中于图标
+  const cx = size / 2
   const cy = size - ry
 
-  // 圆角矩形（用 quadraticCurveTo，兼容性好）
-  const x1 = cx - rx, y1 = cy - ry   // 左上
-  const x2 = cx + rx, y2 = cy + ry   // 右下
+  // 圆角矩形（胶囊形）
+  const x1 = cx - rx, y1 = cy - ry
+  const x2 = cx + rx, y2 = cy + ry
 
   ctx.beginPath()
   ctx.moveTo(x1 + ry, y1)
@@ -67,8 +67,8 @@ function drawBadge(ctx: CanvasRenderingContext2D, text: string, size: number): v
   ctx.fillStyle = BADGE_COLOR
   ctx.fill()
 
-  // 数字：字号撑满高度，垂直居中
-  const fontSize = Math.round(ry * 1.25)
+  // 数字：字号尽可能大，撑满角标高度
+  const fontSize = Math.round(ry * 1.5)
   ctx.font = `900 ${fontSize}px system-ui, -apple-system, sans-serif`
   ctx.fillStyle    = BADGE_TEXT_COLOR
   ctx.textAlign    = 'center'

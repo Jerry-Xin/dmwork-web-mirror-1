@@ -2,11 +2,20 @@ import mitt, { Emitter } from "mitt";
 
 /** mittBus 全局事件类型表 */
 export type MittEvents = {
-  'friend-applys-unread-count': number;
-  'space-changed': unknown;
-  'task-upload-failed': { channelKey: string };
-  'wk:pending-thread': { groupNo: string; thread: import('./Service/Thread').Thread | null };
-  'wk:close-thread-panel': undefined;
+  "friend-applys-unread-count": number;
+  "space-changed": unknown;
+  "task-upload-failed": { channelKey: string };
+  "wk:pending-thread": {
+    groupNo: string;
+    thread: import("./Service/Thread").Thread | null;
+  };
+  "wk:close-thread-panel": undefined;
+  "wk:file-preview": {
+    url: string;
+    name: string;
+    extension: string;
+    size?: number;
+  } | null;
 };
 import { EndpointCommon } from "./EndpointCommon";
 import APIClient from "./Service/APIClient";
@@ -257,14 +266,19 @@ export default class WKApp extends ProviderListener {
    * Conversation 在有未发送附件时注册此回调，返回 true 表示可以切换，false 表示有附件待确认。
    * componentDidMount 注册，componentWillUnmount 清空（仅注册者可清空，防止新实例 guard 被旧实例覆盖）。
    */
-  pendingAttachmentGuard?: () => boolean
-  pendingAttachmentGuardId?: symbol
+  pendingAttachmentGuard?: () => boolean;
+  pendingAttachmentGuardId?: symbol;
 
   /** 待打开子区面板的群组 ID，ChatContentPage 挂载时检查并消费 */
-  pendingThreadPanel?: string
+  pendingThreadPanel?: string;
 
   /** 待打开的具体子区，ChatContentPage 挂载时检查并消费 */
-  pendingThread?: { groupNo: string; channelId: string; name: string; shortId: string }
+  pendingThread?: {
+    groupNo: string;
+    channelId: string;
+    name: string;
+    shortId: string;
+  };
 
   baseContext!: WKBaseContext; // DMWork基础上下文
 
@@ -295,7 +309,10 @@ export default class WKApp extends ProviderListener {
     WKApp.loginInfo.load(); // 加载登录信息
 
     // 是否是PC端
-    if ((window as any)?.__POWERED_ELECTRON__ || (window as any).__TAURI_IPC__) {
+    if (
+      (window as any)?.__POWERED_ELECTRON__ ||
+      (window as any).__TAURI_IPC__
+    ) {
       this.isPC = true;
     }
     this.deviceId = this.getDeviceIdFromStorage();
@@ -356,7 +373,6 @@ export default class WKApp extends ProviderListener {
     }
 
     WKApp.remoteConfig.startRequestConfig();
-
   }
 
   getDeviceIdFromStorage() {
@@ -369,30 +385,43 @@ export default class WKApp extends ProviderListener {
   }
 
   generateUUID() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
       return crypto.randomUUID();
     }
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(
+      ""
+    );
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(
+      12,
+      16
+    )}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   }
 
   getOSAndVersion() {
     const userAgent: string = navigator.userAgent;
     if (/Windows NT (\d+\.\d+)/i.test(userAgent)) {
-      const version = userAgent.match(/Windows NT (\d+\.\d+)/i)?.[1] ?? "unknown";
+      const version =
+        userAgent.match(/Windows NT (\d+\.\d+)/i)?.[1] ?? "unknown";
       return `Windows ${version}`;
     } else if (/Mac OS X (\d+_\d+(_\d+)?)/i.test(userAgent)) {
-      const version = userAgent.match(/Mac OS X (\d+_\d+(_\d+)?)/i)?.[1]?.replace(/_/g, ".") ?? "unknown";
+      const version =
+        userAgent
+          .match(/Mac OS X (\d+_\d+(_\d+)?)/i)?.[1]
+          ?.replace(/_/g, ".") ?? "unknown";
       return `MacOS ${version}`;
     } else if (/Android (\d+(\.\d+)?)/i.test(userAgent)) {
-      const version = userAgent.match(/Android (\d+(\.\d+)?)/i)?.[1] ?? "unknown";
+      const version =
+        userAgent.match(/Android (\d+(\.\d+)?)/i)?.[1] ?? "unknown";
       return `Android ${version}`;
     } else if (/CPU (iPhone )?OS (\d+_\d+(_\d+)?)/i.test(userAgent)) {
-      const version = userAgent.match(/CPU (iPhone )?OS (\d+_\d+(_\d+)?)/i)?.[2]?.replace(/_/g, ".") ?? "unknown";
+      const version =
+        userAgent
+          .match(/CPU (iPhone )?OS (\d+_\d+(_\d+)?)/i)?.[2]
+          ?.replace(/_/g, ".") ?? "unknown";
       return `iOS ${version}`;
     } else if (/Linux/i.test(userAgent)) {
       return "Linux (version not available)";
@@ -426,11 +455,13 @@ export default class WKApp extends ProviderListener {
     WKApp.dataSource.contactsSync(); // 同步通讯录
     ProhibitwordsService.shared.sync(); // 同步敏感词
 
-    WKApp.apiClient.get(`/user/devices/${WKApp.shared.deviceId}`).then((res) => {
-      if (res.id) {
-        WKSDK.shared().config.clientMsgDeviceId = res.id;
-      }
-    })
+    WKApp.apiClient
+      .get(`/user/devices/${WKApp.shared.deviceId}`)
+      .then((res) => {
+        if (res.id) {
+          WKSDK.shared().config.clientMsgDeviceId = res.id;
+        }
+      });
   }
 
   connectIM() {
@@ -510,7 +541,9 @@ export default class WKApp extends ProviderListener {
 
   // 我的用户头像发送改变
   myUserAvatarChange() {
-    this.changeChannelAvatarTag(new Channel(WKApp.loginInfo.uid || "", ChannelTypePerson));
+    this.changeChannelAvatarTag(
+      new Channel(WKApp.loginInfo.uid || "", ChannelTypePerson)
+    );
   }
 
   changeChannelAvatarTag(channel: Channel) {
@@ -643,7 +676,7 @@ export default class WKApp extends ProviderListener {
     try {
       friendApplyObjs = JSON.parse(value);
     } catch (e) {
-      console.error('Failed to parse friend apply data:', e);
+      console.error("Failed to parse friend apply data:", e);
       return friendApplys;
     }
 
@@ -668,11 +701,14 @@ export default class WKApp extends ProviderListener {
 
   public setFriendApplysUnreadCount() {
     if (WKApp.loginInfo.isLogined()) {
-      WKApp.apiClient.get(`/user/reddot/friendApply`).then(res => {
-        WKApp.mittBus.emit('friend-applys-unread-count', res.count)
-        WKApp.loginInfo.setStorageItem(`${WKApp.loginInfo.uid}-friend-applys-unread-count`, res.count);
+      WKApp.apiClient.get(`/user/reddot/friendApply`).then((res) => {
+        WKApp.mittBus.emit("friend-applys-unread-count", res.count);
+        WKApp.loginInfo.setStorageItem(
+          `${WKApp.loginInfo.uid}-friend-applys-unread-count`,
+          res.count
+        );
         WKApp.menus.refresh();
-      })
+      });
     }
   }
 
@@ -687,7 +723,9 @@ export default class WKApp extends ProviderListener {
     //   }
     // }
     if (WKApp.loginInfo.isLogined()) {
-      const num = WKApp.loginInfo.getStorageItem(`${WKApp.loginInfo.uid}-friend-applys-unread-count`)
+      const num = WKApp.loginInfo.getStorageItem(
+        `${WKApp.loginInfo.uid}-friend-applys-unread-count`
+      );
       unreadCount = Number(num);
     }
     return unreadCount;
@@ -713,7 +751,10 @@ export default class WKApp extends ProviderListener {
     //   WKApp.endpointManager.invokes(EndpointCategory.friendApplyDataChange);
     // }
     if (WKApp.loginInfo.isLogined()) {
-      WKApp.loginInfo.setStorageItem(`${WKApp.loginInfo.uid}-friend-applys-unread-count`, '0')
+      WKApp.loginInfo.setStorageItem(
+        `${WKApp.loginInfo.uid}-friend-applys-unread-count`,
+        "0"
+      );
     }
     await WKApp.apiClient.delete(`/user/reddot/friendApply`);
   }

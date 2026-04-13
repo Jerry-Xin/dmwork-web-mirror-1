@@ -6,7 +6,7 @@
  * - >99：显示 "99+"
  */
 
-const FAVICON_SIZE = 32
+const FAVICON_SIZE = 64  // 2x 内部渲染，最终压缩到 tab 尺寸更清晰
 const BADGE_COLOR = '#e53935'
 const BADGE_TEXT_COLOR = '#ffffff'
 const FALLBACK_BG_COLOR = '#5b6abf'
@@ -31,19 +31,31 @@ function saveOriginalFavicon(): void {
 
 function drawBadge(ctx: CanvasRenderingContext2D, text: string, size: number): void {
   const isLong = text.length > 2 // "99+"
-  const badgeRadius = size * 0.28
+  const badgeRadius = size * 0.30  // 稍大一点，tab 缩小后更清晰
 
   // 角标中心在右下角，内容过长时向左上方内缩，避免超出画布
-  const margin = isLong ? badgeRadius * 0.4 : 0
+  const margin = isLong ? badgeRadius * 0.5 : 0
   const cx = size - badgeRadius - margin
   const cy = size - badgeRadius - margin
 
+  // 白色描边，和主图标区分
   ctx.beginPath()
   if (isLong) {
-    // 拉长椭圆形，向中心方向延伸
-    const rx = badgeRadius * 1.4
+    const rx = badgeRadius * 1.5
     const ry = badgeRadius
-    ctx.ellipse(cx - rx * 0.15, cy, rx, ry, 0, 0, Math.PI * 2)
+    ctx.ellipse(cx - rx * 0.1, cy, rx + 2, ry + 2, 0, 0, Math.PI * 2)
+  } else {
+    ctx.arc(cx, cy, badgeRadius + 2, 0, Math.PI * 2)
+  }
+  ctx.fillStyle = '#ffffff'
+  ctx.fill()
+
+  // 红色角标
+  ctx.beginPath()
+  if (isLong) {
+    const rx = badgeRadius * 1.5
+    const ry = badgeRadius
+    ctx.ellipse(cx - rx * 0.1, cy, rx, ry, 0, 0, Math.PI * 2)
   } else {
     ctx.arc(cx, cy, badgeRadius, 0, Math.PI * 2)
   }
@@ -53,9 +65,9 @@ function drawBadge(ctx: CanvasRenderingContext2D, text: string, size: number): v
   ctx.fillStyle = BADGE_TEXT_COLOR
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  const fontSize = isLong ? Math.floor(size * 0.22) : Math.floor(size * 0.26)
+  const fontSize = isLong ? Math.floor(size * 0.22) : Math.floor(size * 0.28)
   ctx.font = `bold ${fontSize}px -apple-system, sans-serif`
-  const textX = isLong ? cx - badgeRadius * 0.15 : cx
+  const textX = isLong ? cx - badgeRadius * 1.5 * 0.1 : cx
   ctx.fillText(text, textX, cy)
 }
 

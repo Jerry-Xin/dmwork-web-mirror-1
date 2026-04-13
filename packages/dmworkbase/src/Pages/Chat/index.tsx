@@ -245,7 +245,17 @@ export class ChatContentPage extends Component<
                         <div className="wk-chat-conversation-header-channel-info-name">
                           {channel.channelType === ChannelTypeCommunityTopic && channelInfo?.orgData?.parentGroupNo ? (
                             <>
-                              <span className="wk-chat-conversation-header-parent-group">
+                              <span
+                                className="wk-chat-conversation-header-parent-group"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => {
+                                  if (this.parentGroupChannel) {
+                                    WKApp.endpoints.showConversation(this.parentGroupChannel)
+                                  } else {
+                                    WKApp.endpoints.showConversation(new Channel(channelInfo.orgData.parentGroupNo, ChannelTypeGroup))
+                                  }
+                                }}
+                              >
                                 {WKSDK.shared().channelManager.getChannelInfo(new Channel(channelInfo.orgData.parentGroupNo, ChannelTypeGroup))?.title || channelInfo.orgData.parentGroupNo}
                               </span>
                               <span className="wk-chat-conversation-header-separator">&gt;</span>

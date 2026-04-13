@@ -32,12 +32,15 @@ function saveOriginalFavicon(): void {
 function drawBadge(ctx: CanvasRenderingContext2D, text: string, size: number): void {
   const isLong = text.length > 2 // "99+"
   const badgeRadius = size * 0.28
-  const cx = size - badgeRadius
-  const cy = badgeRadius
+
+  // 角标中心在右下角，内容过长时向左上方内缩，避免超出画布
+  const margin = isLong ? badgeRadius * 0.4 : 0
+  const cx = size - badgeRadius - margin
+  const cy = size - badgeRadius - margin
 
   ctx.beginPath()
   if (isLong) {
-    // 拉长椭圆形
+    // 拉长椭圆形，向中心方向延伸
     const rx = badgeRadius * 1.4
     const ry = badgeRadius
     ctx.ellipse(cx - rx * 0.15, cy, rx, ry, 0, 0, Math.PI * 2)

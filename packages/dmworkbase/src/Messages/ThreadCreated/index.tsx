@@ -1,7 +1,7 @@
 import { MessageContent, Channel, ChannelTypePerson } from "wukongimjssdk"
 import React from "react"
 import { Toast } from "@douyinfe/semi-ui"
-import { MessageSquare } from "lucide-react"
+import ThreadIcon from "../../Components/Icons/ThreadIcon"
 import { MessageCell } from "../MessageCell"
 import WKApp from "../../App"
 import { ChannelTypeCommunityTopic } from "../../Service/Const"
@@ -116,7 +116,7 @@ export class ThreadCreatedCell extends MessageCell {
     return (
       <div className="wk-thread-created" onClick={this.handleClick}>
         {/* 消息图标 */}
-        <MessageSquare className="wk-thread-created-icon" size={16} />
+        <ThreadIcon className="wk-thread-created-icon" size={16} />
 
         {/* 文案：xxx 发起了子区: xxx */}
         <span className="wk-thread-created-text">

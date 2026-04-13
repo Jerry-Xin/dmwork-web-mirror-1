@@ -1,0 +1,15 @@
+.wk-create-category-modal__input-wrap {
+    position: relative;
+}
+
+.wk-create-category-modal__error {
+    margin-top: 4px;
+    font-size: var(--wk-text-size-xs);
+    color: var(--wk-color-error);
+}
+
+.wk-create-category-modal__help {
+    margin-top: 4px;
+    font-size: var(--wk-text-size-xs);
+    color: var(--wk-text-tertiary);
+}

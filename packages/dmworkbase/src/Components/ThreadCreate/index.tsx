@@ -1,6 +1,7 @@
 import React, { Component } from "react"
 import { Toast } from "@douyinfe/semi-ui"
-import { MessageSquare, X } from "lucide-react"
+import { X } from "lucide-react"
+import ThreadIcon from "../Icons/ThreadIcon"
 import WKApp from "../../App"
 import "./index.css"
 
@@ -73,7 +74,7 @@ export class ThreadCreate extends Component<ThreadCreateProps, ThreadCreateState
     return (
       <div className="wk-thread-create">
         <div className="wk-thread-create-header">
-          <MessageSquare className="wk-thread-create-icon" size={24} />
+          <ThreadIcon className="wk-thread-create-icon" size={24} />
           <span className="wk-thread-create-title">创建子区</span>
           {onCancel && (
             <div className="wk-thread-create-close" onClick={onCancel}>

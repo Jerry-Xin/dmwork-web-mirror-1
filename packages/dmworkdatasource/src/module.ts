@@ -141,7 +141,15 @@ export default class DataSourceModule implements IModule {
 
     setSyncSubscribersCallback() {
         WKSDK.shared().config.provider.syncSubscribersCallback = async function (channel: Channel, version: number): Promise<Array<Subscriber>> {
-            const resp = await WKApp.apiClient.get(`groups/${channel.channelID}/membersync?version=${version}&limit=10000`);
+            // 子区（ChannelTypeCommunityTopic）使用父群聊 ID 拉取成员列表
+            let groupId = channel.channelID
+            if (channel.channelType === ChannelTypeCommunityTopic) {
+                const parsed = parseThreadChannelId(channel.channelID)
+                if (parsed) {
+                    groupId = parsed.groupNo
+                }
+            }
+            const resp = await WKApp.apiClient.get(`groups/${groupId}/membersync?version=${version}&limit=10000`);
             let members = [];
             if (resp) {
                 for (let i = 0; i < resp.length; i++) {

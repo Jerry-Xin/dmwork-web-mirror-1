@@ -1,3 +1,4 @@
+import { ChannelTypeCommunityTopic } from './Const'
 export interface Thread {
   short_id: string
   group_no: string
@@ -36,4 +37,19 @@ export function parseThreadChannelId(channelId: string): { groupNo: string; shor
 
 export function buildThreadChannelId(groupNo: string, shortId: string): string {
   return `${groupNo}${ThreadChannelIdSeparator}${shortId}`
+}
+
+/** 从 pendingThread 等数据快速构造 Thread 存根（非完整数据，仅用于 UI 导航） */
+export function buildThreadStub(shortId: string, groupNo: string, channelId: string, name: string): Thread {
+  return {
+    short_id: shortId,
+    group_no: groupNo,
+    channel_id: channelId,
+    channel_type: ChannelTypeCommunityTopic,
+    name,
+    creator_uid: "",
+    status: 1,
+    created_at: "",
+    updated_at: "",
+  }
 }

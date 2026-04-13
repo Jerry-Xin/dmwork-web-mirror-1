@@ -11,13 +11,13 @@
   border-left: var(--wk-line);
   margin-right: calc(0px - var(--wk-width-thread-panel));
   background-color: var(--wk-bg-base);
-  box-shadow: 0 0.25rem 0.5rem 0.125rem rgba(114, 114, 114, 0.25098);
+  box-shadow: var(--wk-shadow-md);
   display: flex;
   flex-direction: column;
 }
 
 body[theme-mode="dark"] .wk-thread-panel {
-  box-shadow: 0 0.25rem 0.5rem 0.125rem rgba(0, 0, 0, 0.25098);
+  box-shadow: var(--wk-shadow-md);
 }
 
 .wk-chat-content-right.wk-chat-threadpanel-open .wk-thread-panel {
@@ -482,4 +482,29 @@ body[theme-mode="dark"] .wk-thread-panel {
 .wk-thread-panel-item-preview-empty {
   color: var(--wk-text-tertiary);
   font-style: italic;
+}
+
+/* ··· 更多菜单 */
+.wk-thread-more-menu {
+  min-width: 140px;
+  padding: 4px 0;
+  border-radius: 8px;
+  background: var(--wk-bg-elevated);
+}
+.wk-thread-more-menu-item {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--wk-text-primary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+.wk-thread-more-menu-item:hover {
+  background: var(--wk-bg-hover);
+}
+.wk-thread-more-menu-item-danger {
+  color: var(--wk-color-danger);
+}
+.wk-thread-more-menu-item-danger:hover {
+  background: var(--wk-brand-tint-08);
 }

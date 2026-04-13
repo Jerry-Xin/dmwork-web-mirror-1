@@ -375,3 +375,35 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 .wk-conversationlist-thread-overflow:hover {
     color: var(--wk-brand-primary);
 }
+
+/* 会话列表频道 icon */
+.wk-conv-channel-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 3px;
+  margin-top: -1px;
+  color: var(--wk-text-secondary);
+}
+.wk-conv-thread-icon {
+  color: var(--wk-text-tertiary);
+}
+.wk-conv-hash-icon {
+  color: var(--wk-text-secondary);
+}
+
+/* 有子区的主群聊头像右下角 Hash badge */
+.wk-conv-group-hash-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--wk-bg-elevated);
+  border: 1.5px solid var(--wk-bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wk-text-secondary);
+}

@@ -13,7 +13,9 @@ import "./index.css"
 import { Badge, Toast } from "@douyinfe/semi-ui";
 import WKApp from "../../App";
 import { EndpointID } from "../../Service/Const";
-import ContextMenus, { ContextMenusContext } from "../ContextMenus";
+import { Hash } from "lucide-react";
+import ThreadIcon from "../Icons/ThreadIcon";
+import ContextMenus, { ContextMenusContext, ContextMenusData } from "../ContextMenus";
 import { ChannelSettingManager } from "../../Service/ChannelSetting";
 import { TypingListener, TypingManager } from "../../Service/TypingManager";
 import { BeatLoader } from "react-spinners";
@@ -33,6 +35,8 @@ export interface ConversationListProps {
     onClearMessages?: (channel: Channel) => void
     /** 点击 "+N 个子区" 时的回调，传入父群组 ID */
     onThreadOverflowClick?: (groupNo: string) => void
+    /** 外部注入的额外右键菜单项，追加到内置菜单之后 */
+    extraContextMenus?: (conversation: ConversationWrap | undefined) => ContextMenusData[]
 }
 
 export interface ConversationListState {
@@ -162,7 +166,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         return false
     }
 
-    conversationItem(conversationWrap: ConversationWrap) {
+    conversationItem(conversationWrap: ConversationWrap, hasThreads = false) {
         
 
         let channelInfo = conversationWrap.channelInfo
@@ -189,6 +193,11 @@ export default class ConversationList extends Component<ConversationListProps, C
                     <div className="wk-conversationlist-item-left">
                         <div className="wk-conversationlist-item-avatar-box">
                             <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
+                            {hasThreads && (
+                              <div className="wk-conv-group-hash-badge">
+                                <Hash size={10} strokeWidth={2.5} />
+                              </div>
+                            )}
                             {channelInfo && this.needShowOnlineStatus(channelInfo) ? <OnlineStatusBadge tip={this.getOnlineTip(channelInfo)}></OnlineStatusBadge> : undefined}
                         </div>
                     </div>
@@ -197,7 +206,9 @@ export default class ConversationList extends Component<ConversationListProps, C
                     <div className="wk-conversationlist-item-right-first-line">
                         <div className="wk-conversationlist-item-name">
                             <h3>
-                                {conversationWrap.channel.channelType === ChannelTypeCommunityTopic && <span className="wk-thread-prefix">#</span>}
+                                {conversationWrap.channel.channelType === ChannelTypeCommunityTopic && (
+                                  <ThreadIcon size={13} className="wk-conv-channel-icon wk-conv-thread-icon" />
+                                )}
                                 {channelInfo?.orgData.displayName}
                             </h3>
                             {channelInfo?.orgData?.robot === 1 && <AiBadge />}
@@ -284,7 +295,7 @@ export default class ConversationList extends Component<ConversationListProps, C
     }
 
     // 将子区放在父群组后面，最多显示2个，超出部分用计数表示
-    private groupThreadsWithParent(convs: ConversationWrap[]): Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }> {
+    private groupThreadsWithParent(convs: ConversationWrap[]): { items: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }>, threadsByParent: Map<string, ConversationWrap[]> } {
         const MAX_VISIBLE_THREADS = 2
 
         // 分离群组和子区
@@ -362,7 +373,7 @@ export default class ConversationList extends Component<ConversationListProps, C
             }
         }
 
-        return result
+        return { items: result, threadsByParent }
     }
 
     render() {
@@ -372,7 +383,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         const filtered = conversations?.filter(c => this.filterConversation(c)) ?? []
 
         // 先对整个列表分组子区，再分离置顶/最近（避免置顶群组和子区断开）
-        const grouped = this.groupThreadsWithParent(filtered)
+        const { items: grouped, threadsByParent } = this.groupThreadsWithParent(filtered)
         const groupedPinned = grouped.filter(item => {
             if ('type' in item) return false
             return (item as ConversationWrap).channelInfo?.top
@@ -426,7 +437,10 @@ export default class ConversationList extends Component<ConversationListProps, C
                     </div>
                 )
             }
-            return this.conversationItem(item as ConversationWrap)
+            const conv = item as ConversationWrap
+            const hasThreads = conv.channel.channelType === ChannelTypeGroup
+                && threadsByParent.has(conv.channel.channelID)
+            return this.conversationItem(conv, hasThreads)
         }
 
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
@@ -445,58 +459,113 @@ export default class ConversationList extends Component<ConversationListProps, C
 
             <ContextMenus onContext={(ctx) => {
                 this.contextMenusContext = ctx
-            }} menus={[
-                {
-                    title: selectConversationWrap?.channelInfo?.top ? "取消置顶" : "置顶", onClick: () => {
-                        if (selectConversationWrap?.channelInfo) this.onTop(selectConversationWrap.channelInfo)
-                    }
-                },
-                {
-                    title: selectConversationWrap?.channelInfo?.mute ? "关闭免打扰" : "开启免打扰", onClick: () => {
-                        if (selectConversationWrap?.channelInfo) this.onMute(selectConversationWrap.channelInfo)
-                    }
-                },
-                {
-                    title: "关闭聊天窗口", onClick: () => {
+            }} menus={(() => {
+                const conv = selectConversationWrap
+                const channelInfo = conv?.channelInfo
+                const channel = conv?.channel
+                const extraMenus = this.props.extraContextMenus ? this.props.extraContextMenus(conv) : []
+
+                const menus: any[] = []
+
+                // 1. 标为已读（有未读时显示）
+                if (conv && conv.unread > 0) {
+                    menus.push({
+                        title: "标为已读",
+                        icon: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
+                        onClick: () => {
+                            if (!channel) return
+                            WKApp.apiClient.put("conversation/clearUnread", {
+                                channel_id: channel.channelID,
+                                channel_type: channel.channelType,
+                                unread: 0,
+                            })
+                        }
+                    })
+                }
+
+                // 2. 关闭聊天窗口
+                menus.push({
+                    title: "关闭聊天窗口",
+                    icon: "M18 6 6 18 M6 6l12 12",
+                    onClick: () => {
+                        if (!channel) return
                         Modal.confirm({
                             title: '确认关闭',
                             content: '确定要关闭此聊天窗口吗？',
                             okText: '确定',
                             cancelText: '取消',
-                            onOk: () => {
-                                this.onCloseChat(selectConversationWrap?.channel!)
-                            },
+                            onOk: () => { this.onCloseChat(channel) },
                         })
                     }
-                },
-                {
-                    title: "清空聊天记录", onClick: () => {
-                        Modal.confirm({
-                            title: '确认清空',
-                            content: '确定要清空所有聊天记录吗？此操作不可撤销。',
-                            okText: '确定',
-                            cancelText: '取消',
-                            onOk: () => {
-                                this.onClearMessages(selectConversationWrap?.channel!)
-                            },
-                        })
-                    }
-                },
-                {
-                    title: "关闭窗口并清空聊天记录", onClick: () => {
-                        Modal.confirm({
-                            title: '确认关闭并清空',
-                            content: '确定要关闭窗口并清空所有聊天记录吗？此操作不可撤销。',
-                            okText: '确定',
-                            cancelText: '取消',
-                            onOk: () => {
-                                this.onCloseChat(selectConversationWrap?.channel!)
-                                this.onClearMessages(selectConversationWrap?.channel!)
-                            },
-                        })
-                    }
-                },
-            ]} />
+                })
+
+                // 3. 移到分组（仅群聊，且有分组数据时显示）
+                if (extraMenus.length > 0) {
+                    menus.push({
+                        title: "移到分组",
+                        icon: "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z",
+                        children: extraMenus,
+                    })
+                }
+
+                // 4. 置顶 / 取消置顶
+                menus.push({
+                    title: channelInfo?.top ? "取消置顶" : "置顶",
+                    icon: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
+                    onClick: () => { if (channelInfo) this.onTop(channelInfo) }
+                })
+
+                // 5. 免打扰 / 关闭免打扰
+                menus.push({
+                    title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
+                    icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
+                    onClick: () => { if (channelInfo) this.onMute(channelInfo) }
+                })
+
+                // 6. 分隔线
+                menus.push({ separator: true } as ContextMenusData)
+
+                // 7. 更多（子菜单：清空聊天记录 / 关闭并清空）
+                menus.push({
+                    title: "更多",
+                    icon: "M12 12m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 5m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 19m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0",
+                    children: [
+                        {
+                            title: "清空聊天记录",
+                            danger: true,
+                            onClick: () => {
+                                if (!channel) return
+                                Modal.confirm({
+                                    title: '确认清空',
+                                    content: '确定要清空所有聊天记录吗？此操作不可撤销。',
+                                    okText: '确定',
+                                    cancelText: '取消',
+                                    onOk: () => { this.onClearMessages(channel) },
+                                })
+                            }
+                        },
+                        {
+                            title: "关闭窗口并清空记录",
+                            danger: true,
+                            onClick: () => {
+                                if (!channel) return
+                                Modal.confirm({
+                                    title: '确认关闭并清空',
+                                    content: '确定要关闭窗口并清空所有聊天记录吗？此操作不可撤销。',
+                                    okText: '确定',
+                                    cancelText: '取消',
+                                    onOk: () => {
+                                        this.onCloseChat(channel)
+                                        this.onClearMessages(channel)
+                                    },
+                                })
+                            }
+                        },
+                    ]
+                })
+
+                return menus
+            })()} />
         </div>
     }
 }

@@ -1,0 +1,156 @@
+.wk-category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;              /* --sp-2 */
+    padding: 6px 8px;      /* 6px var(--sp-2) */
+    border-radius: 6px;    /* --r-sm */
+    cursor: pointer;
+    user-select: none;
+    transition: background 120ms;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wk-category-header:hover {
+    background: var(--wk-bg-hover);
+}
+
+/* 空分组整行降透明度 */
+.wk-category-header--empty {
+    opacity: 0.6;
+}
+
+/* 右键菜单打开时的 active 态 */
+.wk-category-header--active {
+    background: var(--wk-bg-hover);
+}
+
+/* 行内重命名编辑态 */
+.wk-category-header--editing {
+    background: var(--wk-purple-alpha-04);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wk-category-header__rename-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.wk-category-header__rename-input {
+    flex: 1;
+    min-width: 0;
+    height: 24px;
+    padding: 2px 6px;
+    border: 1px solid var(--wk-brand-primary);
+    border-radius: var(--wk-r-xs, 4px);
+    background: var(--wk-bg-surface);
+    box-shadow: 0 0 0 2px var(--wk-purple-alpha-12);
+    font: 600 12px var(--wk-font-sans);
+    color: var(--wk-text-primary);
+    outline: none;
+}
+
+.wk-category-header__rename-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--wk-r-xs, 4px);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.1s ease;
+}
+
+.wk-category-header__rename-btn:hover {
+    background: var(--wk-bg-active);
+}
+
+.wk-category-header__rename-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.wk-category-header__rename-btn--ok {
+    color: var(--wk-color-success);
+}
+
+.wk-category-header__rename-btn--cancel {
+    color: var(--wk-color-error);
+}
+
+/* 折叠箭头 */
+.wk-category-header__arrow {
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.wk-category-header__arrow svg {
+    width: 10px;
+    height: 10px;
+    stroke: var(--wk-text-tertiary);
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* 折叠态：箭头旋转 -90deg */
+.wk-category-header__arrow--collapsed {
+    transform: rotate(-90deg);
+}
+
+/* 分组名 */
+.wk-category-header__name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--wk-text-secondary);
+    flex: 1;
+    letter-spacing: 0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 折叠时括号数量 / 空分组 (空)：内联在分组名里，不是独立 flex item */
+.wk-category-header__count {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--wk-text-tertiary);
+}
+
+.wk-category-header__count--empty {
+    font-style: italic;
+}
+
+/* 未读 badge */
+.wk-category-header__badge {
+    min-width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--wk-brand-primary);
+    color: var(--wk-color-white);
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    flex-shrink: 0;
+}

@@ -1,13 +1,16 @@
 import React, { Component, ReactNode } from "react";
 import { Conversation } from "../../Components/Conversation";
 import ConversationList, { ConvFilter } from "../../Components/ConversationList";
+import ConversationListGrouped from "../../Components/ConversationListGrouped";
+import ChatConversationList from "../../Components/ChatConversationList";
 import Provider from "../../Service/Provider";
 import { ErrorBoundary } from "../../Components/ErrorBoundary";
 
-import { Spin, Popover } from "@douyinfe/semi-ui";
+import { Spin, Popover, Modal, Toast } from "@douyinfe/semi-ui";
 import WKButton from "../../Components/WKButton";
 import WKModal from "../../Components/WKModal";
-import { Search, Plus, MessageSquare } from "lucide-react";
+import { Search, Plus } from "lucide-react";
+import ThreadIcon from "../../Components/Icons/ThreadIcon";
 import { ChatVM, handleGlobalSearchClick } from "./vm";
 import "./index.css";
 import { ConversationWrap } from "../../Service/Model";
@@ -26,7 +29,7 @@ import SpaceCreate from "../../Components/SpaceCreate";
 import { Space } from "../../Service/SpaceService";
 import NavSignalBadge from "../../Components/NavRail/NavSignalBadge";
 import ThreadPanel from "../../Components/ThreadPanel";
-import { Thread, parseThreadChannelId } from "../../Service/Thread";
+import { Thread, parseThreadChannelId, buildThreadStub } from "../../Service/Thread";
 
 export interface ChatContentPageProps {
   channel: Channel;
@@ -39,6 +42,7 @@ export interface ChatContentPageState {
   selectedCount: number;
   showThreadPanel: boolean;
   activeThread: Thread | null;
+  showThreadDropdown: boolean;
 }
 export class ChatContentPage extends Component<
   ChatContentPageProps,
@@ -56,6 +60,7 @@ export class ChatContentPage extends Component<
       selectedCount: 0,
       showThreadPanel: false,
       activeThread: null,
+      showThreadDropdown: false,
     };
   }
 
@@ -72,7 +77,27 @@ export class ChatContentPage extends Component<
     };
     WKSDK.shared().channelManager.addListener(this.channelInfoListener);
 
-    // 检查是否需要自动打开子区面板
+    // 注册 pending-thread 事件监听（当前频道已打开时直接导航到子区）
+    this._onPendingThread = (detail: { groupNo: string; thread: Thread | null }) => {
+      if (detail?.groupNo === this.props.channel.channelID) {
+        this.setState({
+          showThreadPanel: true,
+          showChannelSetting: false,
+          activeThread: detail.thread || null,
+        })
+      }
+    }
+    WKApp.mittBus.on('wk:pending-thread', this._onPendingThread)
+
+    // 注册关闭子区面板事件监听
+    this._onCloseThreadPanel = () => {
+      if (this.state.showThreadPanel) {
+        this.setState({ showThreadPanel: false, activeThread: null })
+      }
+    }
+    WKApp.mittBus.on('wk:close-thread-panel', this._onCloseThreadPanel)
+
+    // 检查是否需要自动打开子区面板（查看全部子区）
     if (WKApp.shared.pendingThreadPanel === channel.channelID) {
       this.setState({ showThreadPanel: true, activeThread: null });
       WKApp.shared.pendingThreadPanel = undefined;
@@ -93,6 +118,17 @@ export class ChatContentPage extends Component<
 
   componentDidUpdate(prevProps: ChatContentPageProps) {
     const { channel } = this.props;
+
+    // 切换频道时消费 pendingThreadPanel
+    if (channel.channelID !== prevProps.channel.channelID) {
+      // 打开全部子区列表
+      if (WKApp.shared.pendingThreadPanel === channel.channelID) {
+        WKApp.shared.pendingThreadPanel = undefined
+        this.setState({ showThreadPanel: true, activeThread: null, showChannelSetting: false })
+        return
+      }
+    }
+
     // 子区 channelInfo 加载后，检查是否需要获取父群组信息
     if (channel.channelType === ChannelTypeCommunityTopic && !this.parentGroupChannel) {
       const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
@@ -106,7 +142,16 @@ export class ChatContentPage extends Component<
     }
   }
 
+  private _onPendingThread?: (detail: { groupNo: string; thread: Thread | null }) => void
+  private _onCloseThreadPanel?: () => void
+
   componentWillUnmount() {
+    if (this._onPendingThread) {
+      WKApp.mittBus.off('wk:pending-thread', this._onPendingThread)
+    }
+    if (this._onCloseThreadPanel) {
+      WKApp.mittBus.off('wk:close-thread-panel', this._onCloseThreadPanel)
+    }
     WKSDK.shared().channelManager.removeListener(this.channelInfoListener);
   }
 
@@ -114,7 +159,7 @@ export class ChatContentPage extends Component<
 
   render(): React.ReactNode {
     const { channel, initLocateMessageSeq } = this.props;
-    const { showChannelSetting, selectionMode, selectedCount, showThreadPanel, activeThread } = this.state;
+    const { showChannelSetting, selectionMode, selectedCount, showThreadPanel, activeThread, showThreadDropdown } = this.state;
     // 子区页面不显示讨论串按钮
     const isThreadChannel = channel.channelType === ChannelTypeCommunityTopic;
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
@@ -178,7 +223,17 @@ export class ChatContentPage extends Component<
                         <div className="wk-chat-conversation-header-channel-info-name">
                           {channel.channelType === ChannelTypeCommunityTopic && channelInfo?.orgData?.parentGroupNo ? (
                             <>
-                              <span className="wk-chat-conversation-header-parent-group">
+                              <span
+                                className="wk-chat-conversation-header-parent-group"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => {
+                                  if (this.parentGroupChannel) {
+                                    WKApp.endpoints.showConversation(this.parentGroupChannel)
+                                  } else {
+                                    WKApp.endpoints.showConversation(new Channel(channelInfo.orgData.parentGroupNo, ChannelTypeGroup))
+                                  }
+                                }}
+                              >
                                 {WKSDK.shared().channelManager.getChannelInfo(new Channel(channelInfo.orgData.parentGroupNo, ChannelTypeGroup))?.title || channelInfo.orgData.parentGroupNo}
                               </span>
                               <span className="wk-chat-conversation-header-separator">&gt;</span>
@@ -221,18 +276,95 @@ export class ChatContentPage extends Component<
                           </div>
                         );
                       })}
-                    {/* 讨论串按钮 - 子区页面不显示 */}
+                    {/* 子区按钮 - 下拉菜单（新建子区 / 查看全部子区） */}
                     {!isThreadChannel && channel.channelType === ChannelTypeGroup && WKApp.remoteConfig.threadOn && (
-                      <div
-                        className="wk-chat-conversation-header-right-item"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          this.setState({ showThreadPanel: !showThreadPanel, showChannelSetting: false });
-                        }}
-                        title="子区"
+                      <Popover
+                        visible={showThreadDropdown}
+                        onVisibleChange={(v) => this.setState({ showThreadDropdown: v })}
+                        trigger="click"
+                        position="bottomRight"
+                        showArrow={false}
+                        content={
+                          <div className="wk-thread-dropdown">
+                            <div
+                              className="wk-thread-dropdown-item"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                this.setState({ showThreadDropdown: false })
+                                const groupNo = channel.channelID
+                                let threadName = ""
+                                Modal.confirm({
+                                  title: "新建子区",
+                                  icon: null,
+                                  okText: "创建",
+                                  cancelText: "取消",
+                                  content: (
+                                    <div>
+                                      <div style={{ marginBottom: "8px", fontSize: "14px", color: "var(--wk-text-secondary)" }}>
+                                        话题名称
+                                      </div>
+                                      <input
+                                        type="text"
+                                        placeholder="输入讨论话题..."
+                                        style={{
+                                          width: "100%",
+                                          padding: "10px 12px",
+                                          background: "var(--wk-bg-base)",
+                                          border: "1px solid var(--wk-border-default)",
+                                          borderRadius: "6px",
+                                          fontSize: "14px",
+                                          color: "var(--wk-text-primary)",
+                                          outline: "none",
+                                          boxSizing: "border-box" as const,
+                                        }}
+                                        onChange={(ev) => { threadName = ev.target.value }}
+                                        autoFocus
+                                      />
+                                    </div>
+                                  ),
+                                  onOk: async () => {
+                                    if (!threadName || threadName.trim() === "") {
+                                      Toast.error("话题名称不能为空")
+                                      return
+                                    }
+                                    try {
+                                      await WKApp.dataSource.channelDataSource.threadCreate(groupNo, threadName.trim())
+                                      Toast.success("子区创建成功")
+                                    } catch (err) {
+                                      const msg = err instanceof Error ? err.message : "创建失败"
+                                      Toast.error(msg)
+                                    }
+                                  },
+                                })
+                              }}
+                            >
+                              新建子区
+                            </div>
+                            <div
+                              className="wk-thread-dropdown-item"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                this.setState({
+                                  showThreadDropdown: false,
+                                  showThreadPanel: true,
+                                  activeThread: null,
+                                  showChannelSetting: false,
+                                });
+                              }}
+                            >
+                              查看全部子区
+                            </div>
+                          </div>
+                        }
                       >
-                        <MessageSquare size={20} color={WKApp.config.themeColor} />
-                      </div>
+                        <div
+                          className="wk-chat-conversation-header-right-item"
+                          onClick={(e) => e.stopPropagation()}
+                          title="子区"
+                        >
+                          <ThreadIcon size={20} color={WKApp.config.themeColor} />
+                        </div>
+                      </Popover>
                     )}
                     <div className="wk-chat-conversation-header-right-item">
                       <svg
@@ -280,17 +412,12 @@ export class ChatContentPage extends Component<
                     this.setState({
                       showThreadPanel: true,
                       showChannelSetting: false,
-                      activeThread: {
-                        short_id: threadInfo.shortId,
-                        group_no: threadInfo.groupNo,
-                        channel_id: threadChannelId,
-                        channel_type: ChannelTypeCommunityTopic,
-                        name: threadName,
-                        creator_uid: "",
-                        status: 1,
-                        created_at: "",
-                        updated_at: "",
-                      },
+                      activeThread: buildThreadStub(
+                        threadInfo.shortId,
+                        threadInfo.groupNo,
+                        threadChannelId,
+                        threadName
+                      ),
                     });
                   }
                 }}
@@ -493,31 +620,26 @@ export default class ChatPage extends Component<any, ChatPageState> {
                       </div>
                     ) : (
                       <ErrorBoundary moduleName="会话列表">
-                        <ConversationList
-                          select={WKApp.shared.openChannel}
+                        <ChatConversationList
                           conversations={vm.filteredConversations}
                           filter={filter}
-                          onClearMessages={this.vm.clearMessages.bind(this.vm)}
-                          onThreadOverflowClick={(groupNo: string) => {
-                            // 切换到对应群组的会话
-                            const groupConv = vm.filteredConversations.find(
-                              c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === groupNo
-                            );
-                            if (groupConv) {
-                              // 标记待打开子区面板，ChatContentPage 挂载时检查
-                              WKApp.shared.pendingThreadPanel = groupNo;
-                              vm.selectedConversation = groupConv;
-                              WKApp.endpoints.showConversation(groupConv.channel);
-                              vm.notifyListener();
-                            }
-                          }}
-                          onClick={(conversation: ConversationWrap) => {
+                          select={WKApp.shared.openChannel}
+                          onConversationClick={(conversation: ConversationWrap) => {
                             const doSwitch = () => {
+                              // 子区：直接进入完整视图（参考 Discord 逻辑）
+                              if (conversation.channel.channelType === ChannelTypeCommunityTopic) {
+                                WKApp.mittBus.emit('wk:close-thread-panel', undefined)
+                                vm.selectedConversation = conversation;
+                                WKApp.endpoints.showConversation(conversation.channel);
+                                vm.notifyListener();
+                                return
+                              }
+                              // 普通会话：关闭子区面板
+                              WKApp.mittBus.emit('wk:close-thread-panel', undefined)
                               vm.selectedConversation = conversation;
                               WKApp.endpoints.showConversation(conversation.channel);
                               vm.notifyListener();
                             }
-                            // 附件发送守卫：有未发送附件时弹确认
                             const guard = WKApp.shared.pendingAttachmentGuard
                             if (guard && !guard()) {
                               this.setState({ pendingConfirm: { onOk: doSwitch } })
@@ -525,7 +647,24 @@ export default class ChatPage extends Component<any, ChatPageState> {
                             }
                             doSwitch()
                           }}
-                        ></ConversationList>
+                          onClearMessages={this.vm.clearMessages.bind(this.vm)}
+                          onThreadOverflowClick={(groupNo: string) => {
+                            // 通过 mittBus 通知导航到父群聊子区列表
+                            WKApp.mittBus.emit('wk:pending-thread', { groupNo, thread: null })
+                            // 若当前不是目标群聊，切换频道
+                            if (this.props.channel?.channelID !== groupNo) {
+                              WKApp.shared.pendingThreadPanel = groupNo
+                              const groupConv = vm.filteredConversations.find(
+                                c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === groupNo
+                              )
+                              if (groupConv) {
+                                vm.selectedConversation = groupConv
+                                vm.notifyListener()
+                              }
+                              WKApp.endpoints.showConversation(new Channel(groupNo, ChannelTypeGroup))
+                            }
+                          }}
+                        />
                       </ErrorBoundary>
                     )}
                   </div>

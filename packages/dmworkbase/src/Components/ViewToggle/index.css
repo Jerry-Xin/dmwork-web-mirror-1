@@ -1,0 +1,30 @@
+.wk-view-toggle {
+    display: flex;
+    margin: 0 16px 8px;
+    background: var(--wk-bg-elevated);
+    border-radius: var(--wk-r-sm, 6px);
+    padding: 2px;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.wk-view-toggle-item {
+    flex: 1;
+    padding: 5px 0;
+    border: none;
+    border-radius: var(--wk-r-xs, 4px);
+    background: transparent;
+    color: var(--wk-text-secondary);
+    font: 500 12px var(--wk-font-sans);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    text-align: center;
+    font-family: var(--wk-font-sans);
+}
+
+.wk-view-toggle-item--active {
+    background: var(--wk-bg-surface);
+    color: var(--wk-text-primary);
+    box-shadow: var(--wk-shadow-sm);
+}

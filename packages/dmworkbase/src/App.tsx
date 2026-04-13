@@ -5,6 +5,8 @@ export type MittEvents = {
   'friend-applys-unread-count': number;
   'space-changed': unknown;
   'task-upload-failed': { channelKey: string };
+  'wk:pending-thread': { groupNo: string; thread: import('./Service/Thread').Thread | null };
+  'wk:close-thread-panel': undefined;
 };
 import { EndpointCommon } from "./EndpointCommon";
 import APIClient from "./Service/APIClient";
@@ -260,6 +262,9 @@ export default class WKApp extends ProviderListener {
 
   /** 待打开子区面板的群组 ID，ChatContentPage 挂载时检查并消费 */
   pendingThreadPanel?: string
+
+  /** 待打开的具体子区，ChatContentPage 挂载时检查并消费 */
+  pendingThread?: { groupNo: string; channelId: string; name: string; shortId: string }
 
   baseContext!: WKBaseContext; // DMWork基础上下文
 

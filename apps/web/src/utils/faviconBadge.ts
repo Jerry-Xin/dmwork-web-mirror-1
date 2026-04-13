@@ -39,11 +39,11 @@ function drawBadge(ctx: CanvasRenderingContext2D, text: string, size: number): v
   const isLong     = text.length > 2   // "99+"
   const isTwoDigit = text.length === 2
 
-  const badgeH = size * 0.38
+  const badgeH = size * 0.50
   const ry     = badgeH / 2  // 圆角半径 = 高度一半（胶囊形）
 
   // 宽度按位数拉伸
-  const rx = isLong ? ry * 2.0 : isTwoDigit ? ry * 1.5 : ry
+  const rx = isLong ? ry * 2.2 : isTwoDigit ? ry * 1.6 : ry
 
   // 贴右下角，不超出边界
   const cx = size - rx

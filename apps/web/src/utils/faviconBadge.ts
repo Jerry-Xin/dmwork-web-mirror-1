@@ -2,15 +2,13 @@
  * faviconBadge.ts
  * 在浏览器 Tab favicon 上叠加未读数角标。
  * - count 0：恢复原始 favicon
- * - 1~99：显示数字
+ * - 1~99：显示数字（圆形角标，右下角）
  * - >99：显示 "99+"
  *
- * 实现策略：
- * 用 128px canvas 高分辨率渲染后输出为 dataURL，
- * 浏览器 tab 在 ~16-32px 显示时自动降采样，清晰度更好。
+ * 设计参考 Discord：大面积角标、粗字体、无描边、贴底部
  */
 
-const RENDER_SIZE = 128        // 高分辨率渲染尺寸
+const RENDER_SIZE = 128
 const BADGE_COLOR = '#e53935'
 const BADGE_TEXT_COLOR = '#ffffff'
 const FALLBACK_BG_COLOR = '#5b6abf'
@@ -34,55 +32,37 @@ function saveOriginalFavicon(): void {
 }
 
 function drawBadge(ctx: CanvasRenderingContext2D, text: string, size: number): void {
-  const isLong = text.length > 2 // "99+"
+  const isLong = text.length > 2  // "99+"
+  const isTwoDigit = text.length === 2
 
-  // 角标半径：单数字用圆，双数字/99+ 用胶囊形
-  const r = size * 0.26
+  // 角标高度固定为图标高度的 38%，宽度随文字自适应
+  const badgeH = size * 0.38
+  const ry = badgeH / 2  // 胶囊圆角半径 = 高度一半
 
-  // 右下角，长文本往中间挤保证不超出边界
-  const inset = isLong ? r * 0.6 : 0
-  const cx = size - r - inset
-  const cy = size - r - inset
+  // 宽度：单数字=正圆，双数字/99+=胶囊
+  const rx = isLong
+    ? ry * 2.0   // "99+" 更宽
+    : isTwoDigit
+      ? ry * 1.5  // 两位数略宽
+      : ry         // 单数字正圆
 
-  // ── 白色描边（分离角标与图标背景）──
-  const strokeW = size * 0.04
+  // 贴右下角，不超出边界
+  const cx = size - rx
+  const cy = size - ry
+
+  // 红色胶囊（无描边，直接覆盖）
   ctx.beginPath()
-  if (isLong) {
-    const rx = r * 1.55
-    const ry = r
-    ctx.ellipse(cx, cy, rx + strokeW, ry + strokeW, 0, 0, Math.PI * 2)
-  } else {
-    ctx.arc(cx, cy, r + strokeW, 0, Math.PI * 2)
-  }
-  ctx.fillStyle = '#ffffff'
-  ctx.fill()
-
-  // ── 红色主体 ──
-  ctx.beginPath()
-  if (isLong) {
-    const rx = r * 1.55
-    const ry = r
-    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
-  } else {
-    ctx.arc(cx, cy, r, 0, Math.PI * 2)
-  }
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
   ctx.fillStyle = BADGE_COLOR
   ctx.fill()
 
-  // ── 数字文本 ──
-  // 使用系统 UI 字体，开启抗锯齿
-  const fontSize = isLong
-    ? Math.round(size * 0.24)
-    : text.length === 1
-      ? Math.round(size * 0.30)
-      : Math.round(size * 0.26)
-
+  // 粗字体，字号尽量撑满圆形高度
+  const fontSize = Math.round(ry * 1.3)
   ctx.fillStyle = BADGE_TEXT_COLOR
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  // system-ui 在各平台都有好的渲染效果
-  ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`
-  ctx.fillText(text, cx, cy + size * 0.01) // 微调垂直对齐
+  ctx.font = `900 ${fontSize}px system-ui, -apple-system, sans-serif`
+  ctx.fillText(text, cx, cy + ry * 0.05)  // 视觉垂直居中微调
 }
 
 function renderBadge(img: HTMLImageElement | null, text: string): string {
@@ -91,8 +71,6 @@ function renderBadge(img: HTMLImageElement | null, text: string): string {
   canvas.width = size
   canvas.height = size
   const ctx = canvas.getContext('2d', { alpha: true })!
-
-  // 开启高质量缩放
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
@@ -121,7 +99,7 @@ function renderBadge(img: HTMLImageElement | null, text: string): string {
 }
 
 export function setFaviconBadge(count: number): void {
-  if (typeof document === 'undefined') return // SSR 安全
+  if (typeof document === 'undefined') return
 
   saveOriginalFavicon()
 
@@ -130,15 +108,8 @@ export function setFaviconBadge(count: number): void {
 
   const img = new Image()
   img.crossOrigin = 'anonymous'
-
-  img.onload = () => {
-    getFaviconLink().href = renderBadge(img, text)
-  }
-
-  img.onerror = () => {
-    getFaviconLink().href = renderBadge(null, text)
-  }
-
+  img.onload = () => { getFaviconLink().href = renderBadge(img, text) }
+  img.onerror = () => { getFaviconLink().href = renderBadge(null, text) }
   img.src = src
 }
 

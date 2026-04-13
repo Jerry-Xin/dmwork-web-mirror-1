@@ -103,17 +103,6 @@ export class ChatContentPage extends Component<
       WKApp.shared.pendingThreadPanel = undefined;
     }
 
-    // 检查是否需要打开具体某个子区
-    const pt = WKApp.shared.pendingThread
-    if (pt && pt.groupNo === channel.channelID) {
-      WKApp.shared.pendingThread = undefined
-      this.setState({
-        showThreadPanel: true,
-        showChannelSetting: false,
-        activeThread: buildThreadStub(pt.shortId, pt.groupNo, pt.channelId, pt.name),
-      })
-    }
-
     // 子区：预先获取父群组信息
     if (channel.channelType === ChannelTypeCommunityTopic) {
       const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
@@ -130,19 +119,8 @@ export class ChatContentPage extends Component<
   componentDidUpdate(prevProps: ChatContentPageProps) {
     const { channel } = this.props;
 
-    // 切换频道时消费 pendingThread / pendingThreadPanel
+    // 切换频道时消费 pendingThreadPanel
     if (channel.channelID !== prevProps.channel.channelID) {
-      // 导航到特定子区
-      const pt = WKApp.shared.pendingThread
-      if (pt && pt.groupNo === channel.channelID) {
-        WKApp.shared.pendingThread = undefined
-        this.setState({
-          showThreadPanel: true,
-          showChannelSetting: false,
-          activeThread: buildThreadStub(pt.shortId, pt.groupNo, pt.channelId, pt.name),
-        })
-        return
-      }
       // 打开全部子区列表
       if (WKApp.shared.pendingThreadPanel === channel.channelID) {
         WKApp.shared.pendingThreadPanel = undefined
@@ -245,7 +223,17 @@ export class ChatContentPage extends Component<
                         <div className="wk-chat-conversation-header-channel-info-name">
                           {channel.channelType === ChannelTypeCommunityTopic && channelInfo?.orgData?.parentGroupNo ? (
                             <>
-                              <span className="wk-chat-conversation-header-parent-group">
+                              <span
+                                className="wk-chat-conversation-header-parent-group"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => {
+                                  if (this.parentGroupChannel) {
+                                    WKApp.endpoints.showConversation(this.parentGroupChannel)
+                                  } else {
+                                    WKApp.endpoints.showConversation(new Channel(channelInfo.orgData.parentGroupNo, ChannelTypeGroup))
+                                  }
+                                }}
+                              >
                                 {WKSDK.shared().channelManager.getChannelInfo(new Channel(channelInfo.orgData.parentGroupNo, ChannelTypeGroup))?.title || channelInfo.orgData.parentGroupNo}
                               </span>
                               <span className="wk-chat-conversation-header-separator">&gt;</span>
@@ -637,39 +625,13 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           select={WKApp.shared.openChannel}
                           onConversationClick={(conversation: ConversationWrap) => {
                             const doSwitch = () => {
-                              // 子区：跳转到父群聊 + 打开 ThreadPanel 定位到该子区
+                              // 子区：直接进入完整视图（参考 Discord 逻辑）
                               if (conversation.channel.channelType === ChannelTypeCommunityTopic) {
-                                const parsed = parseThreadChannelId(conversation.channel.channelID)
-                                const parentGroupNo = conversation.channelInfo?.orgData?.parentGroupNo || parsed?.groupNo
-                                if (parentGroupNo) {
-                                  const thread = buildThreadStub(
-                                    parsed?.shortId || "",
-                                    parentGroupNo,
-                                    conversation.channel.channelID,
-                                    conversation.channelInfo?.orgData?.displayName || parsed?.shortId || ""
-                                  )
-                                  // 通过 mittBus 通知当前已打开的 ChatContentPage 导航到子区
-                                  WKApp.mittBus.emit('wk:pending-thread', { groupNo: parentGroupNo, thread })
-                                  // 若当前不是父群聊，切换频道
-                                  if (this.props.channel?.channelID !== parentGroupNo) {
-                                    const parentChannel = new Channel(parentGroupNo, ChannelTypeGroup)
-                                    WKApp.shared.pendingThread = {
-                                      groupNo: parentGroupNo,
-                                      channelId: conversation.channel.channelID,
-                                      name: conversation.channelInfo?.orgData?.displayName || parsed?.shortId || "",
-                                      shortId: parsed?.shortId || "",
-                                    }
-                                    const parentConv = vm.filteredConversations.find(
-                                      c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === parentGroupNo
-                                    )
-                                    if (parentConv) {
-                                      vm.selectedConversation = parentConv
-                                      vm.notifyListener()
-                                    }
-                                    WKApp.endpoints.showConversation(parentChannel)
-                                  }
-                                  return
-                                }
+                                WKApp.mittBus.emit('wk:close-thread-panel', undefined)
+                                vm.selectedConversation = conversation;
+                                WKApp.endpoints.showConversation(conversation.channel);
+                                vm.notifyListener();
+                                return
                               }
                               // 普通会话：关闭子区面板
                               WKApp.mittBus.emit('wk:close-thread-panel', undefined)

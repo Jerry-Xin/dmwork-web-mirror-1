@@ -14,7 +14,7 @@ const BADGE_FG  = '#ffffff'
 const FALLBACK_BG = '#5b6abf'
 
 // 角标占图标高度的比例（0~1）
-const BADGE_HEIGHT_RATIO = 0.36
+const BADGE_HEIGHT_RATIO = 0.48
 
 let originalFaviconHref: string | null = null
 let originalTitle: string | null = null
@@ -89,11 +89,12 @@ function drawBadge(ctx: CanvasRenderingContext2D, text: string, size: number) {
   ctx.closePath()
   ctx.fill()
 
-  // 文字居中
+  // 文字居中（textBaseline='middle' 在部分浏览器有 1px 偏差，用 alphabetic 手动校正）
   ctx.fillStyle    = BADGE_FG
   ctx.textAlign    = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(text, x + bw / 2, y + bh / 2)
+  ctx.textBaseline = 'alphabetic'
+  // alphabetic baseline 约在字体 em-box 的 80% 处，向上偏移 30% bh 可达视觉中心
+  ctx.fillText(text, x + bw / 2, y + bh * 0.72)
 }
 
 function renderBadge(img: HTMLImageElement | null, text: string, size: number): string {

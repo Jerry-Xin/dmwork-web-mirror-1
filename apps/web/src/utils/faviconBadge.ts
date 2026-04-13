@@ -4,9 +4,13 @@
  * - count 0：恢复原始 favicon
  * - 1~99：显示数字
  * - >99：显示 "99+"
+ *
+ * 实现策略：
+ * 用 128px canvas 高分辨率渲染后输出为 dataURL，
+ * 浏览器 tab 在 ~16-32px 显示时自动降采样，清晰度更好。
  */
 
-const FAVICON_SIZE = 64  // 2x 内部渲染，最终压缩到 tab 尺寸更清晰
+const RENDER_SIZE = 128        // 高分辨率渲染尺寸
 const BADGE_COLOR = '#e53935'
 const BADGE_TEXT_COLOR = '#ffffff'
 const FALLBACK_BG_COLOR = '#5b6abf'
@@ -31,75 +35,88 @@ function saveOriginalFavicon(): void {
 
 function drawBadge(ctx: CanvasRenderingContext2D, text: string, size: number): void {
   const isLong = text.length > 2 // "99+"
-  const badgeRadius = size * 0.30  // 稍大一点，tab 缩小后更清晰
 
-  // 角标中心在右下角，内容过长时向左上方内缩，避免超出画布
-  const margin = isLong ? badgeRadius * 0.5 : 0
-  const cx = size - badgeRadius - margin
-  const cy = size - badgeRadius - margin
+  // 角标半径：单数字用圆，双数字/99+ 用胶囊形
+  const r = size * 0.26
 
-  // 白色描边，和主图标区分
+  // 右下角，长文本往中间挤保证不超出边界
+  const inset = isLong ? r * 0.6 : 0
+  const cx = size - r - inset
+  const cy = size - r - inset
+
+  // ── 白色描边（分离角标与图标背景）──
+  const strokeW = size * 0.04
   ctx.beginPath()
   if (isLong) {
-    const rx = badgeRadius * 1.5
-    const ry = badgeRadius
-    ctx.ellipse(cx - rx * 0.1, cy, rx + 2, ry + 2, 0, 0, Math.PI * 2)
+    const rx = r * 1.55
+    const ry = r
+    ctx.ellipse(cx, cy, rx + strokeW, ry + strokeW, 0, 0, Math.PI * 2)
   } else {
-    ctx.arc(cx, cy, badgeRadius + 2, 0, Math.PI * 2)
+    ctx.arc(cx, cy, r + strokeW, 0, Math.PI * 2)
   }
   ctx.fillStyle = '#ffffff'
   ctx.fill()
 
-  // 红色角标
+  // ── 红色主体 ──
   ctx.beginPath()
   if (isLong) {
-    const rx = badgeRadius * 1.5
-    const ry = badgeRadius
-    ctx.ellipse(cx - rx * 0.1, cy, rx, ry, 0, 0, Math.PI * 2)
+    const rx = r * 1.55
+    const ry = r
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
   } else {
-    ctx.arc(cx, cy, badgeRadius, 0, Math.PI * 2)
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
   }
   ctx.fillStyle = BADGE_COLOR
   ctx.fill()
 
+  // ── 数字文本 ──
+  // 使用系统 UI 字体，开启抗锯齿
+  const fontSize = isLong
+    ? Math.round(size * 0.24)
+    : text.length === 1
+      ? Math.round(size * 0.30)
+      : Math.round(size * 0.26)
+
   ctx.fillStyle = BADGE_TEXT_COLOR
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  const fontSize = isLong ? Math.floor(size * 0.22) : Math.floor(size * 0.28)
-  ctx.font = `bold ${fontSize}px -apple-system, sans-serif`
-  const textX = isLong ? cx - badgeRadius * 1.5 * 0.1 : cx
-  ctx.fillText(text, textX, cy)
+  // system-ui 在各平台都有好的渲染效果
+  ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`
+  ctx.fillText(text, cx, cy + size * 0.01) // 微调垂直对齐
 }
 
 function renderBadge(img: HTMLImageElement | null, text: string): string {
+  const size = RENDER_SIZE
   const canvas = document.createElement('canvas')
-  canvas.width = FAVICON_SIZE
-  canvas.height = FAVICON_SIZE
-  const ctx = canvas.getContext('2d')!
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d', { alpha: true })!
+
+  // 开启高质量缩放
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
 
   if (img) {
-    ctx.drawImage(img, 0, 0, FAVICON_SIZE, FAVICON_SIZE)
+    ctx.drawImage(img, 0, 0, size, size)
   } else {
-    // 加载失败兜底：纯色圆角背景（手动绘制，避免 roundRect 兼容性问题）
-    const r = 6
-    const w = FAVICON_SIZE
-    const h = FAVICON_SIZE
+    // 加载失败兜底：品牌色圆角矩形
+    const rad = size * 0.18
     ctx.fillStyle = FALLBACK_BG_COLOR
     ctx.beginPath()
-    ctx.moveTo(r, 0)
-    ctx.lineTo(w - r, 0)
-    ctx.quadraticCurveTo(w, 0, w, r)
-    ctx.lineTo(w, h - r)
-    ctx.quadraticCurveTo(w, h, w - r, h)
-    ctx.lineTo(r, h)
-    ctx.quadraticCurveTo(0, h, 0, h - r)
-    ctx.lineTo(0, r)
-    ctx.quadraticCurveTo(0, 0, r, 0)
+    ctx.moveTo(rad, 0)
+    ctx.lineTo(size - rad, 0)
+    ctx.quadraticCurveTo(size, 0, size, rad)
+    ctx.lineTo(size, size - rad)
+    ctx.quadraticCurveTo(size, size, size - rad, size)
+    ctx.lineTo(rad, size)
+    ctx.quadraticCurveTo(0, size, 0, size - rad)
+    ctx.lineTo(0, rad)
+    ctx.quadraticCurveTo(0, 0, rad, 0)
     ctx.closePath()
     ctx.fill()
   }
 
-  drawBadge(ctx, text, FAVICON_SIZE)
+  drawBadge(ctx, text, size)
   return canvas.toDataURL('image/png')
 }
 
@@ -115,14 +132,11 @@ export function setFaviconBadge(count: number): void {
   img.crossOrigin = 'anonymous'
 
   img.onload = () => {
-    const dataUrl = renderBadge(img, text)
-    getFaviconLink().href = dataUrl
+    getFaviconLink().href = renderBadge(img, text)
   }
 
   img.onerror = () => {
-    // 原图加载失败，用兜底色
-    const dataUrl = renderBadge(null, text)
-    getFaviconLink().href = dataUrl
+    getFaviconLink().href = renderBadge(null, text)
   }
 
   img.src = src
@@ -130,7 +144,5 @@ export function setFaviconBadge(count: number): void {
 
 export function clearFaviconBadge(): void {
   if (typeof document === 'undefined') return
-
-  const href = originalFaviconHref || '/favicon.ico'
-  getFaviconLink().href = href
+  getFaviconLink().href = originalFaviconHref || '/favicon.ico'
 }

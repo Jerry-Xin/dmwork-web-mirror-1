@@ -637,39 +637,13 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           select={WKApp.shared.openChannel}
                           onConversationClick={(conversation: ConversationWrap) => {
                             const doSwitch = () => {
-                              // 子区：跳转到父群聊 + 打开 ThreadPanel 定位到该子区
+                              // 子区：直接进入完整视图（参考 Discord 逻辑）
                               if (conversation.channel.channelType === ChannelTypeCommunityTopic) {
-                                const parsed = parseThreadChannelId(conversation.channel.channelID)
-                                const parentGroupNo = conversation.channelInfo?.orgData?.parentGroupNo || parsed?.groupNo
-                                if (parentGroupNo) {
-                                  const thread = buildThreadStub(
-                                    parsed?.shortId || "",
-                                    parentGroupNo,
-                                    conversation.channel.channelID,
-                                    conversation.channelInfo?.orgData?.displayName || parsed?.shortId || ""
-                                  )
-                                  // 通过 mittBus 通知当前已打开的 ChatContentPage 导航到子区
-                                  WKApp.mittBus.emit('wk:pending-thread', { groupNo: parentGroupNo, thread })
-                                  // 若当前不是父群聊，切换频道
-                                  if (this.props.channel?.channelID !== parentGroupNo) {
-                                    const parentChannel = new Channel(parentGroupNo, ChannelTypeGroup)
-                                    WKApp.shared.pendingThread = {
-                                      groupNo: parentGroupNo,
-                                      channelId: conversation.channel.channelID,
-                                      name: conversation.channelInfo?.orgData?.displayName || parsed?.shortId || "",
-                                      shortId: parsed?.shortId || "",
-                                    }
-                                    const parentConv = vm.filteredConversations.find(
-                                      c => c.channel.channelType === ChannelTypeGroup && c.channel.channelID === parentGroupNo
-                                    )
-                                    if (parentConv) {
-                                      vm.selectedConversation = parentConv
-                                      vm.notifyListener()
-                                    }
-                                    WKApp.endpoints.showConversation(parentChannel)
-                                  }
-                                  return
-                                }
+                                WKApp.mittBus.emit('wk:close-thread-panel', undefined)
+                                vm.selectedConversation = conversation;
+                                WKApp.endpoints.showConversation(conversation.channel);
+                                vm.notifyListener();
+                                return
                               }
                               // 普通会话：关闭子区面板
                               WKApp.mittBus.emit('wk:close-thread-panel', undefined)

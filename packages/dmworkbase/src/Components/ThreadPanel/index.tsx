@@ -101,12 +101,12 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
   }
 
   private handleThreadClick = (thread: Thread) => {
-    this.setState({
-      view: "detail",
-      vmState: { ...this.state.vmState, thread },
-    })
-    this.props.onThreadSelect?.(thread)
-    this.initVM(thread.short_id)
+    // 子区列表点击 → 进入完整视图（参考 Discord 逻辑）
+    if (thread.channel_id) {
+      const threadChannel = new Channel(thread.channel_id, ChannelTypeCommunityTopic)
+      WKApp.endpoints.showConversation(threadChannel)
+      this.props.onClose()
+    }
   }
 
   private handleBackToList = () => {

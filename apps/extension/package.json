@@ -2,7 +2,7 @@
   "name": "Octo Extension",
   "description": "Octo Extension",
   "private": true,
-  "version": "0.0.0.2",
+  "version": "0.0.0.3",
   "type": "module",
   "scripts": {
     "dev": "wxt --port 5678",

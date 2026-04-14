@@ -189,6 +189,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
 
         const moveToItem: ContextMenusData = {
             title: '移到分组',
+            icon: "M2 9V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4 M12 3v5h5 M9 15l3 3 3-3 M12 12v6",
             children: moveToChildren,
         }
 
@@ -196,6 +197,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             const catName = categories.find(c => c.category_id === currentCategoryId)?.name ?? '当前分组'
             const moveOutItem: ContextMenusData = {
                 title: '移出分组',
+                icon: "M2 9V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4 M12 3v5h5 M9 18l3-3 3 3 M12 21v-6",
                 onClick: () => {
                     Modal.confirm({
                         title: '移出分组',

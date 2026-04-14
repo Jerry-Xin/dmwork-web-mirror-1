@@ -567,37 +567,39 @@ export default class ChatPage extends Component<any, ChatPageState> {
                       >
                         <Search size={16} />
                       </div>
-                      {/* 群聊 Tab 下显示「创建分组」快捷入口 */}
-                      {activeTab === 'group' && (
+                      {/* + 按钮：群聊 Tab 额外显示「创建分组」，其余菜单项保持不变 */}
+                      <Popover
+                        onClickOutSide={() => { vm.showAddPopover = false; }}
+                        className="wk-chat-popover"
+                        position="bottomRight"
+                        visible={vm.showAddPopover}
+                        showArrow={false}
+                        trigger="custom"
+                        content={
+                          <div>
+                            {/* 群聊 Tab 下在顶部插入「创建分组」 */}
+                            {activeTab === 'group' && (
+                              <div
+                                className="wk-chat-menu-item"
+                                onClick={() => {
+                                  vm.showAddPopover = false
+                                  this.openCreateCategoryRef.current?.()
+                                }}
+                              >
+                                创建分组
+                              </div>
+                            )}
+                            <ChatMenusPopover onItem={() => { vm.showAddPopover = false; }} />
+                          </div>
+                        }
+                      >
                         <div
                           className="wk-chat-header-btn"
-                          title="创建分组"
-                          onClick={() => { this.openCreateCategoryRef.current?.() }}
+                          onClick={() => { vm.showAddPopover = !vm.showAddPopover; }}
                         >
                           <Plus size={16} />
                         </div>
-                      )}
-                      {/* 私聊 Tab 下显示通用添加菜单 */}
-                      {activeTab !== 'group' && (
-                        <Popover
-                          onClickOutSide={() => { vm.showAddPopover = false; }}
-                          className="wk-chat-popover"
-                          position="bottomRight"
-                          visible={vm.showAddPopover}
-                          showArrow={false}
-                          trigger="custom"
-                          content={
-                            <ChatMenusPopover onItem={() => { vm.showAddPopover = false; }} />
-                          }
-                        >
-                          <div
-                            className="wk-chat-header-btn"
-                            onClick={() => { vm.showAddPopover = !vm.showAddPopover; }}
-                          >
-                            <Plus size={16} />
-                          </div>
-                        </Popover>
-                      )}
+                      </Popover>
                     </div>
                   </div>
                   {/* 群聊/私聊 Tab Bar */}

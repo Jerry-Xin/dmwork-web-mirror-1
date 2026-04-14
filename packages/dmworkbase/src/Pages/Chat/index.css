@@ -670,3 +670,18 @@ body[theme-mode=dark] .wk-chat-popover {
 .wk-thread-dropdown-item:hover {
   background: var(--wk-bg-hover);
 }
+
+/* 群聊 Tab 下「创建分组」菜单项，对齐 ChatMenusPopover li 样式 */
+.wk-chat-menu-item {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px;
+    font-size: 13px;
+    color: var(--wk-text-primary, #1A1C24);
+    border-bottom: 1px solid var(--wk-border-subtle, rgba(0,0,0,0.05));
+}
+
+.wk-chat-menu-item:hover {
+    background: var(--wk-bg-hover, rgba(0,0,0,0.04));
+}

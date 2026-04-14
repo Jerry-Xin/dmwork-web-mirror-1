@@ -528,14 +528,14 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     padding-left: 40px;
 }
 
-/* L连接线：竖线从 left: 17px（父群聊 icon 中心）向右弯折连接子区 */
+/* L连接线：竖线从 left: 17px，水平延伸至子区 icon 左边（padding-left - left = 40 - 17 = 23px） */
 .wk-conv-compact-item--thread::after {
     content: '';
     position: absolute;
     left: 17px;
     top: 0;
     height: 50%;
-    width: 8px;
+    width: 23px;
     border-left: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
     border-bottom: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
     border-bottom-left-radius: 3px;
@@ -567,14 +567,14 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     position: relative;
 }
 
-/* L连接线：overflow 控件使用 border 画出 └ 形 */
+/* L连接线：对齐子区缩进（40px - 17px = 23px） */
 .wk-conv-compact-thread-overflow::after {
     content: '';
     position: absolute;
     left: 17px;
     top: 0;
     height: 50%;
-    width: 8px;
+    width: 23px;
     border-left: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
     border-bottom: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
     border-bottom-left-radius: 3px;

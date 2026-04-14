@@ -150,6 +150,7 @@ export default class ConversationList extends Component<ConversationListProps, C
     channelListener!: ChannelInfoListener
     contextMenusContext!: ContextMenusContext
     typingListener!: TypingListener
+    private _compactInitialized = false
     constructor(props: ConversationListProps) {
         super(props)
 
@@ -174,18 +175,13 @@ export default class ConversationList extends Component<ConversationListProps, C
         TypingManager.shared.removeTypingListener(this.typingListener)
     }
 
-    componentDidUpdate(prevProps: ConversationListProps) {
-        // compact 模式：数据首次加载后，把所有有子区的父群聊设为默认折叠
-        if (!this.props.compact) return
-        const prevLen = prevProps.conversations?.length ?? 0
-        const currLen = this.props.conversations?.length ?? 0
-        // 数据从无到有，或 collapsedGroupIds 还是初始空 Set 且有子区时初始化
-        if (prevLen !== currLen && this.state.collapsedGroupIds.size === 0) {
-            const filtered = this.props.conversations?.filter(c => this.filterConversation(c)) ?? []
-            const { threadsByParent } = this.groupThreadsWithParent(filtered)
-            if (threadsByParent.size > 0) {
-                this.setState({ collapsedGroupIds: new Set(threadsByParent.keys()) })
-            }
+    componentDidUpdate() {
+        if (!this.props.compact || this._compactInitialized) return
+        const filtered = this.props.conversations?.filter(c => this.filterConversation(c)) ?? []
+        const { threadsByParent } = this.groupThreadsWithParent(filtered)
+        if (threadsByParent.size > 0) {
+            this._compactInitialized = true
+            this.setState({ collapsedGroupIds: new Set(threadsByParent.keys()) })
         }
     }
 

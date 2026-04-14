@@ -8,6 +8,8 @@ import ConversationList from "../ConversationList"
 import ConversationListWithCategory from "../ConversationListWithCategory"
 import CategoryManagePanel from "../CategoryManagePanel"
 import ContextMenus, { ContextMenusContext, ContextMenusData } from "../ContextMenus"
+import ConversationSelect from "../ConversationSelect"
+import WKModal from "../WKModal"
 
 // category_id 收窄为非 null（useCategoryList 已 filter 掉 null 项）
 export type ValidCategoryItem = CategoryItem & { category_id: string }
@@ -50,6 +52,8 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     onOpenCreateCategory,
 }) => {
     const [managePanelVisible, setManagePanelVisible] = useState(false)
+    // 「添加群聊到分组」Modal 状态
+    const [addGroupToCatId, setAddGroupToCatId] = useState<string | null>(null)
     const categoryCtxMenuRef = useRef<ContextMenusContext | null>(null)
     const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
     const ctxMenuClearRef = useRef<(() => void) | null>(null)
@@ -164,6 +168,15 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         if (!cat) return []
         return [
             {
+                title: "添加群聊",
+                icon: "M12 5v14 M5 12h14",
+                onClick: () => {
+                    setActiveCategoryId(null)
+                    setAddGroupToCatId(categoryId)
+                },
+            },
+            { separator: true } as ContextMenusData,
+            {
                 title: "重命名",
                 icon: "M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z m-2-2 4 4",
                 onClick: () => {
@@ -265,6 +278,27 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 onReorder={onSortCategories}
                 onCreateCategory={() => { setManagePanelVisible(false); onOpenCreateCategory() }}
             />
+
+            {/* 「添加群聊到分组」Modal */}
+            <WKModal
+                visible={addGroupToCatId !== null}
+                title="添加群聊到分组"
+                onCancel={() => setAddGroupToCatId(null)}
+                footer={null}
+            >
+                <ConversationSelect
+                    title="选择群聊"
+                    onFinished={async (channels) => {
+                        if (!addGroupToCatId) return
+                        for (const ch of channels) {
+                            if (ch.channelType === ChannelTypeGroup) {
+                                await onMoveGroupToCategory(ch.channelID, addGroupToCatId)
+                            }
+                        }
+                        setAddGroupToCatId(null)
+                    }}
+                />
+            </WKModal>
         </>
     )
 }

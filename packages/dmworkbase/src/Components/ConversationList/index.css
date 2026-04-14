@@ -528,14 +528,14 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     padding-left: 40px;
 }
 
-/* L连接线：竖线从 left: 17px，水平延伸至子区 icon 左边（padding-left - left = 40 - 17 = 23px） */
+/* L连接线：left = 35px（= 父群聊 # icon 中心），width = 5px 贴到子区 padding 左边缘(40px) */
 .wk-conv-compact-item--thread::after {
     content: '';
     position: absolute;
-    left: 17px;
+    left: 35px;
     top: 0;
     height: 50%;
-    width: 23px;
+    width: 5px;
     border-left: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
     border-bottom: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
     border-bottom-left-radius: 3px;

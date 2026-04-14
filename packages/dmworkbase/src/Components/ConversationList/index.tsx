@@ -561,9 +561,19 @@ export default class ConversationList extends Component<ConversationListProps, C
                                 </span>
                                 {isExpanded ? `收起 ${item.count} 个 Thread` : `展开 ${item.count} 个 Thread`}
                             </div>
-                            {isExpanded && extraThreads.map(conv =>
-                                this.conversationItem(conv, false)
-                            )}
+                            {isExpanded && extraThreads.map(conv => {
+                                // 强制走 compact 渲染（保持连接线样式一致）
+                                const selected = !!(this.props.select && this.props.select.isEqual(conv.channel))
+                                return (
+                                    <CompactGroupItem
+                                        key={conv.channel.getChannelKey()}
+                                        conversationWrap={conv}
+                                        selected={selected}
+                                        onClick={() => { if (this.props.onClick) this.props.onClick(conv) }}
+                                        onContextMenu={(e) => { this._handleContextMenu(conv, e) }}
+                                    />
+                                )
+                            })}
                         </React.Fragment>
                     )
                 }

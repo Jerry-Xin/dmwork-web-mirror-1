@@ -519,23 +519,7 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     opacity: 0.9;
 }
 
-/* 折叠箭头（有子区的群聊 compact item 右侧） */
-.wk-conv-compact-thread-toggle {
-    flex-shrink: 0;
-    width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--wk-text-tertiary, #9498A8);
-    cursor: pointer;
-    transition: transform 200ms;
-    transform: rotate(-90deg);
-}
 
-.wk-conv-compact-thread-toggle--open {
-    transform: rotate(0deg);
-}
 
 /* compact 模式子区 L连接线 */
 .wk-conv-compact-item--thread {
@@ -566,4 +550,31 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     bottom: 0;
     width: 1.5px;
     background: var(--wk-border-default, rgba(0,0,0,0.12));
+}
+
+/* compact 模式「+N 个子区」/ 「收起」 overflow 控件 */
+.wk-conv-compact-thread-overflow {
+    padding: 3px 8px 3px 24px;  /* 对齐子区缩进 */
+    font-size: 11px;
+    color: var(--wk-text-tertiary, #9498A8);
+    cursor: pointer;
+    border-radius: var(--wk-r-sm, 4px);
+    transition: color 150ms;
+    position: relative;
+}
+
+.wk-conv-compact-thread-overflow::after {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 0;
+    height: 50%;
+    width: 8px;
+    border-left: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
+    border-bottom: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
+    border-bottom-left-radius: 3px;
+}
+
+.wk-conv-compact-thread-overflow:hover {
+    color: var(--wk-brand-primary, #7C5CFC);
 }

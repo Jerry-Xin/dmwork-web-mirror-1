@@ -34,15 +34,10 @@ interface CompactGroupItemProps {
     selected: boolean
     onClick: () => void
     onContextMenu: (e: React.MouseEvent) => void
-    /** 有子区时显示折叠箭头 */
-    hasThreads?: boolean
-    isCollapsed?: boolean
-    onToggleCollapse?: (e: React.MouseEvent) => void
 }
 
 const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
     conversationWrap, selected, onClick, onContextMenu,
-    hasThreads, isCollapsed, onToggleCollapse,
 }) => {
     const channelInfo = conversationWrap.channelInfo
     const isThread = conversationWrap.channel.channelType === ChannelTypeCommunityTopic
@@ -109,17 +104,6 @@ const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
                     {conversationWrap.unread > 99 ? '99+' : conversationWrap.unread}
                 </span>
             )}
-            {/* 有子区时显示折叠箭头 */}
-            {hasThreads && (
-                <span
-                    className={`wk-conv-compact-thread-toggle${isCollapsed ? '' : ' wk-conv-compact-thread-toggle--open'}`}
-                    onClick={e => { e.stopPropagation(); onToggleCollapse?.(e) }}
-                >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                </span>
-            )}
         </div>
     )
 }
@@ -142,19 +126,18 @@ export interface ConversationListProps {
 
 export interface ConversationListState {
     selectConversationWrap?: ConversationWrap
-    /** compact 模式：折叠的父群聊 ID 集合（默认全部折叠） */
-    collapsedGroupIds: Set<string>
+    /** compact 模式：已展开全部子区的父群聊 ID 集合（点击 +N 后加入） */
+    expandedGroupIds: Set<string>
 }
 
 export default class ConversationList extends Component<ConversationListProps, ConversationListState>{
     channelListener!: ChannelInfoListener
     contextMenusContext!: ContextMenusContext
     typingListener!: TypingListener
-    private _compactInitialized = false
     constructor(props: ConversationListProps) {
         super(props)
 
-        this.state = { collapsedGroupIds: new Set() }
+        this.state = { expandedGroupIds: new Set() }
     }
 
     componentDidMount() {
@@ -175,15 +158,6 @@ export default class ConversationList extends Component<ConversationListProps, C
         TypingManager.shared.removeTypingListener(this.typingListener)
     }
 
-    componentDidUpdate() {
-        if (!this.props.compact || this._compactInitialized) return
-        const filtered = this.props.conversations?.filter(c => this.filterConversation(c)) ?? []
-        const { threadsByParent } = this.groupThreadsWithParent(filtered)
-        if (threadsByParent.size > 0) {
-            this._compactInitialized = true
-            this.setState({ collapsedGroupIds: new Set(threadsByParent.keys()) })
-        }
-    }
 
     _handleScroll = () => {
         this.contextMenusContext.hide()
@@ -278,22 +252,6 @@ export default class ConversationList extends Component<ConversationListProps, C
             return true
         }
         return false
-    }
-
-    conversationItemCompactWithToggle(conversationWrap: ConversationWrap, isCollapsed: boolean, onToggle: () => void) {
-        const selected = !!(this.props.select && this.props.select.isEqual(conversationWrap.channel))
-        return (
-            <CompactGroupItem
-                key={conversationWrap.channel.getChannelKey()}
-                conversationWrap={conversationWrap}
-                selected={selected}
-                onClick={() => { if (this.props.onClick) this.props.onClick(conversationWrap) }}
-                onContextMenu={(e) => { this._handleContextMenu(conversationWrap, e) }}
-                hasThreads
-                isCollapsed={isCollapsed}
-                onToggleCollapse={onToggle}
-            />
-        )
     }
 
     conversationItem(conversationWrap: ConversationWrap, hasThreads = false) {
@@ -442,8 +400,7 @@ export default class ConversationList extends Component<ConversationListProps, C
 
     // 将子区放在父群组后面，最多显示2个，超出部分用计数表示
     private groupThreadsWithParent(convs: ConversationWrap[]): { items: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }>, threadsByParent: Map<string, ConversationWrap[]> } {
-        // compact 模式显示全部子区，非 compact 最多 2 个（超出用 overflow indicator）
-        const MAX_VISIBLE_THREADS = this.props.compact ? Infinity : 2
+        const MAX_VISIBLE_THREADS = 2
 
         // 分离群组和子区
         const threads: ConversationWrap[] = []
@@ -572,12 +529,37 @@ export default class ConversationList extends Component<ConversationListProps, C
         }
 
         const { onThreadOverflowClick, compact } = this.props
-        const { collapsedGroupIds } = this.state
+        const { expandedGroupIds } = this.state
 
         const renderItem = (item: ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }) => {
             if ('type' in item && item.type === 'thread-overflow') {
-                // compact 模式：overflow indicator 完全不渲染（子区由折叠箭头控制）
-                if (compact) return null
+                if (compact) {
+                    // compact 模式：overflow indicator 改为「+N 个子区」/ 「收起」可切换
+                    const isExpanded = expandedGroupIds.has(item.parentGroupId)
+                    const toggleExpand = () => {
+                        this.setState(s => {
+                            const next = new Set(s.expandedGroupIds)
+                            if (next.has(item.parentGroupId)) next.delete(item.parentGroupId)
+                            else next.add(item.parentGroupId)
+                            return { expandedGroupIds: next }
+                        })
+                    }
+                    // 展开态：渲染剩余子区 + 收起按钮
+                    const extraThreads = (threadsByParent.get(item.parentGroupId) ?? []).slice(2)
+                    return (
+                        <React.Fragment key={`overflow-${item.parentGroupId}`}>
+                            {isExpanded && extraThreads.map(conv =>
+                                this.conversationItem(conv, false)
+                            )}
+                            <div
+                                className="wk-conv-compact-thread-overflow"
+                                onClick={toggleExpand}
+                            >
+                                {isExpanded ? '收起' : `+ ${item.count} 个子区`}
+                            </div>
+                        </React.Fragment>
+                    )
+                }
                 return (
                     <div
                         key={`overflow-${item.parentGroupId}`}
@@ -590,30 +572,14 @@ export default class ConversationList extends Component<ConversationListProps, C
             }
             const conv = item as ConversationWrap
 
-            // compact 模式：折叠时跳过该父群聊下的子区
-            if (compact && conv.channel.channelType === ChannelTypeCommunityTopic) {
-                const parentGroupNo = conv.channelInfo?.orgData?.parentGroupNo
-                    || parseThreadChannelId(conv.channel.channelID)?.groupNo
-                if (parentGroupNo && collapsedGroupIds.has(parentGroupNo)) return null
-            }
+            // compact 模式展开：已展开分组的子区（overflow 之后的部分）是否显示
+            // 注意：groupThreadsWithParent 只给前 2 个，overflow 的在 threadsByParent 里
+            // 这里 item 已经是 groupThreadsWithParent 处理后的，超出的不在 items 里
+            // 所以只需要在 overflow click 后渲染额外的子区
+            // → 用 expandedGroupIds 控制是否渲染 threadsByParent 里超出 MAX 的部分（见下方额外渲染）
 
             const hasThreads = conv.channel.channelType === ChannelTypeGroup
                 && threadsByParent.has(conv.channel.channelID)
-
-            // compact 模式：父群聊带折叠箭头
-            if (compact && hasThreads) {
-                const groupNo = conv.channel.channelID
-                const isCollapsed = collapsedGroupIds.has(groupNo)
-                return this.conversationItemCompactWithToggle(conv, isCollapsed, () => {
-                    this.setState(s => {
-                        const next = new Set(s.collapsedGroupIds)
-                        if (next.has(groupNo)) next.delete(groupNo)
-                        else next.add(groupNo)
-                        return { collapsedGroupIds: next }
-                    })
-                })
-            }
-
             return this.conversationItem(conv, hasThreads)
         }
 

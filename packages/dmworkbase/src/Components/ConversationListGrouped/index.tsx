@@ -166,7 +166,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         }
     }
 
-    // 构建右键菜单：移出分组（有分组时）+ 平铺的分组列表（移到分组）+ 新建分组
+    // 构建右键菜单：移出分组（有分组时，一级直接点击）+ 移到分组（一级，展开二级子菜单）
     const buildExtraContextMenus = (conv: ConversationWrap | undefined): ContextMenusData[] => {
         if (!conv || conv.channel.channelType !== ChannelTypeGroup) return []
         if (categories.length === 0) return []
@@ -176,16 +176,21 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             cat => (cat.groups || []).some(g => g.group_no === groupNo)
         )?.category_id
 
-        // 平铺的「移到分组」列表（排除当前分组）
-        const moveToItems: ContextMenusData[] = categories
+        // 「移到分组」二级子菜单（排除当前分组）
+        const moveToChildren: ContextMenusData[] = categories
             .filter(c => c.category_id !== currentCategoryId)
             .map(cat => ({
                 title: cat.name,
                 checked: false,
                 onClick: () => onMoveGroupToCategory(groupNo, cat.category_id),
             }))
-        moveToItems.push({ separator: true } as ContextMenusData)
-        moveToItems.push({ title: '+ 新建分组', onClick: onOpenCreateCategory })
+        moveToChildren.push({ separator: true } as ContextMenusData)
+        moveToChildren.push({ title: '+ 新建分组', onClick: onOpenCreateCategory })
+
+        const moveToItem: ContextMenusData = {
+            title: '移到分组',
+            children: moveToChildren,
+        }
 
         if (currentCategoryId) {
             const catName = categories.find(c => c.category_id === currentCategoryId)?.name ?? '当前分组'
@@ -201,10 +206,10 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     })
                 },
             }
-            return [moveOutItem, ...moveToItems]
+            return [moveOutItem, moveToItem]
         }
 
-        return moveToItems
+        return [moveToItem]
     }
 
     const ConvListWithMenu = (convs: ConversationWrap[]) => (

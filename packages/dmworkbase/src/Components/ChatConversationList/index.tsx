@@ -23,6 +23,8 @@ export interface ChatConversationListProps {
     onConversationClick: (conv: ConversationWrap) => void
     onClearMessages: (channel: Channel) => void
     onThreadOverflowClick: (groupNo: string) => void
+    /** 外部触发「新建分组」Modal（如顶部 + 按钮），调用后 Modal 显示 */
+    onOpenCreateCategoryRef?: React.MutableRefObject<(() => void) | null>
 }
 
 const ChatConversationList: React.FC<ChatConversationListProps> = ({
@@ -32,6 +34,7 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
     onConversationClick,
     onClearMessages,
     onThreadOverflowClick,
+    onOpenCreateCategoryRef,
 }) => {
     const {
         categories,
@@ -46,6 +49,18 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
     } = useCategoryList()
 
     const [createModalVisible, setCreateModalVisible] = useState(false)
+
+    // 暴露「打开新建分组 Modal」给外层（如顶部 + 按钮）
+    React.useEffect(() => {
+        if (onOpenCreateCategoryRef) {
+            onOpenCreateCategoryRef.current = () => setCreateModalVisible(true)
+        }
+        return () => {
+            if (onOpenCreateCategoryRef) {
+                onOpenCreateCategoryRef.current = null
+            }
+        }
+    }, [onOpenCreateCategoryRef])
 
     const existingCategoryNames = categories.map(c => c.name)
 

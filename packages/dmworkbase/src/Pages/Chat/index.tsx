@@ -485,6 +485,7 @@ interface ChatPageState {
 export default class ChatPage extends Component<any, ChatPageState> {
   vm!: ChatVM;
   spaceListRef: SpaceList | null = null;
+  openCreateCategoryRef: React.MutableRefObject<(() => void) | null> = { current: null };
   constructor(props: any) {
     super(props);
     this.state = { activeTab: getSavedTab(), currentSpaceName: WKApp.config.appName, pendingConfirm: null }
@@ -566,24 +567,37 @@ export default class ChatPage extends Component<any, ChatPageState> {
                       >
                         <Search size={16} />
                       </div>
-                      <Popover
-                        onClickOutSide={() => { vm.showAddPopover = false; }}
-                        className="wk-chat-popover"
-                        position="bottomRight"
-                        visible={vm.showAddPopover}
-                        showArrow={false}
-                        trigger="custom"
-                        content={
-                          <ChatMenusPopover onItem={() => { vm.showAddPopover = false; }} />
-                        }
-                      >
+                      {/* 群聊 Tab 下显示「创建分组」快捷入口 */}
+                      {activeTab === 'group' && (
                         <div
                           className="wk-chat-header-btn"
-                          onClick={() => { vm.showAddPopover = !vm.showAddPopover; }}
+                          title="创建分组"
+                          onClick={() => { this.openCreateCategoryRef.current?.() }}
                         >
                           <Plus size={16} />
                         </div>
-                      </Popover>
+                      )}
+                      {/* 私聊 Tab 下显示通用添加菜单 */}
+                      {activeTab !== 'group' && (
+                        <Popover
+                          onClickOutSide={() => { vm.showAddPopover = false; }}
+                          className="wk-chat-popover"
+                          position="bottomRight"
+                          visible={vm.showAddPopover}
+                          showArrow={false}
+                          trigger="custom"
+                          content={
+                            <ChatMenusPopover onItem={() => { vm.showAddPopover = false; }} />
+                          }
+                        >
+                          <div
+                            className="wk-chat-header-btn"
+                            onClick={() => { vm.showAddPopover = !vm.showAddPopover; }}
+                          >
+                            <Plus size={16} />
+                          </div>
+                        </Popover>
+                      )}
                     </div>
                   </div>
                   {/* 群聊/私聊 Tab Bar */}
@@ -624,6 +638,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           conversations={vm.filteredConversations}
                           filter={filter}
                           select={WKApp.shared.openChannel}
+                          onOpenCreateCategoryRef={this.openCreateCategoryRef}
                           onConversationClick={(conversation: ConversationWrap) => {
                             const doSwitch = () => {
                               // 子区：直接进入完整视图（参考 Discord 逻辑）

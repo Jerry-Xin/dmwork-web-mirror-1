@@ -605,29 +605,9 @@ export default class ConversationList extends Component<ConversationListProps, C
             return this.conversationItem(conv, hasThreads)
         }
 
-        const { compact } = this.props
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
-            {compact ? (
-                <>
-                    {finalPinned.map(renderItem)}
-                    {finalRecent.map(renderItem)}
-                </>
-            ) : (
-                <>
-                    {finalPinned.length > 0 && (
-                        <>
-                            <div className="wk-conv-section">置顶</div>
-                            {finalPinned.map(renderItem)}
-                        </>
-                    )}
-                    {finalRecent.length > 0 && (
-                        <>
-                            {finalPinned.length > 0 && <div className="wk-conv-section">最近</div>}
-                            {finalRecent.map(renderItem)}
-                        </>
-                    )}
-                </>
-            )}
+            {finalPinned.map(renderItem)}
+            {finalRecent.map(renderItem)}
         
 
             <ContextMenus onContext={(ctx) => {

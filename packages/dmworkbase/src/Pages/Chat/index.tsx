@@ -252,15 +252,15 @@ export class ChatContentPage extends Component<
                                   }
                                 }}
                               >
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 2 }}>
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                                   <line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" />
                                   <line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" />
                                 </svg>
                                 {WKSDK.shared().channelManager.getChannelInfo(new Channel(channelInfo.orgData.parentGroupNo, ChannelTypeGroup))?.title || channelInfo.orgData.parentGroupNo}
                               </span>
-                              <span className="wk-chat-conversation-header-separator">&gt;</span>
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                                <ThreadIcon size={11} color="currentColor" />
+                              <span className="wk-chat-conversation-header-separator">›</span>
+                              <span className="wk-chat-conversation-header-thread-name">
+                                <ThreadIcon size={12} color="currentColor" />
                                 {channelInfo?.orgData?.displayName}
                               </span>
                             </>

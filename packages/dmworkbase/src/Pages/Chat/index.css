@@ -396,14 +396,59 @@
     gap: 4px;
 }
 
-.wk-chat-conversation-header-parent-group {
-    color: var(--wk-text-secondary);
-    font-weight: 500;
+/* 面包屑容器 */
+.wk-chat-conversation-header-channel-info-name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+    overflow: hidden;
 }
 
-.wk-chat-conversation-header-separator {
-    color: var(--wk-text-tertiary);
+/* 父群组 badge：# icon + 群组名，可点击 */
+.wk-chat-conversation-header-parent-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--wk-text-tertiary, #9498A8);
+    font-size: 13px;
     font-weight: 400;
+    cursor: pointer;
+    transition: color 150ms;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.wk-chat-conversation-header-parent-group:hover {
+    color: var(--wk-text-secondary, #5C6070);
+}
+
+.wk-chat-conversation-header-parent-group svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+/* 分隔符 › */
+.wk-chat-conversation-header-separator {
+    color: var(--wk-text-quaternary, #C4C7D0);
+    font-size: 11px;
+    font-weight: 300;
+    flex-shrink: 0;
+    user-select: none;
+    margin: 0 1px;
+}
+
+/* 子区名称（当前频道）：🧵 icon + 名称，加粗 */
+.wk-chat-conversation-header-thread-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--wk-text-primary, #1A1C24);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .wk-chat-conversation-header-content {

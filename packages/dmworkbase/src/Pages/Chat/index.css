@@ -368,6 +368,19 @@
     border-radius: 40%;
 }
 
+/* 群聊 header 的 # icon（替换头像） */
+.wk-chat-conversation-header-channel-hash-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 40%;
+    background: var(--wk-bg-secondary, #EEEEF0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wk-text-secondary, #5C6070);
+    flex-shrink: 0;
+}
+
 .wk-chat-conversation-header-channel-info {
     display: flex;
     align-items: center;

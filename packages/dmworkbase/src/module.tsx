@@ -1242,7 +1242,7 @@ export default class BaseModule implements IModule {
               onClick: () => {
                 context.push(
                   <ChannelAvatar
-                    showUpload={data.isManagerOrCreatorOfMe}
+                    showUpload={false}
                     channel={channel}
                     context={context}
                   ></ChannelAvatar>,

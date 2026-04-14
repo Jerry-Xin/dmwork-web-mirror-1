@@ -407,3 +407,80 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
   justify-content: center;
   color: var(--wk-text-secondary);
 }
+
+/* ── Compact 模式（群聊 Tab）紧凑频道列表 ── */
+.wk-conv-compact-item {
+    display: flex;
+    align-items: center;
+    gap: var(--wk-sp-2, 8px);
+    padding: 5px var(--wk-sp-2, 8px);
+    border-radius: var(--wk-r-sm, 6px);
+    cursor: pointer;
+    min-height: 32px;
+    position: relative;
+    transition: background 200ms;
+}
+
+.wk-conv-compact-item:hover {
+    background: var(--wk-bg-hover, rgba(0,0,0,0.04));
+}
+
+.wk-conv-compact-item--selected {
+    background: rgba(124,92,252,0.06);
+}
+
+.wk-conv-compact-item--selected::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    border-radius: 0 2px 2px 0;
+    background: linear-gradient(135deg, var(--wk-brand-from, #7C5CFC), var(--wk-brand-to, #00D4AA));
+}
+
+.wk-conv-compact-item--thread {
+    padding-left: 28px;
+}
+
+.wk-conv-compact-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wk-text-tertiary, #9498A8);
+}
+
+.wk-conv-compact-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--wk-text-secondary, #5C6070);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wk-conv-compact-item--unread .wk-conv-compact-name {
+    font-weight: 600;
+    color: var(--wk-text-primary, #1A1C24);
+}
+
+.wk-conv-compact-badge {
+    min-width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--wk-red, #E5405E);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    flex-shrink: 0;
+}

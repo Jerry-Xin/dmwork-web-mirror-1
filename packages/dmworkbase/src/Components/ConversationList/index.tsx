@@ -31,6 +31,8 @@ export interface ConversationListProps {
     select?: Channel
     /** 外部控制过滤，不传则内部默认 'all' */
     filter?: ConvFilter
+    /** 紧凑模式：隐藏头像/消息预览/时间戳，显示 # icon，用于群聊 Tab */
+    compact?: boolean
     onClick?: (conversation: ConversationWrap) => void
     onClearMessages?: (channel: Channel) => void
     /** 点击 "+N 个子区" 时的回调，传入父群组 ID */
@@ -167,11 +169,45 @@ export default class ConversationList extends Component<ConversationListProps, C
     }
 
     conversationItem(conversationWrap: ConversationWrap, hasThreads = false) {
-        
-
         let channelInfo = conversationWrap.channelInfo
         if (!channelInfo) {
             WKSDK.shared().channelManager.fetchChannelInfo(conversationWrap.channel)
+        }
+
+        const { compact } = this.props
+
+        // ── Compact 模式（群聊 Tab）：# icon + 名称 + 未读角标，无头像/预览/时间戳 ──
+        if (compact) {
+            const selected = this.props.select && this.props.select.isEqual(conversationWrap.channel)
+            const isThread = conversationWrap.channel.channelType === ChannelTypeCommunityTopic
+            return (
+                <div
+                    key={conversationWrap.channel.getChannelKey()}
+                    className={classNames(
+                        "wk-conv-compact-item",
+                        selected ? "wk-conv-compact-item--selected" : undefined,
+                        conversationWrap.unread > 0 ? "wk-conv-compact-item--unread" : undefined,
+                        isThread ? "wk-conv-compact-item--thread" : undefined,
+                    )}
+                    onClick={() => { if (this.props.onClick) this.props.onClick(conversationWrap) }}
+                    onContextMenu={(e) => { this._handleContextMenu(conversationWrap, e) }}
+                >
+                    <span className="wk-conv-compact-icon">
+                        {isThread
+                            ? <ThreadIcon size={13} />
+                            : <Hash size={14} strokeWidth={2} />
+                        }
+                    </span>
+                    <span className="wk-conv-compact-name">
+                        {channelInfo?.orgData.displayName ?? conversationWrap.channel.channelID}
+                    </span>
+                    {conversationWrap.unread > 0 && (
+                        <span className="wk-conv-compact-badge">
+                            {conversationWrap.unread > 99 ? '99+' : conversationWrap.unread}
+                        </span>
+                    )}
+                </div>
+            )
         }
 
         const avatarKey = WKApp.shared.getChannelAvatarTag(conversationWrap.channel);

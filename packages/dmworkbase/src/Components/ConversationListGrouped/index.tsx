@@ -127,6 +127,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             conversations={convs}
             select={select}
             filter="group"
+            compact
             onClick={onConversationClick}
             onClearMessages={onClearMessages}
             onThreadOverflowClick={onThreadOverflowClick}

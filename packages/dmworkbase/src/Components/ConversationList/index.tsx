@@ -544,13 +544,10 @@ export default class ConversationList extends Component<ConversationListProps, C
                             return { expandedGroupIds: next }
                         })
                     }
-                    // 展开态：渲染剩余子区 + 收起按钮
+                    // 控件位置固定在前2个子区下方，展开的额外子区在控件下面
                     const extraThreads = (threadsByParent.get(item.parentGroupId) ?? []).slice(2)
                     return (
                         <React.Fragment key={`overflow-${item.parentGroupId}`}>
-                            {isExpanded && extraThreads.map(conv =>
-                                this.conversationItem(conv, false)
-                            )}
                             <div
                                 className={`wk-conv-compact-thread-overflow${isExpanded ? ' wk-conv-compact-thread-overflow--expanded' : ''}`}
                                 onClick={toggleExpand}
@@ -560,6 +557,9 @@ export default class ConversationList extends Component<ConversationListProps, C
                                 </span>
                                 {isExpanded ? `收起 ${item.count} 个 Thread` : `展开 ${item.count} 个 Thread`}
                             </div>
+                            {isExpanded && extraThreads.map(conv =>
+                                this.conversationItem(conv, false)
+                            )}
                         </React.Fragment>
                     )
                 }

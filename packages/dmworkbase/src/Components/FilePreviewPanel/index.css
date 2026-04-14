@@ -73,6 +73,14 @@
   flex: 1;
   overflow: hidden;
   position: relative;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-file-preview-content > * {
+  flex: 1;
+  min-height: 0;
 }
 
 /* Dark mode */

@@ -1,8 +1,19 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { BaseRendererProps } from "../types";
+import { VirtualTable, ColumnConfig } from "../../VirtualTable";
+import { TooltipCell } from "./TooltipCell";
 import "./ExcelRenderer.css";
 
 export interface ExcelRendererProps extends BaseRendererProps {}
+
+const DEFAULT_ROW_HEIGHT = 40;
+
+/** 工作表数据 */
+interface SheetData {
+  name: string;
+  data: Record<string | symbol, unknown>[];
+  columns: ColumnConfig<string | symbol>[];
+}
 
 // 动态加载 xlsx 库
 let xlsxLibrary: typeof import("xlsx") | null = null;
@@ -10,39 +21,158 @@ let xlsxLibrary: typeof import("xlsx") | null = null;
 async function loadXlsxLibrary(): Promise<typeof import("xlsx")> {
   if (xlsxLibrary) return xlsxLibrary;
 
-  // 本地开发时使用动态导入
   try {
     xlsxLibrary = await import("xlsx");
     return xlsxLibrary;
   } catch {
-    // 如果动态导入失败，尝试从 window 获取
-    xlsxLibrary = (window as any).XLSX;
+    xlsxLibrary = (window as unknown as Record<string, typeof import("xlsx")>)
+      .XLSX;
     if (xlsxLibrary) return xlsxLibrary;
     throw new Error("xlsx library not available");
   }
 }
 
-interface SheetData {
-  name: string;
-  headers: string[];
-  rows: string[][];
-  maxCols: number;
+/**
+ * 裁剪尾部空行和右侧空列
+ */
+const trimEmptyRowsAndColumns = (data: unknown[][]): unknown[][] => {
+  if (!data || data.length === 0) return data;
+
+  // 1. 裁剪尾部空行
+  let lastNonEmptyRowIndex = 0;
+  for (let i = data.length - 1; i >= 0; i--) {
+    const row = data[i];
+    const hasContent = row.some(
+      (cell) => cell !== null && cell !== undefined && cell !== ""
+    );
+    if (hasContent) {
+      lastNonEmptyRowIndex = i;
+      break;
+    }
+  }
+  const trimmedRows = data.slice(0, lastNonEmptyRowIndex + 1);
+  if (trimmedRows.length === 0) return [];
+
+  // 2. 找到最右侧非空列
+  let lastNonEmptyColIndex = 0;
+  trimmedRows.forEach((row) => {
+    for (let i = row.length - 1; i >= 0; i--) {
+      const cell = row[i];
+      if (cell !== null && cell !== undefined && cell !== "") {
+        lastNonEmptyColIndex = Math.max(lastNonEmptyColIndex, i);
+        break;
+      }
+    }
+  });
+
+  // 3. 裁剪右侧空列
+  return trimmedRows.map((row) => row.slice(0, lastNonEmptyColIndex + 1));
+};
+
+/**
+ * 解析工作簿为 SheetData 数组
+ */
+function parseWorkbook(
+  XLSX: typeof import("xlsx"),
+  rawData: ArrayBuffer | Uint8Array
+): SheetData[] {
+  const workbook = XLSX.read(rawData, {
+    type: "array",
+    codepage: 65001,
+    raw: true,
+  });
+
+  return workbook.SheetNames.map((name) => {
+    const sheet = workbook.Sheets[name];
+    const jsonData = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      raw: false,
+      defval: "",
+      blankrows: true,
+    }) as unknown[][];
+
+    const trimmedData = trimEmptyRowsAndColumns(jsonData);
+    const headers =
+      trimmedData.length > 0 ? (trimmedData[0] as string[]) : [];
+
+    // 构建列配置，用 Symbol 处理重复列名
+    const headerNameCount = new Map<string, number>();
+    const columns: ColumnConfig<string | symbol>[] = [];
+    const keyMapping = new Map<number, string | symbol>();
+
+    headers.forEach((headerValue, idx) => {
+      const headerName = headerValue || "-";
+      const count = headerNameCount.get(headerName) || 0;
+      headerNameCount.set(headerName, count + 1);
+      const uniqueKey = count > 0 ? Symbol(headerName) : headerName;
+      columns.push({ key: uniqueKey, title: headerName });
+      keyMapping.set(idx, uniqueKey);
+    });
+
+    // 转换为对象数组
+    const rows = trimmedData.slice(1).map((row) => {
+      const newRow: Record<string | symbol, unknown> = {};
+      (row as unknown[]).forEach((cell, idx) => {
+        const uniqueKey = keyMapping.get(idx);
+        if (uniqueKey) {
+          newRow[uniqueKey] = cell;
+        }
+      });
+      return newRow;
+    });
+
+    return { name, data: rows, columns };
+  });
 }
 
 /**
- * Excel 渲染器
- * 支持 xlsx, xls, csv 格式的表格预览
+ * 表格内容组件（虚拟滚动）
+ */
+function SheetTable({ sheetData }: { sheetData: SheetData }) {
+  const { data, columns } = sheetData;
+
+  const renderCellContent = (value: unknown): string => {
+    if (value === null || value === undefined) return "-";
+    if (typeof value === "object") return JSON.stringify(value);
+    return String(value);
+  };
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="wk-file-preview-excel-renderer--empty">
+        <span>暂无内容</span>
+      </div>
+    );
+  }
+
+  return (
+    <VirtualTable
+      rows={data}
+      columns={columns as ColumnConfig[]}
+      rowHeight={DEFAULT_ROW_HEIGHT}
+      height="100%"
+      className="wk-file-preview-excel-renderer__virtual-table"
+      renderHeaderCell={(col) => <TooltipCell content={String(col.title)} />}
+      renderCell={(row, col) => (
+        <TooltipCell
+          content={renderCellContent(row[col.key as string | symbol])}
+        />
+      )}
+      emptyText="暂无内容"
+    />
+  );
+}
+
+/**
+ * Excel/CSV 渲染器
+ * 支持 xlsx, xls, xlsb, xlsm, csv 格式
+ * 使用虚拟滚动高效渲染大数据量
  */
 const ExcelRenderer: React.FC<ExcelRendererProps> = ({ file, onError }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sheets, setSheets] = useState<SheetData[]>([]);
   const [activeSheet, setActiveSheet] = useState(0);
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const pageSize = 100; // 每页行数
 
   const loadContent = useCallback(async () => {
     if (!file.url) return;
@@ -51,114 +181,22 @@ const ExcelRenderer: React.FC<ExcelRendererProps> = ({ file, onError }) => {
     setError(null);
     setSheets([]);
     setActiveSheet(0);
-    setPage(0);
 
     try {
       const XLSX = await loadXlsxLibrary();
-
-      // 判断文件类型
-      const ext = file.extension?.toLowerCase() || "";
-      const isExcel = ["xlsx", "xls", "xlsb", "xlsm"].includes(ext);
-
-      if (ext === "csv") {
-        // CSV 文件：作为文本加载
-        const response = await fetch(file.url);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const text = await response.text();
-
-        // 简单的 CSV 解析
-        const rows: string[][] = [];
-        const lines = text.split(/\r?\n/);
-
-        for (const line of lines) {
-          const cells: string[] = [];
-          let current = "";
-          let inQuotes = false;
-
-          for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-            if (char === '"') {
-              inQuotes = !inQuotes;
-            } else if (char === "," && !inQuotes) {
-              cells.push(current.trim());
-              current = "";
-            } else {
-              current += char;
-            }
-          }
-          cells.push(current.trim());
-
-          if (cells.some((c) => c !== "")) {
-            rows.push(cells);
-          }
-        }
-
-        if (rows.length === 0) {
-          throw new Error("CSV 文件为空");
-        }
-
-        const headers = rows[0] || [];
-        const csvData: SheetData = {
-          name: file.name || "Sheet1",
-          headers,
-          rows: rows.slice(1),
-          maxCols: headers.length,
-        };
-
-        setSheets([csvData]);
-        setLoading(false);
-        return;
-      }
-
-      if (!isExcel) {
-        throw new Error("不支持的文件格式");
-      }
-
-      // Excel 文件：作为二进制加载
       const response = await fetch(file.url);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+
       const buffer = await response.arrayBuffer();
-      const workbook = XLSX.read(new Uint8Array(buffer), { type: "array" });
-
-      // 解析所有工作表
-      const parsedSheets: SheetData[] = [];
-
-      workbook.SheetNames.forEach((sheetName) => {
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json<string[]>(sheet, {
-          header: 1,
-          defval: "",
-        }) as string[][];
-
-        if (jsonData.length > 0) {
-          const headers = jsonData[0] || [];
-          const rows = jsonData
-            .slice(1)
-            .filter((row) =>
-              row.some(
-                (cell) => cell !== "" && cell !== null && cell !== undefined
-              )
-            );
-
-          parsedSheets.push({
-            name: sheetName,
-            headers,
-            rows,
-            maxCols: Math.max(headers.length, ...rows.map((r) => r.length)),
-          });
-        }
-      });
+      const parsedSheets = parseWorkbook(XLSX, new Uint8Array(buffer));
 
       if (parsedSheets.length === 0) {
         throw new Error("工作表为空");
       }
 
       setSheets(parsedSheets);
-      setTotalPages(Math.ceil((parsedSheets[0]?.rows.length || 0) / pageSize));
     } catch (err) {
       const message = err instanceof Error ? err.message : "加载失败";
       setError(message);
@@ -166,24 +204,11 @@ const ExcelRenderer: React.FC<ExcelRendererProps> = ({ file, onError }) => {
     } finally {
       setLoading(false);
     }
-  }, [file.url, file.extension, file.name, onError]);
+  }, [file.url, onError]);
 
   useEffect(() => {
     loadContent();
   }, [loadContent]);
-
-  const reload = useCallback(() => {
-    loadContent();
-  }, [loadContent]);
-
-  // 分页
-  useEffect(() => {
-    if (sheets.length > 0 && activeSheet < sheets.length) {
-      const sheet = sheets[activeSheet];
-      setTotalPages(Math.ceil(sheet.rows.length / pageSize));
-      setPage(0);
-    }
-  }, [sheets, activeSheet]);
 
   if (loading) {
     return (
@@ -200,7 +225,7 @@ const ExcelRenderer: React.FC<ExcelRendererProps> = ({ file, onError }) => {
         <span>{error}</span>
         <button
           className="wk-file-preview-excel-renderer__retry"
-          onClick={reload}
+          onClick={loadContent}
         >
           重试
         </button>
@@ -216,103 +241,43 @@ const ExcelRenderer: React.FC<ExcelRendererProps> = ({ file, onError }) => {
     );
   }
 
-  const currentSheet = sheets[activeSheet];
-  const startRow = page * pageSize;
-  const endRow = Math.min(startRow + pageSize, currentSheet.rows.length);
-  const visibleRows = currentSheet.rows.slice(startRow, endRow);
-
   return (
-    <div className="wk-file-preview-excel-renderer" ref={containerRef}>
-      {/* 工作表切换器 */}
-      {sheets.length > 1 && (
-        <div className="wk-file-preview-excel-renderer__tabs">
-          {sheets.map((sheet, index) => (
-            <button
-              key={sheet.name}
-              className={`wk-file-preview-excel-renderer__tab ${
-                index === activeSheet
-                  ? "wk-file-preview-excel-renderer__tab--active"
-                  : ""
-              }`}
-              onClick={() => setActiveSheet(index)}
-            >
-              {sheet.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* 表格容器 */}
-      <div className="wk-file-preview-excel-renderer__table-wrapper">
-        <table className="wk-file-preview-excel-renderer__table">
-          <thead>
-            <tr>
-              <th className="wk-file-preview-excel-renderer__row-num">#</th>
-              {currentSheet.headers.map((header, idx) => (
-                <th key={idx}>{header || `列 ${idx + 1}`}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {visibleRows.map((row, rowIdx) => (
-              <tr key={startRow + rowIdx}>
-                <td className="wk-file-preview-excel-renderer__row-num">
-                  {startRow + rowIdx + 1}
-                </td>
-                {currentSheet.headers.map((_, colIdx) => (
-                  <td key={colIdx}>
-                    {row[colIdx] !== undefined && row[colIdx] !== null
-                      ? String(row[colIdx])
-                      : ""}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="wk-file-preview-excel-renderer">
+      {/* 表格内容区 */}
+      <div className="wk-file-preview-excel-renderer__content">
+        {sheets.map((sheet, index) => (
+          <div
+            key={sheet.name}
+            style={{ display: index === activeSheet ? "contents" : "none" }}
+          >
+            <SheetTable sheetData={sheet} />
+          </div>
+        ))}
       </div>
 
-      {/* 分页 */}
-      {currentSheet.rows.length > pageSize && (
-        <div className="wk-file-preview-excel-renderer__pagination">
-          <span className="wk-file-preview-excel-renderer__page-info">
-            显示 {startRow + 1}-{endRow} 行，共 {currentSheet.rows.length} 行
-          </span>
-          <div className="wk-file-preview-excel-renderer__page-controls">
-            <button
-              className="wk-file-preview-excel-renderer__page-btn"
-              disabled={page === 0}
-              onClick={() => setPage(0)}
-            >
-              首页
-            </button>
-            <button
-              className="wk-file-preview-excel-renderer__page-btn"
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              上一页
-            </button>
-            <span className="wk-file-preview-excel-renderer__page-current">
-              {page + 1} / {totalPages}
-            </span>
-            <button
-              className="wk-file-preview-excel-renderer__page-btn"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              下一页
-            </button>
-            <button
-              className="wk-file-preview-excel-renderer__page-btn"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage(totalPages - 1)}
-            >
-              末页
-            </button>
+      {/* 底部信息栏：行数 + 工作表切换 */}
+      <div className="wk-file-preview-excel-renderer__footer">
+        <span className="wk-file-preview-excel-renderer__row-count">
+          共 {sheets[activeSheet]?.data.length ?? 0} 行
+        </span>
+        {sheets.length > 1 && (
+          <div className="wk-file-preview-excel-renderer__tabs">
+            {sheets.map((sheet, index) => (
+              <button
+                key={sheet.name}
+                className={`wk-file-preview-excel-renderer__tab ${
+                  index === activeSheet
+                    ? "wk-file-preview-excel-renderer__tab--active"
+                    : ""
+                }`}
+                onClick={() => setActiveSheet(index)}
+              >
+                {sheet.name}
+              </button>
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

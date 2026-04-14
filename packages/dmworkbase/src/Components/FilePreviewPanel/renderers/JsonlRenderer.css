@@ -82,7 +82,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--wk-sp-2) var(--wk-sp-4);
-  background: var(--wk-bg-raised);
+  background: var(--wk-bg-elevated);
   border-bottom: 1px solid var(--wk-border-subtle);
   flex-shrink: 0;
   gap: var(--wk-sp-2);
@@ -225,7 +225,7 @@
 }
 
 .wk-file-preview-jsonl-renderer__table th {
-  background: var(--wk-bg-raised);
+  background: var(--wk-bg-elevated);
   color: var(--wk-text-primary);
   font-weight: 600;
   position: sticky;
@@ -248,7 +248,7 @@
   min-width: 50px;
   text-align: center;
   color: var(--wk-text-tertiary);
-  background: var(--wk-bg-raised);
+  background: var(--wk-bg-elevated);
   font-size: var(--wk-text-size-xs);
   user-select: none;
 }
@@ -286,7 +286,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--wk-sp-2) var(--wk-sp-4);
-  background: var(--wk-bg-raised);
+  background: var(--wk-bg-elevated);
   border-top: 1px solid var(--wk-border-subtle);
   flex-shrink: 0;
   gap: var(--wk-sp-4);

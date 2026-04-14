@@ -32,6 +32,12 @@ FilePreviewPanel/
     ├── TextRenderer.css
     ├── HtmlRenderer.tsx      # HTML 渲染器
     ├── HtmlRenderer.css
+    ├── ExcelRenderer.tsx     # Excel/CSV 渲染器（虚拟滚动）
+    ├── ExcelRenderer.css
+    ├── VLManager.ts          # 虚拟列表管理器
+    ├── VirtualList.tsx       # 虚拟列表组件
+    ├── TooltipCell.tsx       # 单元格 Tooltip 组件
+    ├── TooltipCell.css
     ├── FallbackRenderer.tsx  # 兜底渲染器
     └── FallbackRenderer.css
 ```
@@ -46,7 +52,7 @@ FilePreviewPanel/
 | `CodeRenderer` | js, jsx, ts, tsx, json, css, scss, less, xml, yaml, yml, py, java, c, cpp, h, hpp, go, rs, rb, php, sh, bash, sql, vue, svelte | 语法高亮、行号 | `react-syntax-highlighter` |
 | `TextRenderer` | txt, log, ini, conf, cfg | 纯文本显示 | - |
 | `HtmlRenderer` | html, htm | iframe 渲染预览 | - |
-| `ExcelRenderer` | xlsx, xls, xlsb, xlsm, csv | Excel/CSV 表格预览，多工作表切换，分页 | `xlsx` |
+| `ExcelRenderer` | xlsx, xls, xlsb, xlsm, csv | Excel/CSV 表格预览，多工作表切换，虚拟滚动 | `xlsx`, `VirtualList` |
 | `JsonRenderer` | json | JSON 格式化 + 表格视图切换 | `react-syntax-highlighter` |
 | `JsonlRenderer` | jsonl | JSONL 格式化 + 表格视图切换 | `react-syntax-highlighter` |
 | `FallbackRenderer` | 其他 | 文件信息卡片 + 下载按钮 | - |
@@ -64,7 +70,7 @@ FilePreviewPanel/
 | 代码高亮 | `CodeRaw` | ✅ `CodeRenderer` |
 | 纯文本 | `PureText` | ✅ `TextRenderer` |
 | 不支持类型 | `DownloadFileCard` | ✅ `FallbackRenderer` |
-| Excel/CSV 预览 | `ExcelTable` | ✅ `ExcelRenderer` |
+| Excel/CSV 预览 | `ExcelTable` | ✅ `ExcelRenderer`（虚拟滚动、空行裁剪、重复列名处理） |
 | JSON 格式化/表格 | `JsonRaw` / `JsonTableRender` | ✅ `JsonRenderer` |
 | JSONL 格式化/表格 | `JsonlRaw` / `JsonlTableRender` | ✅ `JsonlRenderer` |
 

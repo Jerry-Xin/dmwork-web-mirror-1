@@ -295,7 +295,10 @@ End of file.
 孙七,26,杭州,律师
 周八,39,成都,会计
 吴九,33,武汉,销售
-郑十,45,南京,经理`),
+郑十,45,南京,经理
+${Array.from({ length: 2000 }, (_, i) =>
+  `员工${i + 1},${20 + (i % 40)},城市${i % 10},职业${i % 20}`
+).join("\n")}`),
     name: "员工名单.csv",
     extension: "csv",
     size: 512,
@@ -649,7 +652,7 @@ export const ExcelPreview: Story = {
     docs: {
       description: {
         story:
-          "CSV/Excel 文件预览，支持表格展示、分页和多工作表切换（xlsx/xls/csv）。",
+          "CSV/Excel 文件预览，虚拟滚动、空行裁剪、重复列名处理、多工作表切换（xlsx/xls/csv）。",
       },
     },
   },

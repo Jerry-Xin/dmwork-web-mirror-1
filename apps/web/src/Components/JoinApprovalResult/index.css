@@ -3,22 +3,22 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--wk-brand-gradient);
     position: fixed;
     inset: 0;
     z-index: 1000;
 }
 
 .wk-join-approval-card {
-    background: white;
+    background: var(--wk-bg-surface);
     border-radius: 16px;
     padding: 48px 40px;
     width: 100%;
     max-width: 400px;
     min-width: 320px;
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    color: #333;
+    box-shadow: var(--wk-shadow-lg);
+    color: var(--wk-text-primary);
 }
 
 .wk-join-approval-icon {
@@ -30,13 +30,13 @@
 .wk-join-approval-title {
     font-size: 24px;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--wk-text-primary);
     margin: 0 0 12px;
 }
 
 .wk-join-approval-desc {
     font-size: 14px;
-    color: #666;
+    color: var(--wk-text-secondary);
     line-height: 1.6;
     margin: 0 0 32px;
 }
@@ -46,12 +46,12 @@
     height: 44px !important;
     font-size: 16px !important;
     border-radius: 8px !important;
-    background-color: #5b6abf !important;
-    border-color: #5b6abf !important;
-    color: #ffffff !important;
+    background-color: var(--wk-brand-primary) !important;
+    border-color: var(--wk-brand-primary) !important;
+    color: var(--wk-text-inverse) !important;
 }
 
 .wk-join-approval-btn:hover {
-    background-color: #4a59ae !important;
-    border-color: #4a59ae !important;
+    background-color: var(--wk-brand-primary-hover) !important;
+    border-color: var(--wk-brand-primary-hover) !important;
 }

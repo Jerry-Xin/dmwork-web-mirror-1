@@ -96,14 +96,16 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             const groupNo = active.data.current?.groupNo as string
             if (!groupNo) return
 
+            // over.id 可能是 useSortable 的 cat:: 或 useDroppable 的 drop::cat::
             if (overId.startsWith('drop::cat::')) {
-                // 拖到某个分组 → 归入该分组
                 const targetCategoryId = overId.replace('drop::cat::', '')
-                if (targetCategoryId) {
-                    onMoveGroupToCategory(groupNo, targetCategoryId)
-                }
-            } else if (overId === 'drop::ungrouped') {
-                // 拖到未分组区 → 移出分组
+                if (targetCategoryId) onMoveGroupToCategory(groupNo, targetCategoryId)
+            } else if (overId.startsWith('cat::')) {
+                // useSortable 的 id，同样是分组目标
+                const targetCategoryId = overId.replace('cat::', '')
+                if (targetCategoryId) onMoveGroupToCategory(groupNo, targetCategoryId)
+            } else if (overId === 'drop::ungrouped' || overId === 'ungrouped') {
+                // 移出分组
                 onMoveGroupToCategory(groupNo, '')
             }
         }

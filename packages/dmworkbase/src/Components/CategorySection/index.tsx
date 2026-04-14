@@ -1,7 +1,6 @@
 import React from "react"
 import CategoryHeader from "../CategoryHeader"
 import { useSortable } from "@dnd-kit/sortable"
-import { useDroppable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import "./index.css"
 
@@ -36,21 +35,16 @@ const CategorySectionInner: React.FC<CategorySectionProps> = ({
     onRenameConfirm,
     onRenameCancel,
 }) => {
-    // useSortable：分组整体排序
+    // useSortable：分组整体排序（同时作为 droppable，接受 group item 的 drop）
     const {
         attributes,
         listeners,
-        setNodeRef: setSortableRef,
+        setNodeRef,
         transform,
         transition,
         isDragging,
+        isOver,
     } = useSortable({ id: `cat::${category.id}`, data: { type: 'category', categoryId: category.id } })
-
-    // useDroppable：接受 group 类型的 drop（id 前缀不同，onDragEnd 里区分）
-    const { setNodeRef: setDropRef, isOver } = useDroppable({
-        id: `drop::cat::${category.id}`,
-        data: { type: 'category-drop', categoryId: category.id },
-    })
 
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
@@ -60,15 +54,9 @@ const CategorySectionInner: React.FC<CategorySectionProps> = ({
 
     const isEmpty = category.isEmpty ?? (!children || (Array.isArray(children) && children.length === 0))
 
-    // 合并两个 ref
-    const setRef = (el: HTMLDivElement | null) => {
-        setSortableRef(el)
-        setDropRef(el)
-    }
-
     return (
         <div
-            ref={setRef}
+            ref={setNodeRef}
             style={style}
             className={`wk-category-section${isOver ? ' wk-category-section--drop-over' : ''}`}
         >

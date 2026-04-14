@@ -524,8 +524,8 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 /* compact 模式子区 L连接线 */
 .wk-conv-compact-item--thread {
     position: relative;
-    /* 子区图标对齐父群聊名称起始位置：icon(18) + gap(8) = 26px，微调到 24 */
-    padding-left: 24px;
+    /* 子区缩进：在父群聊 icon 右侧，体现父子层级关系 */
+    padding-left: 36px;
 }
 
 /* L连接线：竖线从 left: 17px（父群聊 icon 中心）向右弯折连接子区 */
@@ -554,7 +554,7 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 
 /* compact 模式「+N 个子区」/ 「收起」 overflow 控件 */
 .wk-conv-compact-thread-overflow {
-    padding: 3px 8px 3px 24px;  /* 对齐子区缩进 */
+    padding: 3px 8px 3px 36px;  /* 对齐子区缩进 */
     font-size: 11px;
     color: var(--wk-text-tertiary, #9498A8);
     cursor: pointer;

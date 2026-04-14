@@ -478,6 +478,7 @@ function getSavedTab(): SidebarTab {
 
 interface ChatPageState {
   activeTab: SidebarTab
+  currentSpaceName: string
   pendingConfirm: null | { onOk: () => void }  // 附件切换确认弹窗
 }
 
@@ -486,7 +487,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
   spaceListRef: SpaceList | null = null;
   constructor(props: any) {
     super(props);
-    this.state = { activeTab: getSavedTab(), pendingConfirm: null }
+    this.state = { activeTab: getSavedTab(), currentSpaceName: 'DMWork', pendingConfirm: null }
   }
 
   _handleTabChange = (tab: SidebarTab) => {
@@ -494,7 +495,21 @@ export default class ChatPage extends Component<any, ChatPageState> {
     this.setState({ activeTab: tab })
   }
 
+  private _onSpaceChanged?: (space: any) => void
 
+  componentDidMount() {
+    // 监听 space-changed，同步 spacename 到 state
+    this._onSpaceChanged = (space: any) => {
+      this.setState({ currentSpaceName: (space as Space | undefined)?.name ?? 'DMWork' })
+    }
+    WKApp.mittBus.on('space-changed', this._onSpaceChanged)
+  }
+
+  componentWillUnmount() {
+    if (this._onSpaceChanged) {
+      WKApp.mittBus.off('space-changed', this._onSpaceChanged)
+    }
+  }
 
   render(): ReactNode {
     return (
@@ -531,7 +546,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
                 <div className="wk-chat-content-left">
                   <div className="wk-chat-search">
                     {/* Space 名称（原下拉筛选位置） */}
-                    <div className="wk-chat-space-name">{vm.selectedSpace?.name ?? 'DMWork'}</div>
+                    <div className="wk-chat-space-name">{this.state.currentSpaceName}</div>
                     <div className="wk-chat-header-actions">
                       <NavSignalBadge showText />
                       <div

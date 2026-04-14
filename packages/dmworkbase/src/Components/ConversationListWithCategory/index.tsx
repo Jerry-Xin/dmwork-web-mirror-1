@@ -16,8 +16,8 @@ export interface CategoryData {
 }
 
 export interface ConversationListWithCategoryProps {
-    viewMode: ViewMode
-    onViewModeChange: (mode: ViewMode) => void
+    viewMode?: ViewMode
+    onViewModeChange?: (mode: ViewMode) => void
     categories?: CategoryData[]
     ungroupedConversations?: React.ReactNode  // 未分组群聊，为空时不渲染 UngroupedSection
     isLoading?: boolean

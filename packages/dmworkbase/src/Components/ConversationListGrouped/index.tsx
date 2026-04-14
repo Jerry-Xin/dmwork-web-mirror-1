@@ -31,17 +31,7 @@ export interface ConversationListGroupedProps {
     onOpenCreateCategory: () => void
 }
 
-type ViewMode = "all" | "grouped"
 
-const VIEW_MODE_KEY = "wk_category_view_mode"
-
-function getStoredViewMode(): ViewMode {
-    try {
-        const v = localStorage.getItem(VIEW_MODE_KEY)
-        if (v === "all" || v === "grouped") return v
-    } catch {}
-    return "all"
-}
 
 const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     conversations,
@@ -59,7 +49,6 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     onMoveGroupToCategory,
     onOpenCreateCategory,
 }) => {
-    const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode)
     const [managePanelVisible, setManagePanelVisible] = useState(false)
     const categoryCtxMenuRef = useRef<ContextMenusContext | null>(null)
     const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
@@ -77,11 +66,6 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     // 菜单数据用 ref 存，避免 state 异步导致 menus 为空时就 show()
     const [categoryMenus, setCategoryMenus] = useState<ContextMenusData[]>([])
     const [renamingCategoryId, setRenamingCategoryId] = useState<string | null>(null)
-
-    const handleViewModeChange = (mode: ViewMode) => {
-        setViewMode(mode)
-        try { localStorage.setItem(VIEW_MODE_KEY, mode) } catch {}
-    }
 
     const groupConversations = conversations.filter(
         c => c.channel.channelType === ChannelTypeGroup
@@ -219,8 +203,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     return (
         <>
             <ConversationListWithCategory
-                viewMode={viewMode}
-                onViewModeChange={handleViewModeChange}
+
                 categories={categoriesForView}
                 isLoading={isLoading}
                 error={error}

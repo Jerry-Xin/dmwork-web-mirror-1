@@ -540,8 +540,9 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     border-bottom-left-radius: 3px;
 }
 
-/* 非最后一个子区：延伸竖线到下方 */
-.wk-conv-compact-item--thread:has(+ .wk-conv-compact-item--thread)::before {
+/* 非最后一个子区（后面还有子区或 overflow 控件）：延伸竖线到下方 */
+.wk-conv-compact-item--thread:has(+ .wk-conv-compact-item--thread)::before,
+.wk-conv-compact-item--thread:has(+ .wk-conv-compact-thread-overflow)::before {
     content: '';
     position: absolute;
     left: 17px;
@@ -565,7 +566,7 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     position: relative;
 }
 
-/* L连接线（对齐子区） */
+/* L连接线：overflow 控件使用 border 画出 └ 形 */
 .wk-conv-compact-thread-overflow::after {
     content: '';
     position: absolute;
@@ -576,6 +577,17 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     border-left: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
     border-bottom: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
     border-bottom-left-radius: 3px;
+}
+
+/* 展开态：overflow 控件下方有额外子区时，自身下半段也要有竖线 */
+.wk-conv-compact-thread-overflow--expanded::before {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 50%;
+    bottom: 0;
+    width: 1.5px;
+    background: var(--wk-border-default, rgba(0,0,0,0.12));
 }
 
 .wk-conv-compact-thread-overflow:hover {

@@ -8,6 +8,7 @@
  */
 import React, { useState } from "react"
 import { Channel, ChannelTypeGroup } from "wukongimjssdk"
+import WKApp from "../../App"
 import { useCategoryList } from "../../Hooks/useCategoryList"
 import { ConversationWrap } from "../../Service/Model"
 import { ConvFilter } from "../ConversationList"
@@ -104,6 +105,11 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
                     onSortCategories={sortCategories}
                     onMoveGroupToCategory={moveGroupToCategory}
                     onOpenCreateCategory={() => setCreateModalVisible(true)}
+                    onStartGroup={() => {
+                        const menus = WKApp.shared.chatMenus()
+                        const groupMenu = menus.find((m: any) => m.title === '发起群聊')
+                        if (groupMenu?.onClick) groupMenu.onClick()
+                    }}
                 />
             ) : (
                 <ConversationList

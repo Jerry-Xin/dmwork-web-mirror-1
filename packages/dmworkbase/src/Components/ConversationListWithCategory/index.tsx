@@ -25,6 +25,9 @@ export interface ConversationListWithCategoryProps {
     onRetry?: () => void
     allConversations?: React.ReactNode
     onCreateCategory?: () => void
+    /** 无任何群聊时（无分组且未分组为空）→ 空状态显示「发起群聊」 */
+    hasNoGroups?: boolean
+    onStartGroup?: () => void
     onCategoryContextMenu?: (categoryId: string, e: React.MouseEvent) => void
     /** CategorySection 是否启用拖拽（useSortable + useDroppable） */
     categorySectionDraggable?: boolean
@@ -46,6 +49,8 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
     onRetry,
     allConversations,
     onCreateCategory,
+    hasNoGroups,
+    onStartGroup,
     onCategoryContextMenu,
     activeCategoryId,
     renamingCategoryId,
@@ -90,7 +95,13 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
         }
 
         if (categories.length === 0) {
-            return <CategoryEmptyState onCreateCategory={onCreateCategory ?? (() => {})} />
+            return (
+                <CategoryEmptyState
+                    onCreateCategory={onCreateCategory ?? (() => {})}
+                    noGroups={hasNoGroups}
+                    onStartGroup={onStartGroup}
+                />
+            )
         }
 
         return (

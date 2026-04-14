@@ -43,6 +43,7 @@ export interface ConversationListGroupedProps {
     onSortCategories: (ids: string[]) => Promise<void>
     onMoveGroupToCategory: (groupNo: string, categoryId: string) => Promise<void>
     onOpenCreateCategory: () => void
+    onStartGroup?: () => void
 }
 
 
@@ -62,6 +63,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     onSortCategories,
     onMoveGroupToCategory,
     onOpenCreateCategory,
+    onStartGroup,
 }) => {
     // ── DnD 状态 ──────────────────────────────────────────────────────────────
     const sensors = useSensors(useSensor(PointerSensor, {
@@ -285,6 +287,8 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     allConversations={ConvListWithMenu(conversations)}
                     ungroupedConversations={ConvListWithMenu(ungroupedConvs)}
                     onCreateCategory={onOpenCreateCategory}
+                    hasNoGroups={categories.length === 0 && ungroupedConvs.length === 0}
+                    onStartGroup={onStartGroup}
                     activeCategoryId={activeCategoryId}
                     renamingCategoryId={renamingCategoryId}
                     categorySectionDraggable

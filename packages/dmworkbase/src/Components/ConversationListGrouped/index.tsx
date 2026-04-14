@@ -206,7 +206,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     })
                 },
             }
-            return [moveOutItem, moveToItem]
+            return [moveToItem, moveOutItem]
         }
 
         return [moveToItem]

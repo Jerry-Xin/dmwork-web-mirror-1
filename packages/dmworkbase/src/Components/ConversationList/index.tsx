@@ -657,14 +657,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                     menus.push(...extraMenus)
                 }
 
-                // 4. 置顶 / 取消置顶
-                menus.push({
-                    title: channelInfo?.top ? "取消置顶" : "置顶",
-                    icon: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
-                    onClick: () => { if (channelInfo) this.onTop(channelInfo) }
-                })
-
-                // 5. 免打扰 / 关闭免打扰
+                // 4. 免打扰 / 关闭免打扰
                 menus.push({
                     title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
                     icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",

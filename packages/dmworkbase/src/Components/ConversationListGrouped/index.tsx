@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react"
 import { Modal } from "@douyinfe/semi-ui"
-import { Modal } from "@douyinfe/semi-ui"
 import { flushSync } from "react-dom"
 import { ChannelTypeGroup, Channel } from "wukongimjssdk"
 import { parseThreadChannelId } from "../../Service/Thread"
@@ -177,9 +176,25 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             cat => (cat.groups || []).some(g => g.group_no === groupNo)
         )?.category_id
 
+        if (currentCategoryId) {
+            const catName = categories.find(c => c.category_id === currentCategoryId)?.name ?? '当前分组'
+            return [{
+                title: '移出分组',
+                onClick: () => {
+                    Modal.confirm({
+                        title: '移出分组',
+                        content: `确定将此群聊从「${catName}」移出到未分组吗？`,
+                        okText: '移出',
+                        cancelText: '取消',
+                        onOk: () => onMoveGroupToCategory(groupNo, ''),
+                    })
+                },
+            }]
+        }
+
         const items: ContextMenusData[] = categories.map(cat => ({
             title: cat.name,
-            checked: currentCategoryId === cat.category_id,
+            checked: false,
             onClick: () => onMoveGroupToCategory(groupNo, cat.category_id),
         }))
         items.push({ separator: true } as ContextMenusData)
@@ -270,7 +285,17 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 title: "删除分组",
                 icon: "M3 6h18 M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6 M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2",
                 danger: true,
-                onClick: () => onDeleteCategory(categoryId),
+                onClick: () => {
+                    const cat = categories.find(c => c.category_id === categoryId)
+                    Modal.confirm({
+                        title: '删除分组',
+                        content: `确定删除「${cat?.name ?? '该分组'}」吗？分组内群聊将移至未分组。`,
+                        okType: 'danger',
+                        okText: '删除',
+                        cancelText: '取消',
+                        onOk: () => onDeleteCategory(categoryId),
+                    })
+                },
             },
         ]
     }

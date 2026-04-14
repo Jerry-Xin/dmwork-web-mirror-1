@@ -94,13 +94,22 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
             )
         }
 
+        // 无自定义分组时：有群聊则直接显示未分组区，完全无群聊才显示空状态
         if (categories.length === 0) {
+            if (hasNoGroups) {
+                return (
+                    <CategoryEmptyState
+                        onCreateCategory={onCreateCategory ?? (() => {})}
+                        noGroups
+                        onStartGroup={onStartGroup}
+                    />
+                )
+            }
+            // 有群聊但无自定义分组 → 直接显示未分组区，不走分组 UI
             return (
-                <CategoryEmptyState
-                    onCreateCategory={onCreateCategory ?? (() => {})}
-                    noGroups={hasNoGroups}
-                    onStartGroup={onStartGroup}
-                />
+                <div className="wk-conv-with-category__body">
+                    {ungroupedConversations}
+                </div>
             )
         }
 

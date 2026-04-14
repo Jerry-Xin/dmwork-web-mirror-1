@@ -27,7 +27,7 @@ import GlobalSearch from "../../Components/GlobalSearch";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import SpaceList from "../../Components/SpaceList";
 import SpaceCreate from "../../Components/SpaceCreate";
-import { Space } from "../../Service/SpaceService";
+import { Space, SpaceService } from "../../Service/SpaceService";
 import NavSignalBadge from "../../Components/NavRail/NavSignalBadge";
 import ThreadPanel from "../../Components/ThreadPanel";
 import { Thread, parseThreadChannelId, buildThreadStub } from "../../Service/Thread";
@@ -503,6 +503,17 @@ export default class ChatPage extends Component<any, ChatPageState> {
       this.setState({ currentSpaceName: (space as Space | undefined)?.name ?? 'DMWork' })
     }
     WKApp.mittBus.on('space-changed', this._onSpaceChanged)
+
+    // 初始化：主动拉当前 Space 名称（首次渲染时 space-changed 还没触发）
+    const currentSpaceId = WKApp.shared.currentSpaceId
+    if (currentSpaceId) {
+      SpaceService.shared.getMySpaces().then(spaces => {
+        const space = spaces.find(s => s.space_id === currentSpaceId)
+        if (space) {
+          this.setState({ currentSpaceName: space.name })
+        }
+      }).catch(() => {})
+    }
   }
 
   componentWillUnmount() {

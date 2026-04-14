@@ -487,7 +487,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
   spaceListRef: SpaceList | null = null;
   constructor(props: any) {
     super(props);
-    this.state = { activeTab: getSavedTab(), currentSpaceName: 'DMWork', pendingConfirm: null }
+    this.state = { activeTab: getSavedTab(), currentSpaceName: WKApp.config.appName, pendingConfirm: null }
   }
 
   _handleTabChange = (tab: SidebarTab) => {
@@ -500,7 +500,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
   componentDidMount() {
     // 监听 space-changed，同步 spacename 到 state
     this._onSpaceChanged = (space: any) => {
-      this.setState({ currentSpaceName: (space as Space | undefined)?.name ?? 'DMWork' })
+      this.setState({ currentSpaceName: (space as Space | undefined)?.name ?? WKApp.config.appName })
     }
     WKApp.mittBus.on('space-changed', this._onSpaceChanged)
 

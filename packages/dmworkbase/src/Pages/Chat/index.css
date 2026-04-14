@@ -698,3 +698,13 @@ body[theme-mode=dark] .wk-chat-popover {
 .wk-chat-menu-item:hover {
     background: var(--wk-bg-hover, rgba(0,0,0,0.04));
 }
+
+/* 子区 header 的 🧵 icon（无圆形背景，直接显示） */
+.wk-chat-conversation-header-channel-thread-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}

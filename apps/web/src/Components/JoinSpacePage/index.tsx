@@ -66,6 +66,19 @@ export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
         setJoinLoading(true);
         try {
             const result: any = await SpaceService.shared.joinSpace(inviteInfo.invite_code);
+            const status = result?.status;
+
+            if (status === "NEED_APPROVAL" || status === "PENDING") {
+                // 审批状态：关闭当前页，触发全局钩子，由 Layout 统一渲染审批结果页
+                WKApp.endpoints.onJoinApproval(
+                    status === "NEED_APPROVAL" ? "need_approval" : "pending",
+                    inviteInfo.invite_code
+                );
+                // 调 onSuccess 让 Layout 离开 JoinSpacePage（Layout 会先渲染 joinApproval 页）
+                onSuccess();
+                return;
+            }
+
             setCurrentSpace(result?.space_id || inviteInfo.space_id);
             Toast.success("已加入 " + inviteInfo.space_name);
             onSuccess();
@@ -74,7 +87,6 @@ export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
             if (msg.includes("已满") || msg.includes("SPACE_FULL")) {
                 Toast.error("空间已满，无法加入");
             } else if (msg.includes("已是成员") || msg.includes("already")) {
-                // 已是成员也算成功，直接进入
                 setCurrentSpace(inviteInfo.space_id);
                 onSuccess();
             } else {

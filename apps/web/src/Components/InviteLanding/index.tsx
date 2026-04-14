@@ -112,14 +112,25 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
                 const err = await resp.json().catch(() => ({}));
                 throw new Error(err.msg || "加入失败");
             }
+            const result = await resp.json().catch(() => ({}));
+            const status = result?.status;
+
+            if (status === "NEED_APPROVAL" || status === "PENDING") {
+                // 审批状态：触发全局钩子，Layout 统一渲染审批结果页
+                WKApp.endpoints.onJoinApproval(
+                    status === "NEED_APPROVAL" ? "need_approval" : "pending",
+                    this.props.inviteCode
+                );
+                return;
+            }
+
             Toast.success("加入成功！");
-            const spaceId = this.state.info?.space_id;
+            const spaceId = this.state.info?.space_id || result?.space_id;
             if (spaceId) {
                 localStorage.setItem('currentSpaceId', spaceId);
             }
             // 跳转回主界面，带上正确的 sid
             const sid = this.findSid();
-            // pathname 在邀请页是 /web/（query param 形式），去掉尾部斜杠后即为 basePath
             const basePath = window.location.pathname.replace(/\/+$/, '');
             window.location.href = `${window.location.origin}${basePath}/${sid ? `?sid=${sid}` : ''}`;
         } catch (e: any) {

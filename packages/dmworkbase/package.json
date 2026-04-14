@@ -42,6 +42,7 @@
     "react-scroll": "^1.8.4",
     "react-spinners": "^0.11.0",
     "react-syntax-highlighter": "^15.6.1",
+    "react-virtuoso": "^4.18.5",
     "rehype-highlight": "6",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "3",

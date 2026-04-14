@@ -79,9 +79,42 @@
   min-height: 0;
 }
 
-/* Virtual table override */
+/* Virtual table (react-virtuoso) */
 .wk-file-preview-excel-renderer__virtual-table {
   height: 100%;
+}
+
+.wk-file-preview-excel-renderer__virtual-table table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.wk-file-preview-excel-renderer__th {
+  height: 40px;
+  background: var(--wk-bg-elevated);
+  font-size: var(--wk-text-size-xs);
+  font-weight: 500;
+  color: var(--wk-text-primary);
+  padding: 0 var(--wk-sp-3);
+  border-bottom: 1px solid var(--wk-border-subtle);
+  text-align: left;
+  white-space: nowrap;
+  max-width: 300px;
+}
+
+.wk-file-preview-excel-renderer__td {
+  height: 40px;
+  background: var(--wk-bg-base);
+  font-size: var(--wk-text-size-sm);
+  color: var(--wk-text-primary);
+  padding: 0 var(--wk-sp-3);
+  border-bottom: 1px solid var(--wk-border-subtle);
+  max-width: 300px;
+}
+
+.wk-file-preview-excel-renderer__virtual-table tr:hover .wk-file-preview-excel-renderer__td {
+  background: var(--wk-bg-hover);
 }
 
 /* Footer - 底部信息栏 */

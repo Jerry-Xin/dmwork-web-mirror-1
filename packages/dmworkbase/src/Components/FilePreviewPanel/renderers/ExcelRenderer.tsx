@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { TableVirtuoso } from "react-virtuoso";
 import { BaseRendererProps } from "../types";
-import { VirtualTable, ColumnConfig } from "../../VirtualTable";
 import { TooltipCell } from "./TooltipCell";
 import "./ExcelRenderer.css";
 
 export interface ExcelRendererProps extends BaseRendererProps {}
 
-const DEFAULT_ROW_HEIGHT = 40;
+/** 列配置 */
+interface ColumnConfig {
+  key: string | symbol;
+  title: string;
+}
 
 /** 工作表数据 */
 interface SheetData {
   name: string;
   data: Record<string | symbol, unknown>[];
-  columns: ColumnConfig<string | symbol>[];
+  columns: ColumnConfig[];
 }
 
 // 动态加载 xlsx 库
@@ -97,7 +101,7 @@ function parseWorkbook(
 
     // 构建列配置，用 Symbol 处理重复列名
     const headerNameCount = new Map<string, number>();
-    const columns: ColumnConfig<string | symbol>[] = [];
+    const columns: ColumnConfig[] = [];
     const keyMapping = new Map<number, string | symbol>();
 
     headers.forEach((headerValue, idx) => {
@@ -126,7 +130,7 @@ function parseWorkbook(
 }
 
 /**
- * 表格内容组件（虚拟滚动）
+ * 表格内容组件（使用 react-virtuoso TableVirtuoso）
  */
 function SheetTable({ sheetData }: { sheetData: SheetData }) {
   const { data, columns } = sheetData;
@@ -146,19 +150,27 @@ function SheetTable({ sheetData }: { sheetData: SheetData }) {
   }
 
   return (
-    <VirtualTable
-      rows={data}
-      columns={columns as ColumnConfig[]}
-      rowHeight={DEFAULT_ROW_HEIGHT}
-      height="100%"
+    <TableVirtuoso
+      data={data}
       className="wk-file-preview-excel-renderer__virtual-table"
-      renderHeaderCell={(col) => <TooltipCell content={String(col.title)} />}
-      renderCell={(row, col) => (
-        <TooltipCell
-          content={renderCellContent(row[col.key as string | symbol])}
-        />
+      fixedHeaderContent={() => (
+        <tr>
+          {columns.map((col, idx) => (
+            <th key={idx} className="wk-file-preview-excel-renderer__th">
+              <TooltipCell content={col.title} />
+            </th>
+          ))}
+        </tr>
       )}
-      emptyText="暂无内容"
+      itemContent={(index, row) => (
+        <>
+          {columns.map((col, idx) => (
+            <td key={idx} className="wk-file-preview-excel-renderer__td">
+              <TooltipCell content={renderCellContent(row[col.key])} />
+            </td>
+          ))}
+        </>
+      )}
     />
   );
 }

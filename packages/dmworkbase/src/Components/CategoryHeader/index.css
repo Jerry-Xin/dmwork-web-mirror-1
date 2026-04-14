@@ -139,15 +139,15 @@
     font-style: italic;
 }
 
-/* 未读 badge */
+/* 未读 badge（颜色对齐 CompactGroupItem badge） */
 .wk-category-header__badge {
     min-width: 16px;
     height: 16px;
     border-radius: 9999px;
-    background: var(--wk-brand-primary);
-    color: var(--wk-color-white);
-    font-size: 9px;
-    font-weight: 700;
+    background: var(--wk-red, #E5405E);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;

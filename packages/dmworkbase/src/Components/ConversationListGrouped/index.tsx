@@ -200,8 +200,16 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     )
 
     const categoriesForView = categories.map(cat => {
+        // 分组内按最新消息时间降序排序
+        const sortedGroups = [...(cat.groups || [])].sort((a, b) => {
+            const convA = groupConvMap.get(a.group_no)
+            const convB = groupConvMap.get(b.group_no)
+            const tA = convA?.timestamp ?? 0
+            const tB = convB?.timestamp ?? 0
+            return tB - tA
+        })
         const catConvs: ConversationWrap[] = []
-        for (const g of (cat.groups || [])) {
+        for (const g of sortedGroups) {
             const groupConv = groupConvMap.get(g.group_no)
             if (groupConv) {
                 catConvs.push(groupConv)

@@ -177,9 +177,18 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             cat => (cat.groups || []).some(g => g.group_no === groupNo)
         )?.category_id
 
+        const moveToItems: ContextMenusData[] = categories
+            .filter(c => c.category_id !== currentCategoryId)
+            .map(cat => ({
+                title: cat.name,
+                onClick: () => onMoveGroupToCategory(groupNo, cat.category_id),
+            }))
+        moveToItems.push({ separator: true } as ContextMenusData)
+        moveToItems.push({ title: '+ 新建分组', onClick: onOpenCreateCategory })
+
         if (currentCategoryId) {
             const catName = categories.find(c => c.category_id === currentCategoryId)?.name ?? '当前分组'
-            return [{
+            const moveOutItem: ContextMenusData = {
                 title: '移出分组',
                 onClick: () => {
                     Modal.confirm({
@@ -190,18 +199,11 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                         onOk: () => onMoveGroupToCategory(groupNo, ''),
                     })
                 },
-            }]
+            }
+            return [moveOutItem, { separator: true } as ContextMenusData, ...moveToItems]
         }
 
-        const items: ContextMenusData[] = categories.map(cat => ({
-            title: cat.name,
-            checked: false,
-            onClick: () => onMoveGroupToCategory(groupNo, cat.category_id),
-        }))
-        items.push({ separator: true } as ContextMenusData)
-        items.push({ title: "+ 新建分组", onClick: onOpenCreateCategory })
-
-        return items
+        return moveToItems
     }
 
     const ConvListWithMenu = (convs: ConversationWrap[]) => (

@@ -10,7 +10,7 @@ import { ErrorBoundary } from "../../Components/ErrorBoundary";
 import { Spin, Popover, Modal, Toast } from "@douyinfe/semi-ui";
 import WKButton from "../../Components/WKButton";
 import WKModal from "../../Components/WKModal";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Columns2 } from "lucide-react";
 import ThreadIcon from "../../Components/Icons/ThreadIcon";
 import { ChatVM, handleGlobalSearchClick } from "./vm";
 import "./index.css";
@@ -601,17 +601,20 @@ export default class ChatPage extends Component<any, ChatPageState> {
                         trigger="custom"
                         content={
                           <div>
-                            {/* 群聊 Tab 下在顶部插入「创建分组」 */}
+                            {/* 群聊 Tab 下在顶部插入「创建分组」，对齐 ChatMenusPopover li 样式 */}
                             {activeTab === 'group' && (
-                              <div
-                                className="wk-chat-menu-item"
+                              <li
+                                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '10px', listStyle: 'none', borderBottom: '1px solid var(--wk-border-subtle, rgba(0,0,0,0.05))' }}
                                 onClick={() => {
                                   vm.showAddPopover = false
                                   this.openCreateCategoryRef.current?.()
                                 }}
                               >
-                                创建分组
-                              </div>
+                                <div className="wk-chatmenuspopover-avatar">
+                                  <Columns2 size={16} strokeWidth={1.5} />
+                                </div>
+                                <div className="wk-chatmenuspopover-title">创建分组</div>
+                              </li>
                             )}
                             <ChatMenusPopover onItem={() => { vm.showAddPopover = false; }} />
                           </div>

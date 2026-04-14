@@ -33,7 +33,7 @@ export default function JoinApprovalResult({ status, onDismiss }: JoinApprovalRe
                         : "你的加入申请已提交，请等待管理员审批通过后即可加入。"}
                 </p>
                 <Button
-                    type="secondary"
+                    type="primary"
                     size="large"
                     className="wk-join-approval-btn"
                     onClick={onDismiss}

@@ -541,7 +541,17 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     border-bottom-left-radius: 3px;
 }
 
-/* 子区间不需要延伸竖线，每个子区靠自身 ::after 的 L 形体现层级 */
+/* 子区间延伸竖线（├── 效果），最后一个子区（后面是 overflow 或无线）不延伸 */
+.wk-conv-compact-item--thread:has(+ .wk-conv-compact-item--thread)::before,
+.wk-conv-compact-item--thread:has(+ .wk-conv-compact-thread-overflow)::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 50%;
+    bottom: 0;
+    width: 1.5px;
+    background: var(--wk-border-default, rgba(0,0,0,0.12));
+}
 
 /* compact 模式「+N 个子区」/ 「收起」 overflow 控件 */
 .wk-conv-compact-thread-overflow {
@@ -557,17 +567,17 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     position: relative;
 }
 
-/* overflow 控件：只保留 L 横线（无上方竖线） */
+/* overflow 控件：L 形（上方竖线 + 水平线），连接上方子区 */
 .wk-conv-compact-thread-overflow::after {
     content: '';
     position: absolute;
     left: 30px;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 1.5px;
+    top: 0;
+    height: 50%;
     width: 10px;
-    background: var(--wk-border-default, rgba(0,0,0,0.12));
-    border-radius: 1px;
+    border-left: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
+    border-bottom: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
+    border-bottom-left-radius: 3px;
 }
 
 /* 展开态控件置底，不需要下方延伸线 */

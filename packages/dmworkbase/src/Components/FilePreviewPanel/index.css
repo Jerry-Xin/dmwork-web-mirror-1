@@ -1,314 +1,81 @@
+/* ============================================
+   FilePreviewPanel - 文件预览面板样式
+   类名前缀: wk-file-preview
+   ============================================ */
+
 .wk-file-preview-panel {
-    width: 400px;
-    min-width: 360px;
-    height: 100%;
-    background: var(--wk-bg-surface);
-    border-left: 1px solid var(--wk-border-subtle);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  width: 400px;
+  min-width: 360px;
+  height: 100%;
+  background: var(--wk-bg-surface);
+  border-left: 1px solid var(--wk-border-subtle);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
+/* Header */
 .wk-file-preview-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--wk-border-subtle);
-    background: var(--wk-bg-base);
-    min-height: 48px;
+  height: var(--wk-height-chat-conversation-header);
+  min-height: var(--wk-height-chat-conversation-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--wk-sp-4);
+  border-bottom: 1px solid var(--wk-border-default);
+  background-color: var(--wk-bg-surface);
 }
 
 .wk-file-preview-title {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--wk-text-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-right: 12px;
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: var(--wk-sp-3);
 }
 
+/* Header actions */
 .wk-file-preview-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-1);
 }
 
 .wk-file-preview-action {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: transparent;
-    color: var(--wk-text-secondary);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--wk-text-secondary);
+  border-radius: var(--wk-r-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
 
 .wk-file-preview-action:hover {
-    background: var(--wk-bg-hover);
-    color: var(--wk-text-primary);
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
 }
 
 .wk-file-preview-close:hover {
-    background: var(--wk-color-danger-light);
-    color: var(--wk-color-danger);
+  background: var(--wk-color-danger-light);
+  color: var(--wk-color-danger);
 }
 
+/* Content area */
 .wk-file-preview-content {
-    flex: 1;
-    overflow: auto;
-    padding: 0;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
 }
 
-/* Loading state */
-.wk-file-preview-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 12px;
-    color: var(--wk-text-secondary);
-    font-size: 14px;
-}
-
-.wk-file-preview-spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--wk-border-subtle);
-    border-top-color: var(--wk-brand-primary);
-    border-radius: 50%;
-    animation: wk-file-preview-spin 0.8s linear infinite;
-}
-
-@keyframes wk-file-preview-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Error state */
-.wk-file-preview-error {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 12px;
-    color: var(--wk-color-danger);
-    font-size: 14px;
-}
-
-.wk-file-preview-error button {
-    padding: 6px 16px;
-    border: 1px solid var(--wk-border-default);
-    background: var(--wk-bg-base);
-    color: var(--wk-text-primary);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-}
-
-.wk-file-preview-error button:hover {
-    background: var(--wk-bg-hover);
-}
-
-/* Image preview */
-.wk-file-preview-image {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: 16px;
-    background: var(--wk-bg-base);
-}
-
-.wk-file-preview-image img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    border-radius: 4px;
-}
-
-/* PDF preview */
-.wk-file-preview-pdf {
-    height: 100%;
-    width: 100%;
-}
-
-.wk-file-preview-pdf iframe {
-    border: none;
-    display: block;
-}
-
-/* Markdown preview */
-.wk-file-preview-markdown {
-    padding: 20px;
-    overflow: auto;
-    height: 100%;
-    box-sizing: border-box;
-}
-
-.wk-file-preview-markdown h1,
-.wk-file-preview-markdown h2,
-.wk-file-preview-markdown h3,
-.wk-file-preview-markdown h4,
-.wk-file-preview-markdown h5,
-.wk-file-preview-markdown h6 {
-    color: var(--wk-text-primary);
-    margin-top: 1em;
-    margin-bottom: 0.5em;
-}
-
-.wk-file-preview-markdown h1 {
-    font-size: 1.5em;
-    border-bottom: 1px solid var(--wk-border-subtle);
-    padding-bottom: 0.3em;
-}
-
-.wk-file-preview-markdown h2 {
-    font-size: 1.3em;
-    border-bottom: 1px solid var(--wk-border-subtle);
-    padding-bottom: 0.3em;
-}
-
-.wk-file-preview-markdown p {
-    margin: 0.8em 0;
-    color: var(--wk-text-primary);
-    line-height: 1.6;
-}
-
-.wk-file-preview-markdown code {
-    background: var(--wk-bg-base);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-}
-
-.wk-file-preview-markdown pre {
-    background: var(--wk-bg-base);
-    padding: 12px 16px;
-    border-radius: 8px;
-    overflow-x: auto;
-}
-
-.wk-file-preview-markdown pre code {
-    background: none;
-    padding: 0;
-}
-
-.wk-file-preview-markdown blockquote {
-    border-left: 4px solid var(--wk-brand-primary);
-    margin: 1em 0;
-    padding: 0.5em 1em;
-    background: var(--wk-bg-base);
-    color: var(--wk-text-secondary);
-}
-
-.wk-file-preview-markdown ul,
-.wk-file-preview-markdown ol {
-    padding-left: 1.5em;
-    margin: 0.8em 0;
-}
-
-.wk-file-preview-markdown li {
-    margin: 0.3em 0;
-    color: var(--wk-text-primary);
-}
-
-.wk-file-preview-markdown a {
-    color: var(--wk-brand-primary);
-    text-decoration: none;
-}
-
-.wk-file-preview-markdown a:hover {
-    text-decoration: underline;
-}
-
-.wk-file-preview-markdown table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1em 0;
-}
-
-.wk-file-preview-markdown th,
-.wk-file-preview-markdown td {
-    border: 1px solid var(--wk-border-subtle);
-    padding: 8px 12px;
-    text-align: left;
-}
-
-.wk-file-preview-markdown th {
-    background: var(--wk-bg-base);
-    font-weight: 600;
-}
-
-/* Code preview */
-.wk-file-preview-code {
-    height: 100%;
-    overflow: auto;
-}
-
-.wk-file-preview-code pre {
-    margin: 0;
-    padding: 16px;
-    background: var(--wk-bg-base);
-    min-height: 100%;
-    box-sizing: border-box;
-}
-
-.wk-file-preview-code code {
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--wk-text-primary);
-    white-space: pre;
-    display: block;
-}
-
-/* Unsupported file type */
-.wk-file-preview-unsupported {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 16px;
-    color: var(--wk-text-secondary);
-    font-size: 14px;
-}
-
-.wk-file-preview-unsupported button {
-    padding: 8px 20px;
-    border: none;
-    background: var(--wk-brand-primary);
-    color: var(--wk-text-inverse);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: opacity 0.15s;
-}
-
-.wk-file-preview-unsupported button:hover {
-    opacity: 0.9;
-}
-
-/* Dark mode adjustments */
-body[theme-mode=dark] .wk-file-preview-panel {
-    background: var(--wk-bg-surface);
-}
-
-body[theme-mode=dark] .wk-file-preview-image {
-    background: #1a1a1a;
-}
-
-body[theme-mode=dark] .wk-file-preview-code pre {
-    background: #1a1a1a;
+/* Dark mode */
+body[theme-mode="dark"] .wk-file-preview-panel {
+  background: var(--wk-bg-surface);
 }

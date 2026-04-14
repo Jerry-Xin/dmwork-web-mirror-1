@@ -1,0 +1,219 @@
+.wk-file-preview-pdf-renderer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* 工具栏 */
+.wk-file-preview-pdf-renderer__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2);
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  background: var(--wk-bg-base);
+  border-bottom: 1px solid var(--wk-border-subtle);
+  flex-shrink: 0;
+}
+
+.wk-file-preview-pdf-renderer__toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--wk-text-secondary);
+  border-radius: var(--wk-r-xs);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.wk-file-preview-pdf-renderer__toolbar-btn:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+.wk-file-preview-pdf-renderer__toolbar-btn--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.wk-file-preview-pdf-renderer__toolbar-btn--disabled:hover {
+  background: transparent;
+  color: var(--wk-text-secondary);
+}
+
+.wk-file-preview-pdf-renderer__toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--wk-border-subtle);
+  margin: 0 var(--wk-sp-1);
+}
+
+/* 缩放选择器 */
+.wk-file-preview-pdf-renderer__zoom-select {
+  height: 28px;
+  padding: 0 var(--wk-sp-2);
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-xs);
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  min-width: 90px;
+}
+
+.wk-file-preview-pdf-renderer__zoom-select:hover {
+  background: var(--wk-bg-hover);
+}
+
+.wk-file-preview-pdf-renderer__zoom-select:focus {
+  border-color: var(--wk-brand-primary);
+}
+
+/* 页面导航 */
+.wk-file-preview-pdf-renderer__page-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-1);
+}
+
+.wk-file-preview-pdf-renderer__page-input {
+  width: 40px;
+  height: 28px;
+  padding: 0 var(--wk-sp-2);
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-xs);
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  font-size: 12px;
+  text-align: center;
+  outline: none;
+}
+
+.wk-file-preview-pdf-renderer__page-input:focus {
+  border-color: var(--wk-brand-primary);
+}
+
+.wk-file-preview-pdf-renderer__page-total {
+  color: var(--wk-text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* 主内容区域 */
+.wk-file-preview-pdf-renderer__content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 缩略图侧边栏 */
+.wk-file-preview-pdf-renderer__thumbnails {
+  width: 140px;
+  flex-shrink: 0;
+  background: var(--wk-bg-base);
+  border-right: 1px solid var(--wk-border-subtle);
+  overflow-y: auto;
+}
+
+/* PDF 查看器 */
+.wk-file-preview-pdf-renderer__viewer {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: var(--wk-bg-base);
+}
+
+/* Loading state */
+.wk-file-preview-pdf-renderer__loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wk-sp-3);
+  color: var(--wk-text-secondary);
+  font-size: var(--wk-text-size-md);
+  background: var(--wk-bg-surface);
+  z-index: 10;
+}
+
+.wk-file-preview-pdf-renderer__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--wk-border-subtle);
+  border-top-color: var(--wk-brand-primary);
+  border-radius: 50%;
+  animation: wk-pdf-renderer-spin 0.8s linear infinite;
+}
+
+@keyframes wk-pdf-renderer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error state */
+.wk-file-preview-pdf-renderer__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--wk-sp-3);
+  color: var(--wk-color-danger);
+  font-size: var(--wk-text-size-md);
+}
+
+.wk-file-preview-pdf-renderer__error-detail {
+  font-size: var(--wk-text-size-sm);
+  margin-top: var(--wk-sp-2);
+  color: var(--wk-text-tertiary);
+}
+
+/* Override react-pdf-viewer styles */
+.wk-file-preview-pdf-renderer .rpv-core__viewer {
+  height: 100%;
+}
+
+.wk-file-preview-pdf-renderer .rpv-core__inner-pages {
+  background: var(--wk-bg-base);
+}
+
+.wk-file-preview-pdf-renderer .rpv-thumbnail__container {
+  padding: var(--wk-sp-2);
+}
+
+.wk-file-preview-pdf-renderer .rpv-thumbnail__item {
+  margin-bottom: var(--wk-sp-2);
+}
+
+.wk-file-preview-pdf-renderer .rpv-thumbnail__item--selected {
+  border-color: var(--wk-brand-primary);
+}
+
+/* Dark mode adjustments */
+body[theme-mode="dark"] .wk-file-preview-pdf-renderer__toolbar {
+  background: #1f1f1f;
+}
+
+body[theme-mode="dark"] .wk-file-preview-pdf-renderer__thumbnails {
+  background: #1a1a1a;
+}
+
+body[theme-mode="dark"] .wk-file-preview-pdf-renderer__viewer {
+  background: #1a1a1a;
+}
+
+body[theme-mode="dark"] .wk-file-preview-pdf-renderer .rpv-core__inner-pages {
+  background: #1a1a1a;
+}

@@ -1,0 +1,267 @@
+dmwork-web\packages\dmworkbase\src\Components\FilePreviewPanel\renderers\ExcelRenderer.css
+/* Excel Renderer - Excel/CSV 表格渲染器样式 */
+
+.wk-file-preview-excel-renderer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--wk-bg-base);
+  overflow: hidden;
+}
+
+/* Loading state */
+.wk-file-preview-excel-renderer--loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--wk-sp-3);
+  color: var(--wk-text-secondary);
+  font-size: var(--wk-text-size-md);
+}
+
+.wk-file-preview-excel-renderer__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--wk-border-subtle);
+  border-top-color: var(--wk-brand-primary);
+  border-radius: var(--wk-r-full);
+  animation: wk-excel-renderer-spin 0.8s linear infinite;
+}
+
+@keyframes wk-excel-renderer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error state */
+.wk-file-preview-excel-renderer--error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--wk-sp-3);
+  color: var(--wk-color-danger);
+  font-size: var(--wk-text-size-md);
+}
+
+.wk-file-preview-excel-renderer__retry {
+  padding: var(--wk-sp-2) var(--wk-sp-4);
+  border: 1px solid var(--wk-border-default);
+  background: var(--wk-bg-base);
+  color: var(--wk-text-primary);
+  border-radius: var(--wk-r-sm);
+  cursor: pointer;
+  font-size: var(--wk-text-size-sm);
+  transition: background-color 0.15s ease;
+}
+
+.wk-file-preview-excel-renderer__retry:hover {
+  background: var(--wk-bg-hover);
+}
+
+.wk-file-preview-excel-renderer__retry:active {
+  background: var(--wk-bg-active);
+}
+
+/* Empty state */
+.wk-file-preview-excel-renderer--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--wk-text-secondary);
+  font-size: var(--wk-text-size-md);
+}
+
+/* Tabs - 工作表切换器 */
+.wk-file-preview-excel-renderer__tabs {
+  display: flex;
+  gap: var(--wk-sp-1);
+  padding: var(--wk-sp-2) var(--wk-sp-4);
+  background: var(--wk-bg-raised);
+  border-bottom: 1px solid var(--wk-border-subtle);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.wk-file-preview-excel-renderer__tab {
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  border: none;
+  background: transparent;
+  color: var(--wk-text-secondary);
+  font-size: var(--wk-text-size-sm);
+  border-radius: var(--wk-r-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.wk-file-preview-excel-renderer__tab:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+.wk-file-preview-excel-renderer__tab--active {
+  background: var(--wk-brand-primary);
+  color: var(--wk-text-on-brand);
+}
+
+/* Table wrapper - 表格容器 */
+.wk-file-preview-excel-renderer__table-wrapper {
+  flex: 1;
+  overflow: auto;
+  padding: var(--wk-sp-2);
+}
+
+/* Table - 表格 */
+.wk-file-preview-excel-renderer__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wk-text-size-sm);
+  font-family: var(
+    --wk-font-family-mono,
+    ui-monospace,
+    SFMono-Regular,
+    "SF Mono",
+    Menlo,
+    Consolas,
+    monospace
+  );
+}
+
+.wk-file-preview-excel-renderer__table th,
+.wk-file-preview-excel-renderer__table td {
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  text-align: left;
+  border: 1px solid var(--wk-border-subtle);
+  white-space: nowrap;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wk-file-preview-excel-renderer__table th {
+  background: var(--wk-bg-raised);
+  color: var(--wk-text-primary);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.wk-file-preview-excel-renderer__table td {
+  background: var(--wk-bg-base);
+  color: var(--wk-text-primary);
+}
+
+.wk-file-preview-excel-renderer__table tr:hover td {
+  background: var(--wk-bg-hover);
+}
+
+/* Row number column - 行号列 */
+.wk-file-preview-excel-renderer__row-num {
+  width: 50px;
+  min-width: 50px;
+  text-align: center;
+  color: var(--wk-text-tertiary);
+  background: var(--wk-bg-raised);
+  font-size: var(--wk-text-size-xs);
+  user-select: none;
+}
+
+/* 确保行号列背景不被 hover 覆盖 */
+.wk-file-preview-excel-renderer__table
+  tr:hover
+  .wk-file-preview-excel-renderer__row-num {
+  background: var(--wk-bg-raised);
+}
+
+/* Pagination - 分页 */
+.wk-file-preview-excel-renderer__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--wk-sp-2) var(--wk-sp-4);
+  background: var(--wk-bg-raised);
+  border-top: 1px solid var(--wk-border-subtle);
+  flex-shrink: 0;
+  gap: var(--wk-sp-4);
+}
+
+.wk-file-preview-excel-renderer__page-info {
+  font-size: var(--wk-text-size-xs);
+  color: var(--wk-text-secondary);
+}
+
+.wk-file-preview-excel-renderer__page-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2);
+}
+
+.wk-file-preview-excel-renderer__page-btn {
+  padding: var(--wk-sp-1) var(--wk-sp-2);
+  border: 1px solid var(--wk-border-default);
+  background: var(--wk-bg-base);
+  color: var(--wk-text-primary);
+  font-size: var(--wk-text-size-xs);
+  border-radius: var(--wk-r-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wk-file-preview-excel-renderer__page-btn:hover:not(:disabled) {
+  background: var(--wk-bg-hover);
+}
+
+.wk-file-preview-excel-renderer__page-btn:active:not(:disabled) {
+  background: var(--wk-bg-active);
+}
+
+.wk-file-preview-excel-renderer__page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wk-file-preview-excel-renderer__page-current {
+  font-size: var(--wk-text-size-xs);
+  color: var(--wk-text-secondary);
+  padding: 0 var(--wk-sp-2);
+}
+
+/* Dark mode */
+body[theme-mode="dark"] .wk-file-preview-excel-renderer {
+  background: #1a1a1a;
+}
+
+body[theme-mode="dark"] .wk-file-preview-excel-renderer__table th,
+body[theme-mode="dark"] .wk-file-preview-excel-renderer__table td {
+  border-color: #333;
+}
+
+body[theme-mode="dark"] .wk-file-preview-excel-renderer__table th {
+  background: #252525;
+}
+
+body[theme-mode="dark"] .wk-file-preview-excel-renderer__table td {
+  background: #1a1a1a;
+}
+
+body[theme-mode="dark"] .wk-file-preview-excel-renderer__table tr:hover td {
+  background: #252525;
+}
+
+body[theme-mode="dark"] .wk-file-preview-excel-renderer__row-num {
+  background: #252525;
+}
+
+body[theme-mode="dark"]
+  .wk-file-preview-excel-renderer__table
+  tr:hover
+  .wk-file-preview-excel-renderer__row-num {
+  background: #252525;
+}

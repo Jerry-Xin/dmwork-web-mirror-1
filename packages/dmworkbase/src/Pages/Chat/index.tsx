@@ -656,7 +656,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           }}>找人聊天</button>
                           <button className="wk-chat-empty-guide-btn" onClick={() => {
                             const menus = WKApp.shared.chatMenus();
-                            const groupMenu = menus.find(m => m.title === "发起群聊");
+                            const groupMenu = menus.find(m => m.key === 'start-group');
                             if (groupMenu?.onClick) groupMenu.onClick();
                           }}>创建群聊</button>
                         </div>

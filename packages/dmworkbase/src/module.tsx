@@ -561,6 +561,7 @@ export default class BaseModule implements IModule {
     WKApp.shared.chatMenusRegister("chatmenus.startchat", (param) => {
       const isDark = WKApp.config.themeMode === ThemeMode.dark;
       return {
+        key: 'start-group',
         title: "发起群聊",
         icon: isDark ? new URL("./assets/popmenus_startchat_dark.png", import.meta.url).href : new URL("./assets/popmenus_startchat.png", import.meta.url).href,
         onClick: () => {

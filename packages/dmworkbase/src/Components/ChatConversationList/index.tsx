@@ -107,7 +107,7 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
                     onOpenCreateCategory={() => setCreateModalVisible(true)}
                     onStartGroup={() => {
                         const menus = WKApp.shared.chatMenus()
-                        const groupMenu = menus.find((m: any) => m.title === '发起群聊')
+                        const groupMenu = menus.find((m: any) => m.key === 'start-group')
                         if (groupMenu?.onClick) groupMenu.onClick()
                     }}
                 />

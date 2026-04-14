@@ -552,17 +552,8 @@ export default class ConversationList extends Component<ConversationListProps, C
                     const extraThreads = (threadsByParent.get(item.parentGroupId) ?? []).slice(2)
                     return (
                         <React.Fragment key={`overflow-${item.parentGroupId}`}>
-                            <div
-                                className={`wk-conv-compact-thread-overflow${isExpanded ? ' wk-conv-compact-thread-overflow--expanded' : ''}`}
-                                onClick={toggleExpand}
-                            >
-                                <span className="wk-conv-compact-thread-overflow__arrow">
-                                    {isExpanded ? '⌄' : '›'}
-                                </span>
-                                {isExpanded ? `收起 ${item.count} 个 Thread` : `展开 ${item.count} 个 Thread`}
-                            </div>
+                            {/* 展开时：先渲染剩余子区，控件始终置底 */}
                             {isExpanded && extraThreads.map(conv => {
-                                // 强制走 compact 渲染（保持连接线样式一致）
                                 const selected = !!(this.props.select && this.props.select.isEqual(conv.channel))
                                 return (
                                     <CompactGroupItem
@@ -574,6 +565,16 @@ export default class ConversationList extends Component<ConversationListProps, C
                                     />
                                 )
                             })}
+                            {/* 展开/收起控件始终置底 */}
+                            <div
+                                className={`wk-conv-compact-thread-overflow${isExpanded ? ' wk-conv-compact-thread-overflow--expanded' : ''}`}
+                                onClick={toggleExpand}
+                            >
+                                <span className="wk-conv-compact-thread-overflow__arrow">
+                                    {isExpanded ? '⌄' : '›'}
+                                </span>
+                                {isExpanded ? `收起 ${item.count} 个 Thread` : `展开 ${item.count} 个 Thread`}
+                            </div>
                         </React.Fragment>
                     )
                 }

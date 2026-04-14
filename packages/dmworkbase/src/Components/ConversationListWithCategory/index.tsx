@@ -3,7 +3,6 @@ import ViewToggle, { ViewMode } from "../ViewToggle"
 import CategorySection from "../CategorySection"
 import UngroupedSection from "../UngroupedSection"
 import CategoryEmptyState from "../CategoryEmptyState"
-import AddCategoryButton from "../AddCategoryButton"
 import "./index.css"
 
 export interface CategoryData {
@@ -145,11 +144,7 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
                 {renderGroupedBody()}
             </div>
 
-            {!isLoading && !error && (
-                <div className="wk-conv-with-category__footer">
-                    <AddCategoryButton onClick={onCreateCategory ?? (() => {})} />
-                </div>
-            )}
+
         </div>
     )
 }

@@ -71,7 +71,10 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         activationConstraint: { distance: 6 }, // 6px 才触发拖拽，避免误触点击
     }))
     const [activeDragId, setActiveDragId] = useState<string | null>(null)
-    const [activeDragData, setActiveDragData] = useState<any>(null)
+    type DragData =
+        | { type: 'category'; categoryId: string }
+        | { type: 'group'; groupNo: string }
+    const [activeDragData, setActiveDragData] = useState<DragData | null>(null)
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveDragId(String(event.active.id))

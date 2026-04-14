@@ -603,8 +603,8 @@ export default class ChatPage extends Component<any, ChatPageState> {
                           <div>
                             {/* 群聊 Tab 下在顶部插入「创建分组」，对齐 ChatMenusPopover li 样式 */}
                             {activeTab === 'group' && (
-                              <li
-                                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '10px', listStyle: 'none', borderBottom: '1px solid var(--wk-border-subtle, rgba(0,0,0,0.05))' }}
+                              <div
+                                className="wk-chat-menu-item"
                                 onClick={() => {
                                   vm.showAddPopover = false
                                   this.openCreateCategoryRef.current?.()
@@ -614,7 +614,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
                                   <Columns2 size={16} strokeWidth={1.5} />
                                 </div>
                                 <div className="wk-chatmenuspopover-title">创建分组</div>
-                              </li>
+                              </div>
                             )}
                             <ChatMenusPopover onItem={() => { vm.showAddPopover = false; }} />
                           </div>

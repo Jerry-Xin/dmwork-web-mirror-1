@@ -9,6 +9,7 @@ import { relaunch } from '@tauri-apps/api/process'
 import { os } from "@tauri-apps/api";
 import { getSid, getQueryParam } from "@dmwork/base";
 import type { JoinApprovalStatus } from "@dmwork/base";
+import { toJoinApprovalStatus } from "@dmwork/base";
 import InviteLanding from "../Components/InviteLanding";
 import JoinSpacePage from "../Components/JoinSpacePage";
 import JoinApprovalResult from "../Components/JoinApprovalResult";
@@ -58,14 +59,15 @@ export default class AppLayout extends Component<{}, AppLayoutState> {
             // 检查是否有待处理的邀请码（验证格式防止 XSS/Open Redirect）
             const pendingInvite = localStorage.getItem("pendingInviteCode");
             if (pendingInvite && /^[a-zA-Z0-9_-]+$/.test(pendingInvite)) {
-                localStorage.removeItem("pendingInviteCode");
                 WKApp.apiClient.post(`/space/join`, { invite_code: pendingInvite })
                     .then((result: any) => {
+                        // 成功路径才删 pendingInviteCode
+                        localStorage.removeItem("pendingInviteCode");
                         const status = result?.status;
                         if (status === "NEED_APPROVAL" || status === "PENDING") {
                             // 审批状态：统一走全局钩子，Layout state 渲染审批结果页
                             WKApp.endpoints.onJoinApproval(
-                                status === "NEED_APPROVAL" ? "need_approval" : "pending",
+                                toJoinApprovalStatus(status),
                                 pendingInvite
                             );
                             return;
@@ -77,10 +79,13 @@ export default class AppLayout extends Component<{}, AppLayoutState> {
                     .catch((e: any) => {
                         const msg = e?.msg || '';
                         if (msg.includes('已满') || msg.includes('SPACE_FULL')) {
+                            // SPACE_FULL 保留 pendingInviteCode，让用户下次重试
                             import('@douyinfe/semi-ui').then(({ Toast }) => Toast.error('空间已满，无法加入'));
                         } else if (msg.includes('已是成员') || msg.includes('already')) {
+                            localStorage.removeItem("pendingInviteCode");
                             if (e?.space_id) localStorage.setItem('currentSpaceId', e.space_id);
                         } else {
+                            localStorage.removeItem("pendingInviteCode");
                             console.warn('Auto-join space failed:', msg);
                         }
                         goMain();

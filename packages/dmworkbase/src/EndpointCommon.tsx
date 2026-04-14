@@ -16,7 +16,18 @@ export class ShowConversationOptions {
   initLocateMessageSeq?: number;
 }
 
+/**
+ * Layout 层渲染审批结果页使用的状态枚举（snake_case），
+ * 对应 SpaceService.JoinSpaceStatus（SCREAMING_SNAKE_CASE，来自后端）：
+ *   "NEED_APPROVAL" → "need_approval"
+ *   "PENDING"       → "pending"
+ */
 export type JoinApprovalStatus = "need_approval" | "pending"
+
+/** 将后端返回的 JoinSpaceStatus 映射为 JoinApprovalStatus */
+export function toJoinApprovalStatus(status: "NEED_APPROVAL" | "PENDING"): JoinApprovalStatus {
+    return status === "NEED_APPROVAL" ? "need_approval" : "pending"
+}
 
 export class EndpointCommon {
   private _onLogins: VoidFunction[] = []; // 登录成功

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { WKApp } from "@dmwork/base";
+import { WKApp, toJoinApprovalStatus } from "@dmwork/base";
 import type { JoinSpaceStatus } from "@dmwork/base";
 import { Button, Spin, Toast } from "@douyinfe/semi-ui";
 import "./index.css";
@@ -119,7 +119,7 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             if (status === "NEED_APPROVAL" || status === "PENDING") {
                 // 审批状态：触发全局钩子，Layout 统一渲染审批结果页
                 WKApp.endpoints.onJoinApproval(
-                    status === "NEED_APPROVAL" ? "need_approval" : "pending",
+                    toJoinApprovalStatus(status),
                     this.props.inviteCode
                 );
                 return;

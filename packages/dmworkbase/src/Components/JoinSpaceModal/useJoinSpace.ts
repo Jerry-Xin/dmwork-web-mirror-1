@@ -3,6 +3,7 @@ import { Toast } from "@douyinfe/semi-ui";
 import { SpaceService } from "../../Service/SpaceService";
 import { InviteInfo, JoinStep } from "./index";
 import WKApp from "../../App";
+import { toJoinApprovalStatus } from "../../EndpointCommon";
 
 export interface UseJoinSpaceOptions {
     onSuccess?: (spaceId: string) => void;
@@ -83,7 +84,7 @@ export function useJoinSpace({ onSuccess, onClose }: UseJoinSpaceOptions = {}) {
                 reset();
                 onClose?.();
                 WKApp.endpoints.onJoinApproval(
-                    status === "NEED_APPROVAL" ? "need_approval" : "pending",
+                    toJoinApprovalStatus(status),
                     inviteInfo.invite_code
                 );
                 return;

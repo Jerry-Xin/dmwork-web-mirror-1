@@ -441,9 +441,7 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     background: linear-gradient(135deg, var(--wk-brand-from, #7C5CFC), var(--wk-brand-to, #00D4AA));
 }
 
-.wk-conv-compact-item--thread {
-    padding-left: 28px;
-}
+/* 旧式 padding，已在下方的 position:relative 版本合并，保留 fallback */
 
 .wk-conv-compact-icon {
     flex-shrink: 0;
@@ -542,28 +540,30 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 /* compact 模式子区 L连接线 */
 .wk-conv-compact-item--thread {
     position: relative;
+    /* 子区图标对齐父群聊名称起始位置：icon(18) + gap(8) = 26px，微调到 24 */
+    padding-left: 24px;
 }
 
-/* L连接线（└── 样式，复用旧版逻辑） */
+/* L连接线：竖线从 left: 17px（父群聊 icon 中心）向右弯折连接子区 */
 .wk-conv-compact-item--thread::after {
     content: '';
     position: absolute;
-    left: 16px;
+    left: 17px;
     top: 0;
     height: 50%;
-    width: 10px;
-    border-left: 2px solid var(--wk-border-default, rgba(0,0,0,0.1));
-    border-bottom: 2px solid var(--wk-border-default, rgba(0,0,0,0.1));
+    width: 8px;
+    border-left: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
+    border-bottom: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
     border-bottom-left-radius: 3px;
 }
 
-/* 非最后一个子区：延伸竖线 */
+/* 非最后一个子区：延伸竖线到下方 */
 .wk-conv-compact-item--thread:has(+ .wk-conv-compact-item--thread)::before {
     content: '';
     position: absolute;
-    left: 16px;
+    left: 17px;
     top: 50%;
     bottom: 0;
-    width: 2px;
-    background: var(--wk-border-default, rgba(0,0,0,0.1));
+    width: 1.5px;
+    background: var(--wk-border-default, rgba(0,0,0,0.12));
 }

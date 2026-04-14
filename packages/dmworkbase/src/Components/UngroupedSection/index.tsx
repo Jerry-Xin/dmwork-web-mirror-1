@@ -13,7 +13,7 @@ const UngroupedSection: React.FC<UngroupedSectionProps> = ({ children }) => {
     return (
         <div className="wk-ungrouped-section">
             <div className="wk-ungrouped-section__header">
-                <span className="wk-ungrouped-section__title">未分组</span>
+                <span className="wk-ungrouped-section__title">未分组群聊</span>
             </div>
             <div>{children}</div>
         </div>

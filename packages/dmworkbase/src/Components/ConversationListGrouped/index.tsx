@@ -226,7 +226,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 error={error}
                 onRetry={onRetry}
                 allConversations={ConvListWithMenu(conversations)}
-                ungroupedConversations={ungroupedConvs.length > 0 ? ConvListWithMenu(ungroupedConvs) : undefined}
+                ungroupedConversations={ConvListWithMenu(ungroupedConvs)}
                 onCreateCategory={onOpenCreateCategory}
                 onManageCategories={() => setManagePanelVisible(true)}
                 activeCategoryId={activeCategoryId}

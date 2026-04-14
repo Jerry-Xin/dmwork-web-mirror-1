@@ -113,6 +113,8 @@
 /* ── Title Dropdown ── */
 /* Space 名称标题（替换原下拉菜单位置） */
 .wk-chat-space-name {
+    flex: 1;
+    min-width: 0;
     font-size: 15px;
     font-weight: 600;
     color: var(--wk-text-primary, #1A1C24);

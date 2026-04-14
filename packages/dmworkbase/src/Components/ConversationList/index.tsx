@@ -446,17 +446,8 @@ export default class ConversationList extends Component<ConversationListProps, C
         }
 
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
-            {/* 置顶区 */}
-            {finalPinned.length > 0 && <>
-                <div className="wk-conv-section">置顶</div>
-                {finalPinned.map(renderItem)}
-            </>}
-
-            {/* 最近 */}
-            {finalRecent.length > 0 && <>
-                {finalPinned.length > 0 && <div className="wk-conv-section">最近</div>}
-                {finalRecent.map(renderItem)}
-            </>}
+            {finalPinned.map(renderItem)}
+            {finalRecent.map(renderItem)}
         
 
             <ContextMenus onContext={(ctx) => {

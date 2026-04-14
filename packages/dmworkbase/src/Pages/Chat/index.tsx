@@ -227,9 +227,9 @@ export class ChatContentPage extends Component<
                             </svg>
                           </div>
                         ) : channel.channelType === ChannelTypeCommunityTopic ? (
-                          // 子区：🧵 icon，不套圆形背景
+                          // 子区：🧵 icon，圆角背景（对齐群聊 hash-icon 样式）
                           <div className="wk-chat-conversation-header-channel-thread-icon">
-                            <ThreadIcon size={28} color={WKApp.config.themeColor || 'currentColor'} />
+                            <ThreadIcon size={20} color={WKApp.config.themeColor || 'var(--wk-text-secondary, #5C6070)'} />
                           </div>
                         ) : (
                           // 私聊：头像

@@ -567,15 +567,17 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     position: relative;
 }
 
-/* overflow 控件的竖线上半段（从顶部到中间，连接上方子区） */
+/* overflow 控件：上半段竖线 + L 形水平段（贴子区左边） */
 .wk-conv-compact-thread-overflow::after {
     content: '';
     position: absolute;
     left: 30px;
     top: 0;
     height: 50%;
-    width: 1.5px;
-    background: var(--wk-border-default, rgba(0,0,0,0.12));
+    width: 10px;
+    border-left: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
+    border-bottom: 1.5px solid var(--wk-border-default, rgba(0,0,0,0.12));
+    border-bottom-left-radius: 3px;
 }
 
 /* 展开态控件置底，不需要下方延伸线 */
@@ -598,11 +600,21 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 .wk-conv-compact-item--has-threads::after {
     content: '';
     position: absolute;
-    /* # icon 中心位置：drag-handle 默认隐藏(0) + icon-container padding(8) + icon/2(9) = 17px */
     left: 30px;
-    /* 从 item 中间往下 */
     top: 50%;
-    bottom: -1px; /* 延伸到下一个 item 顶部 */
+    bottom: 0;
     width: 1.5px;
     background: var(--wk-border-default, rgba(0,0,0,0.12));
+}
+
+/* 父群聊上方白色覆盖，遮住前一个 item 的 ::before 延伸线 */
+.wk-conv-compact-item--has-threads::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 0;
+    height: 50%;
+    width: 1.5px;
+    background: var(--wk-bg-base, #F7F8FA);
+    z-index: 1;
 }

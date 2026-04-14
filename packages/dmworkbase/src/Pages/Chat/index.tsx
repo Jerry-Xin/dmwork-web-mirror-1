@@ -219,13 +219,20 @@ export class ChatContentPage extends Component<
                     <div className="wk-chat-conversation-header-channel">
                       <div className="wk-chat-conversation-header-channel-avatar">
                         {channel.channelType === ChannelTypeGroup ? (
+                          // 群聊：# icon
                           <div className="wk-chat-conversation-header-channel-hash-icon">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                               <line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" />
                               <line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" />
                             </svg>
                           </div>
+                        ) : channel.channelType === ChannelTypeCommunityTopic ? (
+                          // 子区：🧵 icon
+                          <div className="wk-chat-conversation-header-channel-hash-icon">
+                            <ThreadIcon size={20} color="currentColor" />
+                          </div>
                         ) : (
+                          // 私聊：头像
                           <img alt="" src={WKApp.shared.avatarChannel(channel)}></img>
                         )}
                       </div>

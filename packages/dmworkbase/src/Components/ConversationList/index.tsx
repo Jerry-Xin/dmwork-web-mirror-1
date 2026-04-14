@@ -24,7 +24,7 @@ import { FlameMessageCell } from "../../Messages/Flame";
 import WKAvatar from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import ConversationVM from "../Conversation/vm";
-export type ConvFilter = 'all' | 'human' | 'ai' | 'group'
+export type ConvFilter = 'all' | 'human' | 'ai' | 'group' | 'dm'
 
 export interface ConversationListProps {
     conversations: ConversationWrap[]
@@ -279,6 +279,8 @@ export default class ConversationList extends Component<ConversationListProps, C
         const channelInfo = conv.channelInfo
         // 群组和子区频道都归类到 group 过滤器
         if (filter === 'group') return conv.channel.channelType === ChannelTypeGroup || conv.channel.channelType === ChannelTypeCommunityTopic
+        // dm = human + ai（私聊 Tab 包含所有私聊会话）
+        if (filter === 'dm') return conv.channel.channelType === ChannelTypePerson
         if (filter === 'ai') {
             if (conv.channel.channelType !== ChannelTypePerson) return false
             // channelInfo 未加载时隐藏，等 channelInfoListener 触发重渲后再显示

@@ -1,6 +1,7 @@
 import React, { Component, ReactNode } from "react";
 import { Conversation } from "../../Components/Conversation";
 import ConversationList, { ConvFilter } from "../../Components/ConversationList";
+import SidebarTabBar, { SidebarTab } from "../../Components/SidebarTabBar";
 import ConversationListGrouped from "../../Components/ConversationListGrouped";
 import ChatConversationList from "../../Components/ChatConversationList";
 import Provider from "../../Service/Provider";
@@ -17,7 +18,7 @@ import { ConversationWrap } from "../../Service/Model";
 import WKApp, { ThemeMode } from "../../App";
 import ChannelSetting from "../../Components/ChannelSetting";
 import classNames from "classnames";
-import { Channel, ChannelInfo, ChannelTypeGroup, WKSDK } from "wukongimjssdk";
+import { Channel, ChannelInfo, ChannelTypeGroup, ChannelTypePerson, WKSDK } from "wukongimjssdk";
 import { ChannelTypeCommunityTopic } from "../../Service/Const";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ChatMenus } from "../../App";
@@ -465,52 +466,32 @@ export class ChatContentPage extends Component<
   }
 }
 
-interface ChatPageState {
-  filter: ConvFilter
-  dropdownOpen: boolean
-  pendingConfirm: null | { onOk: () => void }  // 附件切换确认弹窗
+const SIDEBAR_TAB_KEY = 'wk_sidebar_active_tab'
+
+function getSavedTab(): SidebarTab {
+  try {
+    const v = localStorage.getItem(SIDEBAR_TAB_KEY)
+    if (v === 'group' || v === 'dm') return v
+  } catch {}
+  return 'group'
 }
 
-const FILTER_OPTIONS: { key: ConvFilter; label: string; icon: ReactNode }[] = [
-  {
-    key: 'all', label: '全部会话',
-    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-  },
-  {
-    key: 'group', label: '群聊',
-    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-  },
-  {
-    key: 'ai', label: 'AI',
-    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-  },
-  {
-    key: 'human', label: '人类',
-    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-  },
-]
+interface ChatPageState {
+  activeTab: SidebarTab
+  pendingConfirm: null | { onOk: () => void }  // 附件切换确认弹窗
+}
 
 export default class ChatPage extends Component<any, ChatPageState> {
   vm!: ChatVM;
   spaceListRef: SpaceList | null = null;
   constructor(props: any) {
     super(props);
-    this.state = { filter: 'all', dropdownOpen: false, pendingConfirm: null }
+    this.state = { activeTab: getSavedTab(), pendingConfirm: null }
   }
 
-  componentDidMount() {
-    document.addEventListener('click', this._handleDocClick)
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('click', this._handleDocClick)
-  }
-
-  _handleDocClick = (e: MouseEvent) => {
-    const target = e.target as HTMLElement
-    if (!target.closest('.wk-chat-title-dropdown')) {
-      this.setState({ dropdownOpen: false })
-    }
+  _handleTabChange = (tab: SidebarTab) => {
+    try { localStorage.setItem(SIDEBAR_TAB_KEY, tab) } catch {}
+    this.setState({ activeTab: tab })
   }
 
 
@@ -523,8 +504,22 @@ export default class ChatPage extends Component<any, ChatPageState> {
           return this.vm;
         }}
         render={(vm: ChatVM) => {
-          const { filter, dropdownOpen } = this.state
-          const activeOption = FILTER_OPTIONS.find(o => o.key === filter)!
+          const { activeTab } = this.state
+          // 计算各 Tab 未读总数
+          const groupUnread = vm.conversations.reduce((sum: number, c: ConversationWrap) => {
+            if (c.channel.channelType === ChannelTypeGroup || c.channel.channelType === ChannelTypeCommunityTopic) {
+              return sum + (c.unread || 0)
+            }
+            return sum
+          }, 0)
+          const dmUnread = vm.conversations.reduce((sum: number, c: ConversationWrap) => {
+            if (c.channel.channelType === ChannelTypePerson) {
+              return sum + (c.unread || 0)
+            }
+            return sum
+          }, 0)
+          // filter 用于 ConversationList
+          const filter: ConvFilter = activeTab === 'group' ? 'group' : 'dm'
           return (
             <div className="wk-chat">
               <div
@@ -535,34 +530,6 @@ export default class ChatPage extends Component<any, ChatPageState> {
               >
                 <div className="wk-chat-content-left">
                   <div className="wk-chat-search">
-                    {/* 标题下拉菜单 */}
-                    <div className="wk-chat-title-dropdown">
-                      <button
-                        className={classNames('wk-chat-title-btn', dropdownOpen ? 'wk-chat-title-btn-open' : undefined)}
-                        onClick={() => this.setState(s => ({ dropdownOpen: !s.dropdownOpen }))}
-                      >
-                        {activeOption.label}
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"/>
-                        </svg>
-                      </button>
-                      {dropdownOpen && (
-                        <div className="wk-chat-title-menu">
-                          {FILTER_OPTIONS.map(opt => (
-                            <button
-                              key={opt.key}
-                              type="button"
-                              tabIndex={0}
-                              className={classNames('wk-chat-title-option', filter === opt.key ? 'wk-chat-title-option-active' : undefined)}
-                              onClick={() => this.setState({ filter: opt.key, dropdownOpen: false })}
-                            >
-                              <span className="wk-chat-title-option-icon">{opt.icon}</span>
-                              <span>{opt.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                     <div className="wk-chat-header-actions">
                       <NavSignalBadge showText />
                       <div
@@ -591,7 +558,13 @@ export default class ChatPage extends Component<any, ChatPageState> {
                       </Popover>
                     </div>
                   </div>
-                  {/* SpaceList 已移至侧边栏 */}
+                  {/* 群聊/私聊 Tab Bar */}
+                  <SidebarTabBar
+                    activeTab={activeTab}
+                    groupUnread={groupUnread}
+                    dmUnread={dmUnread}
+                    onTabChange={this._handleTabChange}
+                  />
                   <div className="wk-chat-conversation-list">
                     {vm.loading ? (
                       <div className="wk-chat-conversation-list-loading">

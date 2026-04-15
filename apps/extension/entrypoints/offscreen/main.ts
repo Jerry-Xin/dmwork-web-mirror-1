@@ -466,6 +466,16 @@ function registerListeners(): void {
   });
 
   sdk.chatManager.addMessageListener((message) => {
+    // 快速同步检查后立即通知 background 有未读，不等 handleIncomingMessage 的异步网络请求
+    const auth = currentAuth;
+    if (
+      auth?.loggedIn &&
+      auth.token &&
+      message.fromUID !== auth.uid &&
+      !shouldSkipMessageForSpace(message)
+    ) {
+      void sendSyncResult(true, true);
+    }
     void handleIncomingMessage(message);
   });
 

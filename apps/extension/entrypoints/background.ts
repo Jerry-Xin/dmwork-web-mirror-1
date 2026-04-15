@@ -21,7 +21,9 @@ const MENU_SYSTEM_NOTIFY_ON = "system-notify-on";
 const MENU_SYSTEM_NOTIFY_OFF = "system-notify-off";
 const chromeApi = (globalThis as { chrome?: any }).chrome;
 const SIDEPANEL_ACTIVE_TTL_MS = 5000;
+const OFFSCREEN_BADGE_GRACE_MS = 2000;
 let lastSidepanelActiveAt = 0;
+let lastOffscreenBadgeOnAt = 0;
 
 function markSidepanelActive(): void {
   lastSidepanelActiveAt = Date.now();
@@ -374,7 +376,16 @@ async function handleRuntimeMessage(
 
     void getExtensionPreferences().then((preferences) => {
       const shouldShowBadge = preferences.notificationsEnabled && message.hasAuth;
-      void updateBadge(shouldShowBadge && message.hasUnread);
+      const wantBadge = shouldShowBadge && message.hasUnread;
+
+      if (wantBadge) {
+        lastOffscreenBadgeOnAt = Date.now();
+      } else if (Date.now() - lastOffscreenBadgeOnAt < OFFSCREEN_BADGE_GRACE_MS) {
+        // 刚通过 offscreen 设了红点，忽略紧随其后的 stale false
+        return;
+      }
+
+      void updateBadge(wantBadge);
     });
     return;
   }

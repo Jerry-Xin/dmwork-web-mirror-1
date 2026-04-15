@@ -45,6 +45,7 @@ export interface ConversationListGroupedProps {
     onMoveGroupToCategory: (groupNo: string, categoryId: string) => Promise<void>
     onOpenCreateCategory: () => void
     onStartGroup?: () => void
+    onCreateGroupInCategory?: (categoryId: string) => void
 }
 
 
@@ -65,6 +66,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     onMoveGroupToCategory,
     onOpenCreateCategory,
     onStartGroup,
+    onCreateGroupInCategory,
 }) => {
     // ── DnD 状态 ──────────────────────────────────────────────────────────────
     const sensors = useSensors(useSensor(PointerSensor, {
@@ -303,6 +305,14 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     const newIds = categories.map(c => c.category_id)
                     ;[newIds[idx], newIds[idx + 1]] = [newIds[idx + 1], newIds[idx]]
                     onSortCategories(newIds)
+                },
+            },
+            { separator: true } as ContextMenusData,
+            {
+                title: "新建群聊",
+                icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M23 21v-2a4 4 0 0 1-3-3.87 M16 3.13a4 4 0 0 1 0 7.75 M12 16v5 M9.5 13.5h5",
+                onClick: () => {
+                    onCreateGroupInCategory?.(categoryId)
                 },
             },
             { separator: true } as ContextMenusData,

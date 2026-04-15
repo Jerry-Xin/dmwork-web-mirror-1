@@ -104,6 +104,7 @@ export default class ContactsModule implements IModule {
       "contacts.organizational.layer",
       (param) => {
         const channel = param.channel as any;
+        const defaultCategoryId = param.defaultCategoryId as string | undefined;
         const div = document.createElement("div");
         document.body.appendChild(div);
 
@@ -118,6 +119,7 @@ export default class ContactsModule implements IModule {
             remove={remove}
             action={OrganizationalGroupNewAction.createGroup}
             autoShow={true}
+            defaultCategoryId={defaultCategoryId}
           />,
           div
         );

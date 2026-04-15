@@ -11,6 +11,8 @@ export interface CategoryItem {
     name: string
     sort: number
     groups: CategoryGroup[]
+    /** 是否为默认分组（后端 PR #1007 起，默认分组有真实 UUID，通过此字段区分） */
+    is_default?: boolean
 }
 
 export interface CreateCategoryReq {
@@ -26,7 +28,7 @@ export interface SortCategoriesReq {
 }
 
 export interface MoveGroupToCategoryReq {
-    category_id: string  // 空字符串 = 移出分类
+    category_id: string  // 目标分组 ID；移出分组时传默认分组的真实 UUID（后端 PR #1007 起不再接受空字符串）
 }
 
 const CategoryService = {

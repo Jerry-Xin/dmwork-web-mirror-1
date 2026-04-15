@@ -494,12 +494,14 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     color: var(--wk-text-quaternary, #C4C7D0);
     cursor: grab;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 150ms;
     margin-left: -4px;
 }
 
 .wk-conv-compact-item:hover .wk-conv-compact-drag-handle {
     opacity: 1;
+    pointer-events: auto;
 }
 
 .wk-conv-compact-drag-handle:active {

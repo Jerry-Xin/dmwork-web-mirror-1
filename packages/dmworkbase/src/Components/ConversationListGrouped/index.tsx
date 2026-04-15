@@ -109,8 +109,9 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 onSortCategories(newOrder)
             }
         } else if (activeType === 'group') {
-            const groupNo = active.data.current?.groupNo as string
-            if (!groupNo) return
+            const d = active.data.current
+            if (!isDragData(d) || d.type !== 'group') return
+            const groupNo = d.groupNo
 
             // over.id 可能是 useSortable 的 cat:: 或 useDroppable 的 drop::cat::
             if (overId.startsWith('drop::cat::')) {

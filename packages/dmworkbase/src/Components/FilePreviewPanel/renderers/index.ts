@@ -40,3 +40,6 @@ export type { PptPageRendererProps, PptPageContent } from "./PptPageRenderer";
 
 export { default as HtmlIframeRenderer } from "./HtmlIframeRenderer";
 export type { HtmlIframeRendererProps, HtmlIframeRendererRef } from "./HtmlIframeRenderer";
+
+export { RendererState } from "./RendererState";
+export type { RendererStateProps, RendererStateType } from "./RendererState";

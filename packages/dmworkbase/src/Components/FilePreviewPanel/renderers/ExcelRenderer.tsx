@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { TableVirtuoso } from "react-virtuoso";
 import { BaseRendererProps } from "../types";
 import { TooltipCell } from "./TooltipCell";
+import { RendererState } from "./RendererState";
+import { useFileContent } from "../hooks/useFileContent";
 import "./ExcelRenderer.css";
 
 export interface ExcelRendererProps extends BaseRendererProps {}
@@ -181,28 +183,32 @@ function SheetTable({ sheetData }: { sheetData: SheetData }) {
  * 使用虚拟滚动高效渲染大数据量
  */
 const ExcelRenderer: React.FC<ExcelRendererProps> = ({ file, onError }) => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
   const [sheets, setSheets] = useState<SheetData[]>([]);
   const [activeSheet, setActiveSheet] = useState(0);
+  const [parsing, setParsing] = useState(false);
 
-  const loadContent = useCallback(async () => {
-    if (!file.url) return;
+  // 使用共享 Hook 加载文件内容
+  const {
+    content: buffer,
+    loading: fetching,
+    error: fetchError,
+    reload,
+  } = useFileContent({
+    url: file.url,
+    responseType: "arraybuffer",
+  });
 
-    setLoading(true);
-    setError(null);
+  // 解析 Excel 内容
+  const parseContent = useCallback(async (data: ArrayBuffer) => {
+    setParsing(true);
+    setParseError(null);
     setSheets([]);
     setActiveSheet(0);
 
     try {
       const XLSX = await loadXlsxLibrary();
-      const response = await fetch(file.url);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const buffer = await response.arrayBuffer();
-      const parsedSheets = parseWorkbook(XLSX, new Uint8Array(buffer));
+      const parsedSheets = parseWorkbook(XLSX, new Uint8Array(data));
 
       if (parsedSheets.length === 0) {
         throw new Error("工作表为空");
@@ -210,47 +216,35 @@ const ExcelRenderer: React.FC<ExcelRendererProps> = ({ file, onError }) => {
 
       setSheets(parsedSheets);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "加载失败";
-      setError(message);
+      const message = err instanceof Error ? err.message : "解析失败";
+      setParseError(message);
       onError?.(message);
     } finally {
-      setLoading(false);
+      setParsing(false);
     }
-  }, [file.url, onError]);
+  }, [onError]);
 
+  // 当内容加载完成后解析
   useEffect(() => {
-    loadContent();
-  }, [loadContent]);
+    if (buffer) {
+      parseContent(buffer);
+    }
+  }, [buffer, parseContent]);
+
+  // 合并加载和解析状态
+  const loading = fetching || parsing;
+  const error = fetchError || parseError;
 
   if (loading) {
-    return (
-      <div className="wk-file-preview-excel-renderer wk-file-preview-excel-renderer--loading">
-        <div className="wk-file-preview-excel-renderer__spinner" />
-        <span>加载中...</span>
-      </div>
-    );
+    return <RendererState type="loading" />;
   }
 
   if (error) {
-    return (
-      <div className="wk-file-preview-excel-renderer wk-file-preview-excel-renderer--error">
-        <span>{error}</span>
-        <button
-          className="wk-file-preview-excel-renderer__retry"
-          onClick={loadContent}
-        >
-          重试
-        </button>
-      </div>
-    );
+    return <RendererState type="error" message={error} onRetry={reload} />;
   }
 
   if (sheets.length === 0) {
-    return (
-      <div className="wk-file-preview-excel-renderer wk-file-preview-excel-renderer--empty">
-        <span>暂无内容</span>
-      </div>
-    );
+    return <RendererState type="empty" />;
   }
 
   return (

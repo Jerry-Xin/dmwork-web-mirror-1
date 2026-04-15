@@ -8,8 +8,8 @@ export interface FilePreviewInfo {
   size?: number;
 }
 
-/** 渲染器状态 */
-export interface RendererState {
+/** 渲染器状态数据（内部使用） */
+export interface RendererStateData {
   loading: boolean;
   error: string | null;
   content: unknown;

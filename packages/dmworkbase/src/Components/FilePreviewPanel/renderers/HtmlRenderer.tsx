@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { BaseRendererProps } from "../types";
 import { useFileContent } from "../hooks/useFileContent";
+import { RendererState } from "./RendererState";
 import "./HtmlRenderer.css";
 
 export interface HtmlRendererProps extends BaseRendererProps {}
@@ -42,32 +43,16 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({ file, onError }) => {
   };
 
   if (contentLoading) {
-    return (
-      <div className="wk-file-preview-html-renderer wk-file-preview-html-renderer--loading">
-        <div className="wk-file-preview-html-renderer__spinner" />
-        <span className="wk-file-preview-html-renderer__message">加载中...</span>
-      </div>
-    );
+    return <RendererState type="loading" />;
   }
 
   if (error) {
     onError?.(error);
-    return (
-      <div className="wk-file-preview-html-renderer wk-file-preview-html-renderer--error">
-        <span className="wk-file-preview-html-renderer__message">{error}</span>
-        <button className="wk-file-preview-html-renderer__retry" onClick={reload}>
-          重试
-        </button>
-      </div>
-    );
+    return <RendererState type="error" message={error} onRetry={reload} />;
   }
 
   if (!content || !blobUrl) {
-    return (
-      <div className="wk-file-preview-html-renderer wk-file-preview-html-renderer--empty">
-        <span className="wk-file-preview-html-renderer__message">暂无内容</span>
-      </div>
-    );
+    return <RendererState type="empty" />;
   }
 
   return (

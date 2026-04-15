@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, memo } from "react";
 import { Tooltip } from "@douyinfe/semi-ui";
 import "./TooltipCell.css";
 
@@ -9,8 +9,9 @@ interface TooltipCellProps {
 /**
  * 单元格 Tooltip 组件
  * 当内容被截断时，hover 显示完整内容
+ * 使用 React.memo 优化虚拟表格中的重复渲染
  */
-export function TooltipCell({ content }: TooltipCellProps) {
+export const TooltipCell = memo(function TooltipCell({ content }: TooltipCellProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
@@ -41,4 +42,4 @@ export function TooltipCell({ content }: TooltipCellProps) {
       {cellContent}
     </Tooltip>
   );
-}
+});

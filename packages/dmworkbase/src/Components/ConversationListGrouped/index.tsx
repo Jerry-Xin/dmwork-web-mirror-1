@@ -24,8 +24,13 @@ import {
 } from "@dnd-kit/sortable"
 
 
-// category_id 收窄为非 null（useCategoryList 已 filter 掉 null 项）
+// category_id 收窄为非 null
 export type ValidCategoryItem = CategoryItem & { category_id: string }
+
+/** 运行时类型守卫：确保 category_id 为非 null 字符串 */
+export function isValidCategoryItem(c: CategoryItem): c is ValidCategoryItem {
+    return c.category_id !== null
+}
 
 export interface ConversationListGroupedProps {
     conversations: ConversationWrap[]
@@ -123,9 +128,6 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 // useSortable 的 id，同样是分组目标
                 const targetCategoryId = overId.replace('cat::', '')
                 if (targetCategoryId) onMoveGroupToCategory(groupNo, targetCategoryId)
-            } else if (overId === 'drop::ungrouped' || overId === 'ungrouped') {
-                // 移出分组
-                onMoveGroupToCategory(groupNo, '')
             }
         }
     }
@@ -165,23 +167,6 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         }
     }
 
-    const categorizedGroupNos = new Set(
-        categories.flatMap(cat => (cat.groups || []).map(g => g.group_no))
-    )
-    const ungroupedGroupNos = groupConversations
-        .filter(c => !categorizedGroupNos.has(c.channel.channelID))
-        .map(c => c.channel.channelID)
-    const ungroupedConvs: ConversationWrap[] = []
-    for (const groupNo of ungroupedGroupNos) {
-        const groupConv = groupConvMap.get(groupNo)
-        if (groupConv) {
-            ungroupedConvs.push(groupConv)
-            // 将未分组群组的子区一并加入
-            const threads = threadConvsByParent.get(groupNo) || []
-            ungroupedConvs.push(...threads)
-        }
-    }
-
     // 构建右键菜单：移出分组（有分组时，一级直接点击）+ 移到分组（一级，展开二级子菜单）
     const buildExtraContextMenus = (conv: ConversationWrap | undefined): ContextMenusData[] => {
         if (!conv || conv.channel.channelType !== ChannelTypeGroup) return []
@@ -215,12 +200,17 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 title: '移出分组',
                 icon: "M2 9V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4 M12 3v5h5 M9 18l3-3 3 3 M12 21v-6",
                 onClick: () => {
+                    const defaultCategory = categories.find(c => c.is_default)
+                    if (!defaultCategory) {
+                        console.warn('[ConversationListGrouped] 找不到默认分组，无法移出分组')
+                        return
+                    }
                     Modal.confirm({
                         title: '移出分组',
                         content: `确定将此群聊从「${catName}」移出到未分组吗？`,
                         okText: '移出',
                         cancelText: '取消',
-                        onOk: () => onMoveGroupToCategory(groupNo, ''),
+                        onOk: () => onMoveGroupToCategory(groupNo, defaultCategory.category_id),
                     })
                 },
             }
@@ -266,7 +256,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         const unreadCount = catConvs.reduce((sum, c) => sum + (c.unread || 0), 0)
         return {
             id: cat.category_id,
-            name: cat.name,
+            name: cat.is_default ? '默认分组' : cat.name,
             groupCount,
             isEmpty: groupCount === 0,
             unreadCount,
@@ -278,23 +268,8 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         const idx = categories.findIndex(c => c.category_id === categoryId)
         const cat = categories[idx]
         if (!cat) return []
-        return [
-            {
-                title: "新建群聊",
-                icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
-                onClick: () => {
-                    onCreateGroupInCategory?.(categoryId)
-                },
-            },
-            { separator: true } as ContextMenusData,
-            {
-                title: "重命名",
-                icon: "M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z m-2-2 4 4",
-                onClick: () => {
-                    setRenamingCategoryId(categoryId)
-                    setActiveCategoryId(null)
-                },
-            },
+
+        const upDownMenus: ContextMenusData[] = [
             {
                 title: "上移",
                 icon: "M18 15 12 9 6 15",
@@ -315,16 +290,40 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     onSortCategories(newIds)
                 },
             },
+        ]
+
+        // 默认分组：仅允许拖拽排序，屏蔽「重命名」和「删除分组」
+        if (cat.is_default) {
+            return upDownMenus
+        }
+
+        return [
+            {
+                title: "新建群聊",
+                icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
+                onClick: () => {
+                    onCreateGroupInCategory?.(categoryId)
+                },
+            },
+            { separator: true } as ContextMenusData,
+            {
+                title: "重命名",
+                icon: "M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z m-2-2 4 4",
+                onClick: () => {
+                    setRenamingCategoryId(categoryId)
+                    setActiveCategoryId(null)
+                },
+            },
+            ...upDownMenus,
             { separator: true } as ContextMenusData,
             {
                 title: "删除分组",
                 icon: "M3 6h18 M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6 M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2",
                 danger: true,
                 onClick: () => {
-                    const cat = categories.find(c => c.category_id === categoryId)
                     Modal.confirm({
                         title: '删除分组',
-                        content: `确定删除「${cat?.name ?? '该分组'}」吗？分组内群聊将移至未分组。`,
+                        content: `确定删除「${cat.name}」吗？分组内群聊将移至未分组。`,
                         okType: 'danger',
                         okText: '删除',
                         cancelText: '取消',
@@ -355,14 +354,12 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     error={error}
                     onRetry={onRetry}
                     allConversations={ConvListWithMenu(conversations)}
-                    ungroupedConversations={ConvListWithMenu(ungroupedConvs)}
                     onCreateCategory={onOpenCreateCategory}
-                    hasNoGroups={categories.length === 0 && ungroupedConvs.length === 0}
+                    hasNoGroups={categories.length === 0}
                     onStartGroup={onStartGroup}
                     activeCategoryId={activeCategoryId}
                     renamingCategoryId={renamingCategoryId}
                     categorySectionDraggable
-                    ungroupedSectionDroppable
                     onRenameConfirm={async (id, newName) => {
                         await onRenameCategory(id, newName)
                         setRenamingCategoryId(null)

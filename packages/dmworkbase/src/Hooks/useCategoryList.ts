@@ -27,8 +27,9 @@ export function useCategoryList(): UseCategoryListResult {
         setError(null)
         try {
             const result = await CategoryService.list(spaceId)
-            // 过滤掉后端返回的「未分类」（category_id 为 null），由前端单独处理
-            setCategories(result.filter(c => c.category_id !== null))
+            // 后端 PR #1007 起，默认分组有真实 UUID，不再返回 category_id 为 null 的项。
+            // 保留所有项，类型守卫在 ConversationListGrouped 的 ValidCategoryItem 处处理。
+            setCategories(result)
         } catch (e: any) {
             setError(e?.message || "加载分组失败")
         } finally {

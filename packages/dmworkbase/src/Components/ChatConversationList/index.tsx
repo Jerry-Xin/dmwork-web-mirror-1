@@ -13,7 +13,7 @@ import { useCategoryList } from "../../Hooks/useCategoryList"
 import { ConversationWrap } from "../../Service/Model"
 import { ConvFilter } from "../ConversationList"
 import ConversationList from "../ConversationList"
-import ConversationListGrouped, { ValidCategoryItem } from "../ConversationListGrouped"
+import ConversationListGrouped, { ValidCategoryItem, isValidCategoryItem } from "../ConversationListGrouped"
 import CreateCategoryModal from "../CreateCategoryModal"
 import { ContextMenusData } from "../ContextMenus"
 
@@ -76,11 +76,14 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
             cat => (cat.groups || []).some(g => g.group_no === groupNo)
         )?.category_id
 
-        const items: ContextMenusData[] = categories.map(cat => ({
-            title: cat.name,
-            checked: currentCategoryId === cat.category_id,
-            onClick: () => moveGroupToCategory(groupNo, cat.category_id),
-        }))
+        // 过滤默认分组（is_default），不在「移到分组」子菜单里显示
+        const items: ContextMenusData[] = categories
+            .filter(cat => !cat.is_default && isValidCategoryItem(cat))
+            .map(cat => ({
+                title: cat.name,
+                checked: currentCategoryId === cat.category_id,
+                onClick: () => moveGroupToCategory(groupNo, cat.category_id),
+            }))
         items.push({ separator: true } as ContextMenusData)
         items.push({ title: "+ 新建分组", onClick: () => setCreateModalVisible(true) })
 
@@ -96,7 +99,7 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
                     onConversationClick={onConversationClick}
                     onClearMessages={onClearMessages}
                     onThreadOverflowClick={onThreadOverflowClick}
-                    categories={categories as ValidCategoryItem[]}
+                    categories={categories.filter(isValidCategoryItem)}
                     isLoading={isLoading}
                     error={error}
                     onRetry={reload}

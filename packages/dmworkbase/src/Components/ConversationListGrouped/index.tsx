@@ -128,14 +128,6 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                 // useSortable 的 id，同样是分组目标
                 const targetCategoryId = overId.replace('cat::', '')
                 if (targetCategoryId) onMoveGroupToCategory(groupNo, targetCategoryId)
-            } else if (overId === 'drop::ungrouped' || overId === 'ungrouped') {
-                // 移出分组：传默认分组的真实 UUID（后端 PR #1007 起不再接受空字符串）
-                const defaultCategory = categories.find(c => c.is_default)
-                if (!defaultCategory) {
-                    console.warn('[ConversationListGrouped] 找不到默认分组，无法移出分组')
-                    return
-                }
-                onMoveGroupToCategory(groupNo, defaultCategory.category_id)
             }
         }
     }
@@ -172,23 +164,6 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             const list = threadConvsByParent.get(parentGroupNo) || []
             list.push(conv)
             threadConvsByParent.set(parentGroupNo, list)
-        }
-    }
-
-    const categorizedGroupNos = new Set(
-        categories.flatMap(cat => (cat.groups || []).map(g => g.group_no))
-    )
-    const ungroupedGroupNos = groupConversations
-        .filter(c => !categorizedGroupNos.has(c.channel.channelID))
-        .map(c => c.channel.channelID)
-    const ungroupedConvs: ConversationWrap[] = []
-    for (const groupNo of ungroupedGroupNos) {
-        const groupConv = groupConvMap.get(groupNo)
-        if (groupConv) {
-            ungroupedConvs.push(groupConv)
-            // 将未分组群组的子区一并加入
-            const threads = threadConvsByParent.get(groupNo) || []
-            ungroupedConvs.push(...threads)
         }
     }
 

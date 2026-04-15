@@ -3,7 +3,7 @@ WORKDIR /app
 RUN npm install -g pnpm@10
 COPY . .
 RUN git config --global url."https://github.com/".insteadOf "git+ssh://git@github.com/" && git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
-RUN pnpm install --frozen-lockfile && pnpm build
+RUN pnpm install --frozen-lockfile && pnpm turbo run build --filter=@dmwork/web
 
 FROM nginx:latest
 COPY --from=builder /app/docker-entrypoint.sh /docker-entrypoint2.sh 

@@ -29,7 +29,11 @@ export default defineConfig({
     side_panel: {
       default_path: "entrypoints/sidepanel/index.html",
     },
-    permissions: ["notifications", "storage", "offscreen", "sidePanel"],
+    options_ui: {
+      page: "entrypoints/options/index.html",
+      open_in_tab: true,
+    },
+    permissions: ["notifications", "storage", "offscreen", "sidePanel", "contextMenus"],
     host_permissions: ["<all_urls>"],
     web_accessible_resources: [
       {

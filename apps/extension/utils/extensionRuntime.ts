@@ -1,10 +1,21 @@
 export const DEFAULT_API_URL =
-  import.meta.env.VITE_API_URL || "https://api.botgate.cn/v1/";
+  import.meta.env.VITE_API_URL || "https://im.deepminer.com.cn/api/v1/";
 
 export const EXTENSION_STORAGE_KEYS = {
   authState: "dmwork:extension:auth-state",
   pendingConversation: "dmwork:extension:pending-conversation",
+  preferences: "dmwork:extension:preferences",
 } as const;
+
+export interface ExtensionPreferences {
+  notificationsEnabled: boolean;
+  notificationsVisible: boolean;
+}
+
+export const DEFAULT_EXTENSION_PREFERENCES: ExtensionPreferences = {
+  notificationsEnabled: true,
+  notificationsVisible: true,
+};
 
 export const EXTENSION_MESSAGE_TYPE = {
   authChanged: "AUTH_CHANGED",
@@ -13,6 +24,8 @@ export const EXTENSION_MESSAGE_TYPE = {
   offscreenSyncResult: "OFFSCREEN_SYNC_RESULT",
   offscreenNewMessage: "OFFSCREEN_NEW_MESSAGE",
   openConversation: "OPEN_CONVERSATION",
+  sidepanelBadgeSync: "SIDEPANEL_BADGE_SYNC",
+  sidepanelState: "SIDEPANEL_STATE",
 } as const;
 
 export interface ExtensionAuthState {
@@ -62,13 +75,25 @@ export interface OpenConversationMessage {
   target: ConversationTarget;
 }
 
+export interface SidepanelBadgeSyncMessage {
+  type: typeof EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync;
+  badgeCount: number;
+}
+
+export interface SidepanelStateMessage {
+  type: typeof EXTENSION_MESSAGE_TYPE.sidepanelState;
+  active: boolean;
+}
+
 export type ExtensionRuntimeMessage =
   | AuthChangedMessage
   | AuthClearedMessage
   | OffscreenReadyMessage
   | OffscreenSyncResult
   | OffscreenNewMessageEvent
-  | OpenConversationMessage;
+  | OpenConversationMessage
+  | SidepanelBadgeSyncMessage
+  | SidepanelStateMessage;
 
 export interface ExtensionAuthResponse {
   auth: ExtensionAuthState | null;

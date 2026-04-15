@@ -1,5 +1,12 @@
-import type { ConversationTarget, ExtensionAuthState } from "./extensionRuntime";
-import { EXTENSION_STORAGE_KEYS } from "./extensionRuntime";
+import type {
+  ConversationTarget,
+  ExtensionAuthState,
+  ExtensionPreferences,
+} from "./extensionRuntime";
+import {
+  DEFAULT_EXTENSION_PREFERENCES,
+  EXTENSION_STORAGE_KEYS,
+} from "./extensionRuntime";
 
 export async function getExtensionAuthState(): Promise<ExtensionAuthState | null> {
   const result = await browser.storage.local.get(EXTENSION_STORAGE_KEYS.authState);
@@ -36,4 +43,24 @@ export async function setPendingConversation(
 
 export async function clearPendingConversation(): Promise<void> {
   await browser.storage.local.remove(EXTENSION_STORAGE_KEYS.pendingConversation);
+}
+
+export async function getExtensionPreferences(): Promise<ExtensionPreferences> {
+  const result = await browser.storage.local.get(EXTENSION_STORAGE_KEYS.preferences);
+  const stored = result[EXTENSION_STORAGE_KEYS.preferences] as
+    | Partial<ExtensionPreferences>
+    | undefined;
+
+  return {
+    ...DEFAULT_EXTENSION_PREFERENCES,
+    ...(stored ?? {}),
+  };
+}
+
+export async function setExtensionPreferences(
+  preferences: ExtensionPreferences,
+): Promise<void> {
+  await browser.storage.local.set({
+    [EXTENSION_STORAGE_KEYS.preferences]: preferences,
+  });
 }

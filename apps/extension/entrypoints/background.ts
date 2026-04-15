@@ -1,5 +1,6 @@
 import {
   EXTENSION_MESSAGE_TYPE,
+  EXTENSION_STORAGE_KEYS,
   parseNotificationId,
   type ExtensionAuthResponse,
   type ExtensionRuntimeMessage,
@@ -7,12 +8,28 @@ import {
 import {
   clearPendingConversation,
   getExtensionAuthState,
+  getExtensionPreferences,
   setPendingConversation,
 } from "../utils/extensionStorage";
 
 const BADGE_BG_COLOR = "#d24747";
 const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
+const SETTINGS_CONTEXT_MENU_ID = "open-extension-settings";
 const chromeApi = (globalThis as { chrome?: any }).chrome;
+const SIDEPANEL_ACTIVE_TTL_MS = 5000;
+let lastSidepanelActiveAt = 0;
+
+function markSidepanelActive(): void {
+  lastSidepanelActiveAt = Date.now();
+}
+
+function clearSidepanelActive(): void {
+  lastSidepanelActiveAt = 0;
+}
+
+function isSidepanelActive(): boolean {
+  return Date.now() - lastSidepanelActiveAt < SIDEPANEL_ACTIVE_TTL_MS;
+}
 
 async function getStoredAuthResponse(): Promise<ExtensionAuthResponse> {
   const auth = await getExtensionAuthState();
@@ -51,9 +68,12 @@ async function ensureOffscreenDocument(): Promise<void> {
   try {
     await chromeApi.offscreen.createDocument({
       url: OFFSCREEN_DOCUMENT_PATH,
-      reasons: [chromeApi.offscreen.Reason.WORKERS],
+      reasons: [
+        chromeApi.offscreen.Reason.WORKERS,
+        chromeApi.offscreen.Reason.AUDIO_PLAYBACK,
+      ],
       justification:
-        "Keep unread badge and message notifications in sync when the side panel is closed.",
+        "Keep unread badge and message notifications in sync, and play extension sounds when the side panel is closed.",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -69,17 +89,68 @@ async function updateBadge(badgeCount: number): Promise<void> {
   await browser.action.setBadgeText({ text });
 }
 
-async function openSidePanel(): Promise<void> {
+async function clearAllNotifications(): Promise<void> {
+  const items = await browser.notifications.getAll();
+  Object.keys(items).forEach((notificationId) => {
+    void browser.notifications.clear(notificationId);
+  });
+}
+
+async function openOptionsPage(): Promise<void> {
+  if (browser.runtime.openOptionsPage) {
+    await browser.runtime.openOptionsPage();
+  }
+}
+
+async function focusChromeWindow(): Promise<number | undefined> {
+  const currentWindow = await browser.windows.getLastFocused();
+  if (!currentWindow.id) {
+    return undefined;
+  }
+
+  await browser.windows.update(currentWindow.id, { focused: true });
+  return currentWindow.id;
+}
+
+async function applyPreferencesToUi(): Promise<void> {
+  const preferences = await getExtensionPreferences();
+
+  if (!preferences.notificationsEnabled) {
+    await updateBadge(0);
+    await clearAllNotifications();
+    return;
+  }
+
+  if (!preferences.notificationsVisible) {
+    await clearAllNotifications();
+  }
+}
+
+function registerSettingsContextMenu(): void {
+  if (!chromeApi?.contextMenus?.create) {
+    return;
+  }
+
+  chromeApi.contextMenus.removeAll(() => {
+    chromeApi.contextMenus.create({
+      id: SETTINGS_CONTEXT_MENU_ID,
+      title: "打开配置",
+      contexts: ["action"],
+    });
+  });
+}
+
+async function openSidePanel(windowId?: number): Promise<void> {
   if (!chromeApi?.sidePanel?.open) {
     return;
   }
 
-  const currentWindow = await browser.windows.getLastFocused();
-  if (!currentWindow.id) {
+  const targetWindowId = windowId ?? (await focusChromeWindow());
+  if (!targetWindowId) {
     return;
   }
 
-  await chromeApi.sidePanel.open({ windowId: currentWindow.id });
+  await chromeApi.sidePanel.open({ windowId: targetWindowId });
 }
 
 async function dispatchConversationOpen(notificationId: string): Promise<void> {
@@ -89,7 +160,11 @@ async function dispatchConversationOpen(notificationId: string): Promise<void> {
   }
 
   await setPendingConversation(target);
-  await openSidePanel();
+  await focusChromeWindow();
+
+  if (isSidepanelActive()) {
+    await openSidePanel();
+  }
 
   try {
     await browser.runtime.sendMessage({
@@ -118,26 +193,52 @@ async function handleRuntimeMessage(
   if (message.type === EXTENSION_MESSAGE_TYPE.authCleared) {
     void clearPendingConversation();
     void updateBadge(0);
-    void browser.notifications.getAll().then((items) => {
-      Object.keys(items).forEach((notificationId) => {
-        void browser.notifications.clear(notificationId);
-      });
-    });
+    void clearAllNotifications();
     void syncAuthStateToOffscreen();
     return;
   }
 
   if (message.type === EXTENSION_MESSAGE_TYPE.offscreenSyncResult) {
-    void updateBadge(message.hasAuth ? message.badgeCount : 0);
+    if (isSidepanelActive()) {
+      return;
+    }
+
+    void getExtensionPreferences().then((preferences) => {
+      const shouldShowBadge = preferences.notificationsEnabled && message.hasAuth;
+      void updateBadge(shouldShowBadge ? message.badgeCount : 0);
+    });
+    return;
+  }
+
+  if (message.type === EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync) {
+    markSidepanelActive();
+    void getExtensionPreferences().then((preferences) => {
+      void updateBadge(preferences.notificationsEnabled ? message.badgeCount : 0);
+    });
+    return;
+  }
+
+  if (message.type === EXTENSION_MESSAGE_TYPE.sidepanelState) {
+    if (message.active) {
+      markSidepanelActive();
+    } else {
+      clearSidepanelActive();
+    }
     return;
   }
 
   if (message.type === EXTENSION_MESSAGE_TYPE.offscreenNewMessage) {
-    void browser.notifications.create(message.notificationId, {
-      type: "basic",
-      title: message.title,
-      message: message.body,
-      iconUrl: browser.runtime.getURL("/logo.png"),
+    void getExtensionPreferences().then((preferences) => {
+      if (!preferences.notificationsEnabled || !preferences.notificationsVisible) {
+        return;
+      }
+
+      void browser.notifications.create(message.notificationId, {
+        type: "basic",
+        title: message.title,
+        message: message.body,
+        iconUrl: browser.runtime.getURL("/logo.png"),
+      });
     });
   }
 }
@@ -154,10 +255,26 @@ export default defineBackground(async () => {
     void dispatchConversationOpen(notificationId);
   });
 
+  chromeApi?.contextMenus?.onClicked?.addListener((info: { menuItemId?: string }) => {
+    if (info.menuItemId === SETTINGS_CONTEXT_MENU_ID) {
+      void openOptionsPage();
+    }
+  });
+
+  browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local" || !changes[EXTENSION_STORAGE_KEYS.preferences]) {
+      return;
+    }
+
+    void applyPreferencesToUi();
+  });
+
   browser.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
     .catch((error) => console.error(error));
 
+  registerSettingsContextMenu();
   await ensureOffscreenDocument();
   await updateBadge(0);
+  await applyPreferencesToUi();
 });

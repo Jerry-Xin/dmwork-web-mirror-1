@@ -3,6 +3,7 @@ type ExtensionApiLike = {
   storage?: {
     local?: any;
   };
+  contextMenus?: any;
   notifications?: any;
   action?: any;
   windows?: any;

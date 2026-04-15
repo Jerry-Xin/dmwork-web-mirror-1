@@ -2,12 +2,17 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import '@dmwork/base/src/theme/tokens.css';
 import './style.css';
-import { BaseModule, WKApp } from '@dmwork/base';
+import {
+  BaseModule,
+  WKApp,
+  shouldSkipChannelForSpace,
+  shouldSkipPersonConversationForSpace,
+} from '@dmwork/base';
 import StorageService from '@dmwork/base/src/Service/StorageService';
 import { LoginModule } from '@dmwork/login';
 import { DataSourceModule } from '@dmwork/datasource';
 import { ContactsModule } from '@dmwork/contacts';
-import { Channel } from 'wukongimjssdk';
+import { Channel, ChannelTypePerson, WKSDK } from 'wukongimjssdk';
 import App from '../../../web/src/App';
 import {
   DEFAULT_API_URL,
@@ -67,6 +72,10 @@ async function syncExtensionAuthState(): Promise<void> {
   await browser.runtime.sendMessage({
     type: EXTENSION_MESSAGE_TYPE.authCleared,
   } satisfies ExtensionRuntimeMessage).catch(() => {});
+  await browser.runtime.sendMessage({
+    type: EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync,
+    badgeCount: 0,
+  } satisfies ExtensionRuntimeMessage).catch(() => {});
 }
 
 async function openConversation(target: ConversationTarget): Promise<boolean> {
@@ -118,6 +127,7 @@ window.setInterval(() => {
   }
   lastSyncedSpaceId = currentSpaceId;
   void syncExtensionAuthState();
+  syncSidepanelBadge();
 }, 1000);
 
 const originalLoginSave = WKApp.loginInfo.save.bind(WKApp.loginInfo);
@@ -135,6 +145,12 @@ WKApp.shared.logout = () => {
         type: EXTENSION_MESSAGE_TYPE.authCleared,
       } satisfies ExtensionRuntimeMessage).catch(() => {}),
     )
+    .then(() =>
+      browser.runtime.sendMessage({
+        type: EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync,
+        badgeCount: 0,
+      } satisfies ExtensionRuntimeMessage).catch(() => {}),
+    )
     .finally(() => {
       originalLogout();
     });
@@ -148,6 +164,69 @@ WKApp.shared.registerModule(new ContactsModule());
 
 WKApp.shared.startup();
 void syncExtensionAuthState();
+
+function getUnreadBadgeCount(): number {
+  let badgeCount = 0;
+
+  for (const conversation of WKSDK.shared().conversationManager.conversations) {
+    const channelInfo = WKSDK.shared().channelManager.getChannelInfo(conversation.channel);
+    if (channelInfo?.mute) {
+      continue;
+    }
+
+    if (shouldSkipChannelForSpace(conversation.channel)) {
+      continue;
+    }
+
+    if (shouldSkipPersonConversationForSpace(conversation)) {
+      continue;
+    }
+
+    const currentSpaceId = WKApp.shared.currentSpaceId;
+    if (
+      currentSpaceId &&
+      conversation.channel.channelType === ChannelTypePerson &&
+      conversation.extra?.spaceUnread !== undefined
+    ) {
+      badgeCount += Math.max(0, Number(conversation.extra.spaceUnread || 0));
+      continue;
+    }
+
+    badgeCount += Math.max(0, Number(conversation.unread || 0));
+  }
+
+  return badgeCount;
+}
+
+function syncSidepanelBadge(): void {
+  void browser.runtime.sendMessage({
+    type: EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync,
+    badgeCount: getUnreadBadgeCount(),
+  } satisfies ExtensionRuntimeMessage).catch(() => {});
+}
+
+function syncSidepanelState(active: boolean): void {
+  void browser.runtime.sendMessage({
+    type: EXTENSION_MESSAGE_TYPE.sidepanelState,
+    active,
+  } satisfies ExtensionRuntimeMessage).catch(() => {});
+}
+
+WKSDK.shared().conversationManager.addConversationListener(() => {
+  syncSidepanelBadge();
+});
+
+WKSDK.shared().channelManager.addListener(() => {
+  syncSidepanelBadge();
+});
+
+window.addEventListener('pagehide', () => {
+  syncSidepanelState(false);
+});
+
+window.addEventListener('beforeunload', () => {
+  syncSidepanelState(false);
+});
 
 // 渲染
 const container = document.getElementById('root')!;
@@ -169,3 +248,5 @@ browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
 
 void consumePendingConversation();
 ensurePendingConversationRetry();
+syncSidepanelState(true);
+syncSidepanelBadge();

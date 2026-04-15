@@ -112,7 +112,7 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
                     }}
                     onCreateGroupInCategory={(categoryId: string) => {
                         WKApp.endpoints.organizationalLayer(
-                            { channelID: "", channelType: 0 } as any,
+                            null,
                             { defaultCategoryId: categoryId, onSuccess: reload }
                         )
                     }}

@@ -565,11 +565,7 @@ export default class BaseModule implements IModule {
         title: "发起群聊",
         icon: isDark ? new URL("./assets/popmenus_startchat_dark.png", import.meta.url).href : new URL("./assets/popmenus_startchat.png", import.meta.url).href,
         onClick: () => {
-          const channel: any = {
-            channelID: "",
-            channelType: 0,
-          };
-          WKApp.endpoints.organizationalLayer(channel);
+          WKApp.endpoints.organizationalLayer(null);
         },
       };
     });

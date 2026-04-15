@@ -252,7 +252,7 @@ export interface IChannelDataSource {
      *  创建频道
      * @param uids 
      */
-    createChannel(uids: string[]): Promise<any>
+    createChannel(uids: string[], options?: { categoryId?: string }): Promise<any>
 
     /**
      * 更新订阅者的属性

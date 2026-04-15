@@ -110,6 +110,12 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
                         const groupMenu = menus.find((m: any) => m.key === 'start-group')
                         if (groupMenu?.onClick) groupMenu.onClick()
                     }}
+                    onCreateGroupInCategory={(categoryId: string) => {
+                        WKApp.endpoints.organizationalLayer(
+                            null,
+                            { defaultCategoryId: categoryId, onSuccess: reload }
+                        )
+                    }}
                 />
             ) : (
                 <ConversationList

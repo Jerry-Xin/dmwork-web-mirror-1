@@ -32,6 +32,8 @@ interface IPorpsOrganizationalGroupNew {
   render?: JSX.Element;
   remove?: () => void;
   autoShow?: boolean;
+  defaultCategoryId?: string;
+  onSuccess?: () => void;
 }
 
 interface ISateOrganizationalGroupNew {
@@ -460,9 +462,11 @@ export class OrganizationalGroupNew extends Component<
     if (this.props.action === OrganizationalGroupNewAction.createGroup) {
 
       try {
-        await WKApp.dataSource.channelDataSource.createChannel([
-          ...getOptPersonnelData,
-        ])
+        await WKApp.dataSource.channelDataSource.createChannel(
+          [...getOptPersonnelData],
+          { categoryId: this.props.defaultCategoryId }
+        )
+        this.props.onSuccess?.()
       } catch (error: any) {
         Toast.error(error.msg);
         return

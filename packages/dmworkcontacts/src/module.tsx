@@ -103,7 +103,9 @@ export default class ContactsModule implements IModule {
     WKApp.endpoints.registerOrganizationalLayer(
       "contacts.organizational.layer",
       (param) => {
-        const channel = param.channel as any;
+        const channel = (param.channel ?? { channelID: "", channelType: 0 }) as any;
+        const defaultCategoryId = param.defaultCategoryId as string | undefined;
+        const onSuccess = param.onSuccess as (() => void) | undefined;
         const div = document.createElement("div");
         document.body.appendChild(div);
 
@@ -118,6 +120,8 @@ export default class ContactsModule implements IModule {
             remove={remove}
             action={OrganizationalGroupNewAction.createGroup}
             autoShow={true}
+            defaultCategoryId={defaultCategoryId}
+            onSuccess={onSuccess}
           />,
           div
         );

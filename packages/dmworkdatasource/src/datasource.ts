@@ -26,11 +26,14 @@ export class ChannelDataSource implements IChannelDataSource {
         }
         return WKApp.apiClient.put(`groups/${channel.channelID}/members/${subscriberUID}`, attr)
     }
-    createChannel(uids: string[]): Promise<any> {
+    createChannel(uids: string[], options?: { categoryId?: string }): Promise<any> {
         const body: any = { members: uids }
         const spaceId = WKApp.shared.currentSpaceId
         if (spaceId) {
             body.space_id = spaceId
+        }
+        if (options?.categoryId) {
+            body.category_id = options.categoryId
         }
         return WKApp.apiClient.post(`group/create`, body);
     }

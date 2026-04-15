@@ -281,7 +281,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         const unreadCount = catConvs.reduce((sum, c) => sum + (c.unread || 0), 0)
         return {
             id: cat.category_id,
-            name: cat.name,
+            name: cat.is_default ? '默认分组' : cat.name,
             groupCount,
             isEmpty: groupCount === 0,
             unreadCount,
@@ -379,14 +379,12 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     error={error}
                     onRetry={onRetry}
                     allConversations={ConvListWithMenu(conversations)}
-                    ungroupedConversations={ConvListWithMenu(ungroupedConvs)}
                     onCreateCategory={onOpenCreateCategory}
-                    hasNoGroups={categories.length === 0 && ungroupedConvs.length === 0}
+                    hasNoGroups={categories.length === 0}
                     onStartGroup={onStartGroup}
                     activeCategoryId={activeCategoryId}
                     renamingCategoryId={renamingCategoryId}
                     categorySectionDraggable
-                    ungroupedSectionDroppable
                     onRenameConfirm={async (id, newName) => {
                         await onRenameCategory(id, newName)
                         setRenamingCategoryId(null)

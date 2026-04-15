@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import ViewToggle, { ViewMode } from "../ViewToggle"
 import CategorySection from "../CategorySection"
-import UngroupedSection from "../UngroupedSection"
 import CategoryEmptyState from "../CategoryEmptyState"
 import "./index.css"
 
@@ -18,7 +17,6 @@ export interface ConversationListWithCategoryProps {
     viewMode?: ViewMode
     onViewModeChange?: (mode: ViewMode) => void
     categories?: CategoryData[]
-    ungroupedConversations?: React.ReactNode  // 未分组群聊，为空时不渲染 UngroupedSection
     isLoading?: boolean
     error?: string | null
     onRetry?: () => void
@@ -30,8 +28,6 @@ export interface ConversationListWithCategoryProps {
     onCategoryContextMenu?: (categoryId: string, e: React.MouseEvent) => void
     /** CategorySection 是否启用拖拽（useSortable + useDroppable） */
     categorySectionDraggable?: boolean
-    /** UngroupedSection 是否启用 droppable */
-    ungroupedSectionDroppable?: boolean
     activeCategoryId?: string | null       // 右键菜单打开时的高亮分组
     renamingCategoryId?: string | null     // 行内重命名中的分组
     onRenameConfirm?: (id: string, newName: string) => void
@@ -42,7 +38,6 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
     viewMode,
     onViewModeChange,
     categories = [],
-    ungroupedConversations,
     isLoading,
     error,
     onRetry,
@@ -56,7 +51,6 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
     onRenameConfirm,
     onRenameCancel,
     categorySectionDraggable,
-    ungroupedSectionDroppable,
 }) => {
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set())
 
@@ -130,10 +124,7 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
                         {cat.conversations}
                     </CategorySection>
                 ))}
-                {/* 未分组区域：始终渲染 */}
-                <UngroupedSection droppable={ungroupedSectionDroppable}>
-                    {ungroupedConversations}
-                </UngroupedSection>
+                {/* UngroupedSection 已废弃：默认分组现在由后端返回的 is_default category 负责渲染 */}
             </>
         )
     }

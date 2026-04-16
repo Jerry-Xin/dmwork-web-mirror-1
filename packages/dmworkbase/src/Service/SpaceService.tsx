@@ -165,8 +165,8 @@ export class SpaceService {
         return resp || []
     }
 
-    async createSpace(name: string, description: string): Promise<SpaceCreateResp> {
-        return WKApp.apiClient.post("space/create", { name, description })
+    async createSpace(name: string, description: string, joinMode: number = 0): Promise<SpaceCreateResp> {
+        return WKApp.apiClient.post("space/create", { name, description, join_mode: joinMode })
     }
 
     async getSpace(spaceId: string): Promise<Space> {

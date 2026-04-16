@@ -1,13 +1,13 @@
 import React, { Component } from "react"
-import { Channel, ChannelTypePerson, WKSDK } from "wukongimjssdk"
+import { Channel, ChannelTypePerson, ChannelTypeGroup, WKSDK } from "wukongimjssdk"
 import { Modal, Toast, Spin, Popover } from "@douyinfe/semi-ui"
-import { Thread, ThreadStatus } from "../../Service/Thread"
+import { Thread, ThreadStatus, buildThreadChannelId } from "../../Service/Thread"
 import { ThreadPanelVM, ThreadPanelState } from "./vm"
 import { X, Plus, ChevronDown, ArrowLeft, MoreHorizontal } from "lucide-react"
 import ThreadIcon from "../Icons/ThreadIcon"
 import classNames from "classnames"
 import { Conversation } from "../Conversation"
-import { ChannelTypeCommunityTopic } from "../../Service/Const"
+import { ChannelTypeCommunityTopic, GroupRole } from "../../Service/Const"
 import { ErrorBoundary } from "../ErrorBoundary"
 import WKApp from "../../App"
 import { formatRelativeTime } from "../../Utils/time"
@@ -134,6 +134,15 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     }
   }
 
+  private canEditThread(thread: Thread): boolean {
+    const isCreator = thread.creator_uid === WKApp.loginInfo.uid
+    const groupChannel = new Channel(this.props.groupNo, ChannelTypeGroup)
+    const subscribers = WKSDK.shared().channelManager.getSubscribes(groupChannel)
+    const me = subscribers?.find(s => s.uid === WKApp.loginInfo.uid)
+    const isManagerOrOwner = me?.role === GroupRole.owner || me?.role === GroupRole.manager
+    return isCreator || isManagerOrOwner
+  }
+
   private handleEditThread = () => {
     const { vmState } = this.state
     const thread = vmState.thread
@@ -181,13 +190,22 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
             { name: newName.trim() }
           )
           Toast.success("修改成功")
+          // 刷新左侧列表
           this.loadThreads()
+          // 更新详情页标题
           this.setState({
             vmState: {
               ...this.state.vmState,
               thread: { ...thread, name: newName.trim() },
             },
           })
+          // 清除 SDK 缓存，刷新 Chat header 展示的子区名称
+          const threadChannel = new Channel(
+            buildThreadChannelId(this.props.groupNo, thread.short_id),
+            ChannelTypeCommunityTopic
+          )
+          WKSDK.shared().channelManager.deleteChannelInfo(threadChannel)
+          WKSDK.shared().channelManager.fetchChannelInfo(threadChannel)
         } catch {
           Toast.error("保存失败，请重试")
         }
@@ -331,9 +349,11 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
                       在完整视图打开
                     </div>
                   )}
-                  <div className="wk-thread-more-menu-item" onClick={this.handleEditThread}>
-                    编辑子区名称
-                  </div>
+                  {vmState.thread && this.canEditThread(vmState.thread) && (
+                    <div className="wk-thread-more-menu-item" onClick={this.handleEditThread}>
+                      编辑子区名称
+                    </div>
+                  )}
                   <div className="wk-thread-more-menu-item wk-thread-more-menu-item-danger" onClick={this.handleDeleteThread}>
                     删除子区
                   </div>

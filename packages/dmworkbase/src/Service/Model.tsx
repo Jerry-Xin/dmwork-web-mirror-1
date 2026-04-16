@@ -550,7 +550,7 @@ export class MessageWrap {
             if (part.type === PartType.text) {
                 let text = part.text;
                 while (text.length > 0) {
-                    const matchResult = text.match(/((http|ftp|https):\/\/|www.)[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?/)
+                    const matchResult = text.match(/((http|ftp|https):\/\/|www.)[\w\-_]+(\.[\w\-_]+)+([\w\-\.,?^=%&amp;:/~\+#]*[\w\-?^=%&amp;/~\+#])?/)
                     if (!matchResult) {
                         newParts.push(new Part(PartType.text, text))
                         break

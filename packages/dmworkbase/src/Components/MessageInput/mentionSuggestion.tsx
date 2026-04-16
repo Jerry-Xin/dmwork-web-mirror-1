@@ -28,7 +28,10 @@ function findSuggestionMatchAnyPrefix(config: any) {
   const to = from + match[0].length
 
   if (from < $position.pos && to >= $position.pos) {
-    return { range: { from, to }, query: match[0].slice(char.length), text: match[0] }
+    const query = match[0].slice(char.length)
+    // @ 后面纯数字（如 @123）不触发 mention suggestion，避免 URL 后的数字阻断 Enter 发送
+    if (/^\d+$/.test(query)) return null
+    return { range: { from, to }, query, text: match[0] }
   }
 
   return null

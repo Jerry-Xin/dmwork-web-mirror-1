@@ -86,11 +86,11 @@
     border: 1px solid var(--wk-border-subtle);
 }
 
-/* 发送气泡内行内代码：颜色反转处理 */
+/* 发送气泡内行内代码：与接收气泡保持一致的语义变量 */
 .wk-markdown-send code:not(pre code) {
-    background: rgba(255, 255, 255, 0.18);
-    color: rgba(255, 255, 255, 0.95);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--semi-color-fill-0);
+    color: var(--wk-text-accent);
+    border-color: var(--wk-border-subtle);
 }
 
 /* ── 代码块 ── */

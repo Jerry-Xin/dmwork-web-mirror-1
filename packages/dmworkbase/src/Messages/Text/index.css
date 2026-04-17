@@ -57,8 +57,6 @@ body[theme-mode=dark] .wk-message-text-recv {
     cursor: pointer;
 }
 
-
-
 .wk-message-text-reply-author {
     display: flex;
     align-items: center;

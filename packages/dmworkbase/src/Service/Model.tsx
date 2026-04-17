@@ -1,5 +1,5 @@
 import { Setting, StreamFlag } from "wukongimjssdk"
-import { Channel, ChannelInfo, ChannelTypePerson, Conversation, WKSDK, Message, MessageContentType, MessageStatus, MessageText } from "wukongimjssdk"
+import { Channel, ChannelInfo, ChannelTypePerson, Conversation, WKSDK, Message, MessageContentType, MessageStatus, MessageText, ReminderType } from "wukongimjssdk"
 import WKApp from "../App"
 import { MessageContentTypeConst, MessageReasonCode, OrderFactor } from "./Const"
 import { DefaultEmojiService } from "./EmojiService"
@@ -106,7 +106,11 @@ export class ConversationWrap {
     }
 
     public get isMentionMe(): boolean {
-        return this.conversation.isMentionMe ?? false
+        // 优先用 reminders（覆盖历史未读 @ 场景，含子区）
+        // 兜底用 SDK 的 isMentionMe（基于 lastMessage.mention）
+        const hasReminderMention = (this.conversation.reminders?.length ?? 0) > 0
+            && this.conversation.reminders!.some(r => r.reminderType === ReminderType.ReminderTypeMentionMe && !r.done)
+        return hasReminderMention || (this.conversation.isMentionMe ?? false)
     }
 
     public set isMentionMe(isMentionMe: boolean | undefined) {

@@ -215,7 +215,7 @@ export default class DataSourceModule implements IModule {
             const conversations = WKSDK.shared().conversationManager.conversations
             if (conversations && conversations.length > 0) {
                 for (const conversation of conversations) {
-                    if (conversation.channel.channelType === ChannelTypeGroup) {
+                    if (conversation.channel.channelType === ChannelTypeGroup || conversation.channel.channelType === ChannelTypeCommunityTopic) {
                         channelIDs.push(conversation.channel.channelID)
                     }
                 }

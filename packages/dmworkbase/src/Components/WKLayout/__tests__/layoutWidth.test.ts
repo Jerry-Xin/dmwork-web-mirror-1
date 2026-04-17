@@ -16,18 +16,18 @@ import {
 describe('layoutWidth', () => {
     describe('getMaxLeftWidth', () => {
         it('returns 45% of container when that is below SPLITTER_MAX_WIDTH', () => {
-            // 800 * 0.45 = 360
-            expect(getMaxLeftWidth(800)).toBe(360)
+            // 700 * 0.45 = 315
+            expect(getMaxLeftWidth(700)).toBe(315)
         })
 
         it('caps at SPLITTER_MAX_WIDTH for wide containers', () => {
-            // 1400 * 0.45 = 630 > 480
+            // 1400 * 0.45 = 630 > 360
             expect(getMaxLeftWidth(1400)).toBe(SPLITTER_MAX_WIDTH)
         })
 
         it('never goes below SPLITTER_MIN_WIDTH', () => {
-            // 400 * 0.45 = 180 < 240
-            expect(getMaxLeftWidth(400)).toBe(SPLITTER_MIN_WIDTH)
+            // 300 * 0.45 = 135 < 190
+            expect(getMaxLeftWidth(300)).toBe(SPLITTER_MIN_WIDTH)
         })
     })
 
@@ -37,8 +37,8 @@ describe('layoutWidth', () => {
         })
 
         it('clamps above dynamic maximum', () => {
-            // container=800 → max = 360
-            expect(clampWidth(500, 800)).toBe(360)
+            // container=700 → max = 315
+            expect(clampWidth(500, 700)).toBe(315)
         })
 
         it('passes through valid values', () => {
@@ -56,8 +56,8 @@ describe('layoutWidth', () => {
         })
 
         it('restores a previously persisted value', () => {
-            persistWidth(350)
-            expect(restoreWidth()).toBe(350)
+            persistWidth(300)
+            expect(restoreWidth()).toBe(300)
         })
 
         it('returns default for out-of-range stored values', () => {

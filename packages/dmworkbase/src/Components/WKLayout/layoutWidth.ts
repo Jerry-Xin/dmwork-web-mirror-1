@@ -5,8 +5,8 @@
  * without mounting the full WKLayout component.
  */
 
-export const SPLITTER_MIN_WIDTH = 240
-export const SPLITTER_MAX_WIDTH = 480
+export const SPLITTER_MIN_WIDTH = 190
+export const SPLITTER_MAX_WIDTH = 360
 export const SPLITTER_DEFAULT_WIDTH = 300
 export const SPLITTER_STORAGE_KEY = 'wk-layout-left-width'
 

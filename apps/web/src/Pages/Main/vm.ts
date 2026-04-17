@@ -47,6 +47,8 @@ export default class MainVM extends ProviderListener {
   showAppUpdateOperation: boolean;
   appUpdateProgress: number;
 
+  private static VERSION_READ_KEY = "dmwork_last_read_version";
+
   private ipcListeners: { event: string; handler: (...args: any[]) => void }[] = [];
 
   didMount(): void {
@@ -77,7 +79,8 @@ export default class MainVM extends ProviderListener {
             appVersion: version,
             updateDesc: data.update_desc,
           };
-          if (version !== WKApp.config.appVersion) {
+          const lastReadVersion = localStorage.getItem(MainVM.VERSION_READ_KEY);
+          if (version !== WKApp.config.appVersion && version !== lastReadVersion) {
             this.hasNewVersion = true;
           } else {
             this.hasNewVersion = false;
@@ -141,6 +144,14 @@ export default class MainVM extends ProviderListener {
     }
     this.ipcListeners = [];
   }
+  // 标记当前新版本已读，清除红点
+  markVersionRead() {
+    if (this.lastVersionInfo?.appVersion) {
+      localStorage.setItem(MainVM.VERSION_READ_KEY, this.lastVersionInfo.appVersion);
+    }
+    this.hasNewVersion = false;
+  }
+
   // 安装更新
   installUpdate() {
     (window as any).ipc.send("install-update");

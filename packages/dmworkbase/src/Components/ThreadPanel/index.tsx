@@ -78,6 +78,8 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     if (this.props.thread) {
       this.initVM(this.props.thread.short_id)
     }
+    // Set CSS variable on mount so chat area calc has the correct width
+    this.syncCssVariable(this.state.panelWidth)
   }
 
   componentWillUnmount() {
@@ -110,11 +112,8 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     const panel = this.panelRef.current
     if (panel) {
       panel.style.width = newWidth + 'px'
-    }
-    // Update CSS variable on parent for chat area calc
-    const parentEl = this.panelRef.current?.parentElement
-    if (parentEl) {
-      parentEl.style.setProperty('--wk-width-thread-panel', newWidth + 'px')
+      // Update CSS variable on parent for chat area calc
+      panel.parentElement?.style.setProperty('--wk-width-thread-panel', newWidth + 'px')
     }
   }
 
@@ -131,6 +130,13 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     this.lastPanelWidth = THREAD_DEFAULT_WIDTH
     this.setState({ panelWidth: THREAD_DEFAULT_WIDTH })
     persistThreadWidth(THREAD_DEFAULT_WIDTH)
+    this.syncCssVariable(THREAD_DEFAULT_WIDTH)
+  }
+
+  /** Keep --wk-width-thread-panel in sync so chat area calc stays correct */
+  private syncCssVariable(width: number) {
+    const panel = this.panelRef.current
+    panel?.parentElement?.style.setProperty('--wk-width-thread-panel', width + 'px')
   }
 
   componentDidUpdate(prevProps: ThreadPanelProps) {

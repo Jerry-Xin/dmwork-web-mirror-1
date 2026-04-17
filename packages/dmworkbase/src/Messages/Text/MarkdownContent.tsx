@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import "highlight.js/styles/github-dark.css";
@@ -54,7 +55,7 @@ const rehypePlugins: any[] = [
     [rehypeSanitize, sanitizeSchema],
 ];
 
-const remarkPlugins: any[] = [remarkGfm];
+const remarkPlugins: any[] = [remarkGfm, remarkBreaks];
 
 /**
  * 预处理 Markdown 内容：

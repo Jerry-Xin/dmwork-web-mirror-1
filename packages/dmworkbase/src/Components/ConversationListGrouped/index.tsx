@@ -381,6 +381,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         >
             <SortableContext items={categoryIds} strategy={verticalListSortingStrategy}>
                 <ConversationListWithCategory
+                    key={isLoading ? "loading" : categories.map(c => c.category_id).join(",")}
                     categories={categoriesForView}
                     isLoading={isLoading}
                     error={error}

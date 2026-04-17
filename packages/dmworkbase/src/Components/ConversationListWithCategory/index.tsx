@@ -1,7 +1,8 @@
-import React, { useState } from "react"
+import React from "react"
 import ViewToggle, { ViewMode } from "../ViewToggle"
 import CategorySection from "../CategorySection"
 import CategoryEmptyState from "../CategoryEmptyState"
+import { useCategoryCollapse } from "../../Hooks/useCategoryCollapse"
 import "./index.css"
 
 export interface CategoryData {
@@ -52,16 +53,8 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
     onRenameCancel,
     categorySectionDraggable,
 }) => {
-    const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set())
-
-    const toggleCollapse = (id: string) => {
-        setCollapsedIds(prev => {
-            const next = new Set(prev)
-            if (next.has(id)) next.delete(id)
-            else next.add(id)
-            return next
-        })
-    }
+    const categoryIds = categories.map(c => c.id)
+    const { isCollapsed, toggle: toggleCollapse } = useCategoryCollapse(categoryIds)
 
     const renderGroupedBody = () => {
         if (isLoading) {
@@ -112,7 +105,7 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
                     <CategorySection
                         key={cat.id}
                         category={{ ...cat, isEmpty: cat.isEmpty ?? cat.groupCount === 0 }}
-                        isCollapsed={collapsedIds.has(cat.id)}
+                        isCollapsed={isCollapsed(cat.id)}
                         onToggle={() => toggleCollapse(cat.id)}
                         onContextMenu={onCategoryContextMenu ? (e) => onCategoryContextMenu(cat.id, e) : undefined}
                         isActive={activeCategoryId === cat.id}

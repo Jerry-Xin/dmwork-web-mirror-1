@@ -125,13 +125,17 @@ export class WKLayout extends Component<WKLayoutProps, WKLayoutState>{
         const containerWidth = this.getContainerWidth()
         const clampedWidth = clampWidth(leftWidth, containerWidth)
 
-        // CSS variable for splitter absolute positioning; inline width for real resize
+        const widthPx = `${clampedWidth}px`
+
+        // CSS variables for splitter positioning + nested chat content-left
+        // Note: --wk-wdith-conversation-list uses the legacy typo from App.css
         const contentStyle = isSmallScreen ? undefined : {
-            '--wk-width-layout-content-left': `${clampedWidth}px`
+            '--wk-width-layout-content-left': widthPx,
+            '--wk-wdith-conversation-list': widthPx,
         } as React.CSSProperties
 
         const leftStyle = isSmallScreen ? undefined : {
-            width: `${clampedWidth}px`
+            width: widthPx,
         }
 
         const contentElement = <div

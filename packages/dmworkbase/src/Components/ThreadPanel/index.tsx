@@ -11,6 +11,13 @@ import { ChannelTypeCommunityTopic, GroupRole } from "../../Service/Const"
 import { ErrorBoundary } from "../ErrorBoundary"
 import WKApp from "../../App"
 import { formatRelativeTime } from "../../Utils/time"
+import {
+  SMALL_SCREEN_WIDTH,
+  THREAD_DEFAULT_WIDTH,
+  clampThreadWidth,
+  restoreThreadWidth,
+  persistThreadWidth,
+} from "../WKLayout/layoutWidth"
 import "./index.css"
 
 export interface ThreadPanelProps {
@@ -29,13 +36,23 @@ interface ThreadPanelComponentState {
   threads: Thread[]
   threadsLoading: boolean
   showMoreMenu: boolean
+  panelWidth: number
+  isDragging: boolean
 }
 
 export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanelComponentState> {
   private vm: ThreadPanelVM | null = null
+  private panelRef = React.createRef<HTMLDivElement>()
+  private dragStartX = 0
+  private dragStartWidth = 0
+  private lastPanelWidth = THREAD_DEFAULT_WIDTH
+  private cachedContainerWidth = 1200  // cached on drag start
 
   constructor(props: ThreadPanelProps) {
     super(props)
+    const savedWidth = clampThreadWidth(restoreThreadWidth(), window.innerWidth)
+    this.lastPanelWidth = savedWidth
+
     this.state = {
       view: props.thread ? "detail" : "list",
       activeExpanded: true,
@@ -51,6 +68,8 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
       threads: [],
       threadsLoading: true,
       showMoreMenu: false,
+      panelWidth: savedWidth,
+      isDragging: false,
     }
   }
 
@@ -59,6 +78,69 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     if (this.props.thread) {
       this.initVM(this.props.thread.short_id)
     }
+    // Set CSS variable on mount so chat area calc has the correct width
+    this.syncCssVariable(this.state.panelWidth)
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('mousemove', this.onPanelDragMove)
+    document.removeEventListener('mouseup', this.onPanelDragEnd)
+    if (this.state.isDragging) {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }
+
+  // ── Splitter drag for thread panel width ──
+
+  private onPanelDragStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    this.dragStartX = e.clientX
+    this.dragStartWidth = this.lastPanelWidth
+    // Use window width for max calculation (matches Discord's behavior)
+    this.cachedContainerWidth = window.innerWidth
+    this.setState({ isDragging: true })
+    document.addEventListener('mousemove', this.onPanelDragMove)
+    document.addEventListener('mouseup', this.onPanelDragEnd)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }
+
+  private onPanelDragMove = (e: MouseEvent) => {
+    // Dragging LEFT edge: moving mouse left = wider panel
+    const delta = this.dragStartX - e.clientX
+    const newWidth = clampThreadWidth(this.dragStartWidth + delta, this.cachedContainerWidth)
+    this.lastPanelWidth = newWidth
+
+    // Direct DOM update — no React re-render during drag
+    const panel = this.panelRef.current
+    if (panel) {
+      panel.style.width = newWidth + 'px'
+      // Update CSS variable on parent for chat area calc
+      panel.parentElement?.style.setProperty('--wk-width-thread-panel', newWidth + 'px')
+    }
+  }
+
+  private onPanelDragEnd = () => {
+    document.removeEventListener('mousemove', this.onPanelDragMove)
+    document.removeEventListener('mouseup', this.onPanelDragEnd)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    this.setState({ panelWidth: this.lastPanelWidth, isDragging: false })
+    persistThreadWidth(this.lastPanelWidth)
+  }
+
+  private onPanelDoubleClick = () => {
+    this.lastPanelWidth = THREAD_DEFAULT_WIDTH
+    this.setState({ panelWidth: THREAD_DEFAULT_WIDTH })
+    persistThreadWidth(THREAD_DEFAULT_WIDTH)
+    this.syncCssVariable(THREAD_DEFAULT_WIDTH)
+  }
+
+  /** Keep --wk-width-thread-panel in sync so chat area calc stays correct */
+  private syncCssVariable(width: number) {
+    const panel = this.panelRef.current
+    panel?.parentElement?.style.setProperty('--wk-width-thread-panel', width + 'px')
   }
 
   componentDidUpdate(prevProps: ThreadPanelProps) {
@@ -532,12 +614,28 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
   }
 
   render() {
-    const { view } = this.state
+    const { view, panelWidth, isDragging } = this.state
+    const isSmallScreen = window.innerWidth <= SMALL_SCREEN_WIDTH
+
+    const panelStyle = isSmallScreen ? undefined : {
+      width: `${panelWidth}px`,
+    }
 
     return (
-      <div className="wk-thread-panel">
+      <div className="wk-thread-panel" ref={this.panelRef} style={panelStyle}>
+        {/* Left-edge splitter for resizing — hidden on small screens */}
+        {!isSmallScreen && (
+          <div
+            className={classNames("wk-thread-panel-splitter", isDragging && "wk-thread-panel-splitter-active")}
+            onMouseDown={this.onPanelDragStart}
+            onDoubleClick={this.onPanelDoubleClick}
+          >
+            <div className="wk-thread-panel-splitter-line" />
+          </div>
+        )}
         {this.renderHeader()}
         {view === "list" ? this.renderListView() : this.renderDetailView()}
+        {isDragging && <div className="wk-thread-panel-drag-overlay" />}
       </div>
     )
   }

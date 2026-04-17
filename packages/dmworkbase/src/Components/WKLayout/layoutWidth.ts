@@ -5,53 +5,87 @@
  * without mounting the full WKLayout component.
  */
 
+// ── Shared constants ──
+export const SMALL_SCREEN_WIDTH = 640
+
+// ── Left panel (conversation list) ──
 export const SPLITTER_MIN_WIDTH = 190
 export const SPLITTER_MAX_WIDTH = 360
 export const SPLITTER_DEFAULT_WIDTH = 300
 export const SPLITTER_STORAGE_KEY = 'wk-layout-left-width'
 
+// ── Right panel (thread panel) ──
+export const THREAD_MIN_WIDTH = 432
+export const THREAD_MAX_WIDTH = 1600  // effective max is clamped by screen ratio
+export const THREAD_DEFAULT_WIDTH = 432
+export const THREAD_STORAGE_KEY = 'wk-thread-panel-width'
+
 /**
- * Calculate the effective maximum left-panel width.
- * Rule: min(SPLITTER_MAX_WIDTH, containerWidth * 0.45)
- * Never goes below SPLITTER_MIN_WIDTH.
+ * Generic clamp utility: min(maxWidth, containerWidth * ratio), floored to minWidth.
  */
+export function getMaxWidth(containerWidth: number, minWidth: number, maxWidth: number, ratio = 0.45): number {
+    const dynamicMax = Math.floor(containerWidth * ratio)
+    return Math.max(minWidth, Math.min(maxWidth, dynamicMax))
+}
+
+export function clampWidth(width: number, containerWidth: number, minWidth = SPLITTER_MIN_WIDTH, maxWidth = SPLITTER_MAX_WIDTH, ratio = 0.45): number {
+    const max = getMaxWidth(containerWidth, minWidth, maxWidth, ratio)
+    return Math.max(minWidth, Math.min(max, width))
+}
+
+// ── Left panel helpers (backward compat) ──
+
 export function getMaxLeftWidth(containerWidth: number): number {
-    const dynamicMax = Math.floor(containerWidth * 0.45)
-    return Math.max(SPLITTER_MIN_WIDTH, Math.min(SPLITTER_MAX_WIDTH, dynamicMax))
+    return getMaxWidth(containerWidth, SPLITTER_MIN_WIDTH, SPLITTER_MAX_WIDTH)
 }
 
-/**
- * Clamp a width value within the allowed range for a given container.
- */
-export function clampWidth(width: number, containerWidth: number): number {
-    const max = getMaxLeftWidth(containerWidth)
-    return Math.max(SPLITTER_MIN_WIDTH, Math.min(max, width))
-}
-
-/**
- * Restore persisted width from localStorage.
- * Returns SPLITTER_DEFAULT_WIDTH if nothing stored or value is invalid.
- * The returned value is NOT yet clamped against container width
- * (caller should clamp after measuring DOM).
- */
 export function restoreWidth(): number {
+    return restoreStoredWidth(SPLITTER_STORAGE_KEY, SPLITTER_MIN_WIDTH, SPLITTER_MAX_WIDTH, SPLITTER_DEFAULT_WIDTH)
+}
+
+export function persistWidth(width: number): void {
+    persistStoredWidth(SPLITTER_STORAGE_KEY, width)
+}
+
+// ── Right (thread) panel helpers ──
+
+/**
+ * Thread panel max width based on window width (not container).
+ * Ratio ~63.5% matches Discord's behavior (1219/1920).
+ */
+export function getMaxThreadWidth(windowWidth: number): number {
+    return getMaxWidth(windowWidth, THREAD_MIN_WIDTH, THREAD_MAX_WIDTH, 0.635)
+}
+
+export function clampThreadWidth(width: number, windowWidth: number): number {
+    return clampWidth(width, windowWidth, THREAD_MIN_WIDTH, THREAD_MAX_WIDTH, 0.635)
+}
+
+export function restoreThreadWidth(): number {
+    return restoreStoredWidth(THREAD_STORAGE_KEY, THREAD_MIN_WIDTH, THREAD_MAX_WIDTH, THREAD_DEFAULT_WIDTH)
+}
+
+export function persistThreadWidth(width: number): void {
+    persistStoredWidth(THREAD_STORAGE_KEY, width)
+}
+
+// ── Shared localStorage helpers ──
+
+function restoreStoredWidth(key: string, min: number, max: number, defaultVal: number): number {
     try {
-        const stored = localStorage.getItem(SPLITTER_STORAGE_KEY)
+        const stored = localStorage.getItem(key)
         if (stored) {
             const parsed = parseInt(stored, 10)
-            if (!isNaN(parsed) && parsed >= SPLITTER_MIN_WIDTH && parsed <= SPLITTER_MAX_WIDTH) {
+            if (!isNaN(parsed) && parsed >= min && parsed <= max) {
                 return parsed
             }
         }
     } catch (_) {}
-    return SPLITTER_DEFAULT_WIDTH
+    return defaultVal
 }
 
-/**
- * Persist width to localStorage.
- */
-export function persistWidth(width: number): void {
+function persistStoredWidth(key: string, width: number): void {
     try {
-        localStorage.setItem(SPLITTER_STORAGE_KEY, String(width))
+        localStorage.setItem(key, String(width))
     } catch (_) {}
 }

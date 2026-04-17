@@ -7,10 +7,17 @@ import {
     SPLITTER_MAX_WIDTH,
     SPLITTER_DEFAULT_WIDTH,
     SPLITTER_STORAGE_KEY,
+    THREAD_MIN_WIDTH,
+    THREAD_MAX_WIDTH,
+    THREAD_DEFAULT_WIDTH,
+    THREAD_STORAGE_KEY,
     getMaxLeftWidth,
     clampWidth,
     restoreWidth,
     persistWidth,
+    clampThreadWidth,
+    restoreThreadWidth,
+    persistThreadWidth,
 } from '../layoutWidth'
 
 describe('layoutWidth', () => {
@@ -68,6 +75,48 @@ describe('layoutWidth', () => {
         it('returns default for non-numeric stored values', () => {
             localStorage.setItem(SPLITTER_STORAGE_KEY, 'abc')
             expect(restoreWidth()).toBe(SPLITTER_DEFAULT_WIDTH)
+        })
+    })
+
+    describe('thread panel', () => {
+        describe('clampThreadWidth', () => {
+            it('clamps below minimum', () => {
+                expect(clampThreadWidth(100, 1200)).toBe(THREAD_MIN_WIDTH)
+            })
+
+            it('clamps to ~63.5% of window width', () => {
+                // 1920 * 0.635 = 1219
+                expect(clampThreadWidth(1300, 1920)).toBe(1219)
+            })
+
+            it('caps at THREAD_MAX_WIDTH for very wide windows', () => {
+                // 2560 * 0.635 = 1625 > 1600
+                expect(clampThreadWidth(1700, 2560)).toBe(THREAD_MAX_WIDTH)
+            })
+
+            it('passes through valid values', () => {
+                expect(clampThreadWidth(500, 1200)).toBe(500)
+            })
+        })
+
+        describe('restoreThreadWidth / persistThreadWidth', () => {
+            beforeEach(() => {
+                localStorage.clear()
+            })
+
+            it('returns default when nothing stored', () => {
+                expect(restoreThreadWidth()).toBe(THREAD_DEFAULT_WIDTH)
+            })
+
+            it('restores a previously persisted value', () => {
+                persistThreadWidth(500)
+                expect(restoreThreadWidth()).toBe(500)
+            })
+
+            it('returns default for out-of-range stored values', () => {
+                localStorage.setItem(THREAD_STORAGE_KEY, '9999')
+                expect(restoreThreadWidth()).toBe(THREAD_DEFAULT_WIDTH)
+            })
         })
     })
 })

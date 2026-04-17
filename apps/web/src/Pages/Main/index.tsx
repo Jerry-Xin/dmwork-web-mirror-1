@@ -179,6 +179,7 @@ export class MainPage extends Component<{}, MainPageState> {
                                     onSetShowNewVersion={(v) => {
                                         vm.showNewVersion = v;
                                         if (!v) { vm.markVersionRead(); }
+                                        vm.notifyListener();
                                     }}
                                     onSetShowAppVersion={(v) => {
                                         vm.showAppVersion = v;

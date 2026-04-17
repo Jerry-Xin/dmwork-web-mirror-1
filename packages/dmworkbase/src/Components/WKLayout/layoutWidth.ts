@@ -15,9 +15,9 @@ export const SPLITTER_DEFAULT_WIDTH = 300
 export const SPLITTER_STORAGE_KEY = 'wk-layout-left-width'
 
 // ── Right panel (thread panel) ──
-export const THREAD_MIN_WIDTH = 280
-export const THREAD_MAX_WIDTH = 600
-export const THREAD_DEFAULT_WIDTH = 380
+export const THREAD_MIN_WIDTH = 432
+export const THREAD_MAX_WIDTH = 811
+export const THREAD_DEFAULT_WIDTH = 432
 export const THREAD_STORAGE_KEY = 'wk-thread-panel-width'
 
 /**

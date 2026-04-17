@@ -85,17 +85,17 @@ describe('layoutWidth', () => {
             })
 
             it('clamps above dynamic maximum', () => {
-                // container=900 → 900*0.45=405 < 600
-                expect(clampThreadWidth(500, 900)).toBe(405)
+                // container=1000 → 1000*0.45=450 < 811
+                expect(clampThreadWidth(600, 1000)).toBe(450)
             })
 
             it('caps at THREAD_MAX_WIDTH for wide containers', () => {
-                // 1500*0.45=675 > 600
-                expect(clampThreadWidth(650, 1500)).toBe(THREAD_MAX_WIDTH)
+                // 2000*0.45=900 > 811
+                expect(clampThreadWidth(900, 2000)).toBe(THREAD_MAX_WIDTH)
             })
 
             it('passes through valid values', () => {
-                expect(clampThreadWidth(380, 1200)).toBe(380)
+                expect(clampThreadWidth(500, 1200)).toBe(500)
             })
         })
 
@@ -109,8 +109,8 @@ describe('layoutWidth', () => {
             })
 
             it('restores a previously persisted value', () => {
-                persistThreadWidth(350)
-                expect(restoreThreadWidth()).toBe(350)
+                persistThreadWidth(500)
+                expect(restoreThreadWidth()).toBe(500)
             })
 
             it('returns default for out-of-range stored values', () => {

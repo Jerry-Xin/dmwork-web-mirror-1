@@ -84,14 +84,14 @@ describe('layoutWidth', () => {
                 expect(clampThreadWidth(100, 1200)).toBe(THREAD_MIN_WIDTH)
             })
 
-            it('clamps above dynamic maximum', () => {
-                // container=1000 → 1000*0.65=650 < 811
-                expect(clampThreadWidth(700, 1000)).toBe(650)
+            it('clamps to ~63.5% of window width', () => {
+                // 1920 * 0.635 = 1219
+                expect(clampThreadWidth(1300, 1920)).toBe(1219)
             })
 
-            it('caps at THREAD_MAX_WIDTH for wide containers', () => {
-                // 1400*0.65=910 > 811
-                expect(clampThreadWidth(900, 1400)).toBe(THREAD_MAX_WIDTH)
+            it('caps at THREAD_MAX_WIDTH for very wide windows', () => {
+                // 2560 * 0.635 = 1625 > 1600
+                expect(clampThreadWidth(1700, 2560)).toBe(THREAD_MAX_WIDTH)
             })
 
             it('passes through valid values', () => {

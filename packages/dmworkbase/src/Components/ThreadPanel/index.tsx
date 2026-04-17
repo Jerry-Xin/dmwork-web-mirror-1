@@ -91,9 +91,8 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     e.preventDefault()
     this.dragStartX = e.clientX
     this.dragStartWidth = this.lastPanelWidth
-    // Cache container width once at drag start (won't change during drag)
-    const parentEl = this.panelRef.current?.parentElement
-    this.cachedContainerWidth = parentEl ? parentEl.clientWidth : 1200
+    // Use window width for max calculation (matches Discord's behavior)
+    this.cachedContainerWidth = window.innerWidth
     this.setState({ isDragging: true })
     document.addEventListener('mousemove', this.onPanelDragMove)
     document.addEventListener('mouseup', this.onPanelDragEnd)

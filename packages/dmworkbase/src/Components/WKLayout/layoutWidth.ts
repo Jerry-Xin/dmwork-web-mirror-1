@@ -16,7 +16,7 @@ export const SPLITTER_STORAGE_KEY = 'wk-layout-left-width'
 
 // ── Right panel (thread panel) ──
 export const THREAD_MIN_WIDTH = 432
-export const THREAD_MAX_WIDTH = 811
+export const THREAD_MAX_WIDTH = 1600  // effective max is clamped by screen ratio
 export const THREAD_DEFAULT_WIDTH = 432
 export const THREAD_STORAGE_KEY = 'wk-thread-panel-width'
 
@@ -49,12 +49,16 @@ export function persistWidth(width: number): void {
 
 // ── Right (thread) panel helpers ──
 
-export function getMaxThreadWidth(containerWidth: number): number {
-    return getMaxWidth(containerWidth, THREAD_MIN_WIDTH, THREAD_MAX_WIDTH, 0.65)
+/**
+ * Thread panel max width based on window width (not container).
+ * Ratio ~63.5% matches Discord's behavior (1219/1920).
+ */
+export function getMaxThreadWidth(windowWidth: number): number {
+    return getMaxWidth(windowWidth, THREAD_MIN_WIDTH, THREAD_MAX_WIDTH, 0.635)
 }
 
-export function clampThreadWidth(width: number, containerWidth: number): number {
-    return clampWidth(width, containerWidth, THREAD_MIN_WIDTH, THREAD_MAX_WIDTH, 0.65)
+export function clampThreadWidth(width: number, windowWidth: number): number {
+    return clampWidth(width, windowWidth, THREAD_MIN_WIDTH, THREAD_MAX_WIDTH, 0.635)
 }
 
 export function restoreThreadWidth(): number {

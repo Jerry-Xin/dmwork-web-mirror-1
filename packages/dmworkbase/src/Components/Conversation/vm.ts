@@ -805,6 +805,8 @@ export default class ConversationVM extends ProviderListener {
             if (this.onFirstMessagesLoaded) {
                 this.onFirstMessagesLoaded()
             }
+            // 进入会话即标记 reminders 已读，避免折叠分组后 @ 角标残留
+            this.markReminderDones()
         })
 
         // 订阅 task 上传失败事件（module.tsx 全局触发，这里仅处理当前 channel）

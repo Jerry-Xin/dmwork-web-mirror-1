@@ -5,6 +5,7 @@ export interface CategoryHeaderProps {
     name: string
     groupCount?: number
     unreadCount?: number
+    hasMention?: boolean
     isCollapsed: boolean
     isEmpty?: boolean
     onToggle: () => void
@@ -23,6 +24,7 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
     name,
     groupCount,
     unreadCount,
+    hasMention,
     isCollapsed,
     isEmpty,
     onToggle,
@@ -152,8 +154,13 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
             </span>
             {/* 分组折叠时才显示角标，展开时隐藏 */}
             {isCollapsed && !isEmpty && !!unreadCount && unreadCount > 0 && (
-                <span className="wk-category-header__badge">
-                    {unreadCount > 99 ? "99+" : unreadCount}
+                <span className="wk-category-header__badges">
+                    <span className="wk-category-header__badge">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                    {hasMention && (
+                        <span className="wk-category-header__badge wk-category-header__badge--mention">@</span>
+                    )}
                 </span>
             )}
         </div>

@@ -458,11 +458,18 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     color: var(--wk-text-primary, #1A1C24);
 }
 
+.wk-conv-compact-badges {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
 .wk-conv-compact-badge {
     min-width: 16px;
     height: 16px;
     border-radius: 9999px;
-    background: var(--wk-red, #E5405E);
+    background: var(--wk-brand-primary, #7C5CFC);
     color: white;
     font-size: 10px;
     font-weight: 600;
@@ -599,4 +606,21 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     flex-shrink: 0;
     margin-left: 2px;
     opacity: 0.6;
+}
+
+/* @ 未读角标（红色圆形） */
+.wk-mention-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border-radius: 50%;
+    background-color: var(--wk-red, #E5405E);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+    flex-shrink: 0;
 }

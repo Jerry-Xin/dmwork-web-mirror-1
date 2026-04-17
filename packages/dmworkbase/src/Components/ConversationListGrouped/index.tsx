@@ -284,12 +284,14 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             ? groupConversations.filter(c => !assignedGroupNos.has(c.channel.channelID)).length
             : (cat.groups || []).length
         const unreadCount = catConvs.reduce((sum, c) => sum + (c.unread || 0), 0)
+        const hasMention = catConvs.some(c => c.isMentionMe)
         return {
             id: cat.category_id,
             name: cat.is_default ? '默认分组' : cat.name,
             groupCount,
             isEmpty: groupCount === 0,
             unreadCount,
+            hasMention,
             conversations: ConvListWithMenu(catConvs),
         }
     })

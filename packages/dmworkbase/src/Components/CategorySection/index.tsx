@@ -10,6 +10,7 @@ export interface CategorySectionProps {
         name: string
         groupCount?: number
         unreadCount?: number
+        hasMention?: boolean
         isEmpty?: boolean
     }
     isCollapsed: boolean
@@ -64,6 +65,7 @@ const CategorySectionInner: React.FC<CategorySectionProps> = ({
                 name={category.name}
                 groupCount={category.groupCount}
                 unreadCount={category.unreadCount}
+                hasMention={category.hasMention}
                 isCollapsed={isCollapsed}
                 isEmpty={isEmpty}
                 onToggle={onToggle}
@@ -111,6 +113,7 @@ const CategorySectionStatic: React.FC<CategorySectionProps> = ({
                 name={category.name}
                 groupCount={category.groupCount}
                 unreadCount={category.unreadCount}
+                hasMention={category.hasMention}
                 isCollapsed={isCollapsed}
                 isEmpty={isEmpty}
                 onToggle={onToggle}

@@ -122,11 +122,16 @@ const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
                 </span>
             )}
             {conversationWrap.unread > 0 && (
-                <span
-                    className="wk-conv-compact-badge"
-                    style={{ backgroundColor: effectiveMute ? "var(--semi-color-text-2)" : undefined }}
-                >
-                    {conversationWrap.unread > 99 ? '99+' : conversationWrap.unread}
+                <span className="wk-conv-compact-badges">
+                    <span
+                        className="wk-conv-compact-badge"
+                        style={{ backgroundColor: effectiveMute ? "var(--semi-color-text-2)" : undefined }}
+                    >
+                        {conversationWrap.unread > 99 ? '99+' : conversationWrap.unread}
+                    </span>
+                    {conversationWrap.isMentionMe && (
+                        <span className="wk-mention-badge">@</span>
+                    )}
                 </span>
             )}
         </div>
@@ -374,7 +379,14 @@ export default class ConversationList extends Component<ConversationListProps, C
                         </div>
                         <div className="wk-conversationlist-item-reddot">
                             {
-                                conversationWrap.unread > 0 ? <Badge style={channelInfo?.mute ? { "border": "none", "backgroundColor": "var(--semi-color-text-2)" } : { "border": "none", "backgroundColor": "var(--wk-brand-primary)" }} count={conversationWrap.unread} type='danger'></Badge> : undefined
+                                conversationWrap.unread > 0
+                                    ? <span className="wk-conv-compact-badges">
+                                        <Badge style={channelInfo?.mute ? { "border": "none", "backgroundColor": "var(--semi-color-text-2)" } : { "border": "none", "backgroundColor": "var(--wk-brand-primary)" }} count={conversationWrap.unread} type='danger'></Badge>
+                                        {conversationWrap.isMentionMe && (
+                                            <span className="wk-mention-badge">@</span>
+                                        )}
+                                    </span>
+                                    : undefined
                             }
                         </div>
                     </div>

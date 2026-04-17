@@ -50,7 +50,7 @@
     min-width: 16px;
     height: 16px;
     border-radius: 9999px;
-    background: var(--wk-red, #E5405E);
+    background: var(--wk-brand-primary, #7C5CFC);
     color: white;
     font-size: 10px;
     font-weight: 600;

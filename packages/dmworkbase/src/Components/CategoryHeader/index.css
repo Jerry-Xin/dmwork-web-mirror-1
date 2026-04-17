@@ -139,12 +139,20 @@
     font-style: italic;
 }
 
-/* 未读 badge（颜色对齐 CompactGroupItem badge） */
+/* 未读 badge 容器（多个角标并排） */
+.wk-category-header__badges {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+/* 未读 badge */
 .wk-category-header__badge {
     min-width: 16px;
     height: 16px;
     border-radius: 9999px;
-    background: var(--wk-red, #E5405E);
+    background: var(--wk-brand-primary, #7C5CFC);
     color: white;
     font-size: 10px;
     font-weight: 600;
@@ -153,6 +161,18 @@
     justify-content: center;
     padding: 0 4px;
     flex-shrink: 0;
+}
+
+/* @ mention badge（红色圆形） */
+.wk-category-header__badge--mention {
+    width: 16px;
+    height: 16px;
+    min-width: unset;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--wk-red, #E5405E);
+    font-size: 11px;
+    font-weight: 900;
 }
 
 /* 分组拖拽 handle */

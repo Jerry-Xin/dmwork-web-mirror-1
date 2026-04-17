@@ -105,16 +105,16 @@ export class ConversationWrap {
         this.conversation.lastMessage = lastMessage
     }
 
-    public get isMentionMe() {
-        return this.conversation.isMentionMe
-    }
-
-    public get remoteExtra() {
-        return this.conversation.remoteExtra
+    public get isMentionMe(): boolean {
+        return this.conversation.isMentionMe ?? false
     }
 
     public set isMentionMe(isMentionMe: boolean | undefined) {
         this.conversation.isMentionMe = isMentionMe
+    }
+
+    public get remoteExtra() {
+        return this.conversation.remoteExtra
     }
 
     public get reminders() {

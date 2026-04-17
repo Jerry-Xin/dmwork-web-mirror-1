@@ -145,16 +145,21 @@ export class WKLayout extends Component<WKLayoutProps, WKLayoutState>{
         const maxWidth = this.getMaxLeftWidth()
         const clampedWidth = Math.max(SPLITTER_MIN_WIDTH, Math.min(maxWidth, leftWidth))
 
-        // Apply dynamic width via CSS variable on the content container
+        // Set CSS variable on content container for splitter positioning
+        // Set inline width directly on content-left so all children sense the real width
         const contentStyle = isSmallScreen ? undefined : {
             '--wk-width-layout-content-left': `${clampedWidth}px`
         } as React.CSSProperties
+
+        const leftStyle = isSmallScreen ? undefined : {
+            width: `${clampedWidth}px`
+        }
 
         const contentElement = <div
             className={classNames("wk-layout-content", this.rightContext?.viewCount() > 0 ? "wk-layout-open" : undefined)}
             style={contentStyle}
         >
-            <div className="wk-layout-content-left">
+            <div className="wk-layout-content-left" style={leftStyle}>
                 <WKViewQueue onContext={(context) => {
                     if(onLeftContext) {
                         onLeftContext(context)

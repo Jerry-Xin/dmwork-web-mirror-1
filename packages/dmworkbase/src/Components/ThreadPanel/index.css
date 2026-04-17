@@ -518,7 +518,7 @@ body[theme-mode="dark"] .wk-thread-panel {
   width: 12px;
   margin-left: -6px;
   cursor: col-resize;
-  z-index: 101;
+  z-index: 101;  /* just above .wk-thread-panel(z:100), below modals/tooltips(z:200+) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -536,4 +536,12 @@ body[theme-mode="dark"] .wk-thread-panel {
   width: 3px;
   background: var(--wk-brand-primary);
   border-radius: var(--wk-r-full);
+}
+
+/* Drag overlay — prevents content from stealing mouse events during resize */
+.wk-thread-panel-drag-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  cursor: col-resize;
 }

@@ -5,6 +5,9 @@
  * without mounting the full WKLayout component.
  */
 
+// ── Shared constants ──
+export const SMALL_SCREEN_WIDTH = 640
+
 // ── Left panel (conversation list) ──
 export const SPLITTER_MIN_WIDTH = 190
 export const SPLITTER_MAX_WIDTH = 360

@@ -12,14 +12,13 @@ import { ErrorBoundary } from "../ErrorBoundary"
 import WKApp from "../../App"
 import { formatRelativeTime } from "../../Utils/time"
 import {
+  SMALL_SCREEN_WIDTH,
   THREAD_DEFAULT_WIDTH,
   clampThreadWidth,
   restoreThreadWidth,
   persistThreadWidth,
 } from "../WKLayout/layoutWidth"
 import "./index.css"
-
-const smallScreenWidth = 640
 
 export interface ThreadPanelProps {
   groupNo: string
@@ -47,6 +46,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
   private dragStartX = 0
   private dragStartWidth = 0
   private lastPanelWidth = THREAD_DEFAULT_WIDTH
+  private cachedContainerWidth = 1200  // cached on drag start
 
   constructor(props: ThreadPanelProps) {
     super(props)
@@ -91,6 +91,9 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     e.preventDefault()
     this.dragStartX = e.clientX
     this.dragStartWidth = this.lastPanelWidth
+    // Cache container width once at drag start (won't change during drag)
+    const parentEl = this.panelRef.current?.parentElement
+    this.cachedContainerWidth = parentEl ? parentEl.clientWidth : 1200
     this.setState({ isDragging: true })
     document.addEventListener('mousemove', this.onPanelDragMove)
     document.addEventListener('mouseup', this.onPanelDragEnd)
@@ -101,9 +104,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
   private onPanelDragMove = (e: MouseEvent) => {
     // Dragging LEFT edge: moving mouse left = wider panel
     const delta = this.dragStartX - e.clientX
-    const parentEl = this.panelRef.current?.parentElement
-    const containerWidth = parentEl ? parentEl.clientWidth : 1200
-    const newWidth = clampThreadWidth(this.dragStartWidth + delta, containerWidth)
+    const newWidth = clampThreadWidth(this.dragStartWidth + delta, this.cachedContainerWidth)
     this.lastPanelWidth = newWidth
 
     // Direct DOM update — no React re-render during drag
@@ -112,6 +113,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
       panel.style.width = newWidth + 'px'
     }
     // Update CSS variable on parent for chat area calc
+    const parentEl = this.panelRef.current?.parentElement
     if (parentEl) {
       parentEl.style.setProperty('--wk-width-thread-panel', newWidth + 'px')
     }
@@ -604,7 +606,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
 
   render() {
     const { view, panelWidth, isDragging } = this.state
-    const isSmallScreen = window.innerWidth <= smallScreenWidth
+    const isSmallScreen = window.innerWidth <= SMALL_SCREEN_WIDTH
 
     const panelStyle = isSmallScreen ? undefined : {
       width: `${panelWidth}px`,
@@ -624,7 +626,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
         )}
         {this.renderHeader()}
         {view === "list" ? this.renderListView() : this.renderDetailView()}
-        {isDragging && <div className="wk-layout-drag-overlay" />}
+        {isDragging && <div className="wk-thread-panel-drag-overlay" />}
       </div>
     )
   }

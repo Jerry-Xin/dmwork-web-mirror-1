@@ -4,6 +4,7 @@ import { Component } from "react";
 import WKViewQueue, { WKViewQueueContext } from "../WKViewQueue";
 import { throttle } from "../../Utils/rateLimit";
 import {
+    SMALL_SCREEN_WIDTH,
     SPLITTER_MIN_WIDTH,
     SPLITTER_DEFAULT_WIDTH,
     clampWidth,
@@ -11,8 +12,6 @@ import {
     persistWidth,
 } from "./layoutWidth";
 import "./index.css"
-
-const smallScreenWidth = 640 // 小屏最大宽度（index.css @media screen 里也需要改成这个值的大小）
 
 export enum ScreenSize {
     normal,
@@ -134,7 +133,7 @@ export class WKLayout extends Component<WKLayoutProps, WKLayoutState>{
     render() {
         const { onRenderTab, contentLeft,contentRight,onLeftContext,onRightContext } = this.props
         const isExtension = (window as any).__POWERED_EXTENSION__
-        const isSmallScreen = window.innerWidth <= smallScreenWidth
+        const isSmallScreen = window.innerWidth <= SMALL_SCREEN_WIDTH
         const { leftWidth, isDragging } = this.state
 
         const tabElement = <div className="wk-layout-tab">

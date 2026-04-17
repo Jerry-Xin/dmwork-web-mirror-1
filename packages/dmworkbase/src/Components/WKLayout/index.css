@@ -48,8 +48,8 @@
     top: 0;
     bottom: 0;
     left: var(--wk-width-layout-content-left);
-    width: 6px;
-    margin-left: -3px;   /* center on the border line */
+    width: 12px;
+    margin-left: -6px;   /* center on the border line */
     cursor: col-resize;
     z-index: 10;
     display: flex;

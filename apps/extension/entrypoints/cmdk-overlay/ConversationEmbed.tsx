@@ -9,6 +9,7 @@ import type { ChannelPickerItem, ChannelPickerCategory } from '@dmwork/base/src/
 
 // Web 端 CSS 变量定义（--input-bg、--border-color 等），WXT 构建会注入 Shadow DOM
 import '@dmwork/base/src/App.css';
+import './conversation-embed.css';
 
 /** 引用文字最大长度 */
 const QUOTE_MAX_LENGTH = 500;

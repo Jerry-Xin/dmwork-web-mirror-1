@@ -51,8 +51,10 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
 
   componentDidMount() {
     // 初始化 Space（和 MainPage 一样）
-    this.initSpace().then(() => {
-      // Space 初始化后预加载频道数据
+    this.initSpace().then(async () => {
+      // 主动同步会话列表（和 Chat 页面一样），否则 conversations 是空的
+      await WKSDK.shared().conversationManager.sync({});
+      // 同步完成后加载频道数据
       this.loadChannelPickerData();
     });
 

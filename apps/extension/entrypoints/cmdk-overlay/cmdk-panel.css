@@ -3,6 +3,20 @@
  */
 
 /* ============================================================
+   MessageInput 样式约束
+   ============================================================ */
+.octo-cmdk-input-section .wk-messageinput-box {
+  border-radius: var(--wk-r-md);
+  border: 1px solid var(--wk-border-default);
+  overflow: hidden;
+}
+
+.octo-cmdk-input-section .wk-messageinput-editor .ProseMirror {
+  min-height: 62px;
+  max-height: 120px;
+}
+
+/* ============================================================
    Overlay（透明背景，无遮罩）
    ============================================================ */
 .octo-cmdk {

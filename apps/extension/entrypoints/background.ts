@@ -426,7 +426,8 @@ async function handleRuntimeMessage(
   // Cmd+K overlay: 转发给 offscreen 处理
   if (
     message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchThreads ||
-    message.type === EXTENSION_MESSAGE_TYPE.cmdkSendMessage
+    message.type === EXTENSION_MESSAGE_TYPE.cmdkSendMessage ||
+    message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchMembers
   ) {
     await ensureOffscreenDocument();
     // 直接转发给 offscreen，offscreen 的 listener 会处理并返回结果

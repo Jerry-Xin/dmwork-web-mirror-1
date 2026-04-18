@@ -553,7 +553,7 @@ async function clearAuth(): Promise<void> {
 // ============================================================
 // Cmd+K overlay: 获取会话列表 + 发消息
 // ============================================================
-import type { CmdkThreadItem } from "../../utils/extensionRuntime";
+import type { CmdkThreadItem, CmdkFetchMembersMessage } from "../../utils/extensionRuntime";
 
 function getThreadList(): CmdkThreadItem[] {
   const auth = currentAuth;
@@ -612,6 +612,19 @@ async function sendCmdkMessage(
   );
 }
 
+async function fetchChannelMembers(
+  channelId: string,
+  channelType: number,
+): Promise<Array<{ uid: string; name: string }>> {
+  const auth = getAuthOrThrow();
+  const data = await fetchJSON<Array<{ uid: string; name: string }>>(
+    `channels/${encodeURIComponent(channelId)}/${channelType}/subscribers`,
+    { method: "GET" },
+    auth,
+  );
+  return (data ?? []).map((m) => ({ uid: m.uid, name: m.name }));
+}
+
 browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
   if (message.type === EXTENSION_MESSAGE_TYPE.authChanged) {
     void applyAuth(message.auth);
@@ -625,6 +638,12 @@ browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
 
   if (message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchThreads) {
     return Promise.resolve({ success: true, data: getThreadList() });
+  }
+
+  if (message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchMembers) {
+    return fetchChannelMembers(message.channelId, message.channelType)
+      .then((members) => ({ success: true, data: members }))
+      .catch((err) => ({ success: false, error: err?.message || 'fetch members failed', data: [] }));
   }
 
   if (message.type === EXTENSION_MESSAGE_TYPE.cmdkSendMessage) {

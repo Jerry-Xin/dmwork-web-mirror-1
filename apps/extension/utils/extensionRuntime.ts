@@ -29,6 +29,7 @@ export const EXTENSION_MESSAGE_TYPE = {
   // Cmd+K overlay
   cmdkFetchThreads: "CMDK_FETCH_THREADS",
   cmdkSendMessage: "CMDK_SEND_MESSAGE",
+  cmdkFetchMembers: "CMDK_FETCH_MEMBERS",
 } as const;
 
 export interface ExtensionAuthState {
@@ -106,6 +107,12 @@ export interface CmdkSendMessageMessage {
   pageTitle?: string;
 }
 
+export interface CmdkFetchMembersMessage {
+  type: typeof EXTENSION_MESSAGE_TYPE.cmdkFetchMembers;
+  channelId: string;
+  channelType: number;
+}
+
 export interface CmdkThreadItem {
   channelId: string;
   channelType: number;
@@ -124,7 +131,8 @@ export type ExtensionRuntimeMessage =
   | SidepanelBadgeSyncMessage
   | SidepanelStateMessage
   | CmdkFetchThreadsMessage
-  | CmdkSendMessageMessage;
+  | CmdkSendMessageMessage
+  | CmdkFetchMembersMessage;
 
 export interface ExtensionAuthResponse {
   auth: ExtensionAuthState | null;

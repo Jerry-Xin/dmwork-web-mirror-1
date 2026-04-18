@@ -3,7 +3,10 @@ import type { PanelContext } from './CmdKOverlay';
 import type { CmdkThreadItem } from '../../utils/extensionRuntime';
 import MessageInput, { type MentionModel } from '@dmwork/base/src/Components/MessageInput';
 import type ConversationContext from '@dmwork/base/src/Components/Conversation/context';
-import { Channel, Message, MessageContent } from 'wukongimjssdk';
+import { Channel, Message, MessageContent, Subscriber } from 'wukongimjssdk';
+
+// Web 端 CSS 变量定义（--input-bg、--border-color 等），WXT 构建会注入 Shadow DOM
+import '@dmwork/base/src/App.css';
 
 /** SVG outline icons — 和 v2 sidepanel 保持同步 */
 const OUTLINE_ICONS = {
@@ -21,7 +24,6 @@ interface ConversationEmbedProps {
 /**
  * 构造一个最小化的 ConversationContext mock
  * MessageInput 内部不直接调用大部分方法，只在 mention suggestion 里用到 channel()
- * Cmd+K 场景下 hideMention=true，所以 mention 不会触发
  */
 function createMockContext(channelId: string, channelType: number): ConversationContext {
   const channel = new Channel(channelId, channelType);
@@ -74,6 +76,7 @@ export default function ConversationEmbed({
   const [error, setError] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState('');
+  const [members, setMembers] = useState<Subscriber[]>([]);
 
   const fetchThreads = useCallback(async () => {
     try {
@@ -102,6 +105,41 @@ export default function ConversationEmbed({
   }, [fetchThreads]);
 
   const selectedThread = threads.find((t) => t.channelId === selected?.id);
+
+  // 切换频道时获取成员列表
+  useEffect(() => {
+    if (!selected) {
+      setMembers([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await browser.runtime.sendMessage({
+          type: 'CMDK_FETCH_MEMBERS',
+          channelId: selected.id,
+          channelType: selected.type,
+        });
+        if (!cancelled && response?.success && Array.isArray(response.data)) {
+          setMembers(
+            response.data.map((m: { uid: string; name: string }) => {
+              const sub = new Subscriber();
+              sub.uid = m.uid;
+              sub.name = m.name;
+              return sub;
+            }),
+          );
+        }
+      } catch {
+        // 获取成员失败不影响主流程
+        if (!cancelled) setMembers([]);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.type]);
 
   // MessageInput 的 onSend 回调
   const handleSend = useCallback(
@@ -180,8 +218,7 @@ export default function ConversationEmbed({
         <MessageInput
           context={mockContext}
           onSend={handleSend}
-          members={[]}
-          hideMention={true}
+          members={members}
         />
       </div>
 

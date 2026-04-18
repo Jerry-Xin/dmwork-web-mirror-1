@@ -164,7 +164,7 @@
 
 .cmdk-embed-input-error {
   font-size: 11px;
-  color: #F54A45;
+  color: var(--cmdk-danger, #F54A45);
 }
 
 .cmdk-embed-input-hint {

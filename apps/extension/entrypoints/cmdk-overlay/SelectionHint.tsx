@@ -17,21 +17,23 @@ export default function SelectionHint({ rect, onClick }: SelectionHintProps) {
   useEffect(() => {
     const btnWidth = 140;
     const btnHeight = 28;
-    let top = rect.top + (rect.height - btnHeight) / 2;
-    let left = rect.right + 8;
 
-    // 右边放不下，放到选区下方
-    if (left + btnWidth > window.innerWidth - 8) {
-      left = rect.right - btnWidth;
-      top = rect.bottom + 6;
+    // 默认放在选区正下方，水平居中
+    let top = rect.bottom + 6;
+    let left = rect.left + (rect.width - btnWidth) / 2;
+
+    // 左侧越界
+    if (left < 4) left = 4;
+    // 右侧越界
+    if (left + btnWidth > window.innerWidth - 4) {
+      left = window.innerWidth - btnWidth - 4;
     }
-
-    // 上方越界
-    if (top < 4) top = 4;
-    // 下方越界
+    // 下方越界，放到选区上方
     if (top + btnHeight > window.innerHeight - 4) {
       top = rect.top - btnHeight - 6;
     }
+    // 上方也越界（极端情况）
+    if (top < 4) top = 4;
 
     setPos({ top, left });
   }, [rect]);

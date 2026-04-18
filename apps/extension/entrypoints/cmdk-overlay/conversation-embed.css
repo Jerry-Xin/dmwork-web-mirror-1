@@ -105,7 +105,7 @@
 }
 
 .cmdk-embed-picker-unread {
-  background: #F54A45;
+  background: var(--cmdk-danger, #F54A45);
   color: #fff;
   font-size: 10px;
   font-weight: 600;

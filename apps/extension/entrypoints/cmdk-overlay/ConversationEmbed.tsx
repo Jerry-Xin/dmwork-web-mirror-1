@@ -12,23 +12,21 @@ interface ConversationEmbedProps {
  * 轻量对话组件：选频道 + 输入 + 发送
  * 数据通过 background → offscreen 获取和发送
  */
+/** 引用文字最大长度 */
+const QUOTE_MAX_LENGTH = 500;
+
 export default function ConversationEmbed({
   context,
   onMessageSent,
 }: ConversationEmbedProps) {
   const [threads, setThreads] = useState<CmdkThreadItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string>('');
+  const [selected, setSelected] = useState<{ id: string; type: number } | null>(null);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // 加载会话列表
-  useEffect(() => {
-    fetchThreads();
-  }, []);
 
   const fetchThreads = useCallback(async () => {
     try {
@@ -37,8 +35,10 @@ export default function ConversationEmbed({
       });
       if (response?.success && Array.isArray(response.data)) {
         setThreads(response.data);
-        if (response.data.length > 0 && !selectedId) {
-          setSelectedId(response.data[0].channelId);
+        if (response.data.length > 0) {
+          setSelected((prev) =>
+            prev || { id: response.data[0].channelId, type: response.data[0].channelType },
+          );
         }
       } else {
         setError('无法获取会话列表');
@@ -48,23 +48,34 @@ export default function ConversationEmbed({
     } finally {
       setLoading(false);
     }
-  }, [selectedId]);
+  }, []);
 
-  const selectedThread = threads.find((t) => t.channelId === selectedId);
+  // 加载会话列表
+  useEffect(() => {
+    fetchThreads();
+  }, [fetchThreads]);
+
+  const selectedThread = threads.find((t) => t.channelId === selected?.id);
 
   const handleSend = useCallback(async () => {
-    if (!selectedId || (!text.trim() && !context.selectedText)) return;
+    if (!selected || (!text.trim() && !context.selectedText)) return;
 
     setSending(true);
     setError('');
 
+    // 截断引用文字
+    let quotedText = context.selectedText || undefined;
+    if (quotedText && quotedText.length > QUOTE_MAX_LENGTH) {
+      quotedText = quotedText.slice(0, QUOTE_MAX_LENGTH) + '…';
+    }
+
     try {
       const response = await browser.runtime.sendMessage({
         type: 'CMDK_SEND_MESSAGE',
-        channelId: selectedId,
-        channelType: selectedThread?.channelType || 2,
+        channelId: selected.id,
+        channelType: selected.type,
         text: text.trim(),
-        quotedText: context.selectedText || undefined,
+        quotedText,
         pageUrl: context.pageUrl,
         pageTitle: context.pageTitle,
       });
@@ -79,7 +90,7 @@ export default function ConversationEmbed({
       setError(err?.message || '发送失败');
       setSending(false);
     }
-  }, [selectedId, selectedThread, text, context, onMessageSent]);
+  }, [selected, text, context, onMessageSent]);
 
   // Enter 发送
   const handleKeyDown = useCallback(
@@ -123,7 +134,7 @@ export default function ConversationEmbed({
         >
           <span className="cmdk-embed-target-arrow">→</span>
           <span className="cmdk-embed-target-name">
-            {selectedThread?.name || '选择会话'}
+            {selectedThread?.name || (selected ? selected.id : '选择会话')}
           </span>
           <span className="cmdk-embed-target-chevron">▾</span>
         </button>
@@ -136,10 +147,10 @@ export default function ConversationEmbed({
             <button
               key={t.channelId}
               className={`cmdk-embed-picker-item ${
-                t.channelId === selectedId ? 'is-current' : ''
+                t.channelId === selected?.id ? 'is-current' : ''
               }`}
               onClick={() => {
-                setSelectedId(t.channelId);
+                setSelected({ id: t.channelId, type: t.channelType });
                 setPickerOpen(false);
                 inputRef.current?.focus();
               }}
@@ -177,7 +188,7 @@ export default function ConversationEmbed({
           <button
             className={`cmdk-embed-send ${sending ? 'is-sending' : ''}`}
             onClick={handleSend}
-            disabled={sending || (!text.trim() && !context.selectedText)}
+            disabled={sending || !selected || (!text.trim() && !context.selectedText)}
             title="发送 (Enter)"
           >
             {sending ? '发送中…' : '发送'}

@@ -10,6 +10,7 @@
   --cmdk-border: rgba(0, 0, 0, 0.06);
   --cmdk-quote-bg: #f5f5f5;
   --cmdk-quote-border: #7C5CFC;
+  --cmdk-danger: #F54A45;
   --cmdk-shadow: 0 20px 48px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.08);
   --cmdk-radius: 12px;
   --cmdk-font: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;

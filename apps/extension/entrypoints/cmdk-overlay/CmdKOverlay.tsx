@@ -42,21 +42,6 @@ export default function CmdKOverlay({ shadowRoot }: CmdKOverlayProps) {
     };
   }, []);
 
-  // 监听 Cmd+K 快捷键（ESC 由 CmdKPanel 自行处理，避免重复）
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      const meta = e.metaKey || e.ctrlKey;
-      if (meta && (e.key === 'k' || e.key === 'K')) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        openPanel();
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [openPanel]);
-
   const openPanel = useCallback(() => {
     const sel = window.getSelection();
     const text = sel?.toString().trim() || selectionText || '';
@@ -71,6 +56,21 @@ export default function CmdKOverlay({ shadowRoot }: CmdKOverlayProps) {
     setSelectionText('');
     setSelectionRect(null);
   }, [selectionText]);
+
+  // 监听 Cmd+K 快捷键（ESC 由 CmdKPanel 自行处理，避免重复）
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        openPanel();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [openPanel]);
 
   const handleHintClick = useCallback(() => {
     openPanel();

@@ -95,6 +95,9 @@ export default function ChannelPicker({
       threadsByParent.set(t.parentChannelId!, list);
     }
 
+    // 找到默认分类（如果有），未分类频道归入其中
+    const defaultCategory = sortedCategories.find((c) => c.id.startsWith('default-'));
+
     // 按分类分组
     const channelsByCategory = new Map<string, ChannelPickerItem[]>();
     const uncategorized: ChannelPickerItem[] = [];
@@ -104,6 +107,11 @@ export default function ChannelPicker({
         const list = channelsByCategory.get(ch.categoryId) || [];
         list.push(ch);
         channelsByCategory.set(ch.categoryId, list);
+      } else if (defaultCategory) {
+        // 归入默认分类，避免 "未分类" 重复显示
+        const list = channelsByCategory.get(defaultCategory.id) || [];
+        list.push(ch);
+        channelsByCategory.set(defaultCategory.id, list);
       } else {
         uncategorized.push(ch);
       }

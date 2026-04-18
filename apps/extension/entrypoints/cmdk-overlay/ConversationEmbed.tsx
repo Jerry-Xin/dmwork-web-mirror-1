@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import type { PanelContext } from './CmdKOverlay';
 import type { CmdkThreadItem, CmdkCategoryItem } from '../../utils/extensionRuntime';
-import MessageInput, { type MentionModel } from '@dmwork/base/src/Components/MessageInput';
+import MessageInput, { type MentionModel, type MessageInputContext } from '@dmwork/base/src/Components/MessageInput';
 import type ConversationContext from '@dmwork/base/src/Components/Conversation/context';
 import { Channel, Message, MessageContent, Subscriber } from 'wukongimjssdk';
 import ChannelPicker from '@dmwork/base/src/Components/ChannelPicker';
@@ -62,6 +62,83 @@ function createMockContext(channelId: string, channelType: number): Conversation
   };
 }
 
+/** 轻量版工具栏：表情 + @ */
+function CmdkToolbar({ inputContextRef }: { inputContextRef: React.RefObject<MessageInputContext | null> }) {
+  const [emojiOpen, setEmojiOpen] = useState(false);
+
+  // 常用表情快捷列表
+  const quickEmojis = useMemo(() => [
+    '👍', '😄', '❤️', '😂', '👏',
+    '🙏', '🔥', '🎉', '😍', '😢',
+    '😱', '🤔', '👀', '✅', '❌',
+    '🚀', '🌟', '💪', '🙌', '🌸',
+  ], []);
+
+  const handleInsertEmoji = useCallback((emoji: string) => {
+    inputContextRef.current?.insertText(emoji);
+    setEmojiOpen(false);
+  }, [inputContextRef]);
+
+  const handleMentionClick = useCallback(() => {
+    inputContextRef.current?.insertText('@');
+  }, [inputContextRef]);
+
+  return (
+    <>
+      {/* 表情按钮 */}
+      <div className="wk-messageinput-actionitem" style={{ position: 'relative' }}>
+        <button
+          className="octo-cmdk-toolbar-btn"
+          title="表情"
+          onClick={() => setEmojiOpen(!emojiOpen)}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+            <line x1="9" y1="9" x2="9.01" y2="9" />
+            <line x1="15" y1="9" x2="15.01" y2="9" />
+          </svg>
+        </button>
+        {emojiOpen && (
+          <div className="octo-cmdk-emoji-panel">
+            {quickEmojis.map((emoji) => (
+              <button
+                key={emoji}
+                className="octo-cmdk-emoji-item"
+                onClick={() => handleInsertEmoji(emoji)}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* @ 按钮 */}
+      <div className="wk-messageinput-actionitem">
+        <button
+          className="octo-cmdk-toolbar-btn"
+          title="提及"
+          onClick={handleMentionClick}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M16 8v5a3 3 0 0 0 6 0V12a10 10 0 1 0-3.92 7.94" />
+          </svg>
+        </button>
+      </div>
+
+      {/* 表情面板防止点击外部关闭 */}
+      {emojiOpen && (
+        <div
+          className="octo-cmdk-emoji-mask"
+          onClick={() => setEmojiOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
 export default function ConversationEmbed({
   context,
   onMessageSent,
@@ -74,6 +151,7 @@ export default function ConversationEmbed({
   const [error, setError] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [members, setMembers] = useState<Subscriber[]>([]);
+  const inputContextRef = useRef<MessageInputContext | null>(null);
 
   const fetchThreads = useCallback(async () => {
     try {
@@ -254,6 +332,8 @@ export default function ConversationEmbed({
             context={mockContext}
             onSend={handleSend}
             members={members}
+            onContext={(ctx) => { inputContextRef.current = ctx; }}
+            toolbar={<CmdkToolbar inputContextRef={inputContextRef} />}
           />
         </div>
       )}

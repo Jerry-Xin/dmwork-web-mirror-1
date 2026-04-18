@@ -41,6 +41,7 @@ let currentAuth: ExtensionAuthState | null = null;
 let currentConnectAddrs: string[] = [];
 let connectAddrUsed = false;
 let channelSpaceMap = new Map<string, string>();
+let channelCategoryMap = new Map<string, string>();
 let listenersRegistered = false;
 
 function getChannelKey(channel: Channel): string {
@@ -69,6 +70,7 @@ function isSameSession(
 
 function resetSdkCaches(): void {
   channelSpaceMap = new Map<string, string>();
+  channelCategoryMap = new Map<string, string>();
   currentConnectAddrs = [];
   connectAddrUsed = false;
   sdk.conversationManager.conversations = [];
@@ -555,12 +557,26 @@ async function clearAuth(): Promise<void> {
 // ============================================================
 import type { CmdkThreadItem, CmdkCategoryItem, CmdkFetchMembersMessage } from "../../utils/extensionRuntime";
 
-function getThreadList(): CmdkThreadItem[] {
+async function getThreadList(): Promise<CmdkThreadItem[]> {
   const auth = currentAuth;
   if (!auth?.loggedIn) return [];
 
   const conversations = sdk.conversationManager.conversations;
   const result: CmdkThreadItem[] = [];
+
+  // 批量获取未缓存的 channelInfo
+  const uncachedChannels: Channel[] = [];
+  for (const conv of conversations) {
+    if (shouldSkipChannelForSpace(conv.channel)) continue;
+    if (shouldSkipPersonConversationForSpace(conv)) continue;
+    if (!sdk.channelManager.getChannelInfo(conv.channel)) {
+      uncachedChannels.push(conv.channel);
+    }
+  }
+
+  if (uncachedChannels.length > 0) {
+    await Promise.all(uncachedChannels.map((ch) => fetchChannelInfo(ch)));
+  }
 
   for (const conv of conversations) {
     if (shouldSkipChannelForSpace(conv.channel)) continue;
@@ -576,10 +592,6 @@ function getThreadList(): CmdkThreadItem[] {
     const parentChannelId =
       (channelInfo?.orgData?.parentGroupNo as string | undefined) || undefined;
 
-    // 尝试从 channelSpaceMap 或 channelInfo 获取分类相关信息
-    // categoryId 由 getCategoryList 的 groups 映射提供，此处先不填
-    // 后续前端会根据 getCategoryList 的 groups 列表做归类
-
     result.push({
       channelId: conv.channel.channelID,
       channelType: conv.channel.channelType,
@@ -587,6 +599,7 @@ function getThreadList(): CmdkThreadItem[] {
       unread: getBadgeUnread(conv),
       lastMessageTime: conv.timestamp ?? 0,
       parentChannelId,
+      categoryId: channelCategoryMap.get(conv.channel.channelID),
       mentionCount: (conv.extra as any)?.mentionCount || 0,
       muted: channelInfo?.mute || false,
       isBot: SYSTEM_BOTS.has(conv.channel.channelID),
@@ -614,6 +627,18 @@ async function getCategoryList(): Promise<CmdkCategoryItem[]> {
       { method: "GET" },
       auth,
     );
+
+    // 构建 channelId → categoryId 映射
+    const newMap = new Map<string, string>();
+    for (const cat of data ?? []) {
+      const catId = cat.category_id || `default-${cat.sort}`;
+      for (const group of cat.groups ?? []) {
+        if (group.group_no) {
+          newMap.set(group.group_no, catId);
+        }
+      }
+    }
+    channelCategoryMap = newMap;
 
     return (data ?? []).map((cat, idx) => ({
       id: cat.category_id || `default-${idx}`,
@@ -677,7 +702,9 @@ browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
   }
 
   if (message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchThreads) {
-    return Promise.resolve({ success: true, data: getThreadList() });
+    return getThreadList()
+      .then((threads) => ({ success: true, data: threads }))
+      .catch((err) => ({ success: false, error: err?.message || 'fetch threads failed', data: [] }));
   }
 
   if (message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchMembers) {

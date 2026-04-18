@@ -34,6 +34,7 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
   private conversationContext?: ConversationContext;
   private conversationListenerRemover?: () => void;
   private channelInfoListenerRemover?: () => void;
+  private loadDebounceTimer?: ReturnType<typeof setTimeout>;
 
   constructor(props: {}) {
     super(props);
@@ -50,13 +51,14 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
 
   componentDidMount() {
     // 初始化 Space（和 MainPage 一样）
-    this.initSpace();
+    this.initSpace().then(() => {
+      // Space 初始化后预加载频道数据
+      this.loadChannelPickerData();
+    });
 
-    // 监听会话列表变化
+    // 监听会话列表变化——始终刷新缓存，不管 picker 是否展开
     const conversationListener = () => {
-      if (this.state.showPicker) {
-        this.loadChannelPickerData();
-      }
+      this.scheduleLoad();
     };
     WKSDK.shared().conversationManager.addConversationListener(conversationListener);
     this.conversationListenerRemover = () => {
@@ -72,9 +74,7 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
         });
       }
       // 刷新 picker 数据
-      if (this.state.showPicker) {
-        this.loadChannelPickerData();
-      }
+      this.scheduleLoad();
     };
     WKSDK.shared().channelManager.addListener(channelInfoListener);
     this.channelInfoListenerRemover = () => {
@@ -95,6 +95,15 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
   componentWillUnmount() {
     this.conversationListenerRemover?.();
     this.channelInfoListenerRemover?.();
+    if (this.loadDebounceTimer) clearTimeout(this.loadDebounceTimer);
+  }
+
+  /** debounce 300ms 防止 SDK 事件频繁触发重复加载 */
+  private scheduleLoad() {
+    if (this.loadDebounceTimer) clearTimeout(this.loadDebounceTimer);
+    this.loadDebounceTimer = setTimeout(() => {
+      this.loadChannelPickerData();
+    }, 300);
   }
 
   private async initSpace() {

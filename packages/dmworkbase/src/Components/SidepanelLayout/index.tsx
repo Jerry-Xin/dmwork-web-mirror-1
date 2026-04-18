@@ -172,6 +172,18 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
         }
       }
 
+      // 批量 fetch 未缓存的 channelInfo
+      const uncachedChannels = conversations
+        .filter((conv) => !WKSDK.shared().channelManager.getChannelInfo(conv.channel))
+        .map((conv) => conv.channel);
+      if (uncachedChannels.length > 0) {
+        await Promise.all(
+          uncachedChannels.map((ch) =>
+            WKSDK.shared().channelManager.fetchChannelInfo(ch).catch(() => null)
+          )
+        );
+      }
+
       // 转换频道列表
       const channelList: ChannelPickerItem[] = [];
       const privateChatList: ChannelPickerItem[] = [];
@@ -231,11 +243,12 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
     }
   }
 
-  private handlePickerToggle = () => {
+  private handlePickerToggle = async () => {
     if (this.state.showPicker) {
       this.setState({ showPicker: false });
     } else {
-      this.setState({ showPicker: true });
+      this.setState({ showPicker: true, pickerLoading: true });
+      await WKSDK.shared().conversationManager.sync({});
       this.loadChannelPickerData();
     }
   };
@@ -249,7 +262,9 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
     this.selectChannel(channel);
   };
 
-  private handleRefresh = () => {
+  private handleRefresh = async () => {
+    // 刷新时重新从服务端拉取会话列表
+    await WKSDK.shared().conversationManager.sync({});
     this.loadChannelPickerData();
   };
 

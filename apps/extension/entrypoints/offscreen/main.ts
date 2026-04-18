@@ -550,6 +550,68 @@ async function clearAuth(): Promise<void> {
   await sendSyncResult(false, false);
 }
 
+// ============================================================
+// Cmd+K overlay: 获取会话列表 + 发消息
+// ============================================================
+import type { CmdkThreadItem } from "../../utils/extensionRuntime";
+
+function getThreadList(): CmdkThreadItem[] {
+  const auth = currentAuth;
+  if (!auth?.loggedIn) return [];
+
+  const conversations = sdk.conversationManager.conversations;
+  const result: CmdkThreadItem[] = [];
+
+  for (const conv of conversations) {
+    if (shouldSkipChannelForSpace(conv.channel)) continue;
+    if (shouldSkipPersonConversationForSpace(conv)) continue;
+
+    const channelInfo = sdk.channelManager.getChannelInfo(conv.channel);
+    const name =
+      channelInfo?.orgData?.displayName ||
+      channelInfo?.title ||
+      conv.channel.channelID;
+
+    result.push({
+      channelId: conv.channel.channelID,
+      channelType: conv.channel.channelType,
+      name,
+      unread: getBadgeUnread(conv),
+      lastMessageTime: conv.timestamp ?? 0,
+    });
+  }
+
+  // 按最后消息时间降序
+  result.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+  return result;
+}
+
+async function sendCmdkMessage(
+  channelId: string,
+  channelType: number,
+  text: string,
+): Promise<void> {
+  const auth = getAuthOrThrow();
+
+  await fetchJSON(
+    `message/send`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        header: { no_persist: 0, red_dot: 1 },
+        from_uid: auth.uid,
+        channel_id: channelId,
+        channel_type: channelType,
+        payload: {
+          type: 1, // 文本消息
+          content: text,
+        },
+      }),
+    },
+    auth,
+  );
+}
+
 browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
   if (message.type === EXTENSION_MESSAGE_TYPE.authChanged) {
     void applyAuth(message.auth);
@@ -558,6 +620,30 @@ browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
 
   if (message.type === EXTENSION_MESSAGE_TYPE.authCleared) {
     void clearAuth();
+    return;
+  }
+
+  if (message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchThreads) {
+    return Promise.resolve({ success: true, data: getThreadList() });
+  }
+
+  if (message.type === EXTENSION_MESSAGE_TYPE.cmdkSendMessage) {
+    // 拼接发送内容：引用文字 + 来源 + 用户输入
+    const parts: string[] = [];
+    if (message.quotedText) {
+      parts.push(`> ${message.quotedText.split('\n').join('\n> ')}`);
+    }
+    if (message.pageUrl) {
+      parts.push(`🔗 ${message.pageTitle || message.pageUrl}`);
+    }
+    if (message.text) {
+      parts.push(message.text);
+    }
+    const fullText = parts.join('\n\n');
+
+    return sendCmdkMessage(message.channelId, message.channelType, fullText)
+      .then(() => ({ success: true }))
+      .catch((err) => ({ success: false, error: err?.message || 'send failed' }));
   }
 });
 

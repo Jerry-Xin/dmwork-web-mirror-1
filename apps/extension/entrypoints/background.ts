@@ -420,6 +420,17 @@ async function handleRuntimeMessage(
         iconUrl: browser.runtime.getURL("/icons/128.png"),
       });
     });
+    return;
+  }
+
+  // Cmd+K overlay: 转发给 offscreen 处理
+  if (
+    message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchThreads ||
+    message.type === EXTENSION_MESSAGE_TYPE.cmdkSendMessage
+  ) {
+    await ensureOffscreenDocument();
+    // 直接转发给 offscreen，offscreen 的 listener 会处理并返回结果
+    return browser.runtime.sendMessage(message) as any;
   }
 }
 

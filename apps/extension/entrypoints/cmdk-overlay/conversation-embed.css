@@ -1,0 +1,253 @@
+/* 轻量对话组件样式 */
+
+.cmdk-embed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: var(--cmdk-font);
+}
+
+/* 频道选择器 */
+.cmdk-embed-target {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--cmdk-border);
+  flex-shrink: 0;
+}
+
+.cmdk-embed-target-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--cmdk-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--cmdk-text);
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 150ms;
+}
+
+.cmdk-embed-target-btn:hover {
+  border-color: var(--cmdk-quote-border);
+}
+
+.cmdk-embed-target-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cmdk-embed-target-arrow {
+  color: var(--cmdk-text-tertiary);
+  font-size: 12px;
+}
+
+.cmdk-embed-target-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdk-embed-target-chevron {
+  color: var(--cmdk-text-tertiary);
+  font-size: 10px;
+}
+
+/* 频道列表下拉 */
+.cmdk-embed-picker {
+  max-height: 200px;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--cmdk-border);
+  flex-shrink: 0;
+}
+
+.cmdk-embed-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--cmdk-text);
+  font-family: inherit;
+  text-align: left;
+  transition: background 100ms;
+}
+
+.cmdk-embed-picker-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.cmdk-embed-picker-item.is-current {
+  color: var(--cmdk-quote-border);
+  font-weight: 600;
+}
+
+.cmdk-embed-picker-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--cmdk-text-tertiary);
+}
+
+.cmdk-embed-picker-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdk-embed-picker-unread {
+  background: #F54A45;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 输入区 */
+.cmdk-embed-input-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px 14px;
+  min-height: 0;
+}
+
+.cmdk-embed-input {
+  flex: 1;
+  width: 100%;
+  border: 1px solid var(--cmdk-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--cmdk-text);
+  background: var(--cmdk-bg);
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+  transition: border-color 150ms;
+}
+
+.cmdk-embed-input:focus {
+  border-color: var(--cmdk-quote-border);
+}
+
+.cmdk-embed-input::placeholder {
+  color: var(--cmdk-text-tertiary);
+}
+
+.cmdk-embed-input:disabled {
+  opacity: 0.6;
+}
+
+.cmdk-embed-input-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cmdk-embed-input-error {
+  font-size: 11px;
+  color: #F54A45;
+}
+
+.cmdk-embed-input-hint {
+  flex: 1;
+  font-size: 11px;
+  color: var(--cmdk-text-tertiary);
+  text-align: right;
+}
+
+.cmdk-embed-send {
+  padding: 6px 16px;
+  background: var(--cmdk-quote-border);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 150ms;
+  flex-shrink: 0;
+}
+
+.cmdk-embed-send:hover {
+  opacity: 0.9;
+}
+
+.cmdk-embed-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cmdk-embed-send.is-sending {
+  opacity: 0.6;
+}
+
+/* 居中状态（loading / error） */
+.cmdk-embed-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  gap: 8px;
+}
+
+.cmdk-embed-loading {
+  color: var(--cmdk-text-tertiary);
+  font-size: 13px;
+}
+
+.cmdk-embed-error-icon {
+  font-size: 24px;
+}
+
+.cmdk-embed-error-text {
+  font-size: 13px;
+  color: var(--cmdk-text-secondary);
+}
+
+.cmdk-embed-retry {
+  padding: 4px 12px;
+  border: 1px solid var(--cmdk-border);
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--cmdk-text);
+  font-family: inherit;
+}
+
+.cmdk-embed-retry:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Dark Mode 覆盖 */
+@media (prefers-color-scheme: dark) {
+  .cmdk-embed-picker-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .cmdk-embed-retry:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}

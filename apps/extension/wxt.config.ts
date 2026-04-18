@@ -37,7 +37,7 @@ export default defineConfig({
     host_permissions: ["<all_urls>"],
     web_accessible_resources: [
       {
-        resources: ["/injected*.js"],
+        resources: ["/injected*.js", "sidepanel.html"],
         matches: ["<all_urls>"],
       },
     ],

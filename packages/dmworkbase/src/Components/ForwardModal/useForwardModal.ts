@@ -15,7 +15,7 @@ function channelInfoToForwardItem(channelInfo: ChannelInfo): ForwardItem {
   }
 }
 
-function conversationWrapToForwardItem(wrap: ConversationWrap): ForwardItem {
+function conversationWrapToForwardItem(wrap: ConversationWrap, parentChannelID?: string): ForwardItem {
   const channelInfo = wrap.channelInfo
   const isThread = wrap.channel.channelType === ChannelTypeCommunityTopic
   // hasThreads: 判断该群聊下是否有子区（子区会出现在 conversations 里，其 orgData.parentGroupNo 指向父群）
@@ -30,6 +30,7 @@ function conversationWrapToForwardItem(wrap: ConversationWrap): ForwardItem {
     isAI: channelInfo?.orgData?.robot === 1,
     isThread,
     hasThreads: hasThreads ?? false,
+    parentChannelID,
   }
 }
 
@@ -95,12 +96,47 @@ export function useForwardModal(
   const wrapsRef = useRef<ConversationWrap[]>([])
 
   const rebuildConvItems = useCallback(() => {
-    const items: ForwardItem[] = []
+    // 分离：群聊（非子区）和子区
+    const groupWraps: ConversationWrap[] = []
+    const threadWraps: ConversationWrap[] = []
     for (const wrap of wrapsRef.current) {
-      const item = conversationWrapToForwardItem(wrap)
       channelMapRef.current.set(wrap.channel.channelID, wrap.channel)
-      items.push(item)
+      if (wrap.channel.channelType === ChannelTypeCommunityTopic) {
+        threadWraps.push(wrap)
+      } else {
+        groupWraps.push(wrap)
+      }
     }
+
+    // 按 parentGroupNo 建 Map
+    const threadsByParent = new Map<string, ConversationWrap[]>()
+    const orphanThreads: ConversationWrap[] = []
+    for (const tw of threadWraps) {
+      const parentGroupNoRaw = tw.channelInfo?.orgData?.parentGroupNo
+      const parentGroupNo = parentGroupNoRaw != null ? String(parentGroupNoRaw) : undefined
+      if (parentGroupNo) {
+        const list = threadsByParent.get(parentGroupNo) || []
+        list.push(tw)
+        threadsByParent.set(parentGroupNo, list)
+      } else {
+        orphanThreads.push(tw)
+      }
+    }
+
+    // 输出顺序：父群 → 其子区（紧跟） → 下一父群
+    const items: ForwardItem[] = []
+    for (const gw of groupWraps) {
+      items.push(conversationWrapToForwardItem(gw))
+      const children = threadsByParent.get(gw.channel.channelID) || []
+      for (const tw of children) {
+        items.push(conversationWrapToForwardItem(tw, gw.channel.channelID))
+      }
+    }
+    // 找不到父群的孤儿子区追加到末尾
+    for (const ow of orphanThreads) {
+      items.push(conversationWrapToForwardItem(ow))
+    }
+
     setConversationItems(items)
   }, [])
 
@@ -151,11 +187,27 @@ export function useForwardModal(
   const uniqueFriends = friendItems.filter((f: ForwardItem) => !convIDs.has(f.channelID))
   const allItems = [...conversationItems, ...uniqueFriends]
 
-  // 关键字过滤
+  // 关键字过滤（方案 A：命中子区时带出父群；命中父群不自动展开子区）
   const filtered = keyword
-    ? allItems.filter((i) =>
-        i.displayName.toLowerCase().includes(keyword.toLowerCase())
-      )
+    ? (() => {
+        const kw = keyword.toLowerCase()
+        // 先找命中的项
+        const matched = allItems.filter((i) => i.displayName.toLowerCase().includes(kw))
+        // 命中子区时，把父群也加进来（若父群本身未命中）
+        const parentIDsToInclude = new Set<string>()
+        for (const item of matched) {
+          if (item.parentChannelID) {
+            parentIDsToInclude.add(item.parentChannelID)
+          }
+        }
+        const matchedIDs = new Set(matched.map((i) => i.channelID))
+        const parents = parentIDsToInclude.size > 0
+          ? allItems.filter((i) => parentIDsToInclude.has(i.channelID) && !matchedIDs.has(i.channelID))
+          : []
+        // 保持树状顺序：遍历 allItems，只保留命中项 + 需要带出的父群
+        const includeIDs = new Set([...matchedIDs, ...parents.map((p) => p.channelID)])
+        return allItems.filter((i) => includeIDs.has(i.channelID))
+      })()
     : allItems
 
   const toggleSelect = useCallback((item: ForwardItem) => {

@@ -18,6 +18,8 @@ export interface ForwardItem {
   hasThreads?: boolean
   /** 是否是子区（显示 ThreadIcon 角标） */
   isThread?: boolean
+  /** 子区所属父群 channelID，用于树状渲染时缩进 */
+  parentChannelID?: string
 }
 
 export interface ForwardModalProps {
@@ -49,7 +51,19 @@ function SelectedAvatar({ item, onRemove }: SelectedAvatarProps) {
       onClick={() => onRemove(item)}
       title={item.displayName}
     >
-      <WKAvatar channel={channel} />
+      <div className="wk-forward-modal-avatar-wrap">
+        <WKAvatar channel={channel} />
+        {item.isThread && (
+          <span className="wk-forward-modal-badge wk-forward-modal-badge--thread">
+            <ThreadIcon size={10} />
+          </span>
+        )}
+        {!item.isThread && item.hasThreads && (
+          <span className="wk-forward-modal-badge wk-forward-modal-badge--hash">
+            <Hash size={10} strokeWidth={2.5} />
+          </span>
+        )}
+      </div>
     </div>
   )
 }
@@ -64,7 +78,7 @@ function ItemRow({ item, selected, onToggle }: ItemRowProps) {
   const channel = new Channel(item.channelID, item.channelType)
   return (
     <div
-      className="wk-forward-modal-item"
+      className={`wk-forward-modal-item${item.parentChannelID ? " wk-forward-modal-item--child" : ""}`}
       onClick={() => onToggle(item)}
     >
       <Checkbox

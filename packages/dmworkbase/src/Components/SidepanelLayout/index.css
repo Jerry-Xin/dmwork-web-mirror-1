@@ -1,0 +1,176 @@
+/* SidepanelLayout — Chrome extension sidebar */
+
+.wk-sidepanel-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--wk-bg-surface, #fff);
+}
+
+/* ── Header ── */
+
+.wk-sidepanel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2, 8px);
+  padding: var(--wk-sp-2, 8px) var(--wk-sp-3, 12px);
+  min-height: 48px;
+  border-bottom: 1px solid var(--wk-border-default, #e5e5e5);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.wk-sidepanel-header:hover {
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+.wk-sidepanel-header-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  color: var(--wk-text-secondary, #666);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.wk-sidepanel-header-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--semi-color-primary, #5b6abf);
+  flex-shrink: 0;
+}
+
+.wk-sidepanel-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--wk-text-secondary, #666);
+  flex-shrink: 0;
+}
+
+.wk-sidepanel-header-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--wk-r-sm, 4px);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.wk-sidepanel-header-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wk-text-primary, #1a1a1a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Content ── */
+
+.wk-sidepanel-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── ChannelPicker 容器 ── */
+
+.wk-sidepanel-picker-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-sidepanel-picker-wrap .wk-channel-picker {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-sidepanel-picker-wrap .wk-channel-picker-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ── Empty state ── */
+
+.wk-sidepanel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: var(--wk-sp-3, 12px);
+  padding: var(--wk-sp-6, 24px);
+}
+
+.wk-sidepanel-empty-icon {
+  color: var(--wk-text-tertiary, #999);
+  opacity: 0.6;
+}
+
+.wk-sidepanel-empty-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--wk-text-secondary, #666);
+}
+
+.wk-sidepanel-empty-btn {
+  padding: var(--wk-sp-2, 8px) var(--wk-sp-4, 16px);
+  border: 1px solid var(--wk-border-default, #e5e5e5);
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-bg-surface, #fff);
+  color: var(--semi-color-primary, #5b6abf);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wk-sidepanel-empty-btn:hover {
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+  border-color: var(--semi-color-primary, #5b6abf);
+}
+
+/* ── Conversation 在侧边栏中的适配 ── */
+
+.wk-sidepanel-content .wk-conversation {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+/* ── Dark mode ── */
+
+body[theme-mode='dark'] .wk-sidepanel-layout {
+  background: var(--wk-bg-surface, #1e1e1e);
+}
+
+body[theme-mode='dark'] .wk-sidepanel-header {
+  border-bottom-color: var(--wk-border-default, #333);
+}
+
+body[theme-mode='dark'] .wk-sidepanel-empty-btn {
+  background: var(--wk-bg-surface, #1e1e1e);
+  border-color: var(--wk-border-default, #444);
+}

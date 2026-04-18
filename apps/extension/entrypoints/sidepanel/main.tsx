@@ -15,6 +15,7 @@ import { ContactsModule } from '@dmwork/contacts';
 import { version as pkgVersion } from '../../../web/package.json';
 import { Channel, ChannelTypePerson, WKSDK } from 'wukongimjssdk';
 import App from '../../../web/src/App';
+import SidepanelLayout from '@dmwork/base/src/Components/SidepanelLayout';
 import {
   DEFAULT_API_URL,
   EXTENSION_MESSAGE_TYPE,
@@ -164,6 +165,10 @@ WKApp.shared.registerModule(new LoginModule());
 WKApp.shared.registerModule(new ContactsModule());
 
 WKApp.shared.startup();
+
+// 注册扩展专用主页布局（替代 MainPage）
+WKApp.shared.extensionMainPage = SidepanelLayout;
+
 void syncExtensionAuthState();
 
 function hasUnreadConversation(): boolean {

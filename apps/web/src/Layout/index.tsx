@@ -267,6 +267,17 @@ export default class AppLayout extends Component<{}, AppLayoutState> {
             if (!WKApp.shared.currentSpaceId && !WKApp.shared.spaceChecked) {
                 return <SpaceGate />
             }
+            // 扩展环境：使用自定义主页组件（侧边栏布局）
+            const ExtMainPage = WKApp.shared.extensionMainPage;
+            if ((window as any).__POWERED_EXTENSION__ && ExtMainPage) {
+                return <ErrorBoundary moduleName="应用">
+                    <WKBase onContext={(ctx) => {
+                        WKApp.shared.baseContext = ctx
+                    }}>
+                        <ExtMainPage />
+                    </WKBase>
+                </ErrorBoundary>
+            }
             return <ErrorBoundary moduleName="应用">
                 <WKBase onContext={(ctx) => {
                     WKApp.shared.baseContext = ctx

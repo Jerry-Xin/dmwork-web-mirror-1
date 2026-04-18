@@ -1,3 +1,4 @@
+import React from "react";
 import mitt, { Emitter } from "mitt";
 
 /** mittBus 全局事件类型表 */
@@ -272,6 +273,9 @@ export default class WKApp extends ProviderListener {
 
   private wsaddrs = new Array<string>(); // ws的连接地址
   private addrUsed = false; // 地址是否被使用
+
+  /** 扩展环境自定义主页组件（Chrome Extension 侧边栏用） */
+  extensionMainPage?: React.ComponentType;
 
   isPC = false; // 是否是PC端
   deviceId: string = ""; // 设备ID

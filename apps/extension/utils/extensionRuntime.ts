@@ -30,6 +30,7 @@ export const EXTENSION_MESSAGE_TYPE = {
   cmdkFetchThreads: "CMDK_FETCH_THREADS",
   cmdkSendMessage: "CMDK_SEND_MESSAGE",
   cmdkFetchMembers: "CMDK_FETCH_MEMBERS",
+  cmdkFetchCategories: "CMDK_FETCH_CATEGORIES",
 } as const;
 
 export interface ExtensionAuthState {
@@ -119,6 +120,21 @@ export interface CmdkThreadItem {
   name: string;
   unread: number;
   lastMessageTime: number;
+  categoryId?: string;
+  parentChannelId?: string;
+  mentionCount: number;
+  muted: boolean;
+  isBot?: boolean;
+}
+
+export interface CmdkCategoryItem {
+  id: string;
+  name: string;
+  order: number;
+}
+
+export interface CmdkFetchCategoriesMessage {
+  type: typeof EXTENSION_MESSAGE_TYPE.cmdkFetchCategories;
 }
 
 export type ExtensionRuntimeMessage =
@@ -132,7 +148,8 @@ export type ExtensionRuntimeMessage =
   | SidepanelStateMessage
   | CmdkFetchThreadsMessage
   | CmdkSendMessageMessage
-  | CmdkFetchMembersMessage;
+  | CmdkFetchMembersMessage
+  | CmdkFetchCategoriesMessage;
 
 export interface ExtensionAuthResponse {
   auth: ExtensionAuthState | null;

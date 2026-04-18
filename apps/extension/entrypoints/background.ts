@@ -427,7 +427,8 @@ async function handleRuntimeMessage(
   if (
     message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchThreads ||
     message.type === EXTENSION_MESSAGE_TYPE.cmdkSendMessage ||
-    message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchMembers
+    message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchMembers ||
+    message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchCategories
   ) {
     await ensureOffscreenDocument();
     // 直接转发给 offscreen，offscreen 的 listener 会处理并返回结果

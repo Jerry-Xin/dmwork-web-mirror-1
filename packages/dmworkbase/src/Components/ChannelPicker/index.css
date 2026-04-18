@@ -1,0 +1,463 @@
+/* ChannelPicker — 频道选择器组件
+ * 使用 --wk-* CSS 变量，支持多主题
+ * 类名前缀: wk-channel-picker-
+ */
+
+.wk-channel-picker {
+  display: flex;
+  flex-direction: column;
+  background: var(--wk-bg-base, #f7f8fa);
+  border-radius: var(--wk-r-md, 10px);
+  overflow: hidden;
+  font-family: var(--wk-font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 13px;
+  color: var(--wk-text-primary, #111318);
+}
+
+/* ============================================================
+   搜索栏
+   ============================================================ */
+.wk-channel-picker-search {
+  display: flex;
+  gap: 6px;
+  padding: var(--wk-sp-2, 8px);
+  border-bottom: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
+}
+
+.wk-channel-picker-search-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2, 8px);
+  background: var(--wk-bg-surface, #fff);
+  border: 1px solid var(--wk-border-default, rgba(0, 0, 0, 0.08));
+  border-radius: var(--wk-r-sm, 6px);
+  padding: 0 var(--wk-sp-2, 8px);
+  transition: border-color var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
+}
+
+.wk-channel-picker-search-input-wrap:focus-within {
+  border-color: var(--wk-brand-primary, #7c5cfc);
+  box-shadow: 0 0 0 3px var(--wk-brand-glow, rgba(124, 92, 252, 0.3));
+}
+
+.wk-channel-picker-search-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--wk-text-tertiary, #9498a8);
+}
+
+.wk-channel-picker-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 6px 0;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--wk-text-primary, #111318);
+}
+
+.wk-channel-picker-search-input::placeholder {
+  color: var(--wk-text-tertiary, #9498a8);
+}
+
+.wk-channel-picker-icon-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: var(--wk-r-sm, 6px);
+  color: var(--wk-text-tertiary, #9498a8);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: background var(--wk-dur-fast, 150ms) var(--wk-ease, ease),
+    color var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
+}
+
+.wk-channel-picker-icon-btn:hover {
+  background: var(--wk-bg-hover, #eaebf0);
+  color: var(--wk-text-primary, #111318);
+}
+
+.wk-channel-picker-icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================================
+   Tab 切换
+   ============================================================ */
+.wk-channel-picker-tabs {
+  display: flex;
+  gap: 18px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
+  flex-shrink: 0;
+}
+
+.wk-channel-picker-tab {
+  position: relative;
+  background: transparent;
+  border: none;
+  padding: 8px 2px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--wk-text-secondary, #5c6070);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
+}
+
+.wk-channel-picker-tab:hover {
+  color: var(--wk-text-primary, #111318);
+}
+
+.wk-channel-picker-tab.is-active {
+  color: var(--wk-text-primary, #111318);
+  font-weight: 600;
+}
+
+.wk-channel-picker-tab.is-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--wk-brand-primary, #7c5cfc);
+  border-radius: 1px;
+}
+
+.wk-channel-picker-tab-badge {
+  background: var(--wk-color-error, #ff5c72);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ============================================================
+   列表区
+   ============================================================ */
+.wk-channel-picker-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--wk-sp-1, 4px);
+  max-height: 300px;
+}
+
+/* ============================================================
+   分类折叠头
+   ============================================================ */
+.wk-channel-picker-cat-group {
+  margin-bottom: 2px;
+}
+
+.wk-channel-picker-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px 4px;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--wk-text-secondary, #5c6070);
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transition: color var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
+}
+
+.wk-channel-picker-cat:hover {
+  color: var(--wk-text-primary, #111318);
+}
+
+.wk-channel-picker-cat-arrow {
+  color: var(--wk-text-tertiary, #9498a8);
+  font-size: 10px;
+  width: 12px;
+  display: inline-block;
+}
+
+.wk-channel-picker-cat-name {
+  font-weight: 500;
+}
+
+.wk-channel-picker-cat-static {
+  padding: 8px 14px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--wk-text-secondary, #5c6070);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   频道列表项（通用）
+   ============================================================ */
+.wk-channel-picker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2, 8px);
+  width: 100%;
+  padding: 6px 10px 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: var(--wk-r-sm, 6px);
+  color: var(--wk-text-primary, #111318);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
+}
+
+.wk-channel-picker-item:hover {
+  background: var(--wk-bg-hover, #eaebf0);
+}
+
+.wk-channel-picker-item.is-current {
+  background: var(--wk-brand-glow, rgba(124, 92, 252, 0.3));
+}
+
+.wk-channel-picker-item.is-muted {
+  opacity: 0.55;
+}
+
+/* 缩进层级 */
+.wk-channel-picker-level-0 {
+  padding-left: 14px;
+}
+
+.wk-channel-picker-level-1 {
+  padding-left: 40px;
+  position: relative;
+}
+
+.wk-channel-picker-level-1::before {
+  content: '';
+  position: absolute;
+  left: 28px;
+  top: 0;
+  bottom: 50%;
+  width: 1px;
+  background: var(--wk-border-default, rgba(0, 0, 0, 0.08));
+}
+
+.wk-channel-picker-level-1::after {
+  content: '';
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  width: 8px;
+  height: 1px;
+  background: var(--wk-border-default, rgba(0, 0, 0, 0.08));
+}
+
+/* ============================================================
+   频道图标
+   ============================================================ */
+.wk-channel-picker-icon {
+  width: 16px;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--wk-text-tertiary, #9498a8);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.wk-channel-picker-hash {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.wk-channel-picker-thread-icon {
+  font-size: 12px;
+}
+
+/* 私聊头像 */
+.wk-channel-picker-pm .wk-channel-picker-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.wk-channel-picker-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* ============================================================
+   名称 + 内容区
+   ============================================================ */
+.wk-channel-picker-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wk-channel-picker-row1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wk-channel-picker-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+
+.wk-channel-picker-time {
+  font-size: 10px;
+  color: var(--wk-text-tertiary, #9498a8);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   角标 — 未读 / @ / 静音
+   ============================================================ */
+.wk-channel-picker-unread {
+  flex-shrink: 0;
+  background: var(--wk-color-error, #ff5c72);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.wk-channel-picker-unread-muted {
+  flex-shrink: 0;
+  background: var(--wk-bg-hover, #eaebf0);
+  color: var(--wk-text-tertiary, #9498a8);
+  font-size: 10px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.wk-channel-picker-mention {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #f97316;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.wk-channel-picker-muted-icon {
+  flex-shrink: 0;
+  opacity: 0.5;
+  font-size: 11px;
+}
+
+/* ============================================================
+   子区展开按钮
+   ============================================================ */
+.wk-channel-picker-more-subs {
+  display: block;
+  width: 100%;
+  padding: 4px 14px 6px 40px;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--wk-text-tertiary, #9498a8);
+  cursor: pointer;
+  text-align: left;
+  transition: color var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
+}
+
+.wk-channel-picker-more-subs:hover {
+  color: var(--wk-brand-primary, #7c5cfc);
+}
+
+.wk-channel-picker-more-subs.has-mention {
+  color: #f97316;
+}
+
+.wk-channel-picker-more-subs.has-mention:hover {
+  color: #ea580c;
+}
+
+.wk-channel-picker-row-mention {
+  flex-shrink: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 6px;
+  background: #f97316;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+/* ============================================================
+   空状态 + 加载
+   ============================================================ */
+.wk-channel-picker-empty {
+  padding: var(--wk-sp-6, 24px);
+  text-align: center;
+  color: var(--wk-text-tertiary, #9498a8);
+  font-size: 13px;
+}
+
+.wk-channel-picker-loading {
+  padding: var(--wk-sp-6, 24px);
+  text-align: center;
+  color: var(--wk-text-tertiary, #9498a8);
+  font-size: 13px;
+}

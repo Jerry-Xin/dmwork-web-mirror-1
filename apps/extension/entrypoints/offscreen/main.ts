@@ -553,7 +553,7 @@ async function clearAuth(): Promise<void> {
 // ============================================================
 // Cmd+K overlay: 获取会话列表 + 发消息
 // ============================================================
-import type { CmdkThreadItem, CmdkFetchMembersMessage } from "../../utils/extensionRuntime";
+import type { CmdkThreadItem, CmdkCategoryItem, CmdkFetchMembersMessage } from "../../utils/extensionRuntime";
 
 function getThreadList(): CmdkThreadItem[] {
   const auth = currentAuth;
@@ -572,18 +572,58 @@ function getThreadList(): CmdkThreadItem[] {
       channelInfo?.title ||
       conv.channel.channelID;
 
+    // 子区的父频道 ID
+    const parentChannelId =
+      (channelInfo?.orgData?.parentGroupNo as string | undefined) || undefined;
+
+    // 尝试从 channelSpaceMap 或 channelInfo 获取分类相关信息
+    // categoryId 由 getCategoryList 的 groups 映射提供，此处先不填
+    // 后续前端会根据 getCategoryList 的 groups 列表做归类
+
     result.push({
       channelId: conv.channel.channelID,
       channelType: conv.channel.channelType,
       name,
       unread: getBadgeUnread(conv),
       lastMessageTime: conv.timestamp ?? 0,
+      parentChannelId,
+      mentionCount: (conv.extra as any)?.mentionCount || 0,
+      muted: channelInfo?.mute || false,
+      isBot: SYSTEM_BOTS.has(conv.channel.channelID),
     });
   }
 
   // 按最后消息时间降序
   result.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
   return result;
+}
+
+async function getCategoryList(): Promise<CmdkCategoryItem[]> {
+  const auth = currentAuth;
+  if (!auth?.loggedIn || !auth.currentSpaceId) return [];
+
+  try {
+    const data = await fetchJSON<Array<{
+      category_id: string | null;
+      name: string;
+      sort: number;
+      groups?: Array<{ group_no: string; name: string; category_sort: number }>;
+      is_default?: boolean;
+    }>>(
+      `spaces/${encodeURIComponent(auth.currentSpaceId)}/categories`,
+      { method: "GET" },
+      auth,
+    );
+
+    return (data ?? []).map((cat, idx) => ({
+      id: cat.category_id || `default-${idx}`,
+      name: cat.name,
+      order: cat.sort ?? idx,
+    }));
+  } catch (error) {
+    console.debug("[Extension] Failed to fetch categories:", error);
+    return [];
+  }
 }
 
 async function sendCmdkMessage(
@@ -644,6 +684,12 @@ browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
     return fetchChannelMembers(message.channelId, message.channelType)
       .then((members) => ({ success: true, data: members }))
       .catch((err) => ({ success: false, error: err?.message || 'fetch members failed', data: [] }));
+  }
+
+  if (message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchCategories) {
+    return getCategoryList()
+      .then((categories) => ({ success: true, data: categories }))
+      .catch((err) => ({ success: false, error: err?.message || 'fetch categories failed', data: [] }));
   }
 
   if (message.type === EXTENSION_MESSAGE_TYPE.cmdkSendMessage) {

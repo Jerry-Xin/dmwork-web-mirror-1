@@ -1,17 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { PanelContext } from './CmdKOverlay';
-import type { CmdkThreadItem } from '../../utils/extensionRuntime';
+import type { CmdkThreadItem, CmdkCategoryItem } from '../../utils/extensionRuntime';
 import MessageInput, { type MentionModel } from '@dmwork/base/src/Components/MessageInput';
 import type ConversationContext from '@dmwork/base/src/Components/Conversation/context';
 import { Channel, Message, MessageContent, Subscriber } from 'wukongimjssdk';
+import ChannelPicker from '@dmwork/base/src/Components/ChannelPicker';
+import type { ChannelPickerItem, ChannelPickerCategory } from '@dmwork/base/src/Components/ChannelPicker';
 
 // Web 端 CSS 变量定义（--input-bg、--border-color 等），WXT 构建会注入 Shadow DOM
 import '@dmwork/base/src/App.css';
-
-/** SVG outline icons — 和 v2 sidepanel 保持同步 */
-const OUTLINE_ICONS = {
-  send: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 2.5L2.5 9l5.5 2.5L10.5 17 17.5 2.5z"/><path d="M8 11.5l9-9"/></svg>',
-};
 
 /** 引用文字最大长度 */
 const QUOTE_MAX_LENGTH = 500;
@@ -70,28 +67,30 @@ export default function ConversationEmbed({
   onMessageSent,
 }: ConversationEmbedProps) {
   const [threads, setThreads] = useState<CmdkThreadItem[]>([]);
+  const [categories, setCategories] = useState<CmdkCategoryItem[]>([]);
   const [selected, setSelected] = useState<{ id: string; type: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerQuery, setPickerQuery] = useState('');
   const [members, setMembers] = useState<Subscriber[]>([]);
 
   const fetchThreads = useCallback(async () => {
     try {
-      const response = await browser.runtime.sendMessage({
-        type: 'CMDK_FETCH_THREADS',
-      });
-      if (response?.success && Array.isArray(response.data)) {
-        setThreads(response.data);
-        if (response.data.length > 0) {
-          setSelected((prev) =>
-            prev || { id: response.data[0].channelId, type: response.data[0].channelType },
-          );
-        }
+      const [threadsResponse, categoriesResponse] = await Promise.all([
+        browser.runtime.sendMessage({ type: 'CMDK_FETCH_THREADS' }),
+        browser.runtime.sendMessage({ type: 'CMDK_FETCH_CATEGORIES' }),
+      ]);
+
+      if (threadsResponse?.success && Array.isArray(threadsResponse.data)) {
+        setThreads(threadsResponse.data);
+        // 默认不选发送方
       } else {
         setError('无法获取会话列表');
+      }
+
+      if (categoriesResponse?.success && Array.isArray(categoriesResponse.data)) {
+        setCategories(categoriesResponse.data);
       }
     } catch (err: any) {
       setError(err?.message || '连接失败');
@@ -133,7 +132,6 @@ export default function ConversationEmbed({
           );
         }
       } catch {
-        // 获取成员失败不影响主流程
         if (!cancelled) setMembers([]);
       }
     })();
@@ -179,21 +177,55 @@ export default function ConversationEmbed({
     [selected, context, onMessageSent],
   );
 
+  // ChannelPicker onSelect
+  const handlePickerSelect = useCallback((item: ChannelPickerItem) => {
+    setSelected({ id: item.channelId, type: item.channelType });
+    setPickerOpen(false);
+  }, []);
+
+  // 将 threads 数据转换为 ChannelPicker 格式
+  const pickerChannels: ChannelPickerItem[] = threads
+    .filter((t) => t.channelType !== 1)
+    .map((t) => ({
+      channelId: t.channelId,
+      channelType: t.channelType,
+      name: t.name,
+      categoryId: t.categoryId,
+      parentChannelId: t.parentChannelId,
+      unread: t.unread,
+      mentionCount: t.mentionCount,
+      muted: t.muted,
+      lastMessageTime: t.lastMessageTime,
+      isBot: t.isBot,
+    }));
+
+  const pickerPrivateChats: ChannelPickerItem[] = threads
+    .filter((t) => t.channelType === 1)
+    .map((t) => ({
+      channelId: t.channelId,
+      channelType: t.channelType,
+      name: t.name,
+      unread: t.unread,
+      mentionCount: t.mentionCount,
+      muted: t.muted,
+      lastMessageTime: t.lastMessageTime,
+      isBot: t.isBot,
+    }));
+
+  const pickerCategories: ChannelPickerCategory[] = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    order: c.order,
+  }));
+
   // 构造 mock context 给 MessageInput
   const mockContext = selected
     ? createMockContext(selected.id, selected.type)
     : createMockContext('', 0);
 
-  // Picker 过滤
-  const filteredThreads = pickerQuery.trim()
-    ? threads.filter((t) =>
-        t.name.toLowerCase().includes(pickerQuery.trim().toLowerCase()),
-      )
-    : threads;
-
   if (loading) {
     return (
-      <div className="octo-cmdk-empty">
+      <div className="octo-cmdk-center">
         <div className="octo-cmdk-loading">加载会话列表…</div>
       </div>
     );
@@ -201,10 +233,10 @@ export default function ConversationEmbed({
 
   if (error && threads.length === 0) {
     return (
-      <div className="octo-cmdk-empty">
-        <div style={{ fontSize: '24px' }}>⚠️</div>
-        <div className="octo-cmdk-loading">{error}</div>
-        <button className="octo-btn octo-btn-sm" onClick={fetchThreads}>
+      <div className="octo-cmdk-center">
+        <div className="octo-cmdk-error-icon">⚠️</div>
+        <div className="octo-cmdk-error-text">{error}</div>
+        <button className="octo-cmdk-retry" onClick={fetchThreads}>
           重试
         </button>
       </div>
@@ -214,13 +246,17 @@ export default function ConversationEmbed({
   return (
     <>
       {/* 输入区 — 使用 Web 端 MessageInput 组件 */}
-      <div className="octo-cmdk-section octo-cmdk-input-section">
-        <MessageInput
-          context={mockContext}
-          onSend={handleSend}
-          members={members}
-        />
-      </div>
+      {selected && (
+        <div className="octo-cmdk-section octo-cmdk-input-section">
+          {/* key 使 MessageInput 在切换频道时重新挂载，自动清空编辑器 */}
+          <MessageInput
+            key={selected.id}
+            context={mockContext}
+            onSend={handleSend}
+            members={members}
+          />
+        </div>
+      )}
 
       {/* 工具栏 */}
       <div className="octo-cmdk-toolbar">
@@ -232,54 +268,45 @@ export default function ConversationEmbed({
         >
           <span className="octo-cmdk-target-label">→</span>
           <span className="octo-cmdk-target-name">
-            {selectedThread?.name || (selected ? selected.id : '选择会话')}
+            {selectedThread?.name || (selected ? selected.id : '选择发送方')}
           </span>
           <span className="octo-cmdk-target-chevron">▾</span>
         </button>
       </div>
 
-      {/* 错误提示 + 发送 */}
-      <div className="octo-cmdk-footer">
-        {error && <span className="octo-cmdk-err">{error}</span>}
-        <div className="octo-cmdk-actions">
-          <span className="octo-cmdk-hint-text">Enter 发送 · Shift+Enter 换行</span>
+      {/* 未选择发送方时的提示 */}
+      {!selected && !pickerOpen && (
+        <div className="octo-cmdk-center">
+          <div className="octo-cmdk-loading">请先选择发送方</div>
         </div>
-      </div>
+      )}
 
-      {/* Target Picker */}
+      {/* 错误提示 + 发送提示 */}
+      {selected && (
+        <div className="octo-cmdk-footer">
+          {error && <span className="octo-cmdk-err">{error}</span>}
+          <div className="octo-cmdk-actions">
+            <span className="octo-cmdk-hint-text">Enter 发送 · Shift+Enter 换行</span>
+          </div>
+        </div>
+      )}
+
+      {/* ChannelPicker */}
       {pickerOpen && (
         <div className="octo-cmdk-picker">
-          <input
-            className="octo-input-text"
-            placeholder="搜索 Channel / Thread / 联系人"
-            value={pickerQuery}
-            onChange={(e) => setPickerQuery(e.target.value)}
-            autoFocus
+          <ChannelPicker
+            channels={pickerChannels}
+            categories={pickerCategories}
+            privateChats={pickerPrivateChats}
+            selectedId={selected?.id}
+            onSelect={handlePickerSelect}
+            onClose={() => setPickerOpen(false)}
+            onRefresh={() => {
+              setLoading(true);
+              fetchThreads();
+            }}
+            loading={loading}
           />
-          <div className="octo-cmdk-picker-list">
-            {filteredThreads.length === 0 ? (
-              <div className="octo-empty-small">未找到</div>
-            ) : (
-              filteredThreads.map((t) => (
-                <button
-                  key={t.channelId}
-                  className={`octo-cmdk-picker-item ${
-                    t.channelId === selected?.id ? 'is-current' : ''
-                  }`}
-                  onClick={() => {
-                    setSelected({ id: t.channelId, type: t.channelType });
-                    setPickerOpen(false);
-                    setPickerQuery('');
-                  }}
-                >
-                  <span className="octo-cmdk-pk-icon">
-                    {t.channelType === 1 ? '👤' : '#'}
-                  </span>
-                  <span className="octo-cmdk-pk-name">{t.name}</span>
-                </button>
-              ))
-            )}
-          </div>
         </div>
       )}
     </>

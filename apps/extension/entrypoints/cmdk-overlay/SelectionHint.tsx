@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import './selection-hint.css';
 
 interface SelectionHintProps {
   rect: DOMRect;
@@ -14,7 +15,6 @@ export default function SelectionHint({ rect, onClick }: SelectionHintProps) {
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
-    // 定位：选区右侧，垂直居中
     const btnWidth = 140;
     const btnHeight = 28;
     let top = rect.top + (rect.height - btnHeight) / 2;
@@ -39,13 +39,14 @@ export default function SelectionHint({ rect, onClick }: SelectionHintProps) {
   return (
     <button
       ref={btnRef}
+      className="octo-selection-hint"
+      style={{ top: pos.top, left: pos.left }}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         onClick();
       }}
       onPointerDown={(e) => {
-        // 防止点击时选区丢失
         e.preventDefault();
         e.stopPropagation();
       }}
@@ -53,43 +54,10 @@ export default function SelectionHint({ rect, onClick }: SelectionHintProps) {
         e.preventDefault();
         e.stopPropagation();
       }}
-      style={{
-        position: 'fixed',
-        top: pos.top,
-        left: pos.left,
-        zIndex: 2147483647,
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '4px 10px',
-        background: '#fff',
-        border: '1px solid rgba(0,0,0,0.1)',
-        borderRadius: 8,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-        cursor: 'pointer',
-        fontSize: 12,
-        color: '#333',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif',
-        whiteSpace: 'nowrap',
-        transition: 'box-shadow 150ms ease',
-        lineHeight: 1,
-      }}
     >
-      <span style={{ fontSize: 14 }}>🐙</span>
+      <span className="octo-selection-hint-icon">🐙</span>
       <span>反馈到 Octo</span>
-      <kbd
-        style={{
-          fontSize: 10,
-          padding: '1px 4px',
-          background: '#f0f0f0',
-          border: '1px solid #ddd',
-          borderRadius: 3,
-          fontFamily: 'monospace',
-          color: '#666',
-        }}
-      >
-        ⌘K
-      </kbd>
+      <kbd className="octo-selection-hint-kbd">⌘K</kbd>
     </button>
   );
 }

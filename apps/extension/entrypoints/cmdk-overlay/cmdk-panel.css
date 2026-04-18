@@ -1,0 +1,149 @@
+/* Cmd+K 弹窗样式
+ * 使用 CSS 变量，后续 P2 主题系统可直接覆盖
+ */
+
+:host {
+  --cmdk-bg: #ffffff;
+  --cmdk-text: #111318;
+  --cmdk-text-secondary: #666;
+  --cmdk-text-tertiary: #999;
+  --cmdk-border: rgba(0, 0, 0, 0.06);
+  --cmdk-quote-bg: #f5f5f5;
+  --cmdk-quote-border: #7C5CFC;
+  --cmdk-shadow: 0 20px 48px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.08);
+  --cmdk-radius: 12px;
+  --cmdk-font: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;
+}
+
+/* Dark Mode — 跟随系统偏好 */
+@media (prefers-color-scheme: dark) {
+  :host {
+    --cmdk-bg: #252525;
+    --cmdk-text: #e0e0e0;
+    --cmdk-text-secondary: #aaa;
+    --cmdk-text-tertiary: #777;
+    --cmdk-border: rgba(255, 255, 255, 0.08);
+    --cmdk-quote-bg: #333;
+    --cmdk-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 8px 16px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.octo-cmdk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+}
+
+.octo-cmdk-card {
+  width: 420px;
+  height: 560px;
+  background: var(--cmdk-bg);
+  border-radius: var(--cmdk-radius);
+  box-shadow: var(--cmdk-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--cmdk-font);
+  color: var(--cmdk-text);
+}
+
+/* 顶栏 */
+.octo-cmdk-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--cmdk-border);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.octo-cmdk-header:active {
+  cursor: grabbing;
+}
+
+.octo-cmdk-logo {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.octo-cmdk-source {
+  flex: 1;
+  min-width: 0;
+}
+
+.octo-cmdk-source-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cmdk-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.octo-cmdk-source-host {
+  font-size: 10px;
+  color: var(--cmdk-text-tertiary);
+  font-style: italic;
+}
+
+.octo-cmdk-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--cmdk-text-tertiary);
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.octo-cmdk-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--cmdk-text);
+}
+
+/* 引用区 */
+.octo-cmdk-quote-wrap {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--cmdk-border);
+  flex-shrink: 0;
+}
+
+.octo-cmdk-quote {
+  padding: 6px 10px;
+  background: var(--cmdk-quote-bg);
+  border-left: 2px solid var(--cmdk-quote-border);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--cmdk-text-secondary);
+  max-height: 80px;
+  overflow: hidden;
+  line-height: 1.5;
+  position: relative;
+}
+
+.octo-cmdk-quote-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  background: linear-gradient(transparent, var(--cmdk-quote-bg));
+}
+
+/* 对话区 */
+.octo-cmdk-conversation {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

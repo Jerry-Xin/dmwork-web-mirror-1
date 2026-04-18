@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import SelectionHint from './SelectionHint';
 import CmdKPanel from './CmdKPanel';
 
@@ -14,18 +14,10 @@ export default function CmdKOverlay({ shadowRoot }: CmdKOverlayProps) {
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelContext, setPanelContext] = useState<PanelContext | null>(null);
-  const mouseDownRef = useRef(false);
 
   // 监听划词
   useEffect(() => {
-    const doc = document;
-
-    const onMouseDown = () => {
-      mouseDownRef.current = true;
-    };
-
     const onMouseUp = () => {
-      mouseDownRef.current = false;
       // 延迟检测，等浏览器更新 selection
       setTimeout(checkSelection, 10);
     };
@@ -44,16 +36,13 @@ export default function CmdKOverlay({ shadowRoot }: CmdKOverlayProps) {
       }
     };
 
-    doc.addEventListener('mousedown', onMouseDown, true);
-    doc.addEventListener('mouseup', onMouseUp, true);
-
+    document.addEventListener('mouseup', onMouseUp, true);
     return () => {
-      doc.removeEventListener('mousedown', onMouseDown, true);
-      doc.removeEventListener('mouseup', onMouseUp, true);
+      document.removeEventListener('mouseup', onMouseUp, true);
     };
   }, []);
 
-  // 监听 Cmd+K 快捷键
+  // 监听 Cmd+K 快捷键（ESC 由 CmdKPanel 自行处理，避免重复）
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
@@ -62,15 +51,11 @@ export default function CmdKOverlay({ shadowRoot }: CmdKOverlayProps) {
         e.stopImmediatePropagation();
         openPanel();
       }
-      if (e.key === 'Escape' && panelOpen) {
-        e.preventDefault();
-        setPanelOpen(false);
-      }
     };
 
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [panelOpen, selectionText]);
+  }, [openPanel]);
 
   const openPanel = useCallback(() => {
     const sel = window.getSelection();

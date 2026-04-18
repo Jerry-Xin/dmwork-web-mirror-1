@@ -8,11 +8,9 @@ interface ConversationEmbedProps {
 
 /**
  * 通过 iframe 嵌入 sidepanel 页面，复用 Web 端完整的对话组件
- * 
- * 这样做的好处：
- * 1. content script 保持轻量，不需要引入整个 @dmwork/base
- * 2. 对话组件在 iframe 里独立运行，和 sidepanel 共享同一套代码
- * 3. 样式完全隔离，不会和宿主页面冲突
+ *
+ * context 通过 postMessage 传给 iframe，iframe 内的 sidepanel 可据此
+ * 预填引用文字、显示来源信息等。
  */
 export default function ConversationEmbed({
   context,
@@ -21,21 +19,40 @@ export default function ConversationEmbed({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(true);
 
-  // sidepanel 页面的 URL（扩展内部页面）
-  const sidepanelUrl = browser.runtime.getURL('/entrypoints/sidepanel/index.html');
+  const sidepanelUrl = browser.runtime.getURL('sidepanel.html');
 
   useEffect(() => {
     // 监听 iframe 内的消息（发送成功后关闭弹窗）
     const onMessage = (e: MessageEvent) => {
-      if (e.data?.__octo_cmdk === true) {
-        if (e.data.type === 'message-sent') {
-          onMessageSent();
-        }
+      if (e.data?.__octo_cmdk !== true) return;
+      if (e.data.type === 'message-sent') {
+        onMessageSent();
       }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
   }, [onMessageSent]);
+
+  const handleIframeLoad = () => {
+    setLoading(false);
+    // iframe 加载完成后，把 context 通过 postMessage 传进去
+    const iframe = iframeRef.current;
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage(
+        {
+          __octo_cmdk: true,
+          type: 'cmdk-context',
+          payload: {
+            selectedText: context.selectedText,
+            pageUrl: context.pageUrl,
+            pageTitle: context.pageTitle,
+            hostname: context.hostname,
+          },
+        },
+        '*',
+      );
+    }
+  };
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -57,7 +74,7 @@ export default function ConversationEmbed({
       <iframe
         ref={iframeRef}
         src={sidepanelUrl}
-        onLoad={() => setLoading(false)}
+        onLoad={handleIframeLoad}
         style={{
           width: '100%',
           height: '100%',

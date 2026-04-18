@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { PanelContext } from './CmdKOverlay';
 import ConversationEmbed from './ConversationEmbed';
+import { resolveApp } from './url-apps';
+import './tokens.css';
 import './cmdk-panel.css';
 
 interface CmdKPanelProps {
@@ -8,18 +10,22 @@ interface CmdKPanelProps {
   onClose: () => void;
 }
 
-const QUOTE_PREVIEW_LIMIT = 300;
+const QUOTE_PREVIEW_LIMIT = 500;
+const TITLE_DISPLAY_LIMIT = 60;
 
 /**
- * Cmd+K 弹窗：半透明遮罩 + 居中面板
- * 面板内渲染 Web 端的对话组件
+ * Cmd+K 弹窗 — 对齐 v2 content.css
+ * 透明背景 + 可拖拽 + 完整发送能力
  */
 export default function CmdKPanel({ context, onClose }: CmdKPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const sourceRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [quotedText, setQuotedText] = useState(context.selectedText);
   const dragRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
 
-  // ESC 关闭（唯一处理点，CmdKOverlay 不再重复监听）
+  // ESC 关闭
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -32,72 +38,98 @@ export default function CmdKPanel({ context, onClose }: CmdKPanelProps) {
   }, [onClose]);
 
   // 拖拽
-  const onDragStart = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).tagName === 'BUTTON') return;
-    e.preventDefault();
-    dragRef.current = { startX: e.clientX, startY: e.clientY, ox: offset.x, oy: offset.y };
+  const onDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).tagName === 'BUTTON') return;
+      e.preventDefault();
+      dragRef.current = { startX: e.clientX, startY: e.clientY, ox: offset.x, oy: offset.y };
+      setIsDragging(true);
 
-    const onMove = (me: MouseEvent) => {
-      if (!dragRef.current) return;
-      setOffset({
-        x: dragRef.current.ox + (me.clientX - dragRef.current.startX),
-        y: dragRef.current.oy + (me.clientY - dragRef.current.startY),
-      });
-    };
-    const onUp = () => {
-      dragRef.current = null;
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }, [offset]);
+      const onMove = (me: MouseEvent) => {
+        if (!dragRef.current) return;
+        setOffset({
+          x: dragRef.current.ox + (me.clientX - dragRef.current.startX),
+          y: dragRef.current.oy + (me.clientY - dragRef.current.startY),
+        });
+      };
+      const onUp = () => {
+        dragRef.current = null;
+        setIsDragging(false);
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+      };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    },
+    [offset],
+  );
 
-  const truncatedText =
-    context.selectedText.length > QUOTE_PREVIEW_LIMIT
-      ? context.selectedText.slice(0, QUOTE_PREVIEW_LIMIT) + '…'
-      : context.selectedText;
+  // App 识别
+  const app = resolveApp(context.pageUrl, context.hostname);
+
+  // 标题截断
+  const title =
+    context.pageTitle.length > TITLE_DISPLAY_LIMIT
+      ? context.pageTitle.slice(0, TITLE_DISPLAY_LIMIT) + '…'
+      : context.pageTitle;
+
+  // App 副标题
+  const appLabel = app.cli ? `${app.name} · ${app.cli}` : app.name;
+
+  // 引用文字
+  const preview =
+    quotedText.length > QUOTE_PREVIEW_LIMIT
+      ? quotedText.slice(0, QUOTE_PREVIEW_LIMIT) + '…'
+      : quotedText;
+  const isTruncated = quotedText.length > QUOTE_PREVIEW_LIMIT;
 
   return (
-    <div
-      className="octo-cmdk-backdrop"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <div className="octo-cmdk">
       <div
         ref={panelRef}
-        className="octo-cmdk-card"
+        className={`octo-cmdk-panel${isDragging ? ' is-dragging' : ''}`}
         style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
       >
-        {/* 顶栏：来源信息 + 关闭按钮，可拖拽 */}
-        <div className="octo-cmdk-header" onMouseDown={onDragStart}>
-          <span className="octo-cmdk-logo">🐙</span>
-          <div className="octo-cmdk-source">
-            <div className="octo-cmdk-source-title">{context.pageTitle}</div>
-            <div className="octo-cmdk-source-host">{context.hostname}</div>
+        {/* 关闭按钮 */}
+        <button className="octo-cmdk-close" onClick={onClose} title="关闭 (Esc)">
+          ×
+        </button>
+
+        {/* 来源栏（可拖拽）：app 图标 + 标题 + app 名 */}
+        <div
+          ref={sourceRef}
+          className={`octo-cmdk-source${isDragging ? ' is-dragging' : ''}`}
+          onMouseDown={onDragStart}
+          title="按住可拖动浮层"
+        >
+          <span className="octo-cmdk-source-badge">{app.icon}</span>
+          <div className="octo-cmdk-source-text">
+            <div className="octo-cmdk-source-title">{title}</div>
+            <div className="octo-cmdk-source-url">{appLabel}</div>
           </div>
-          <button className="octo-cmdk-close" onClick={onClose} title="关闭 (Esc)">
-            ×
-          </button>
         </div>
 
-        {/* 引用区：显示选中的文字 */}
-        {context.selectedText && (
-          <div className="octo-cmdk-quote-wrap">
-            <div className="octo-cmdk-quote">
-              {truncatedText}
-              {context.selectedText.length > QUOTE_PREVIEW_LIMIT && (
-                <div className="octo-cmdk-quote-fade" />
-              )}
+        {/* ① 引用区 */}
+        {quotedText && (
+          <div className="octo-cmdk-section octo-cmdk-quote-section">
+            <div className={`octo-cmdk-quote${isTruncated ? ' is-truncated' : ''}`}>
+              {preview}
             </div>
+            <button
+              className="octo-cmdk-quote-rm"
+              title="清除引用"
+              onClick={() => setQuotedText('')}
+            >
+              ×
+            </button>
           </div>
         )}
 
         {/* 对话区：复用 Web 端组件 */}
-        <div className="octo-cmdk-conversation">
-          <ConversationEmbed context={context} onMessageSent={onClose} />
-        </div>
+        <ConversationEmbed
+          context={{ ...context, selectedText: quotedText }}
+          onMessageSent={onClose}
+        />
       </div>
     </div>
   );

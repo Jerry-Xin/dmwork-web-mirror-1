@@ -1,61 +1,59 @@
-/* 划词浮标样式 */
+/* Selection hint — v2 对齐
+ * 选中文字后在选区旁弹出的渐变药丸按钮
+ */
 
-:host {
-  --hint-bg: #ffffff;
-  --hint-text: #333;
-  --hint-border: rgba(0, 0, 0, 0.1);
-  --hint-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  --hint-kbd-bg: #f0f0f0;
-  --hint-kbd-border: #ddd;
-  --hint-kbd-text: #666;
-}
-
-@media (prefers-color-scheme: dark) {
-  :host {
-    --hint-bg: #333;
-    --hint-text: #e0e0e0;
-    --hint-border: rgba(255, 255, 255, 0.12);
-    --hint-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    --hint-kbd-bg: #444;
-    --hint-kbd-border: #555;
-    --hint-kbd-text: #aaa;
-  }
-}
-
-.octo-selection-hint {
+.octo-select-hint {
   position: fixed;
-  z-index: 2147483647;
+  z-index: 2147483645;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: var(--hint-bg);
-  border: 1px solid var(--hint-border);
-  border-radius: 8px;
-  box-shadow: var(--hint-shadow);
+  gap: var(--wk-sp-2);
+  padding: 5px var(--wk-sp-2) 5px var(--wk-sp-2);
+  background: var(--wk-brand-gradient);
+  color: #fff;
+  border: none;
+  border-radius: var(--wk-r-full);
+  box-shadow: 0 6px 18px rgba(124, 92, 252, 0.4), 0 1px 2px rgba(0, 0, 0, 0.14);
   cursor: pointer;
+  pointer-events: auto;
+  transition: transform var(--wk-dur-fast) var(--wk-ease), opacity var(--wk-dur-fast);
+  opacity: 0.96;
+  font-family: var(--wk-font-sans);
   font-size: 12px;
-  color: var(--hint-text);
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
-  white-space: nowrap;
-  transition: box-shadow 150ms ease;
   line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  animation: octo-hint-in 180ms var(--wk-ease-bounce);
 }
 
-.octo-selection-hint:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+.octo-select-hint:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(124, 92, 252, 0.5), 0 2px 4px rgba(0, 0, 0, 0.16);
+  opacity: 1;
 }
 
-.octo-selection-hint-icon {
-  font-size: 14px;
+.octo-select-hint svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
 }
 
-.octo-selection-hint-kbd {
+.octo-select-hint-label {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.octo-select-hint-kbd {
+  font-family: var(--wk-font-mono);
   font-size: 10px;
-  padding: 1px 4px;
-  background: var(--hint-kbd-bg);
-  border: 1px solid var(--hint-kbd-border);
+  padding: 2px 5px;
+  background: rgba(255, 255, 255, 0.22);
   border-radius: 3px;
-  font-family: monospace;
-  color: var(--hint-kbd-text);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+@keyframes octo-hint-in {
+  from { transform: translateY(4px) scale(0.92); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 0.95; }
 }

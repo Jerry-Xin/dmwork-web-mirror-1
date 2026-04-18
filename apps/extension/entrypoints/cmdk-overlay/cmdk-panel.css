@@ -1,150 +1,580 @@
-/* Cmd+K 弹窗样式
- * 使用 CSS 变量，后续 P2 主题系统可直接覆盖
+/* Cmd+K 弹窗样式 — 完全对齐 v2 content.css
+ * 使用 --wk-* CSS 变量系统
  */
 
-:host {
-  --cmdk-bg: #ffffff;
-  --cmdk-text: #111318;
-  --cmdk-text-secondary: #666;
-  --cmdk-text-tertiary: #999;
-  --cmdk-border: rgba(0, 0, 0, 0.06);
-  --cmdk-quote-bg: #f5f5f5;
-  --cmdk-quote-border: #7C5CFC;
-  --cmdk-danger: #F54A45;
-  --cmdk-shadow: 0 20px 48px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.08);
-  --cmdk-radius: 12px;
-  --cmdk-font: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif;
-}
-
-/* Dark Mode — 跟随系统偏好 */
-@media (prefers-color-scheme: dark) {
-  :host {
-    --cmdk-bg: #252525;
-    --cmdk-text: #e0e0e0;
-    --cmdk-text-secondary: #aaa;
-    --cmdk-text-tertiary: #777;
-    --cmdk-border: rgba(255, 255, 255, 0.08);
-    --cmdk-quote-bg: #333;
-    --cmdk-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 8px 16px rgba(0, 0, 0, 0.3);
-  }
-}
-
-.octo-cmdk-backdrop {
+/* ============================================================
+   Overlay（透明背景，无遮罩）
+   ============================================================ */
+.octo-cmdk {
   position: fixed;
   inset: 0;
-  z-index: 2147483646;
+  background: transparent;
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(2px);
+  align-items: flex-start;
+  padding-top: 12vh;
+  z-index: 2147483646;
+  pointer-events: none;
+  animation: octo-fade-in var(--wk-dur-fast) var(--wk-ease);
 }
 
-.octo-cmdk-card {
-  width: 420px;
-  height: 560px;
-  background: var(--cmdk-bg);
-  border-radius: var(--cmdk-radius);
-  box-shadow: var(--cmdk-shadow);
+@keyframes octo-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================
+   Panel 主体
+   ============================================================ */
+.octo-cmdk-panel {
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 24vh);
+  background: var(--wk-bg-surface);
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-lg);
+  box-shadow: var(--wk-shadow-overlay);
+  overflow: hidden;
+  pointer-events: auto;
+  position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  font-family: var(--cmdk-font);
-  color: var(--cmdk-text);
+  font-family: var(--wk-font-sans);
+  color: var(--wk-text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  animation: octo-cmdk-in var(--wk-dur) var(--wk-ease-bounce);
+  transition: box-shadow var(--wk-dur-fast) var(--wk-ease);
 }
 
-/* 顶栏 */
-.octo-cmdk-header {
+.octo-cmdk-panel *,
+.octo-cmdk-panel *::before,
+.octo-cmdk-panel *::after {
+  box-sizing: border-box;
+}
+
+.octo-cmdk-panel.is-dragging {
+  box-shadow: var(--wk-shadow-overlay), 0 0 0 2px var(--wk-border-glow);
+}
+
+@keyframes octo-cmdk-in {
+  from { transform: translateY(-12px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1);        opacity: 1; }
+}
+
+/* ============================================================
+   关闭按钮（右上角圆形）
+   ============================================================ */
+.octo-cmdk-close {
+  position: absolute;
+  top: var(--wk-sp-2);
+  right: var(--wk-sp-2);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--wk-r-full);
+  border: none;
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
+  z-index: 2;
+  transition: background var(--wk-dur-fast) var(--wk-ease), color var(--wk-dur-fast) var(--wk-ease);
+}
+
+.octo-cmdk-close:hover {
+  background: var(--wk-bg-active);
+  color: var(--wk-text-primary);
+}
+
+/* ============================================================
+   来源栏（header / 可拖拽）
+   ============================================================ */
+.octo-cmdk-source {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--cmdk-border);
+  gap: var(--wk-sp-2);
+  padding: var(--wk-sp-3) var(--wk-sp-4);
+  padding-right: 40px;
+  background: var(--wk-brand-gradient-subtle);
+  border-bottom: 1px solid var(--wk-border-glow);
   cursor: grab;
   user-select: none;
   flex-shrink: 0;
 }
 
-.octo-cmdk-header:active {
+.octo-cmdk-source.is-dragging {
   cursor: grabbing;
 }
 
-.octo-cmdk-logo {
-  font-size: 16px;
+.octo-cmdk-source-badge {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  background: var(--wk-bg-surface);
+  border-radius: var(--wk-r-sm);
   flex-shrink: 0;
 }
 
-.octo-cmdk-source {
+.octo-cmdk-source-text {
   flex: 1;
   min-width: 0;
 }
 
 .octo-cmdk-source-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--cmdk-text);
+  color: var(--wk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.octo-cmdk-source-url {
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
+  font-family: var(--wk-font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================
+   三段式 section · 每段之间细横线分隔
+   ============================================================ */
+.octo-cmdk-section {
+  padding: 10px 14px;
+  border-top: 1px solid var(--wk-border-subtle);
+}
+
+.octo-cmdk-section:first-of-type {
+  border-top: none;
+}
+
+/* ============================================================
+   ① 引用区 — 左侧 3px 渐变色边框 + 底部渐变遮罩 + 右侧清除按钮
+   ============================================================ */
+.octo-cmdk-quote-section {
+  position: relative;
+  padding-right: 36px;
+}
+
+.octo-cmdk-quote {
+  margin: 0 auto 0 0;
+  max-width: 88%;
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  border-left: 3px solid var(--wk-border-glow, var(--wk-brand-primary));
+  background: var(--wk-bg-base);
+  color: var(--wk-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  max-height: 96px;
+  overflow-y: auto;
+  border-radius: var(--wk-r-xs);
+  position: relative;
+}
+
+.octo-cmdk-quote.is-truncated::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24px;
+  background: linear-gradient(to bottom, transparent, var(--wk-bg-base));
+  pointer-events: none;
+  border-radius: 0 0 var(--wk-r-xs) var(--wk-r-xs);
+}
+
+.octo-cmdk-quote-rm {
+  position: absolute;
+  top: var(--wk-sp-2);
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: background var(--wk-dur-fast) var(--wk-ease), color var(--wk-dur-fast) var(--wk-ease);
+}
+
+.octo-cmdk-quote-rm:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+/* ============================================================
+   ② 输入区 — textarea 贴边
+   ============================================================ */
+.octo-cmdk-input-section {
+  padding: var(--wk-sp-2) 14px 10px;
+}
+
+.octo-cmdk-input {
+  width: 100%;
+  border: 1px solid var(--wk-border-default);
+  background: var(--wk-bg-base);
+  border-radius: var(--wk-r-md);
+  padding: var(--wk-sp-3);
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--wk-text-primary);
+  resize: none;
+  line-height: 1.5;
+  transition: border-color var(--wk-dur-fast) var(--wk-ease), box-shadow var(--wk-dur-fast) var(--wk-ease);
+}
+
+.octo-cmdk-input:focus {
+  outline: none;
+  border-color: var(--wk-brand-primary);
+  box-shadow: 0 0 0 3px var(--wk-brand-glow);
+}
+
+.octo-cmdk-input::placeholder {
+  color: var(--wk-text-tertiary);
+}
+
+.octo-cmdk-input:disabled {
+  opacity: 0.6;
+}
+
+/* ============================================================
+   工具栏 — 左侧工具 + 右侧目标
+   ============================================================ */
+.octo-cmdk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2);
+  padding: 10px var(--wk-sp-4);
+  margin-top: var(--wk-sp-1);
+  border-top: 1px solid var(--wk-border-subtle);
+  flex-wrap: wrap;
+}
+
+.octo-cmdk-tools-left {
+  display: flex;
+  gap: var(--wk-sp-1);
+  flex-shrink: 0;
+}
+
+.octo-cmdk-tool {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--wk-r-sm);
+  display: grid;
+  place-items: center;
+  transition: all var(--wk-dur-fast) var(--wk-ease);
+}
+
+.octo-cmdk-tool:hover:not(:disabled) {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+.octo-cmdk-tool.is-active {
+  background: var(--wk-brand-gradient-subtle);
+  color: var(--wk-text-accent);
+}
+
+.octo-cmdk-tool:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.octo-cmdk-tool svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* 目标选择器按钮 */
+.octo-cmdk-target {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-1);
+  margin-left: auto;
+  background: var(--wk-bg-base);
+  border: 1px solid var(--wk-border-default);
+  color: var(--wk-text-accent);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--wk-r-sm);
+  transition: background var(--wk-dur-fast) var(--wk-ease);
+  max-width: 220px;
+}
+
+.octo-cmdk-target:hover:not(:disabled) {
+  background: var(--wk-bg-hover);
+}
+
+.octo-cmdk-target:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.octo-cmdk-target-label {
+  color: var(--wk-text-tertiary);
+}
+
+.octo-cmdk-target-name {
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.octo-cmdk-source-host {
+.octo-cmdk-target-chevron {
+  color: var(--wk-text-tertiary);
   font-size: 10px;
-  color: var(--cmdk-text-tertiary);
-  font-style: italic;
 }
 
-.octo-cmdk-close {
-  width: 24px;
-  height: 24px;
+/* ============================================================
+   底部 footer
+   ============================================================ */
+.octo-cmdk-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2);
+  padding: 10px var(--wk-sp-4) 14px;
+  background: var(--wk-bg-base);
+  flex-shrink: 0;
+}
+
+.octo-cmdk-err {
+  color: var(--wk-color-error);
+  font-size: 12px;
+  flex: 1;
+  padding: var(--wk-sp-1) var(--wk-sp-2);
+  background: rgba(255, 92, 114, 0.08);
+  border-radius: var(--wk-r-xs);
+}
+
+.octo-cmdk-actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--wk-sp-2);
+  align-items: center;
+}
+
+/* 取消按钮 */
+.octo-cmdk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wk-sp-1) 10px;
+  border-radius: var(--wk-r-sm);
+  border: 1px solid var(--wk-border-default);
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--wk-dur-fast) var(--wk-ease);
+}
+
+.octo-cmdk-btn:hover:not(:disabled) {
+  background: var(--wk-bg-hover);
+}
+
+.octo-cmdk-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 发送按钮 — outline 纸飞机 primary 色 */
+.octo-cmdk-send {
+  width: 34px;
+  height: 30px;
   border: none;
   background: transparent;
+  color: var(--wk-brand-primary);
   cursor: pointer;
-  font-size: 16px;
-  color: var(--cmdk-text-tertiary);
+  border-radius: var(--wk-r-sm);
   display: grid;
   place-items: center;
-  border-radius: 4px;
+  transition: all var(--wk-dur-fast);
+}
+
+.octo-cmdk-send:hover:not(:disabled) {
+  background: var(--wk-brand-gradient-subtle);
+  color: var(--wk-brand-primary-hover);
+  transform: translateX(1px);
+}
+
+.octo-cmdk-send:disabled {
+  color: var(--wk-text-tertiary);
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.octo-cmdk-send svg {
+  width: 20px;
+  height: 20px;
+}
+
+.octo-cmdk-send.is-sending svg {
+  animation: octo-send-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes octo-send-pulse {
+  0%, 100% { opacity: 1; transform: translateX(0); }
+  50% { opacity: 0.4; transform: translateX(4px); }
+}
+
+/* ============================================================
+   Target Picker
+   ============================================================ */
+.octo-cmdk-picker {
+  border-top: 1px solid var(--wk-border-default);
+  padding: var(--wk-sp-3);
+  background: var(--wk-bg-base);
+  max-height: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wk-sp-2);
   flex-shrink: 0;
+  overflow: hidden;
 }
 
-.octo-cmdk-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: var(--cmdk-text);
+.octo-cmdk-picker-search {
+  width: 100%;
+  background: var(--wk-bg-surface);
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-sm);
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  transition: border-color var(--wk-dur-fast) var(--wk-ease), box-shadow var(--wk-dur-fast) var(--wk-ease);
 }
 
-/* 引用区 */
-.octo-cmdk-quote-wrap {
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--cmdk-border);
-  flex-shrink: 0;
+.octo-cmdk-picker-search:focus {
+  outline: none;
+  border-color: var(--wk-brand-primary);
+  box-shadow: 0 0 0 3px var(--wk-brand-glow);
 }
 
-.octo-cmdk-quote {
+.octo-cmdk-picker-search::placeholder {
+  color: var(--wk-text-tertiary);
+}
+
+.octo-cmdk-picker-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.octo-cmdk-picker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2);
   padding: 6px 10px;
-  background: var(--cmdk-quote-bg);
-  border-left: 2px solid var(--cmdk-quote-border);
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--cmdk-text-secondary);
-  max-height: 80px;
-  overflow: hidden;
-  line-height: 1.5;
-  position: relative;
+  background: transparent;
+  border: none;
+  border-radius: var(--wk-r-sm);
+  color: var(--wk-text-primary);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background var(--wk-dur-fast) var(--wk-ease);
 }
 
-.octo-cmdk-quote-fade {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 24px;
-  background: linear-gradient(transparent, var(--cmdk-quote-bg));
+.octo-cmdk-picker-item:hover {
+  background: var(--wk-bg-hover);
 }
 
-/* 对话区 */
-.octo-cmdk-conversation {
+.octo-cmdk-picker-item.is-current {
+  background: var(--wk-ai-surface);
+  color: var(--wk-text-accent);
+}
+
+.octo-cmdk-pk-icon {
+  width: 18px;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--wk-text-tertiary);
+  font-size: 13px;
+}
+
+.octo-cmdk-pk-name {
   flex: 1;
-  min-height: 0;
+  min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.octo-cmdk-pk-unread {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--wk-sp-1);
+  background: #F97316;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   Loading & Error 居中状态
+   ============================================================ */
+.octo-cmdk-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wk-sp-6);
+  gap: var(--wk-sp-2);
+}
+
+.octo-cmdk-loading {
+  color: var(--wk-text-tertiary);
+  font-size: 13px;
+}
+
+.octo-cmdk-error-icon {
+  font-size: 24px;
+}
+
+.octo-cmdk-error-text {
+  font-size: 13px;
+  color: var(--wk-text-secondary);
+}
+
+.octo-cmdk-retry {
+  padding: var(--wk-sp-1) var(--wk-sp-3);
+  border: 1px solid var(--wk-border-default);
+  background: transparent;
+  border-radius: var(--wk-r-xs);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--wk-text-primary);
+  font-family: inherit;
+  transition: background var(--wk-dur-fast) var(--wk-ease);
+}
+
+.octo-cmdk-retry:hover {
+  background: var(--wk-bg-hover);
 }

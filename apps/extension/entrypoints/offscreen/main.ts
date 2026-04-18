@@ -7,6 +7,7 @@ import {
   ConnectStatus,
   Conversation,
   Message,
+  MessageText,
   WKSDK,
 } from "wukongimjssdk";
 import {
@@ -656,25 +657,11 @@ async function sendCmdkMessage(
   channelType: number,
   text: string,
 ): Promise<void> {
-  const auth = getAuthOrThrow();
+  getAuthOrThrow(); // 确保已登录
 
-  await fetchJSON(
-    `message/send`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        header: { no_persist: 0, red_dot: 1 },
-        from_uid: auth.uid,
-        channel_id: channelId,
-        channel_type: channelType,
-        payload: {
-          type: 1, // 文本消息
-          content: text,
-        },
-      }),
-    },
-    auth,
-  );
+  const channel = new Channel(channelId, channelType);
+  const content = new MessageText(text);
+  await sdk.chatManager.send(content, channel);
 }
 
 async function fetchChannelMembers(

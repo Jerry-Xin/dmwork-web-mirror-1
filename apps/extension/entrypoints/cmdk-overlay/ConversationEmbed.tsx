@@ -219,9 +219,11 @@ export default function ConversationEmbed({
   }, [selected?.id, selected?.type]);
 
   // MessageInput 的 onSend 回调
+  const sendingRef = useRef(false);
   const handleSend = useCallback(
     async (text: string, _mention?: MentionModel) => {
-      if (!selected || !text.trim()) return;
+      if (!selected || !text.trim() || sendingRef.current) return;
+      sendingRef.current = true;
 
       setSending(true);
       setError('');
@@ -243,14 +245,17 @@ export default function ConversationEmbed({
         });
 
         if (response?.success) {
+          sendingRef.current = false;
           onMessageSent();
         } else {
           setError(response?.error || '发送失败');
           setSending(false);
+          sendingRef.current = false;
         }
       } catch (err: any) {
         setError(err?.message || '发送失败');
         setSending(false);
+        sendingRef.current = false;
       }
     },
     [selected, context, onMessageSent],

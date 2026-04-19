@@ -32,6 +32,7 @@ import { ErrorBoundary } from '@dmwork/base/src/Components/ErrorBoundary';
 import { ChannelSettingManager } from '@dmwork/base/src/Service/ChannelSetting';
 import { SpaceService } from '@dmwork/base/src/Service/SpaceService';
 
+
 const HashIconComponent = HashIcon as any;
 const ThreadIconComponent = ThreadIcon as any;
 const ConversationComponent = Conversation as any;
@@ -211,6 +212,8 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
   componentDidMount() {
     const theme = localStorage.getItem('octo_v3_theme') || 'paper';
     const layout = localStorage.getItem('octo_v3_layout') || 'message';
+    document.body.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-layout', layout);
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-layout', layout);
     this.setState({ theme, layout });
@@ -352,17 +355,19 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
   private handleClickOutsideSettings = (e: MouseEvent) => {
     if (!this.state.showSettings) return;
     const target = e.target as HTMLElement;
-    if (target.closest('.octo-settings-pop') || target.closest('.octo-sidepanel-demo-btn')) return;
+    if (target.closest('.octo-settings-pop') || target.closest('.wk-sidepanel-header-search')) return;
     this.setState({ showSettings: false });
   };
 
   private setTheme = (theme: string) => {
+    document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('octo_v3_theme', theme);
     this.setState({ theme });
   };
 
   private setLayout = (layout: string) => {
+    document.body.setAttribute('data-layout', layout);
     document.documentElement.setAttribute('data-layout', layout);
     localStorage.setItem('octo_v3_layout', layout);
     this.setState({ layout });
@@ -829,25 +834,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
   // Search Popover
   // ================================================================
 
-  private static MOCK_SEARCH_DATA = {
-    contacts: [
-      { id: 'c1', name: '张三', sub: '产品经理' },
-      { id: 'c2', name: '李四', sub: '前端开发' },
-      { id: 'c3', name: '王五', sub: '设计师' },
-      { id: 'c4', name: 'Thomas', sub: 'AI Agent' },
-      { id: 'c5', name: '赵六', sub: '后端开发' },
-    ],
-    groups: [
-      { id: 'g1', name: 'DMWork 开发组', sub: '12 人' },
-      { id: 'g2', name: '产品讨论', sub: '8 人' },
-      { id: 'g3', name: '设计团队', sub: '5 人' },
-    ],
-    files: [
-      { id: 'f1', name: 'Q2 计划.pdf', sub: '张三 · 2天前' },
-      { id: 'f2', name: '设计稿-v3.fig', sub: '王五 · 昨天' },
-      { id: 'f3', name: 'API文档.md', sub: '李四 · 3小时前' },
-    ],
-  };
+  private searchDebounceTimer?: ReturnType<typeof setTimeout>;
 
   private handleSearchToggle = () => {
     this.setState((prev) => ({
@@ -860,22 +847,69 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
 
   private handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
-    const { searchTab } = this.state;
-    const data = OctoSidepanelLayout.MOCK_SEARCH_DATA[searchTab] || [];
-    const results = query.trim()
-      ? data.filter((item) => item.name.toLowerCase().includes(query.toLowerCase()))
-      : [];
-    this.setState({ searchQuery: query, searchResults: results });
+    this.setState({ searchQuery: query });
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
+    if (!query.trim()) {
+      this.setState({ searchResults: [] });
+      return;
+    }
+    this.searchDebounceTimer = setTimeout(() => {
+      void this.doSearch(query.trim(), this.state.searchTab);
+    }, 300);
   };
 
   private handleSearchTabChange = (tab: 'contacts' | 'groups' | 'files') => {
+    this.setState({ searchTab: tab, searchResults: [] });
     const { searchQuery } = this.state;
-    const data = OctoSidepanelLayout.MOCK_SEARCH_DATA[tab] || [];
-    const results = searchQuery.trim()
-      ? data.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      : [];
-    this.setState({ searchTab: tab, searchResults: results });
+    if (searchQuery.trim()) {
+      void this.doSearch(searchQuery.trim(), tab);
+    }
   };
+
+  private async doSearch(keyword: string, tab: 'contacts' | 'groups' | 'files') {
+    try {
+      // Map tab to content_type: contacts=0 (users), groups=1 (groups), files is not supported by global search
+      const contentTypeMap: Record<string, number> = { contacts: 0, groups: 1, files: 2 };
+      const contentType = contentTypeMap[tab] ?? 0;
+      const spaceId = WKApp.shared.currentSpaceId;
+      const searchUrl = spaceId
+        ? `/search/global?space_id=${encodeURIComponent(spaceId)}`
+        : '/search/global';
+      const res = await WKApp.apiClient.post(searchUrl, {
+        keyword,
+        content_type: contentType,
+        page: 1,
+        limit: 20,
+      });
+      // Normalize results from API response
+      const results: any[] = [];
+      if (res?.contacts) {
+        for (const c of res.contacts) {
+          results.push({ id: c.uid || c.id, name: c.name || c.uid, sub: c.remark || '' });
+        }
+      }
+      if (res?.groups) {
+        for (const g of res.groups) {
+          results.push({ id: g.group_no || g.id, name: g.name, sub: `${g.member_count || ''} 人` });
+        }
+      }
+      if (res?.messages) {
+        for (const m of res.messages) {
+          results.push({ id: m.message_id || m.id, name: m.from_name || m.sender_name || '消息', sub: m.payload?.content?.substring(0, 40) || '' });
+        }
+      }
+      // If the API returns a flat array, handle that too
+      if (Array.isArray(res)) {
+        for (const item of res) {
+          results.push({ id: item.uid || item.group_no || item.id, name: item.name || item.uid, sub: item.remark || '' });
+        }
+      }
+      this.setState({ searchResults: results });
+    } catch (e) {
+      console.warn('[OctoSidepanelLayout] Search failed:', e);
+      this.setState({ searchResults: [] });
+    }
+  }
 
   private renderSearchPopover() {
     if (!this.state.showSearch) return null;
@@ -936,41 +970,56 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
   // Contacts Drawer
   // ================================================================
 
-  private static MOCK_CONTACTS = {
-    newFriends: [
-      { id: 'nf1', name: '刘七', sub: '待验证' },
-    ],
-    aiPartners: [
-      { id: 'ai1', name: 'Thomas', sub: 'AI 助手 · 已接入' },
-      { id: 'ai2', name: '龙虾', sub: 'AI Agent · 已接入' },
-    ],
-    friends: {
-      A: [{ id: 'a1', name: 'Alice', sub: '产品团队' }],
-      B: [{ id: 'b1', name: 'Bob', sub: '前端开发' }],
-      C: [{ id: 'c1', name: 'Charlie', sub: '设计师' }],
-      L: [
-        { id: 'l1', name: '李四', sub: '前端开发' },
-        { id: 'l2', name: '刘七', sub: '后端开发' },
-      ],
-      W: [
-        { id: 'w1', name: '王五', sub: '设计师' },
-        { id: 'w2', name: '吴九', sub: '测试工程师' },
-      ],
-      Z: [
-        { id: 'z1', name: '张三', sub: '产品经理' },
-        { id: 'z2', name: '赵六', sub: '后端开发' },
-      ],
-    } as Record<string, { id: string; name: string; sub: string }[]>,
-  };
+  private contactsList: Array<{ id: string; name: string; sub: string; robot?: boolean }> = [];
+  private contactsLoaded = false;
 
   private toggleContacts = () => {
-    this.setState((prev) => ({ showContacts: !prev.showContacts }));
+    const nextShow = !this.state.showContacts;
+    this.setState({ showContacts: nextShow });
+    if (nextShow && !this.contactsLoaded) {
+      void this.loadContacts();
+    }
   };
+
+  private async loadContacts() {
+    try {
+      const results = await WKApp.apiClient.get('friend/sync', {
+        param: { version: '', api_version: '1' },
+      });
+      if (Array.isArray(results)) {
+        this.contactsList = results.map((r: any) => ({
+          id: r.uid || r.id || '',
+          name: r.remark || r.name || r.uid || '',
+          sub: r.robot === 1 ? 'AI 伙伴 · 已接入' : '',
+          robot: r.robot === 1,
+        }));
+      }
+      this.contactsLoaded = true;
+      this.forceUpdate();
+    } catch (e) {
+      console.warn('[OctoSidepanelLayout] Failed to load contacts:', e);
+    }
+  }
+
+  private getGroupedContacts() {
+    const aiPartners = this.contactsList.filter((c) => c.robot);
+    const friends = this.contactsList.filter((c) => !c.robot);
+
+    // Group by first letter
+    const grouped: Record<string, typeof friends> = {};
+    for (const f of friends) {
+      const ch = getFirstChar(f.name);
+      const letter = /[A-Z]/.test(ch) ? ch : '#';
+      if (!grouped[letter]) grouped[letter] = [];
+      grouped[letter].push(f);
+    }
+
+    return { aiPartners, grouped, letters: Object.keys(grouped).sort() };
+  }
 
   private renderContactsDrawer() {
     const { showContacts } = this.state;
-    const { newFriends, aiPartners, friends } = OctoSidepanelLayout.MOCK_CONTACTS;
-    const letters = Object.keys(friends).sort();
+    const { aiPartners, grouped, letters } = this.getGroupedContacts();
 
     return (
       <div className={`octo-contacts-drawer${showContacts ? ' is-open' : ''}`}>
@@ -979,43 +1028,39 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
           <button className="octo-contacts-close" onClick={this.toggleContacts} type="button">×</button>
         </div>
         <div className="octo-contacts-body">
-          {/* 新朋友 */}
-          <div className="octo-contacts-section">新朋友</div>
-          {newFriends.map((f) => (
-            <div key={f.id} className="octo-contacts-item">
-              <span className="octo-contacts-avatar" style={{ background: avatarGradient(f.name) }}>
-                {getFirstChar(f.name)}
-              </span>
-              <span>
-                <div className="octo-contacts-name">{f.name}</div>
-                <div className="octo-contacts-sub">{f.sub}</div>
-              </span>
-            </div>
-          ))}
+          {!this.contactsLoaded && (
+            <div className="octo-contacts-section">加载中…</div>
+          )}
 
           {/* AI 伙伴 */}
-          <div className="octo-contacts-section">AI 伙伴</div>
-          {aiPartners.map((f) => (
-            <div key={f.id} className="octo-contacts-item">
-              <span
-                className="octo-contacts-avatar"
-                style={{ background: 'var(--octo-avatar-ai)' }}
-              >
-                {getFirstChar(f.name)}
-              </span>
-              <span>
-                <div className="octo-contacts-name">{f.name}</div>
-                <div className="octo-contacts-sub">{f.sub}</div>
-              </span>
-            </div>
-          ))}
+          {aiPartners.length > 0 && (
+            <>
+              <div className="octo-contacts-section">AI 伙伴</div>
+              {aiPartners.map((f) => (
+                <div key={f.id} className="octo-contacts-item">
+                  <span
+                    className="octo-contacts-avatar"
+                    style={{ background: 'var(--octo-avatar-ai)' }}
+                  >
+                    {getFirstChar(f.name)}
+                  </span>
+                  <span>
+                    <div className="octo-contacts-name">{f.name}</div>
+                    <div className="octo-contacts-sub">{f.sub}</div>
+                  </span>
+                </div>
+              ))}
+            </>
+          )}
 
           {/* 我的朋友 A-Z */}
-          <div className="octo-contacts-section">我的朋友</div>
+          {letters.length > 0 && (
+            <div className="octo-contacts-section">我的朋友</div>
+          )}
           {letters.map((letter) => (
             <React.Fragment key={letter}>
               <div className="octo-contacts-section" id={`contacts-letter-${letter}`}>{letter}</div>
-              {friends[letter].map((f) => (
+              {grouped[letter].map((f) => (
                 <div key={f.id} className="octo-contacts-item">
                   <span className="octo-contacts-avatar" style={{ background: avatarGradient(f.name) }}>
                     {getFirstChar(f.name)}
@@ -1029,21 +1074,27 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
             </React.Fragment>
           ))}
 
+          {this.contactsLoaded && this.contactsList.length === 0 && (
+            <div className="octo-contacts-section">暂无联系人</div>
+          )}
+
           {/* 右侧字母索引条 */}
-          <div className="octo-contacts-index">
-            {letters.map((letter) => (
-              <span
-                key={letter}
-                className="octo-contacts-index-letter"
-                onClick={() => {
-                  const el = document.getElementById(`contacts-letter-${letter}`);
-                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-              >
-                {letter}
-              </span>
-            ))}
-          </div>
+          {letters.length > 0 && (
+            <div className="octo-contacts-index">
+              {letters.map((letter) => (
+                <span
+                  key={letter}
+                  className="octo-contacts-index-letter"
+                  onClick={() => {
+                    const el = document.getElementById(`contacts-letter-${letter}`);
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                >
+                  {letter}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1355,43 +1406,6 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
 
     return (
       <div className="octo-sidepanel-shell">
-        <div className="octo-sidepanel-demo-bar">
-          <span className="octo-sidepanel-demo-logo">🐙</span>
-          <span className="octo-sidepanel-demo-workspace">Octo</span>
-          <div style={{flex:1}} />
-          <button className="octo-sidepanel-demo-btn" onClick={this.toggleContacts} title="通讯录">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          </button>
-          <button className="octo-sidepanel-demo-btn" onClick={this.toggleSettings} title="设置">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          </button>
-        </div>
-        {this.state.showSettings && (
-          <div className="octo-settings-pop">
-            <div className="octo-settings-section">主题</div>
-            <div className="octo-settings-themes">
-              {[{id:'paper',label:'Paper'},{id:'terminal',label:'Terminal'},{id:'moonwire',label:'Moonwire'}].map(t => (
-                <button key={t.id} className={`octo-settings-theme-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.id)}>
-                  <span className="octo-settings-seg-dot" data-theme={t.id} />
-                  <span>{t.label}</span>
-                </button>
-              ))}
-            </div>
-            <div className="octo-settings-section">布局</div>
-            <div className="octo-settings-layouts">
-              {[{id:'message',label:'Message'},{id:'cli',label:'CLI'}].map(l => (
-                <button key={l.id} className={`octo-settings-layout-btn${this.state.layout===l.id?' is-active':''}`} onClick={() => this.setLayout(l.id)}>
-                  {l.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         <div className="octo-sidepanel-app">
         <div className="wk-sidepanel-layout">
         <div className="wk-sidepanel-body">
@@ -1448,6 +1462,28 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
                     />
                   </svg>
                 </button>
+                <button
+                  className="wk-sidepanel-header-search"
+                  title="通讯录"
+                  onClick={this.toggleContacts}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </button>
+                <button
+                  className="wk-sidepanel-header-search"
+                  title="设置"
+                  onClick={this.toggleSettings}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                  </svg>
+                </button>
                 {selectedChannel && (
                   <button
                     className="wk-sidepanel-header-peer"
@@ -1490,6 +1526,27 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
                 </button>
               </div>
             </header>
+
+            {/* Settings Popover */}
+            <div className={`octo-settings-pop${this.state.showSettings ? ' is-open' : ''}`}>
+              <div className="octo-settings-section">主题</div>
+              <div className="octo-settings-seg">
+                {[{id:'paper',label:'Paper'},{id:'terminal',label:'Terminal'},{id:'moonwire',label:'Moonwire'}].map(t => (
+                  <button key={t.id} className={`octo-settings-seg-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.id)}>
+                    <span className="octo-settings-seg-dot" data-theme={t.id} />
+                    <span>{t.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="octo-settings-section">布局</div>
+              <div className="octo-settings-seg">
+                {[{id:'message',label:'Message'},{id:'cli',label:'CLI'}].map(l => (
+                  <button key={l.id} className={`octo-settings-seg-btn${this.state.layout===l.id?' is-active':''}`} onClick={() => this.setLayout(l.id)}>
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="wk-sidepanel-content">
               {selectedChannel ? (

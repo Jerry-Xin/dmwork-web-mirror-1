@@ -42,73 +42,7 @@ body.octo-sidepanel-v3 #root {
     var(--octo-sidepanel-shell-bg);
 }
 
-.octo-sidepanel-demo-bar {
-  flex-shrink: 0;
-  min-height: 38px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 8px 0 12px;
-  border-bottom: 1px solid var(--octo-sidepanel-border);
-  background: var(--wk-bg-rail);
-  color: var(--wk-text-secondary);
-  font-size: 12px;
-}
-
-.octo-sidepanel-demo-logo {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  display: grid;
-  place-items: center;
-  background: var(--octo-logo-grad);
-  color: var(--wk-text-inverse);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  box-shadow: var(--octo-logo-shadow);
-}
-
-.octo-sidepanel-demo-name {
-  color: var(--wk-text-primary);
-  font-size: 12.5px;
-  font-weight: 600;
-}
-
-.octo-sidepanel-demo-space {
-  padding-left: 6px;
-  margin-left: 2px;
-  border-left: 1px solid var(--octo-sidepanel-border);
-  color: var(--wk-text-tertiary);
-  font-size: 11.5px;
-}
-
-.octo-sidepanel-demo-spacer {
-  flex: 1;
-}
-
-.octo-sidepanel-demo-btn {
-  width: 22px;
-  height: 22px;
-  border: none;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--wk-text-tertiary);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: background 150ms ease, color 150ms ease;
-}
-
-.octo-sidepanel-demo-btn:hover {
-  background: var(--wk-bg-hover);
-  color: var(--wk-text-primary);
-}
-
-.octo-sidepanel-demo-btn svg {
-  width: 14px;
-  height: 14px;
-}
+/* demo-bar removed — buttons moved to header actions */
 
 .octo-sidepanel-app {
   flex: 1;
@@ -442,6 +376,7 @@ body.octo-sidepanel-v3 .octo-sidepanel-drawer.is-open {
   opacity: 1;
   pointer-events: auto;
   transform: translateX(0);
+  background: var(--octo-sidepanel-drawer-bg, var(--wk-bg-app, #fff));
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-drawer-head {

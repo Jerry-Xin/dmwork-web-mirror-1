@@ -119,15 +119,25 @@ body.octo-sidepanel-v3 .wk-sidepanel-rail-pin {
 }
 
 /* V3: Rail is on the right (row-reverse), so popovers open to the left */
+/* Rail overflow clips absolutely-positioned popovers — override to visible.
+   The rail-list part scrolls independently via flex + min-height:0. */
+body.octo-sidepanel-v3 .wk-sidepanel-rail {
+  overflow: visible;
+}
+
 body.octo-sidepanel-v3 .wk-rail-settings-pop {
+  position: fixed !important;
   left: auto !important;
-  right: calc(100% + 8px) !important;
+  right: 56px !important;  /* rail 48px + 8px gap */
+  bottom: 10px !important;
   z-index: 9999 !important;
 }
 
 body.octo-sidepanel-v3 .wk-rail-create-menu {
+  position: fixed;
   left: auto;
-  right: calc(100% + 8px);
+  right: 56px;  /* rail 48px + 8px gap */
+  bottom: 50px;
   z-index: 9999;
 }
 

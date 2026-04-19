@@ -815,9 +815,15 @@ export default function CmdKApp() {
   }, []);
 
   const handleOverlayClick = useCallback((e: React.MouseEvent) => {
-    if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-      notifyClose('cancel');
-    }
+    const target = e.target as HTMLElement;
+    // 检查点击是否在面板内
+    if (panelRef.current && panelRef.current.contains(target)) return;
+    // 检查点击是否在 tippy 弹窗内（mention、emoji 等）
+    if (target.closest('[data-tippy-root]') || target.closest('.tippy-box') || target.closest('.tippy-content')) return;
+    // 检查点击是否在 emoji 面板内
+    if (target.closest('.wk-emojitoolbar-emojipanel') || target.closest('.wk-emojitoolbar')) return;
+    // 真的点了空白处，关闭
+    notifyClose('cancel');
   }, [notifyClose]);
 
   if (!context) {

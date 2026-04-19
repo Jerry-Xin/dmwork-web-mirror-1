@@ -32,6 +32,7 @@ import type { MessageInputContext } from '@dmwork/base/src/Components/MessageInp
 import { ErrorBoundary } from '@dmwork/base/src/Components/ErrorBoundary';
 import { ChannelSettingManager } from '@dmwork/base/src/Service/ChannelSetting';
 import { SpaceService } from '@dmwork/base/src/Service/SpaceService';
+import CreateCategoryModal from '@dmwork/base/src/Components/CreateCategoryModal';
 
 
 const HashIconComponent = HashIcon as any;
@@ -80,6 +81,8 @@ interface OctoSidepanelLayoutState {
   showContacts: boolean;
   // Create Menu (rail)
   showCreateMenu: boolean;
+  // Create Category Modal
+  showCreateCategoryModal: boolean;
 }
 
 function getFirstChar(name: string): string {
@@ -211,6 +214,8 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       showContacts: false,
       // Create Menu (rail)
       showCreateMenu: false,
+      // Create Category Modal
+      showCreateCategoryModal: false,
     };
   }
 
@@ -1312,9 +1317,53 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
           </button>
           {this.state.showCreateMenu && (
             <div className="wk-rail-create-menu">
+              {/* 发起私聊 */}
               <button
                 className="wk-rail-create-menu-item"
-                onClick={() => { this.setState({ showCreateMenu: false }); showToast('创建分组 · 暂未实现'); }}
+                onClick={() => {
+                  this.setState({ showCreateMenu: false });
+                  const baseContext = WKApp.shared.baseContext as any;
+                  if (baseContext?.showConversationSelect) {
+                    baseContext.showConversationSelect((channels: Channel[]) => {
+                      if (channels?.length > 0) {
+                        WKApp.endpoints.showConversation(channels[0]);
+                      }
+                    }, '找人聊天');
+                  } else {
+                    showToast('发起私聊 · 环境未就绪，请稍后重试');
+                  }
+                }}
+                type="button"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+                </svg>
+                <span>发起私聊</span>
+              </button>
+              {/* 创建群聊 */}
+              <button
+                className="wk-rail-create-menu-item"
+                onClick={() => {
+                  this.setState({ showCreateMenu: false });
+                  try {
+                    WKApp.endpoints.organizationalLayer(null);
+                  } catch {
+                    // organizationalLayer endpoint 可能未注册（ContactsModule 尚未初始化）
+                    showToast('创建群聊 · 环境未就绪，请稍后重试');
+                  }
+                }}
+                type="button"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>创建群聊</span>
+              </button>
+              {/* 创建分组 */}
+              <button
+                className="wk-rail-create-menu-item"
+                onClick={() => { this.setState({ showCreateMenu: false, showCreateCategoryModal: true }); }}
                 type="button"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -1324,16 +1373,6 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
                   <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" />
                 </svg>
                 <span>创建分组</span>
-              </button>
-              <button
-                className="wk-rail-create-menu-item"
-                onClick={() => { this.setState({ showCreateMenu: false }); showToast('创建群聊 · 暂未实现'); }}
-                type="button"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span>创建群聊</span>
               </button>
             </div>
           )}
@@ -1664,6 +1703,24 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
 
       {/* Lightbox — fixed, top-level overlay */}
       {this.renderLightbox()}
+
+      {/* Create Category Modal */}
+      <CreateCategoryModal
+        visible={this.state.showCreateCategoryModal}
+        existingNames={this.state.categories.map(c => c.name)}
+        onConfirm={async (name: string) => {
+          const spaceId = WKApp.shared.currentSpaceId;
+          if (!spaceId) {
+            showToast('未选中 Space，无法创建分组');
+            return;
+          }
+          await CategoryService.create(spaceId, { name });
+          this.setState({ showCreateCategoryModal: false });
+          // 刷新侧栏分组列表
+          this.loadChannelPickerData();
+        }}
+        onCancel={() => this.setState({ showCreateCategoryModal: false })}
+      />
       </div>
     );
   }

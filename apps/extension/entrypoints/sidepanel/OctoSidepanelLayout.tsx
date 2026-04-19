@@ -999,7 +999,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
             <div key={f.id} className="octo-contacts-item">
               <span
                 className="octo-contacts-avatar"
-                style={{ background: 'linear-gradient(90deg, #63b3ff 0%, #8b6bff 100%)' }}
+                style={{ background: 'var(--octo-avatar-ai)' }}
               >
                 {getFirstChar(f.name)}
               </span>
@@ -1375,9 +1375,9 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
           <div className="octo-settings-pop">
             <div className="octo-settings-section">主题</div>
             <div className="octo-settings-themes">
-              {[{id:'paper',label:'Paper',color:'#7C5CFC'},{id:'terminal',label:'Terminal',color:'#f54e00'},{id:'moonwire',label:'Moonwire',color:'#7170ff'}].map(t => (
+              {[{id:'paper',label:'Paper'},{id:'terminal',label:'Terminal'},{id:'moonwire',label:'Moonwire'}].map(t => (
                 <button key={t.id} className={`octo-settings-theme-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.id)}>
-                  <span className="octo-settings-dot" style={{background:t.color}} />
+                  <span className="octo-settings-seg-dot" data-theme={t.id} />
                   <span>{t.label}</span>
                 </button>
               ))}

@@ -1,3 +1,5 @@
+@import './tokens.css';
+
 :root {
   --octo-sidepanel-shell-bg: var(--wk-bg-app);
   --octo-sidepanel-border: var(--wk-border-subtle);
@@ -829,4 +831,71 @@ body.octo-sidepanel-v3 .octo-sidepanel-mem-badge-ai {
 body.octo-sidepanel-v3 .octo-sidepanel-mem-badge-owner {
   background: var(--wk-mention, #f97316);
   color: #fff;
+}
+
+/* ---------- Settings Popover ---------- */
+
+.octo-settings-pop {
+  position: absolute;
+  top: 38px;
+  right: 8px;
+  z-index: 100;
+  min-width: 180px;
+  padding: 8px 0;
+  border-radius: var(--wk-r-lg, 8px);
+  background: var(--wk-bg-app, #fff);
+  border: 1px solid var(--wk-border-default, rgba(28,28,35,0.08));
+  box-shadow: var(--wk-shadow-pop, 0 12px 32px rgba(28,28,35,0.18));
+}
+
+.octo-settings-section {
+  padding: 6px 12px 4px;
+  color: var(--wk-text-tertiary, rgba(28,28,35,0.45));
+  font: 600 10.5px var(--wk-font-mono, ui-monospace, monospace);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.octo-settings-themes,
+.octo-settings-layouts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 6px 6px;
+}
+
+.octo-settings-theme-btn,
+.octo-settings-layout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--wk-r-sm, 4px);
+  background: transparent;
+  color: var(--wk-text-secondary, rgba(28,28,35,0.58));
+  font: 500 12.5px var(--wk-font-sans, sans-serif);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.octo-settings-theme-btn:hover,
+.octo-settings-layout-btn:hover {
+  background: var(--wk-bg-hover, rgba(28,28,35,0.05));
+  color: var(--wk-text-primary, #1C1C23);
+}
+
+.octo-settings-theme-btn.is-active,
+.octo-settings-layout-btn.is-active {
+  background: var(--wk-bg-active, rgba(28,28,35,0.08));
+  color: var(--wk-text-primary, #1C1C23);
+  font-weight: 600;
+}
+
+.octo-settings-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }

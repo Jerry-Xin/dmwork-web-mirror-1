@@ -61,6 +61,9 @@ interface OctoSidepanelLayoutState {
   showAiMembers: boolean;
   showHumanMembers: boolean;
   drawerMuted: boolean | null;
+  theme: string;
+  layout: string;
+  showSettings: boolean;
 }
 
 function getFirstChar(name: string): string {
@@ -166,10 +169,19 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       showAiMembers: true,
       showHumanMembers: true,
       drawerMuted: null,
+      theme: 'paper',
+      layout: 'message',
+      showSettings: false,
     };
   }
 
   componentDidMount() {
+    const theme = localStorage.getItem('octo_v3_theme') || 'paper';
+    const layout = localStorage.getItem('octo_v3_layout') || 'message';
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-layout', layout);
+    this.setState({ theme, layout });
+
     this.initSpace().then(async () => {
       await WKSDK.shared().conversationManager.sync({});
       this.loadChannelPickerData();
@@ -207,6 +219,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     );
 
     document.addEventListener('keydown', this.handleEscKey);
+    document.addEventListener('click', this.handleClickOutsideSettings);
   }
 
   componentWillUnmount() {
@@ -214,10 +227,15 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     this.channelInfoListenerRemover?.();
     if (this.loadDebounceTimer) clearTimeout(this.loadDebounceTimer);
     document.removeEventListener('keydown', this.handleEscKey);
+    document.removeEventListener('click', this.handleClickOutsideSettings);
   }
 
   private handleEscKey = (e: KeyboardEvent) => {
     if (e.key !== 'Escape') return;
+    if (this.state.showSettings) {
+      this.setState({ showSettings: false });
+      return;
+    }
     if (this.state.showInfoDrawer) {
       this.setState({ showInfoDrawer: false });
       return;
@@ -225,6 +243,29 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     if (this.state.showPicker) {
       this.setState({ showPicker: false });
     }
+  };
+
+  private handleClickOutsideSettings = (e: MouseEvent) => {
+    if (!this.state.showSettings) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.octo-settings-pop') || target.closest('.octo-sidepanel-demo-btn')) return;
+    this.setState({ showSettings: false });
+  };
+
+  private setTheme = (theme: string) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('octo_v3_theme', theme);
+    this.setState({ theme });
+  };
+
+  private setLayout = (layout: string) => {
+    document.documentElement.setAttribute('data-layout', layout);
+    localStorage.setItem('octo_v3_layout', layout);
+    this.setState({ layout });
+  };
+
+  private toggleSettings = () => {
+    this.setState((prev) => ({ showSettings: !prev.showSettings }));
   };
 
   private scheduleLoad() {
@@ -895,7 +936,38 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     const memberCountText = memberLoading ? '...' : String(Math.max(members.length, 0));
 
     return (
-      <div className="wk-sidepanel-layout">
+      <div className="octo-sidepanel-shell">
+        <div className="octo-sidepanel-demo-bar">
+          <span className="octo-sidepanel-demo-logo">🐙</span>
+          <span className="octo-sidepanel-demo-workspace">Octo</span>
+          <div style={{flex:1}} />
+          <button className="octo-sidepanel-demo-btn" onClick={this.toggleSettings} title="设置">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </button>
+        </div>
+        {this.state.showSettings && (
+          <div className="octo-settings-pop">
+            <div className="octo-settings-section">主题</div>
+            <div className="octo-settings-themes">
+              {[{id:'paper',label:'Paper',color:'#7C5CFC'},{id:'terminal',label:'Terminal',color:'#f54e00'},{id:'moonwire',label:'Moonwire',color:'#7170ff'}].map(t => (
+                <button key={t.id} className={`octo-settings-theme-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.id)}>
+                  <span className="octo-settings-dot" style={{background:t.color}} />
+                  <span>{t.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="octo-settings-section">布局</div>
+            <div className="octo-settings-layouts">
+              {[{id:'message',label:'Message'},{id:'cli',label:'CLI'}].map(l => (
+                <button key={l.id} className={`octo-settings-layout-btn${this.state.layout===l.id?' is-active':''}`} onClick={() => this.setLayout(l.id)}>
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="octo-sidepanel-app">
+        <div className="wk-sidepanel-layout">
         <div className="wk-sidepanel-body">
           {this.renderRail()}
 
@@ -1029,6 +1101,8 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
             {this.renderInfoDrawer()}
           </div>
         </div>
+      </div>
+      </div>
       </div>
     );
   }

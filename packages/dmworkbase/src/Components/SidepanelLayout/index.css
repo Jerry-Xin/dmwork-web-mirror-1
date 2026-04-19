@@ -275,6 +275,7 @@
   bottom: 0 !important;
   left: calc(100% + 8px) !important;
   min-width: 180px;
+  z-index: 9999;
 }
 
 /* Create menu anchored to rail (base: rail on left, popover opens right) */

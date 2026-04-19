@@ -122,11 +122,13 @@ body.octo-sidepanel-v3 .wk-sidepanel-rail-pin {
 body.octo-sidepanel-v3 .wk-rail-settings-pop {
   left: auto !important;
   right: calc(100% + 8px) !important;
+  z-index: 9999 !important;
 }
 
 body.octo-sidepanel-v3 .wk-rail-create-menu {
   left: auto;
   right: calc(100% + 8px);
+  z-index: 9999;
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-header {

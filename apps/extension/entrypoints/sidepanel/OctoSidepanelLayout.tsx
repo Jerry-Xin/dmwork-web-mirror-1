@@ -868,40 +868,53 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
 
   private async doSearch(keyword: string, tab: 'contacts' | 'groups' | 'files') {
     try {
-      // Map tab to content_type: contacts=0 (users), groups=1 (groups), files is not supported by global search
-      const contentTypeMap: Record<string, number> = { contacts: 0, groups: 1, files: 2 };
-      const contentType = contentTypeMap[tab] ?? 0;
+      // Map tab to content_type array (matches web client format)
+      // contacts/groups: empty array = search all; files: [8] = file type only
+      const contentTypeMap: Record<string, number[]> = { contacts: [], groups: [], files: [8] };
+      const contentTypes = contentTypeMap[tab] ?? [];
       const spaceId = WKApp.shared.currentSpaceId;
       const searchUrl = spaceId
         ? `/search/global?space_id=${encodeURIComponent(spaceId)}`
         : '/search/global';
       const res = await WKApp.apiClient.post(searchUrl, {
         keyword,
-        content_type: contentType,
+        content_type: contentTypes,
         page: 1,
         limit: 20,
       });
-      // Normalize results from API response
+      // Normalize results from API response (fields match web client: friends, groups, messages)
       const results: any[] = [];
-      if (res?.contacts) {
-        for (const c of res.contacts) {
-          results.push({ id: c.uid || c.id, name: c.name || c.uid, sub: c.remark || '' });
+      if (tab === 'contacts' && res?.friends) {
+        for (const c of res.friends) {
+          results.push({ id: c.uid || c.id, name: c.channel_name || c.name || c.uid, sub: c.channel_remark || c.remark || '' });
         }
       }
-      if (res?.groups) {
+      if (tab === 'groups' && res?.groups) {
         for (const g of res.groups) {
-          results.push({ id: g.group_no || g.id, name: g.name, sub: `${g.member_count || ''} 人` });
+          results.push({ id: g.group_no || g.id, name: g.channel_name || g.name, sub: `${g.member_count || ''} 人` });
         }
       }
-      if (res?.messages) {
+      if (tab === 'files' && res?.messages) {
         for (const m of res.messages) {
-          results.push({ id: m.message_id || m.id, name: m.from_name || m.sender_name || '消息', sub: m.payload?.content?.substring(0, 40) || '' });
+          results.push({ id: m.message_id || m.id, name: m.from_name || m.sender_name || '文件', sub: m.payload?.content?.substring(0, 40) || '' });
         }
       }
-      // If the API returns a flat array, handle that too
-      if (Array.isArray(res)) {
-        for (const item of res) {
-          results.push({ id: item.uid || item.group_no || item.id, name: item.name || item.uid, sub: item.remark || '' });
+      // Fallback: if current tab has no results but other fields exist, try to extract from any available data
+      if (results.length === 0) {
+        if (res?.friends) {
+          for (const c of res.friends) {
+            results.push({ id: c.uid || c.id, name: c.channel_name || c.name || c.uid, sub: c.channel_remark || c.remark || '' });
+          }
+        }
+        if (res?.groups) {
+          for (const g of res.groups) {
+            results.push({ id: g.group_no || g.id, name: g.channel_name || g.name, sub: `${g.member_count || ''} 人` });
+          }
+        }
+        if (res?.messages) {
+          for (const m of res.messages) {
+            results.push({ id: m.message_id || m.id, name: m.from_name || m.sender_name || '消息', sub: m.payload?.content?.substring(0, 40) || '' });
+          }
         }
       }
       this.setState({ searchResults: results });
@@ -1462,28 +1475,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
                     />
                   </svg>
                 </button>
-                <button
-                  className="wk-sidepanel-header-search"
-                  title="通讯录"
-                  onClick={this.toggleContacts}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                </button>
-                <button
-                  className="wk-sidepanel-header-search"
-                  title="设置"
-                  onClick={this.toggleSettings}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                  </svg>
-                </button>
+                {/* 通讯录、设置、全屏编辑、三个点菜单按钮暂时隐藏，后续再定入口位置 */}
                 {selectedChannel && (
                   <button
                     className="wk-sidepanel-header-peer"
@@ -1499,31 +1491,6 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
                     )}
                   </button>
                 )}
-                {selectedChannel && (
-                  <button
-                    className="wk-sidepanel-header-search"
-                    title="全屏编辑"
-                    onClick={this.toggleFullComposer}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="15 3 21 3 21 9" />
-                      <polyline points="9 21 3 21 3 15" />
-                      <line x1="21" y1="3" x2="14" y2="10" />
-                      <line x1="3" y1="21" x2="10" y2="14" />
-                    </svg>
-                  </button>
-                )}
-                <button
-                  className="wk-sidepanel-header-more"
-                  title={selectedChannel?.channelType === ChannelTypePerson ? '会话信息' : '群信息'}
-                  onClick={this.handleInfoDrawerToggle}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <circle cx="5" cy="12" r="1.6" fill="currentColor" />
-                    <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-                    <circle cx="19" cy="12" r="1.6" fill="currentColor" />
-                  </svg>
-                </button>
               </div>
             </header>
 

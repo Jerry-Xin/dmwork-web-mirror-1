@@ -1311,6 +1311,20 @@ body.octo-sidepanel-v3 .wk-emojitoolbar-mask {
   z-index: 999;
 }
 
+/* Disable show/hide animations in sidepanel — the fixed positioning
+   causes a flash when the hide animation ends and the panel briefly
+   snaps back to its original absolute position before visibility:hidden. */
+body.octo-sidepanel-v3 .wk-emojitoolbar-emojipanel-show {
+  animation: none;
+  -webkit-animation: none;
+  visibility: visible;
+}
+body.octo-sidepanel-v3 .wk-emojitoolbar-emojipanel-hide {
+  animation: none;
+  -webkit-animation: none;
+  visibility: hidden;
+}
+
 /* Emoji panel tab bar inherits theme bg */
 body.octo-sidepanel-v3 .wk-emojipanel-tab {
   background-color: var(--wk-bg-base, var(--wk-bg-rail));

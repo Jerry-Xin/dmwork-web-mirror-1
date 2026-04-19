@@ -686,6 +686,48 @@ html, body {
   font-size: 13px;
 }
 
+/* ── Bug fix: Emoji picker clipped by overflow:hidden in CmdK panel ──── */
+/* .octo-cmdk-panel and .octo-cmdk-composer both have overflow:hidden,
+   which clips the absolutely-positioned emoji panel. Use position:fixed
+   to lift it out of the clipping context.                                 */
+.octo-cmdk .wk-emojitoolbar {
+  position: relative;
+}
+
+.octo-cmdk .wk-emojitoolbar-emojipanel {
+  position: fixed;
+  /* Center horizontally without transform (which conflicts with scale animation) */
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  bottom: 80px;
+  top: auto;
+  width: min(420px, calc(100vw - 40px));
+  max-width: none;
+  height: 372px;
+  max-height: calc(100vh - 200px);
+  z-index: 10000;
+  border-radius: 12px;
+  background-color: var(--wk-bg-surface, #fff);
+  box-shadow:
+    0 24px 60px rgba(20, 20, 28, 0.22),
+    0 8px 24px rgba(20, 20, 28, 0.12);
+  transform-origin: center bottom;
+}
+
+.octo-cmdk .wk-emojitoolbar-mask {
+  z-index: 9999;
+}
+
+.octo-cmdk .wk-emojipanel-tab {
+  background-color: var(--wk-bg-base, var(--wk-bg-rail, #f5f5f5));
+}
+
+.octo-cmdk .wk-emojipanel-tab-item-selected {
+  background-color: var(--wk-bg-surface, #fff);
+}
+
 @media (max-width: 640px) {
   .octo-cmdk {
     padding-top: 7vh;

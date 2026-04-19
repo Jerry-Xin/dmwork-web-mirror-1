@@ -248,11 +248,14 @@ body.octo-sidepanel-v3 .wk-conversation .wk-messageinput-editor .ProseMirror {
 
 body.octo-sidepanel-v3 .wk-conversation-chattoolbars {
   padding-left: 4px;
+  flex-wrap: nowrap;
+  overflow: visible;
 }
 
 body.octo-sidepanel-v3 .wk-conversation-chattoolbars-item {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-picker-overlay {
@@ -1295,11 +1298,26 @@ body.octo-sidepanel-v3 .wk-emojitoolbar-emojipanel {
   top: auto;
   max-width: none;
   width: auto;
+  height: 372px;
+  max-height: calc(100vh - 120px);
   z-index: 1000;
   border-radius: 12px;
+  background-color: var(--wk-bg-surface, var(--wk-bg-app));
+  box-shadow: var(--octo-picker-shadow);
 }
 
 /* The mask behind the panel is already position:fixed; just bump z-index */
 body.octo-sidepanel-v3 .wk-emojitoolbar-mask {
   z-index: 999;
 }
+
+/* Emoji panel tab bar inherits theme bg */
+body.octo-sidepanel-v3 .wk-emojipanel-tab {
+  background-color: var(--wk-bg-base, var(--wk-bg-rail));
+}
+
+body.octo-sidepanel-v3 .wk-emojipanel-tab-item-selected {
+  background-color: var(--wk-bg-surface, var(--wk-bg-app));
+}
+
+

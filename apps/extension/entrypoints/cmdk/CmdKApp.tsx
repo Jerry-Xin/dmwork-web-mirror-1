@@ -483,8 +483,10 @@ export default function CmdKApp() {
         if (prev && nextThreads.some((item) => item.channelId === prev.id && item.channelType === prev.type)) {
           return prev;
         }
-        const last = nextThreads[nextThreads.length - 1];
-        return last ? { id: last.channelId, type: last.channelType } : null;
+        // 优先选名字包含"四皇"的群组，没有则选第一个
+        const preferred = nextThreads.find((item) => item.name?.includes('四皇'));
+        const fallback = preferred || nextThreads[0];
+        return fallback ? { id: fallback.channelId, type: fallback.channelType } : null;
       });
     } catch (fetchError: any) {
       setError(fetchError?.message || '获取会话失败');

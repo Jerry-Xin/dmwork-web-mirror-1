@@ -1277,3 +1277,29 @@ body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
 .octo-settings-seg-dot[data-theme="moonwire"] {
   background: var(--octo-dot-moonwire);
 }
+
+/* ── Bug fix: Emoji picker clipped by overflow:hidden ancestors ────────── */
+/* In the sidepanel the emoji panel is rendered inside several containers
+   that all have overflow:hidden (wk-sidepanel-content, wk-conversation,
+   wk-conversation-footer-content).  Switching to position:fixed lifts the
+   panel out of the clipping context so it becomes visible.                 */
+body.octo-sidepanel-v3 .wk-emojitoolbar {
+  position: relative;
+}
+
+body.octo-sidepanel-v3 .wk-emojitoolbar-emojipanel {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: 70px;
+  top: auto;
+  max-width: none;
+  width: auto;
+  z-index: 1000;
+  border-radius: 12px;
+}
+
+/* The mask behind the panel is already position:fixed; just bump z-index */
+body.octo-sidepanel-v3 .wk-emojitoolbar-mask {
+  z-index: 999;
+}

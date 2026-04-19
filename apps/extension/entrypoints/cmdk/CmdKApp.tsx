@@ -686,7 +686,7 @@ export default function CmdKApp() {
     }
   }, [sendContent]);
 
-  const handleSend = useCallback(async (text: string, _mention?: MentionModel) => {
+  const handleSend = useCallback(async (text: string, incomingMention?: MentionModel) => {
     if (!selected || sendingRef.current) return;
 
     const trimmedText = text.trim();
@@ -709,8 +709,26 @@ export default function CmdKApp() {
       }
 
       if (hasText) {
-        const { content: finalText, mention: finalMention } = buildCmdkMessageText(trimmedText, context);
+        const { content: finalText, mention: parsedMention } = buildCmdkMessageText(trimmedText, context);
         const messageContent = new MessageText(finalText);
+
+        // When sent via Enter key, MessageInput pre-formats the text to
+        // "@name" (not "@[uid:name]") and passes the mention data as the
+        // second argument.  buildCmdkMessageText cannot re-parse mentions
+        // from the already-formatted text, so parsedMention will be
+        // undefined.  Fall back to the incoming mention and adjust entity
+        // offsets for any quote/link prefix that was prepended.
+        let finalMention = parsedMention;
+        if (!finalMention && incomingMention) {
+          const prefixLength = finalText.length - trimmedText.length;
+          finalMention = { ...incomingMention };
+          if (finalMention.entities && prefixLength > 0) {
+            finalMention.entities = finalMention.entities.map((e) => ({
+              ...e,
+              offset: e.offset + prefixLength,
+            }));
+          }
+        }
 
         if (finalMention) {
           const mention = new Mention();

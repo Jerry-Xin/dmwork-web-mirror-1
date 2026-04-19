@@ -483,8 +483,8 @@ export default function CmdKApp() {
         if (prev && nextThreads.some((item) => item.channelId === prev.id && item.channelType === prev.type)) {
           return prev;
         }
-        const first = nextThreads[0];
-        return first ? { id: first.channelId, type: first.channelType } : null;
+        const last = nextThreads[nextThreads.length - 1];
+        return last ? { id: last.channelId, type: last.channelType } : null;
       });
     } catch (fetchError: any) {
       setError(fetchError?.message || '获取会话失败');

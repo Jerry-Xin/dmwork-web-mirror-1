@@ -899,3 +899,231 @@ body.octo-sidepanel-v3 .octo-sidepanel-mem-badge-owner {
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+/* ================================================================
+   消息时间线布局
+   ================================================================ */
+
+body.octo-sidepanel-v3 .msg {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 0 var(--wk-sp-2, 8px);
+  padding: var(--wk-sp-2, 8px) var(--wk-sp-3, 12px);
+  position: relative;
+}
+
+body.octo-sidepanel-v3 .msg:hover {
+  background: var(--wk-bg-hover);
+}
+
+body.octo-sidepanel-v3 .ts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  grid-row: 1 / -1;
+}
+
+body.octo-sidepanel-v3 .ts-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wk-ink-35);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+body.octo-sidepanel-v3 .ts-line {
+  flex: 1;
+  width: 1px;
+  background: var(--wk-ink-08);
+  margin-top: 4px;
+}
+
+body.octo-sidepanel-v3 .msg.is-mine .ts-dot {
+  background: var(--wk-success);
+}
+
+body.octo-sidepanel-v3 .msg.is-bot .ts-dot {
+  background: var(--wk-brand);
+  box-shadow: 0 0 6px var(--wk-brand-glow);
+}
+
+body.octo-sidepanel-v3 .head-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+body.octo-sidepanel-v3 .head-row .name {
+  font-weight: 600;
+  color: var(--wk-ink-80);
+}
+
+body.octo-sidepanel-v3 .msg.is-mine .head-row .name {
+  color: var(--wk-success);
+}
+
+body.octo-sidepanel-v3 .msg.is-bot .head-row .name {
+  color: var(--wk-brand);
+}
+
+body.octo-sidepanel-v3 .agent-tag {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--wk-brand);
+  background: var(--wk-brand-soft);
+  padding: 1px 5px;
+  border-radius: var(--wk-r-xs);
+}
+
+body.octo-sidepanel-v3 .head-row .time {
+  font-size: 10px;
+  color: var(--wk-ink-45);
+  font-family: var(--wk-font-mono);
+  font-style: italic;
+}
+
+body.octo-sidepanel-v3 .body-row {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--wk-ink-80);
+}
+
+/* 折叠 */
+
+body.octo-sidepanel-v3 .collapsed {
+  max-height: 190px;
+  overflow: hidden;
+  position: relative;
+}
+
+body.octo-sidepanel-v3 .collapsed::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(transparent, var(--wk-bg-app));
+  pointer-events: none;
+}
+
+body.octo-sidepanel-v3 .expand-link {
+  font-size: 12px;
+  color: var(--wk-brand);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+/* hover 操作条 */
+
+body.octo-sidepanel-v3 .msg-ops {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity var(--wk-dur-fast) var(--wk-ease);
+}
+
+body.octo-sidepanel-v3 .msg:hover .msg-ops {
+  opacity: 1;
+}
+
+body.octo-sidepanel-v3 .msg-op {
+  width: 24px;
+  height: 24px;
+  background: var(--wk-bg-chip);
+  border: 1px solid var(--wk-ink-08);
+  border-radius: var(--wk-r-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wk-ink-60);
+}
+
+/* ================================================================
+   动词轮转 Spinner
+   ================================================================ */
+
+body.octo-sidepanel-v3 .spinner-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  color: var(--wk-ink-45);
+  font-size: 13px;
+  font-style: italic;
+}
+
+body.octo-sidepanel-v3 .dotz {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wk-brand);
+  animation: dotz-pulse 1.5s ease infinite;
+}
+
+@keyframes dotz-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+body.octo-sidepanel-v3 .verb {
+  transition: opacity 150ms ease;
+}
+
+/* ================================================================
+   附件双视图
+   ================================================================ */
+
+/* message 布局：缩略图方格 */
+
+body[data-layout='message'] .octo-attach-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+body[data-layout='message'] .octo-attach-grid .octo-attach-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--wk-r-sm);
+  object-fit: cover;
+  cursor: pointer;
+  border: 1px solid var(--wk-ink-05);
+}
+
+/* cli 布局：文件行 */
+
+body[data-layout='cli'] .octo-attach-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+}
+
+body[data-layout='cli'] .octo-attach-grid .octo-attach-thumb {
+  display: none;
+}
+
+body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-family: var(--wk-font-mono);
+  color: var(--wk-ink-60);
+}

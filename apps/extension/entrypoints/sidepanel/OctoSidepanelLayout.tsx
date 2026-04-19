@@ -144,6 +144,15 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
   private conversationListenerRemover?: () => void;
   private channelInfoListenerRemover?: () => void;
   private loadDebounceTimer?: ReturnType<typeof setTimeout>;
+  private spinnerTimer?: ReturnType<typeof setInterval>;
+  private spinnerVerbIndex = 0;
+
+  private SPINNER_VERBS = [
+    '思考', '推理', '梳理', '分析', '检索', '归纳', '斟酌', '对齐', '琢磨',
+    '审视', '审阅', '解析', '推演', '打磨', '提炼', '整理', '研读', '构思',
+    '拟定', '沉浸', '咀嚼', '推敲', '整合', '抽丝剥茧',
+    '揣摩', '复盘', '盘算', '铺开', '梳头绪', '穿针引线',
+  ];
 
   constructor(props: {}) {
     super(props);
@@ -226,6 +235,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     this.conversationListenerRemover?.();
     this.channelInfoListenerRemover?.();
     if (this.loadDebounceTimer) clearTimeout(this.loadDebounceTimer);
+    if (this.spinnerTimer) clearInterval(this.spinnerTimer);
     document.removeEventListener('keydown', this.handleEscKey);
     document.removeEventListener('click', this.handleClickOutsideSettings);
   }
@@ -244,6 +254,39 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       this.setState({ showPicker: false });
     }
   };
+
+  private startSpinner() {
+    if (this.spinnerTimer) return;
+    this.spinnerVerbIndex = Math.floor(Math.random() * this.SPINNER_VERBS.length);
+    this.spinnerTimer = setInterval(() => {
+      this.spinnerVerbIndex = (this.spinnerVerbIndex + 1) % this.SPINNER_VERBS.length;
+      const el = document.querySelector('.octo-sidepanel-v3 .verb') as HTMLElement | null;
+      if (el) {
+        el.style.opacity = '0';
+        setTimeout(() => {
+          el.textContent = `Agent 正在 ${this.SPINNER_VERBS[this.spinnerVerbIndex]}…`;
+          el.style.opacity = '1';
+        }, 150);
+      }
+    }, 1500);
+  }
+
+  private stopSpinner() {
+    if (this.spinnerTimer) {
+      clearInterval(this.spinnerTimer);
+      this.spinnerTimer = undefined;
+    }
+  }
+
+  private renderSpinner() {
+    const verb = this.SPINNER_VERBS[this.spinnerVerbIndex % this.SPINNER_VERBS.length];
+    return (
+      <div className="spinner-row">
+        <span className="dotz" />
+        <span className="verb">Agent 正在 {verb}…</span>
+      </div>
+    );
+  }
 
   private handleClickOutsideSettings = (e: MouseEvent) => {
     if (!this.state.showSettings) return;

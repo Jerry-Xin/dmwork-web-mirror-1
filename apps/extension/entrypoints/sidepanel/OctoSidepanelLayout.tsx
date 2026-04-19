@@ -26,6 +26,7 @@ import {
 } from '@dmwork/base';
 import HashIcon from '@dmwork/base/src/Components/Icons/HashIcon';
 import ThreadIcon from '@dmwork/base/src/Components/Icons/ThreadIcon';
+import { showToast } from './OctoToast';
 import type ConversationContext from '@dmwork/base/src/Components/Conversation/context';
 import type { MessageInputContext } from '@dmwork/base/src/Components/MessageInput';
 import { ErrorBoundary } from '@dmwork/base/src/Components/ErrorBoundary';
@@ -77,6 +78,8 @@ interface OctoSidepanelLayoutState {
   searchResults: any[];
   // Contacts Drawer
   showContacts: boolean;
+  // Create Menu (rail)
+  showCreateMenu: boolean;
 }
 
 function getFirstChar(name: string): string {
@@ -206,6 +209,8 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       searchResults: [],
       // Contacts Drawer
       showContacts: false,
+      // Create Menu (rail)
+      showCreateMenu: false,
     };
   }
 
@@ -288,6 +293,10 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       this.setState({ showSettings: false });
       return;
     }
+    if (this.state.showCreateMenu) {
+      this.setState({ showCreateMenu: false });
+      return;
+    }
     if (this.state.showContacts) {
       this.setState({ showContacts: false });
       return;
@@ -353,10 +362,19 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
   };
 
   private handleClickOutsideSettings = (e: MouseEvent) => {
-    if (!this.state.showSettings) return;
     const target = e.target as HTMLElement;
-    if (target.closest('.octo-settings-pop') || target.closest('.wk-sidepanel-header-search')) return;
-    this.setState({ showSettings: false });
+    // Close settings popover
+    if (this.state.showSettings) {
+      if (!target.closest('.octo-settings-pop') && !target.closest('.wk-rail-action-settings')) {
+        this.setState({ showSettings: false });
+      }
+    }
+    // Close create menu
+    if (this.state.showCreateMenu) {
+      if (!target.closest('.wk-rail-create-menu') && !target.closest('.wk-rail-action-create')) {
+        this.setState({ showCreateMenu: false });
+      }
+    }
   };
 
   private setTheme = (theme: string) => {
@@ -374,7 +392,11 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
   };
 
   private toggleSettings = () => {
-    this.setState((prev) => ({ showSettings: !prev.showSettings }));
+    this.setState((prev) => ({ showSettings: !prev.showSettings, showCreateMenu: false }));
+  };
+
+  private toggleCreateMenu = () => {
+    this.setState((prev) => ({ showCreateMenu: !prev.showCreateMenu, showSettings: false }));
   };
 
   private scheduleLoad() {
@@ -1261,6 +1283,88 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
 
         <div className="wk-sidepanel-rail-spacer" />
         <div className="wk-sidepanel-rail-divider" />
+
+        {/* Rail action buttons */}
+        <button
+          className={`wk-rail-action wk-rail-action-contacts${this.state.showContacts ? ' is-active' : ''}`}
+          title="通讯录"
+          onClick={this.toggleContacts}
+          type="button"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        <div className="wk-rail-action-wrap">
+          <button
+            className={`wk-rail-action wk-rail-action-create${this.state.showCreateMenu ? ' is-active' : ''}`}
+            title="创建"
+            onClick={this.toggleCreateMenu}
+            type="button"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+          {this.state.showCreateMenu && (
+            <div className="wk-rail-create-menu">
+              <button
+                className="wk-rail-create-menu-item"
+                onClick={() => { this.setState({ showCreateMenu: false }); showToast('创建分组 · 暂未实现'); }}
+                type="button"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" />
+                  <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" />
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" />
+                  <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" />
+                </svg>
+                <span>创建分组</span>
+              </button>
+              <button
+                className="wk-rail-create-menu-item"
+                onClick={() => { this.setState({ showCreateMenu: false }); showToast('创建群聊 · 暂未实现'); }}
+                type="button"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>创建群聊</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="wk-rail-action-wrap">
+          <button
+            className={`wk-rail-action wk-rail-action-settings${this.state.showSettings ? ' is-active' : ''}`}
+            title="设置"
+            onClick={this.toggleSettings}
+            type="button"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {this.state.showSettings && (
+            <div className="octo-settings-pop is-open wk-rail-settings-pop">
+              <div className="octo-settings-section">主题</div>
+              <div className="octo-settings-seg">
+                {[{id:'paper',label:'Paper'},{id:'terminal',label:'Terminal'},{id:'moonwire',label:'Moonwire'}].map(t => (
+                  <button key={t.id} className={`octo-settings-seg-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.id)}>
+                    <span className="octo-settings-seg-dot" data-theme={t.id} />
+                    <span>{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </nav>
     );
   }
@@ -1475,7 +1579,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
                     />
                   </svg>
                 </button>
-                {/* 通讯录、设置、全屏编辑、三个点菜单按钮暂时隐藏，后续再定入口位置 */}
+                {/* 通讯录、设置已移至 Rail 底部；全屏编辑、三个点菜单按钮暂时隐藏 */}
                 {selectedChannel && (
                   <button
                     className="wk-sidepanel-header-peer"
@@ -1494,26 +1598,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
               </div>
             </header>
 
-            {/* Settings Popover */}
-            <div className={`octo-settings-pop${this.state.showSettings ? ' is-open' : ''}`}>
-              <div className="octo-settings-section">主题</div>
-              <div className="octo-settings-seg">
-                {[{id:'paper',label:'Paper'},{id:'terminal',label:'Terminal'},{id:'moonwire',label:'Moonwire'}].map(t => (
-                  <button key={t.id} className={`octo-settings-seg-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.id)}>
-                    <span className="octo-settings-seg-dot" data-theme={t.id} />
-                    <span>{t.label}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="octo-settings-section">布局</div>
-              <div className="octo-settings-seg">
-                {[{id:'message',label:'Message'},{id:'cli',label:'CLI'}].map(l => (
-                  <button key={l.id} className={`octo-settings-seg-btn${this.state.layout===l.id?' is-active':''}`} onClick={() => this.setLayout(l.id)}>
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Settings Popover moved to Rail */}
 
             <div className="wk-sidepanel-content">
               {selectedChannel ? (

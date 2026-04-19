@@ -231,6 +231,91 @@
 }
 
 /* ============================================================
+   Rail action buttons — 底部功能按钮
+   ============================================================ */
+.wk-rail-action-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wk-rail-action {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--wk-r-sm, 6px);
+  border: none;
+  background: transparent;
+  color: var(--wk-text-tertiary, #9498a8);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+  padding: 0;
+  margin-bottom: 2px;
+}
+
+.wk-rail-action:hover {
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+  color: var(--wk-text-primary, #1a1a1a);
+}
+
+.wk-rail-action.is-active {
+  color: var(--wk-text-accent, var(--semi-color-primary, #5b6abf));
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+/* Settings popover anchored to rail (base: rail on left, popover opens right) */
+.wk-rail-settings-pop {
+  position: absolute !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: 0 !important;
+  left: calc(100% + 8px) !important;
+  min-width: 180px;
+}
+
+/* Create menu anchored to rail (base: rail on left, popover opens right) */
+.wk-rail-create-menu {
+  position: absolute;
+  bottom: 0;
+  left: calc(100% + 8px);
+  z-index: 100;
+  min-width: 160px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--octo-popover-bg, var(--wk-bg-surface, #fff));
+  border: 1px solid var(--octo-popover-border, var(--wk-border-subtle, rgba(0, 0, 0, 0.08)));
+  box-shadow: var(--octo-popover-shadow, 0 4px 16px rgba(0, 0, 0, 0.12));
+}
+
+.wk-rail-create-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--wk-text-primary, #1a1a1a);
+  font: 400 13px var(--wk-font-sans, system-ui);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.wk-rail-create-menu-item:hover {
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+.wk-rail-create-menu-item svg {
+  color: var(--wk-text-tertiary, #9498a8);
+  flex-shrink: 0;
+}
+
+/* ============================================================
    Main — 右侧主区域
    ============================================================ */
 .wk-sidepanel-main {

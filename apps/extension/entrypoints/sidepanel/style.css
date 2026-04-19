@@ -118,6 +118,17 @@ body.octo-sidepanel-v3 .wk-sidepanel-rail-pin {
   transform: translateX(-50%);
 }
 
+/* V3: Rail is on the right (row-reverse), so popovers open to the left */
+body.octo-sidepanel-v3 .wk-rail-settings-pop {
+  left: auto !important;
+  right: calc(100% + 8px) !important;
+}
+
+body.octo-sidepanel-v3 .wk-rail-create-menu {
+  left: auto;
+  right: calc(100% + 8px);
+}
+
 body.octo-sidepanel-v3 .wk-sidepanel-header {
   min-height: 44px;
   padding: 0 12px;

@@ -814,8 +814,10 @@ export default function CmdKApp() {
     setPickerOpen(false);
   }, []);
 
-  const handleOverlayClick = useCallback((e: React.MouseEvent) => {
+  const handleOverlayMouseDown = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
+    // 如果 target 已从 DOM 移除（弹窗销毁），不关闭
+    if (!document.documentElement.contains(target)) return;
     // 检查点击是否在面板内
     if (panelRef.current && panelRef.current.contains(target)) return;
     // 检查点击是否在 tippy 弹窗内（mention、emoji 等）
@@ -894,7 +896,7 @@ export default function CmdKApp() {
   }));
 
   return (
-    <div className="octo-cmdk" onClick={handleOverlayClick}>
+    <div className="octo-cmdk" onMouseDown={handleOverlayMouseDown}>
       <div
         ref={panelRef}
         className={`octo-cmdk-panel${isDragging ? ' is-dragging' : ''}`}

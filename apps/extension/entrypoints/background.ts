@@ -423,17 +423,6 @@ async function handleRuntimeMessage(
     return;
   }
 
-  // Cmd+K overlay: 转发给 offscreen 处理
-  if (
-    message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchThreads ||
-    message.type === EXTENSION_MESSAGE_TYPE.cmdkSendMessage ||
-    message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchMembers ||
-    message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchCategories
-  ) {
-    await ensureOffscreenDocument();
-    // 直接转发给 offscreen，offscreen 的 listener 会处理并返回结果
-    return browser.runtime.sendMessage(message) as any;
-  }
 }
 
 export default defineBackground(async () => {

@@ -147,7 +147,11 @@ export default function ChannelPicker({
   const renderChannelWithThreads = (ch: ChannelPickerItem) => {
     const threads = categoryTree.threadsByParent.get(ch.channelId) || [];
     const isExpanded = expandedThreadParents.has(ch.channelId);
-    const threadMentionCount = threads.reduce((sum: number, t: ChannelPickerItem) => sum + t.mentionCount, 0);
+    const MAX_VISIBLE = 2;
+    const visibleThreads = isExpanded ? threads : threads.slice(0, MAX_VISIBLE);
+    const hiddenCount = threads.length - visibleThreads.length;
+    const hiddenThreads = isExpanded ? [] : threads.slice(MAX_VISIBLE);
+    const hiddenMentionCount = hiddenThreads.reduce((sum: number, t: ChannelPickerItem) => sum + t.mentionCount, 0);
 
     return (
       <React.Fragment key={ch.channelId}>
@@ -157,35 +161,33 @@ export default function ChannelPicker({
           level={0}
           onClick={() => onSelect(ch)}
         />
-        {threads.length > 0 && !isExpanded && (
+        {visibleThreads.map((t) => (
+          <ChannelItem
+            key={t.channelId}
+            item={t}
+            isSelected={t.channelId === selectedId}
+            level={1}
+            onClick={() => onSelect(t)}
+          />
+        ))}
+        {hiddenCount > 0 && (
           <button
-            className={`wk-channel-picker-more-subs${threadMentionCount > 0 ? ' has-mention' : ''}`}
+            className={`wk-channel-picker-more-subs${hiddenMentionCount > 0 ? ' has-mention' : ''}`}
             onClick={() => toggleThreadExpand(ch.channelId)}
           >
-            + {threads.length} 个子区
-            {threadMentionCount > 0 && (
-              <span className="wk-channel-picker-row-mention">@{threadMentionCount}</span>
+            + {hiddenCount} 个子区
+            {hiddenMentionCount > 0 && (
+              <span className="wk-channel-picker-row-mention">@{hiddenMentionCount}</span>
             )}
           </button>
         )}
-        {threads.length > 0 && isExpanded && (
-          <>
-            {threads.map((t) => (
-              <ChannelItem
-                key={t.channelId}
-                item={t}
-                isSelected={t.channelId === selectedId}
-                level={1}
-                onClick={() => onSelect(t)}
-              />
-            ))}
-            <button
-              className="wk-channel-picker-more-subs"
-              onClick={() => toggleThreadExpand(ch.channelId)}
-            >
-              收起子区
-            </button>
-          </>
+        {isExpanded && threads.length > MAX_VISIBLE && (
+          <button
+            className="wk-channel-picker-more-subs"
+            onClick={() => toggleThreadExpand(ch.channelId)}
+          >
+            收起子区
+          </button>
         )}
       </React.Fragment>
     );
@@ -227,7 +229,7 @@ export default function ChannelPicker({
         {uncategorized.length > 0 && (
           <div className="wk-channel-picker-cat-group">
             {sortedCategories.length > 0 && (
-              <div className="wk-channel-picker-cat-static">未分类</div>
+              <div className="wk-channel-picker-cat-static">默认分组</div>
             )}
             {uncategorized.map((ch) => renderChannelWithThreads(ch))}
           </div>

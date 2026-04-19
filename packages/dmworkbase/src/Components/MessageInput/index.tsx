@@ -42,6 +42,7 @@ interface MessageInputProps {
     getChatContext?: () => string | undefined
     hasPendingAttachments?: boolean
     onExpandChange?: (expanded: boolean) => void
+    mentionContainer?: () => Element
 }
 
 export interface MentionEntity {
@@ -194,14 +195,20 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
                             isBot: false,
                         }]
 
-                        const items = membersRef.current.map(member => ({
-                            uid: member.uid,
-                            name: member.name,
-                            icon: WKApp.shared.avatarChannel(new Channel(member.uid, ChannelTypePerson)),
-                            isBot: WKSDK.shared().channelManager.getChannelInfo(
-                                new Channel(member.uid, ChannelTypePerson)
-                            )?.orgData?.robot === 1,
-                        }))
+                        const hasWKApp = typeof WKApp !== 'undefined' && WKApp.shared?.config?.apiURL
+                        const items = membersRef.current.map(member => {
+                            let icon = ''
+                            let isBot = false
+                            if (hasWKApp) {
+                                try {
+                                    icon = WKApp.shared.avatarChannel(new Channel(member.uid, ChannelTypePerson))
+                                    isBot = WKSDK.shared().channelManager.getChannelInfo(
+                                        new Channel(member.uid, ChannelTypePerson)
+                                    )?.orgData?.robot === 1
+                                } catch {}
+                            }
+                            return { uid: member.uid, name: member.name, icon, isBot }
+                        })
 
                         items.unshift({
                             uid: '-1',
@@ -215,6 +222,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
                         )
                     },
                     (active) => { mentionActiveRef.current = active },
+                    props.mentionContainer ? { appendTo: props.mentionContainer } : undefined,
                 ),
                 renderLabel({ options, node }) {
                     return `@${node.attrs.label}`

@@ -1,4 +1,6 @@
-/* SidepanelLayout — Chrome extension sidebar */
+/* SidepanelLayout — Chrome extension sidebar
+ * Rail + Main 双栏布局，对标 octo-extension-v22
+ */
 
 .wk-sidepanel-layout {
   display: flex;
@@ -9,46 +11,272 @@
   background: var(--wk-bg-surface, #fff);
 }
 
-/* ── Header ── */
+/* ============================================================
+   Body — 横向双栏
+   ============================================================ */
+.wk-sidepanel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+}
 
+/* ============================================================
+   Rail — 48px 左侧图标导航条
+   ============================================================ */
+.wk-sidepanel-rail {
+  width: 48px;
+  flex-shrink: 0;
+  background: var(--wk-bg-surface, #fff);
+  border-right: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0;
+  overflow-y: auto;
+}
+
+.wk-sidepanel-rail::-webkit-scrollbar {
+  width: 0;
+}
+
+/* Rail item — 32x32 图标按钮 */
+.wk-sidepanel-rail-item {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--wk-r-sm, 6px);
+  border: none;
+  background: transparent;
+  color: var(--wk-text-tertiary, #9498a8);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  position: relative;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.wk-sidepanel-rail-item:hover {
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+  color: var(--wk-text-primary, #1a1a1a);
+}
+
+.wk-sidepanel-rail-item.is-current {
+  color: var(--wk-text-accent, var(--semi-color-primary, #5b6abf));
+  font-weight: 600;
+}
+
+.wk-sidepanel-rail-item.is-current::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 16px;
+  background: var(--wk-brand-primary, var(--semi-color-primary, #7c5cfc));
+  border-radius: 1px;
+}
+
+.wk-sidepanel-rail-item.is-pinned {
+  color: var(--wk-text-primary, #1a1a1a);
+}
+
+.wk-sidepanel-rail-item.is-unread-only {
+  border: 1px dashed var(--wk-border-default, rgba(0, 0, 0, 0.08));
+  opacity: 0.85;
+}
+
+.wk-sidepanel-rail-item.is-unread-only:hover {
+  opacity: 1;
+  border-color: var(--wk-brand-primary, var(--semi-color-primary, #7c5cfc));
+}
+
+.wk-sidepanel-rail-item.is-muted .wk-sidepanel-rail-icon {
+  opacity: 0.55;
+}
+
+/* Rail icon */
+.wk-sidepanel-rail-icon {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  user-select: none;
+}
+
+/* 私聊圆形头像 */
+.wk-sidepanel-rail-icon-pm {
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  width: 26px;
+  height: 26px;
+}
+
+/* @ 提醒 — 橙色大 @ */
+.wk-sidepanel-rail-icon-mention {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: #F97316;
+  color: #fff;
+  border-radius: var(--wk-r-sm, 6px);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4);
+  user-select: none;
+  animation: wk-mention-pulse 1.8s ease infinite;
+}
+
+.wk-sidepanel-rail-item.is-mention {
+  color: #fff !important;
+}
+
+.wk-sidepanel-rail-item.is-mention:hover .wk-sidepanel-rail-icon-mention {
+  background: #EA580C;
+  transform: scale(1.05);
+  transition: all 150ms ease;
+}
+
+@keyframes wk-mention-pulse {
+  0%, 100% { box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4); }
+  50% { box-shadow: 0 2px 12px rgba(249, 115, 22, 0.7); }
+}
+
+/* 未读红点 */
+.wk-sidepanel-rail-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 7px;
+  height: 7px;
+  background: #F54A45;
+  border-radius: 50%;
+  font-size: 0;
+  border: 1.5px solid var(--wk-bg-surface, #fff);
+  box-shadow: 0 0 0 0.5px rgba(245, 74, 69, 0.4);
+}
+
+.wk-sidepanel-rail-badge-muted {
+  background: var(--wk-text-tertiary, #9498a8) !important;
+  opacity: 0.6;
+}
+
+/* Pin 标记 */
+.wk-sidepanel-rail-pin {
+  position: absolute;
+  bottom: 1px;
+  right: 50%;
+  transform: translateX(50%);
+  width: 3px;
+  height: 3px;
+  background: var(--wk-brand-primary, var(--semi-color-primary, #7c5cfc));
+  border-radius: 50%;
+  font-size: 0;
+  opacity: 0.7;
+}
+
+.wk-sidepanel-rail-item.is-current .wk-sidepanel-rail-pin {
+  opacity: 1;
+}
+
+/* "+N" 更多按钮 */
+.wk-sidepanel-rail-more {
+  margin-top: 4px;
+  width: 32px;
+  height: 22px;
+  border-radius: var(--wk-r-sm, 6px);
+  border: 1px dashed var(--wk-border-default, rgba(0, 0, 0, 0.08));
+  background: transparent;
+  color: var(--wk-text-tertiary, #9498a8);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 500;
+  display: grid;
+  place-items: center;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.wk-sidepanel-rail-more:hover {
+  color: var(--wk-brand-primary, var(--semi-color-primary, #7c5cfc));
+  border-color: var(--wk-brand-primary, var(--semi-color-primary, #7c5cfc));
+  background: rgba(124, 92, 252, 0.06);
+}
+
+/* Rail 底部 */
+.wk-sidepanel-rail-spacer {
+  flex: 1;
+  min-height: 12px;
+}
+
+.wk-sidepanel-rail-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
+  margin: 4px 0;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Main — 右侧主区域
+   ============================================================ */
+.wk-sidepanel-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+  background: var(--wk-bg-surface, #fff);
+}
+
+/* ============================================================
+   Header — 顶栏
+   ============================================================ */
 .wk-sidepanel-header {
   display: flex;
   align-items: center;
-  gap: var(--wk-sp-2, 8px);
-  padding: var(--wk-sp-2, 8px) var(--wk-sp-3, 12px);
-  min-height: 48px;
-  border-bottom: 1px solid var(--wk-border-default, #e5e5e5);
-  cursor: pointer;
-  user-select: none;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--wk-bg-surface, #fff);
+  border-bottom: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
   flex-shrink: 0;
-}
-
-.wk-sidepanel-header:hover {
-  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+  min-height: 44px;
+  cursor: default;
+  user-select: none;
+  position: relative;
 }
 
 .wk-sidepanel-header-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--wk-r-xs, 4px);
+  background: transparent;
   border: none;
-  background: none;
-  color: var(--wk-text-secondary, #666);
+  color: var(--wk-text-tertiary, #9498a8);
   cursor: pointer;
-  padding: 0;
+  display: grid;
+  place-items: center;
+  transition: all 150ms ease;
   flex-shrink: 0;
+  padding: 0;
 }
 
-.wk-sidepanel-header-logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: var(--semi-color-primary, #5b6abf);
-  flex-shrink: 0;
+.wk-sidepanel-header-toggle:hover {
+  color: var(--wk-text-primary, #1a1a1a);
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
 }
 
 .wk-sidepanel-header-icon {
@@ -69,52 +297,176 @@
   object-fit: cover;
 }
 
-.wk-sidepanel-header-name {
+.wk-sidepanel-header-title {
   flex: 1;
   min-width: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--wk-text-primary, #1a1a1a);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
-/* ── Content ── */
+.wk-sidepanel-header-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--wk-text-primary, #1a1a1a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
 
+.wk-sidepanel-header-more {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--wk-r-xs, 4px);
+  background: transparent;
+  border: none;
+  color: var(--wk-text-tertiary, #9498a8);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.wk-sidepanel-header-more:hover {
+  color: var(--wk-text-primary, #1a1a1a);
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+/* ============================================================
+   More Menu — 更多浮窗菜单
+   ============================================================ */
+.wk-sidepanel-more-menu {
+  position: absolute;
+  top: 100%;
+  right: 8px;
+  z-index: 100;
+  min-width: 200px;
+  max-width: 260px;
+  background: var(--wk-bg-surface, #fff);
+  border: 1px solid var(--wk-border-default, rgba(0, 0, 0, 0.08));
+  border-radius: var(--wk-r-md, 8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 4px;
+  animation: wk-menu-in 120ms ease;
+}
+
+@keyframes wk-menu-in {
+  from {
+    transform: translateY(-4px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.wk-sidepanel-more-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--wk-text-primary, #1a1a1a);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: var(--wk-r-sm, 6px);
+  text-align: left;
+  transition: background 150ms ease;
+}
+
+.wk-sidepanel-more-item:hover {
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+.wk-sidepanel-more-icon {
+  width: 20px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  color: var(--wk-text-tertiary, #9498a8);
+  flex-shrink: 0;
+}
+
+.wk-sidepanel-more-label {
+  flex: 1;
+}
+
+.wk-sidepanel-more-divider {
+  height: 1px;
+  background: var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
+  margin: 4px 6px;
+}
+
+/* ============================================================
+   Content — 主内容区
+   ============================================================ */
 .wk-sidepanel-content {
   flex: 1;
   min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
-/* ── ChannelPicker 容器 ── */
-
-.wk-sidepanel-picker-wrap {
+.wk-sidepanel-content .wk-conversation {
   flex: 1;
   min-height: 0;
+  height: 100%;
+}
+
+/* ============================================================
+   Picker Overlay — 频道选择器浮窗覆盖层
+   ============================================================ */
+.wk-sidepanel-picker-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 16px;
+}
+
+.wk-sidepanel-picker-card {
+  width: calc(100% - 24px);
+  max-height: calc(100% - 32px);
+  background: var(--wk-bg-surface, #fff);
+  border: 1px solid var(--wk-border-default, rgba(0, 0, 0, 0.08));
+  border-radius: var(--wk-r-md, 8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  animation: wk-menu-in 120ms ease;
 }
 
-.wk-sidepanel-picker-wrap .wk-channel-picker {
+.wk-sidepanel-picker-card .wk-channel-picker {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-.wk-sidepanel-picker-wrap .wk-channel-picker-list {
+.wk-sidepanel-picker-card .wk-channel-picker-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  max-height: none;
 }
 
-/* ── Empty state ── */
-
+/* ============================================================
+   Empty state — 空状态
+   ============================================================ */
 .wk-sidepanel-empty {
   display: flex;
   flex-direction: column;
@@ -152,22 +504,39 @@
   border-color: var(--semi-color-primary, #5b6abf);
 }
 
-/* ── Conversation 在侧边栏中的适配 ── */
-
-.wk-sidepanel-content .wk-conversation {
-  flex: 1;
-  min-height: 0;
-  height: 100%;
-}
-
-/* ── Dark mode ── */
-
+/* ============================================================
+   Dark mode
+   ============================================================ */
 body[theme-mode='dark'] .wk-sidepanel-layout {
   background: var(--wk-bg-surface, #1e1e1e);
 }
 
+body[theme-mode='dark'] .wk-sidepanel-rail {
+  border-right-color: var(--wk-border-subtle, rgba(255, 255, 255, 0.06));
+}
+
 body[theme-mode='dark'] .wk-sidepanel-header {
-  border-bottom-color: var(--wk-border-default, #333);
+  border-bottom-color: var(--wk-border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+body[theme-mode='dark'] .wk-sidepanel-more-menu {
+  background: var(--wk-bg-surface, #1e1e1e);
+  border-color: var(--wk-border-default, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body[theme-mode='dark'] .wk-sidepanel-picker-overlay {
+  background: rgba(30, 30, 30, 0.85);
+}
+
+body[theme-mode='dark'] .wk-sidepanel-picker-card {
+  background: var(--wk-bg-surface, #1e1e1e);
+  border-color: var(--wk-border-default, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body[theme-mode='dark'] .wk-sidepanel-rail-badge {
+  border-color: var(--wk-bg-surface, #1e1e1e);
 }
 
 body[theme-mode='dark'] .wk-sidepanel-empty-btn {

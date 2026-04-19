@@ -26,11 +26,6 @@ export const EXTENSION_MESSAGE_TYPE = {
   openConversation: "OPEN_CONVERSATION",
   sidepanelBadgeSync: "SIDEPANEL_BADGE_SYNC",
   sidepanelState: "SIDEPANEL_STATE",
-  // Cmd+K overlay
-  cmdkFetchThreads: "CMDK_FETCH_THREADS",
-  cmdkSendMessage: "CMDK_SEND_MESSAGE",
-  cmdkFetchMembers: "CMDK_FETCH_MEMBERS",
-  cmdkFetchCategories: "CMDK_FETCH_CATEGORIES",
 } as const;
 
 export interface ExtensionAuthState {
@@ -90,53 +85,6 @@ export interface SidepanelStateMessage {
   active: boolean;
 }
 
-// Cmd+K overlay messages
-export interface CmdkFetchThreadsMessage {
-  type: typeof EXTENSION_MESSAGE_TYPE.cmdkFetchThreads;
-}
-
-export interface CmdkSendMessageMessage {
-  type: typeof EXTENSION_MESSAGE_TYPE.cmdkSendMessage;
-  channelId: string;
-  channelType: number;
-  text: string;
-  /** 选中的引用文字 */
-  quotedText?: string;
-  /** 来源页面 URL */
-  pageUrl?: string;
-  /** 来源页面标题 */
-  pageTitle?: string;
-}
-
-export interface CmdkFetchMembersMessage {
-  type: typeof EXTENSION_MESSAGE_TYPE.cmdkFetchMembers;
-  channelId: string;
-  channelType: number;
-}
-
-export interface CmdkThreadItem {
-  channelId: string;
-  channelType: number;
-  name: string;
-  unread: number;
-  lastMessageTime: number;
-  categoryId?: string;
-  parentChannelId?: string;
-  mentionCount: number;
-  muted: boolean;
-  isBot?: boolean;
-}
-
-export interface CmdkCategoryItem {
-  id: string;
-  name: string;
-  order: number;
-}
-
-export interface CmdkFetchCategoriesMessage {
-  type: typeof EXTENSION_MESSAGE_TYPE.cmdkFetchCategories;
-}
-
 export type ExtensionRuntimeMessage =
   | AuthChangedMessage
   | AuthClearedMessage
@@ -145,11 +93,7 @@ export type ExtensionRuntimeMessage =
   | OffscreenNewMessageEvent
   | OpenConversationMessage
   | SidepanelBadgeSyncMessage
-  | SidepanelStateMessage
-  | CmdkFetchThreadsMessage
-  | CmdkSendMessageMessage
-  | CmdkFetchMembersMessage
-  | CmdkFetchCategoriesMessage;
+  | SidepanelStateMessage;
 
 export interface ExtensionAuthResponse {
   auth: ExtensionAuthState | null;

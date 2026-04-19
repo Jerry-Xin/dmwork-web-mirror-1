@@ -7,7 +7,6 @@ import {
   ConnectStatus,
   Conversation,
   Message,
-  MessageText,
   WKSDK,
 } from "wukongimjssdk";
 import {
@@ -42,7 +41,6 @@ let currentAuth: ExtensionAuthState | null = null;
 let currentConnectAddrs: string[] = [];
 let connectAddrUsed = false;
 let channelSpaceMap = new Map<string, string>();
-let channelCategoryMap = new Map<string, string>();
 let listenersRegistered = false;
 
 function getChannelKey(channel: Channel): string {
@@ -71,7 +69,6 @@ function isSameSession(
 
 function resetSdkCaches(): void {
   channelSpaceMap = new Map<string, string>();
-  channelCategoryMap = new Map<string, string>();
   currentConnectAddrs = [];
   connectAddrUsed = false;
   sdk.conversationManager.conversations = [];
@@ -530,6 +527,7 @@ function registerListeners(): void {
   sdk.config.provider.syncConversationsCallback = () => syncConversations();
 }
 
+
 async function applyAuth(auth: ExtensionAuthState): Promise<void> {
   const sameSession = isSameSession(currentAuth, auth);
   currentAuth = auth;
@@ -553,131 +551,9 @@ async function clearAuth(): Promise<void> {
   await sendSyncResult(false, false);
 }
 
-// ============================================================
-// Cmd+K overlay: 获取会话列表 + 发消息
-// ============================================================
-import type { CmdkThreadItem, CmdkCategoryItem, CmdkFetchMembersMessage } from "../../utils/extensionRuntime";
-
-async function getThreadList(): Promise<CmdkThreadItem[]> {
-  const auth = currentAuth;
-  if (!auth?.loggedIn) return [];
-
-  const conversations = sdk.conversationManager.conversations;
-  const result: CmdkThreadItem[] = [];
-
-  // 批量获取未缓存的 channelInfo
-  const uncachedChannels: Channel[] = [];
-  for (const conv of conversations) {
-    if (shouldSkipChannelForSpace(conv.channel)) continue;
-    if (shouldSkipPersonConversationForSpace(conv)) continue;
-    if (!sdk.channelManager.getChannelInfo(conv.channel)) {
-      uncachedChannels.push(conv.channel);
-    }
-  }
-
-  if (uncachedChannels.length > 0) {
-    await Promise.all(uncachedChannels.map((ch) => fetchChannelInfo(ch)));
-  }
-
-  for (const conv of conversations) {
-    if (shouldSkipChannelForSpace(conv.channel)) continue;
-    if (shouldSkipPersonConversationForSpace(conv)) continue;
-
-    const channelInfo = sdk.channelManager.getChannelInfo(conv.channel);
-    const name =
-      channelInfo?.orgData?.displayName ||
-      channelInfo?.title ||
-      conv.channel.channelID;
-
-    // 子区的父频道 ID
-    const parentChannelId =
-      (channelInfo?.orgData?.parentGroupNo as string | undefined) || undefined;
-
-    result.push({
-      channelId: conv.channel.channelID,
-      channelType: conv.channel.channelType,
-      name,
-      unread: getBadgeUnread(conv),
-      lastMessageTime: conv.timestamp ?? 0,
-      parentChannelId,
-      categoryId: channelCategoryMap.get(conv.channel.channelID),
-      mentionCount: (conv.extra as any)?.mentionCount || 0,
-      muted: channelInfo?.mute || false,
-      isBot: SYSTEM_BOTS.has(conv.channel.channelID),
-    });
-  }
-
-  // 按最后消息时间降序
-  result.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
-  return result;
-}
-
-async function getCategoryList(): Promise<CmdkCategoryItem[]> {
-  const auth = currentAuth;
-  if (!auth?.loggedIn || !auth.currentSpaceId) return [];
-
-  try {
-    const data = await fetchJSON<Array<{
-      category_id: string | null;
-      name: string;
-      sort: number;
-      groups?: Array<{ group_no: string; name: string; category_sort: number }>;
-      is_default?: boolean;
-    }>>(
-      `spaces/${encodeURIComponent(auth.currentSpaceId)}/categories`,
-      { method: "GET" },
-      auth,
-    );
-
-    // 构建 channelId → categoryId 映射
-    const newMap = new Map<string, string>();
-    for (const cat of data ?? []) {
-      const catId = cat.category_id || `default-${cat.sort}`;
-      for (const group of cat.groups ?? []) {
-        if (group.group_no) {
-          newMap.set(group.group_no, catId);
-        }
-      }
-    }
-    channelCategoryMap = newMap;
-
-    return (data ?? []).map((cat, idx) => ({
-      id: cat.category_id || `default-${idx}`,
-      name: cat.name,
-      order: cat.sort ?? idx,
-    }));
-  } catch (error) {
-    console.debug("[Extension] Failed to fetch categories:", error);
-    return [];
-  }
-}
-
-async function sendCmdkMessage(
-  channelId: string,
-  channelType: number,
-  text: string,
-): Promise<void> {
-  getAuthOrThrow(); // 确保已登录
-
-  const channel = new Channel(channelId, channelType);
-  const content = new MessageText(text);
-  await sdk.chatManager.send(content, channel);
-}
-
-async function fetchChannelMembers(
-  channelId: string,
-  channelType: number,
-): Promise<Array<{ uid: string; name: string }>> {
-  const auth = getAuthOrThrow();
-  const data = await fetchJSON<Array<{ uid: string; name: string }>>(
-    `channels/${encodeURIComponent(channelId)}/${channelType}/subscribers`,
-    { method: "GET" },
-    auth,
-  );
-  return (data ?? []).map((m) => ({ uid: m.uid, name: m.name }));
-}
-
-browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
+browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage, sender: any) => {
+  // 忽略来自 content script 的直接广播（有 sender.tab），只处理 background 转发的消息，避免重复处理
+  if (sender?.tab) return;
   if (message.type === EXTENSION_MESSAGE_TYPE.authChanged) {
     void applyAuth(message.auth);
     return;
@@ -686,43 +562,6 @@ browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
   if (message.type === EXTENSION_MESSAGE_TYPE.authCleared) {
     void clearAuth();
     return;
-  }
-
-  if (message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchThreads) {
-    return getThreadList()
-      .then((threads) => ({ success: true, data: threads }))
-      .catch((err) => ({ success: false, error: err?.message || 'fetch threads failed', data: [] }));
-  }
-
-  if (message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchMembers) {
-    return fetchChannelMembers(message.channelId, message.channelType)
-      .then((members) => ({ success: true, data: members }))
-      .catch((err) => ({ success: false, error: err?.message || 'fetch members failed', data: [] }));
-  }
-
-  if (message.type === EXTENSION_MESSAGE_TYPE.cmdkFetchCategories) {
-    return getCategoryList()
-      .then((categories) => ({ success: true, data: categories }))
-      .catch((err) => ({ success: false, error: err?.message || 'fetch categories failed', data: [] }));
-  }
-
-  if (message.type === EXTENSION_MESSAGE_TYPE.cmdkSendMessage) {
-    // 拼接发送内容：引用文字 + 来源 + 用户输入
-    const parts: string[] = [];
-    if (message.quotedText) {
-      parts.push(`> ${message.quotedText.split('\n').join('\n> ')}`);
-    }
-    if (message.pageUrl) {
-      parts.push(`🔗 ${message.pageTitle || message.pageUrl}`);
-    }
-    if (message.text) {
-      parts.push(message.text);
-    }
-    const fullText = parts.join('\n\n');
-
-    return sendCmdkMessage(message.channelId, message.channelType, fullText)
-      .then(() => ({ success: true }))
-      .catch((err) => ({ success: false, error: err?.message || 'send failed' }));
   }
 });
 

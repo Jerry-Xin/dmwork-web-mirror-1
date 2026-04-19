@@ -40,6 +40,7 @@ function findSuggestionMatchAnyPrefix(config: any) {
 export function createMentionSuggestion(
   itemsFn: ({ query }: { query: string }) => any[],
   onActiveChange?: (active: boolean) => void,
+  options?: { appendTo?: () => Element },
 ) {
   return {
     items: itemsFn,
@@ -65,7 +66,7 @@ export function createMentionSuggestion(
 
           popup = tippy('body', {
             getReferenceClientRect: props.clientRect,
-            appendTo: () => document.body,
+            appendTo: options?.appendTo || (() => document.body),
             content: component.element,
             showOnCreate: true,
             interactive: true,

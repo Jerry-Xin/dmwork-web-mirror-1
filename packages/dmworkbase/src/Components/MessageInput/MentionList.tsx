@@ -76,12 +76,25 @@ export default forwardRef((props: MentionListProps, ref) => {
             onClick={() => selectItem(index)}
           >
             <div className="wk-messageinput-iconbox">
-              <img
-                className="wk-messageinput-icon"
-                src={item.icon}
-                alt=""
-                style={{ width: '24px', height: '24px', borderRadius: '24px' }}
-              />
+              {item.icon ? (
+                <img
+                  className="wk-messageinput-icon"
+                  src={item.icon}
+                  alt=""
+                  style={{ width: '24px', height: '24px', borderRadius: '24px' }}
+                />
+              ) : (
+                <span
+                  className="wk-messageinput-icon"
+                  style={{
+                    width: '24px', height: '24px', borderRadius: '24px',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    background: '#7c5cfc', color: '#fff', fontSize: '12px', fontWeight: 600,
+                  }}
+                >
+                  {(item.name || '?').charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
             <div>
               <strong>{item.name || item.display}</strong>

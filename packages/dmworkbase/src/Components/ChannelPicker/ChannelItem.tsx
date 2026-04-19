@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ChannelPickerItem } from './types';
+import ThreadIcon from '../Icons/ThreadIcon';
 
 interface ChannelItemProps {
   item: ChannelPickerItem;
@@ -68,7 +69,9 @@ export default function ChannelItem({
           </span>
         ) : item.channelType === 5 ? (
           // 子区：线程图标
-          <span className="wk-channel-picker-thread-icon">🧵</span>
+          <span className="wk-channel-picker-thread-icon">
+            <ThreadIcon size={14} color="currentColor" />
+          </span>
         ) : (
           // 普通频道
           <span className="wk-channel-picker-hash">#</span>

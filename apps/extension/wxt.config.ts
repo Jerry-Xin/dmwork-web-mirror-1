@@ -40,6 +40,10 @@ export default defineConfig({
         resources: ["/injected*.js"],
         matches: ["<all_urls>"],
       },
+      {
+        resources: ["/cmdk.html"],
+        matches: ["<all_urls>"],
+      },
     ],
     action: {},
   },

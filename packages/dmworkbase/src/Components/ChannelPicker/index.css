@@ -6,7 +6,7 @@
 .wk-channel-picker {
   display: flex;
   flex-direction: column;
-  background: var(--wk-bg-base, #f7f8fa);
+  background: var(--wk-bg-surface, #fff);
   border-radius: var(--wk-r-md, 10px);
   overflow: hidden;
   font-family: var(--wk-font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
@@ -289,6 +289,9 @@
 
 .wk-channel-picker-thread-icon {
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 私聊头像 */

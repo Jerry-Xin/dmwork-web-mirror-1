@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import './tokens.css';
-import './selection-hint.css';
 
 interface SelectionHintProps {
   rect: DOMRect;

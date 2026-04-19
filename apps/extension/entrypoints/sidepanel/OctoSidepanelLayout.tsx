@@ -64,6 +64,18 @@ interface OctoSidepanelLayoutState {
   theme: string;
   layout: string;
   showSettings: boolean;
+  // Full Composer
+  showFullComposer: boolean;
+  fullComposerText: string;
+  // Lightbox
+  lightboxSrc: string | null;
+  // Search Popover
+  showSearch: boolean;
+  searchQuery: string;
+  searchTab: 'contacts' | 'groups' | 'files';
+  searchResults: any[];
+  // Contacts Drawer
+  showContacts: boolean;
 }
 
 function getFirstChar(name: string): string {
@@ -181,6 +193,18 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       theme: 'paper',
       layout: 'message',
       showSettings: false,
+      // Full Composer
+      showFullComposer: false,
+      fullComposerText: '',
+      // Lightbox
+      lightboxSrc: null,
+      // Search Popover
+      showSearch: false,
+      searchQuery: '',
+      searchTab: 'contacts',
+      searchResults: [],
+      // Contacts Drawer
+      showContacts: false,
     };
   }
 
@@ -229,6 +253,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
 
     document.addEventListener('keydown', this.handleEscKey);
     document.addEventListener('click', this.handleClickOutsideSettings);
+    document.addEventListener('click', this.handleImageClick);
   }
 
   componentWillUnmount() {
@@ -238,12 +263,30 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     if (this.spinnerTimer) clearInterval(this.spinnerTimer);
     document.removeEventListener('keydown', this.handleEscKey);
     document.removeEventListener('click', this.handleClickOutsideSettings);
+    document.removeEventListener('click', this.handleImageClick);
   }
 
   private handleEscKey = (e: KeyboardEvent) => {
     if (e.key !== 'Escape') return;
+    // Close overlays in z-index priority order (highest first)
+    if (this.state.lightboxSrc) {
+      this.setState({ lightboxSrc: null });
+      return;
+    }
+    if (this.state.showFullComposer) {
+      this.setState({ showFullComposer: false });
+      return;
+    }
+    if (this.state.showSearch) {
+      this.setState({ showSearch: false });
+      return;
+    }
     if (this.state.showSettings) {
       this.setState({ showSettings: false });
+      return;
+    }
+    if (this.state.showContacts) {
+      this.setState({ showContacts: false });
       return;
     }
     if (this.state.showInfoDrawer) {
@@ -287,6 +330,24 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       </div>
     );
   }
+
+  private handleImageClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    // Intercept clicks on images inside conversation messages for lightbox
+    if (
+      target.tagName === 'IMG' &&
+      target.closest('.wk-sidepanel-content') &&
+      !target.closest('.wk-sidepanel-header-avatar') &&
+      !target.closest('.octo-lightbox')
+    ) {
+      const src = (target as HTMLImageElement).src;
+      if (src) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openLightbox(src);
+      }
+    }
+  };
 
   private handleClickOutsideSettings = (e: MouseEvent) => {
     if (!this.state.showSettings) return;
@@ -674,6 +735,320 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     });
   };
 
+  // ================================================================
+  // Full Composer
+  // ================================================================
+
+  private toggleFullComposer = () => {
+    this.setState((prev) => ({
+      showFullComposer: !prev.showFullComposer,
+      fullComposerText: prev.showFullComposer ? '' : prev.fullComposerText,
+    }));
+  };
+
+  private submitFullComposer = () => {
+    const { fullComposerText, selectedChannel } = this.state;
+    const trimmed = fullComposerText.trim();
+    if (!trimmed || !selectedChannel) return;
+
+    // Send via the conversation context if available
+    if (this.conversationContext) {
+      const inputCtx = (this.conversationContext as any).messageInputContext as MessageInputContext | undefined;
+      if (inputCtx && typeof inputCtx.send === 'function') {
+        inputCtx.send(trimmed);
+      }
+    }
+
+    this.setState({ showFullComposer: false, fullComposerText: '' });
+  };
+
+  private handleFullComposerKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      this.submitFullComposer();
+    }
+  };
+
+  private renderFullComposer() {
+    if (!this.state.showFullComposer) return null;
+    return (
+      <div className="octo-fullcomp">
+        <div className="octo-fullcomp-header">
+          <span className="octo-fullcomp-title">全屏编辑</span>
+          <button className="octo-fullcomp-close" onClick={this.toggleFullComposer} type="button">×</button>
+        </div>
+        <div className="octo-fullcomp-body">
+          <textarea
+            className="octo-fullcomp-textarea"
+            value={this.state.fullComposerText}
+            onChange={(e) => this.setState({ fullComposerText: e.target.value })}
+            onKeyDown={this.handleFullComposerKeyDown}
+            placeholder="输入消息…"
+            autoFocus
+          />
+        </div>
+        <div className="octo-fullcomp-foot">
+          <span className="octo-fullcomp-hint">⌘↵ 发送 · Esc 收起</span>
+          <button className="octo-fullcomp-send" onClick={this.submitFullComposer} type="button">发送</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ================================================================
+  // Lightbox
+  // ================================================================
+
+  private openLightbox = (src: string) => {
+    this.setState({ lightboxSrc: src });
+  };
+
+  private closeLightbox = () => {
+    this.setState({ lightboxSrc: null });
+  };
+
+  private handleLightboxClick = (e: React.MouseEvent) => {
+    // Close when clicking the backdrop (not the image)
+    if ((e.target as HTMLElement).classList.contains('octo-lightbox')) {
+      this.closeLightbox();
+    }
+  };
+
+  private renderLightbox() {
+    const { lightboxSrc } = this.state;
+    if (!lightboxSrc) return null;
+    return (
+      <div className="octo-lightbox" onClick={this.handleLightboxClick}>
+        <img src={lightboxSrc} alt="" />
+        <button className="octo-lightbox-close" onClick={this.closeLightbox} type="button">×</button>
+      </div>
+    );
+  }
+
+  // ================================================================
+  // Search Popover
+  // ================================================================
+
+  private static MOCK_SEARCH_DATA = {
+    contacts: [
+      { id: 'c1', name: '张三', sub: '产品经理' },
+      { id: 'c2', name: '李四', sub: '前端开发' },
+      { id: 'c3', name: '王五', sub: '设计师' },
+      { id: 'c4', name: 'Thomas', sub: 'AI Agent' },
+      { id: 'c5', name: '赵六', sub: '后端开发' },
+    ],
+    groups: [
+      { id: 'g1', name: 'DMWork 开发组', sub: '12 人' },
+      { id: 'g2', name: '产品讨论', sub: '8 人' },
+      { id: 'g3', name: '设计团队', sub: '5 人' },
+    ],
+    files: [
+      { id: 'f1', name: 'Q2 计划.pdf', sub: '张三 · 2天前' },
+      { id: 'f2', name: '设计稿-v3.fig', sub: '王五 · 昨天' },
+      { id: 'f3', name: 'API文档.md', sub: '李四 · 3小时前' },
+    ],
+  };
+
+  private handleSearchToggle = () => {
+    this.setState((prev) => ({
+      showSearch: !prev.showSearch,
+      searchQuery: '',
+      searchTab: 'contacts' as const,
+      searchResults: [],
+    }));
+  };
+
+  private handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    const { searchTab } = this.state;
+    const data = OctoSidepanelLayout.MOCK_SEARCH_DATA[searchTab] || [];
+    const results = query.trim()
+      ? data.filter((item) => item.name.toLowerCase().includes(query.toLowerCase()))
+      : [];
+    this.setState({ searchQuery: query, searchResults: results });
+  };
+
+  private handleSearchTabChange = (tab: 'contacts' | 'groups' | 'files') => {
+    const { searchQuery } = this.state;
+    const data = OctoSidepanelLayout.MOCK_SEARCH_DATA[tab] || [];
+    const results = searchQuery.trim()
+      ? data.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : [];
+    this.setState({ searchTab: tab, searchResults: results });
+  };
+
+  private renderSearchPopover() {
+    if (!this.state.showSearch) return null;
+    const { searchQuery, searchTab, searchResults } = this.state;
+    const tabs: { key: 'contacts' | 'groups' | 'files'; label: string }[] = [
+      { key: 'contacts', label: '联系人' },
+      { key: 'groups', label: '群组' },
+      { key: 'files', label: '文件' },
+    ];
+    return (
+      <div className="octo-search-pop">
+        <input
+          className="octo-search-input"
+          placeholder="搜索联系人、群组、文件…"
+          value={searchQuery}
+          onChange={this.handleSearchInput}
+          autoFocus
+        />
+        <div className="octo-search-tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              className={`octo-search-tab${searchTab === tab.key ? ' is-active' : ''}`}
+              onClick={() => this.handleSearchTabChange(tab.key)}
+              type="button"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="octo-search-results">
+          {searchQuery.trim() === '' ? (
+            <div className="octo-search-empty">输入关键词开始搜索</div>
+          ) : searchResults.length === 0 ? (
+            <div className="octo-search-empty">无匹配结果</div>
+          ) : (
+            searchResults.map((item: any) => (
+              <div key={item.id} className="octo-search-result-item">
+                <span
+                  className="octo-search-result-avatar"
+                  style={{ background: avatarGradient(item.name) }}
+                >
+                  {getFirstChar(item.name)}
+                </span>
+                <span>
+                  <div className="octo-search-result-name">{item.name}</div>
+                  <div className="octo-search-result-sub">{item.sub}</div>
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ================================================================
+  // Contacts Drawer
+  // ================================================================
+
+  private static MOCK_CONTACTS = {
+    newFriends: [
+      { id: 'nf1', name: '刘七', sub: '待验证' },
+    ],
+    aiPartners: [
+      { id: 'ai1', name: 'Thomas', sub: 'AI 助手 · 已接入' },
+      { id: 'ai2', name: '龙虾', sub: 'AI Agent · 已接入' },
+    ],
+    friends: {
+      A: [{ id: 'a1', name: 'Alice', sub: '产品团队' }],
+      B: [{ id: 'b1', name: 'Bob', sub: '前端开发' }],
+      C: [{ id: 'c1', name: 'Charlie', sub: '设计师' }],
+      L: [
+        { id: 'l1', name: '李四', sub: '前端开发' },
+        { id: 'l2', name: '刘七', sub: '后端开发' },
+      ],
+      W: [
+        { id: 'w1', name: '王五', sub: '设计师' },
+        { id: 'w2', name: '吴九', sub: '测试工程师' },
+      ],
+      Z: [
+        { id: 'z1', name: '张三', sub: '产品经理' },
+        { id: 'z2', name: '赵六', sub: '后端开发' },
+      ],
+    } as Record<string, { id: string; name: string; sub: string }[]>,
+  };
+
+  private toggleContacts = () => {
+    this.setState((prev) => ({ showContacts: !prev.showContacts }));
+  };
+
+  private renderContactsDrawer() {
+    const { showContacts } = this.state;
+    const { newFriends, aiPartners, friends } = OctoSidepanelLayout.MOCK_CONTACTS;
+    const letters = Object.keys(friends).sort();
+
+    return (
+      <div className={`octo-contacts-drawer${showContacts ? ' is-open' : ''}`}>
+        <div className="octo-contacts-header">
+          <span className="octo-contacts-title">通讯录</span>
+          <button className="octo-contacts-close" onClick={this.toggleContacts} type="button">×</button>
+        </div>
+        <div className="octo-contacts-body">
+          {/* 新朋友 */}
+          <div className="octo-contacts-section">新朋友</div>
+          {newFriends.map((f) => (
+            <div key={f.id} className="octo-contacts-item">
+              <span className="octo-contacts-avatar" style={{ background: avatarGradient(f.name) }}>
+                {getFirstChar(f.name)}
+              </span>
+              <span>
+                <div className="octo-contacts-name">{f.name}</div>
+                <div className="octo-contacts-sub">{f.sub}</div>
+              </span>
+            </div>
+          ))}
+
+          {/* AI 伙伴 */}
+          <div className="octo-contacts-section">AI 伙伴</div>
+          {aiPartners.map((f) => (
+            <div key={f.id} className="octo-contacts-item">
+              <span
+                className="octo-contacts-avatar"
+                style={{ background: 'linear-gradient(90deg, #63b3ff 0%, #8b6bff 100%)' }}
+              >
+                {getFirstChar(f.name)}
+              </span>
+              <span>
+                <div className="octo-contacts-name">{f.name}</div>
+                <div className="octo-contacts-sub">{f.sub}</div>
+              </span>
+            </div>
+          ))}
+
+          {/* 我的朋友 A-Z */}
+          <div className="octo-contacts-section">我的朋友</div>
+          {letters.map((letter) => (
+            <React.Fragment key={letter}>
+              <div className="octo-contacts-section" id={`contacts-letter-${letter}`}>{letter}</div>
+              {friends[letter].map((f) => (
+                <div key={f.id} className="octo-contacts-item">
+                  <span className="octo-contacts-avatar" style={{ background: avatarGradient(f.name) }}>
+                    {getFirstChar(f.name)}
+                  </span>
+                  <span>
+                    <div className="octo-contacts-name">{f.name}</div>
+                    <div className="octo-contacts-sub">{f.sub}</div>
+                  </span>
+                </div>
+              ))}
+            </React.Fragment>
+          ))}
+
+          {/* 右侧字母索引条 */}
+          <div className="octo-contacts-index">
+            {letters.map((letter) => (
+              <span
+                key={letter}
+                className="octo-contacts-index-letter"
+                onClick={() => {
+                  const el = document.getElementById(`contacts-letter-${letter}`);
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+              >
+                {letter}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   private renderMemberGroup(
     title: string,
     members: DrawerMember[],
@@ -984,6 +1359,14 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
           <span className="octo-sidepanel-demo-logo">🐙</span>
           <span className="octo-sidepanel-demo-workspace">Octo</span>
           <div style={{flex:1}} />
+          <button className="octo-sidepanel-demo-btn" onClick={this.toggleContacts} title="通讯录">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </button>
           <button className="octo-sidepanel-demo-btn" onClick={this.toggleSettings} title="设置">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           </button>
@@ -1046,8 +1429,8 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
               <div className="wk-sidepanel-header-actions">
                 <button
                   className="wk-sidepanel-header-search"
-                  title="搜索或切换会话"
-                  onClick={this.handlePickerToggle}
+                  title="搜索"
+                  onClick={this.handleSearchToggle}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <circle
@@ -1078,6 +1461,20 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
                         共 <b>{memberCountText}</b> 人
                       </span>
                     )}
+                  </button>
+                )}
+                {selectedChannel && (
+                  <button
+                    className="wk-sidepanel-header-search"
+                    title="全屏编辑"
+                    onClick={this.toggleFullComposer}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 3 21 3 21 9" />
+                      <polyline points="9 21 3 21 3 15" />
+                      <line x1="21" y1="3" x2="14" y2="10" />
+                      <line x1="3" y1="21" x2="10" y2="14" />
+                    </svg>
                   </button>
                 )}
                 <button
@@ -1141,11 +1538,23 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
               )}
             </div>
 
+            {/* Search Popover — positioned inside main, below header */}
+            {this.renderSearchPopover()}
+
+            {/* Full Composer — covers entire main area */}
+            {this.renderFullComposer()}
+
             {this.renderInfoDrawer()}
           </div>
+
+          {/* Contacts Drawer — covers main area but not Rail */}
+          {this.renderContactsDrawer()}
         </div>
       </div>
       </div>
+
+      {/* Lightbox — fixed, top-level overlay */}
+      {this.renderLightbox()}
       </div>
     );
   }

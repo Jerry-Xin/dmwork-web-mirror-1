@@ -1,13 +1,6 @@
 @import './tokens.css';
 
-:root {
-  --octo-sidepanel-shell-bg: var(--wk-bg-app);
-  --octo-sidepanel-border: var(--wk-border-subtle);
-  --octo-sidepanel-drawer-bg: #fff;
-  --octo-sidepanel-shadow:
-    0 14px 40px rgba(20, 20, 28, 0.06),
-    0 4px 18px rgba(20, 20, 28, 0.04);
-}
+/* Component tokens are now defined per-theme in tokens.css */
 
 html,
 body {
@@ -35,8 +28,8 @@ body.octo-sidepanel-v3 #root {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(125, 129, 149, 0.28);
-  border-radius: 999px;
+  background: var(--octo-scrollbar-thumb);
+  border-radius: var(--wk-r-pill);
 }
 
 .octo-sidepanel-shell {
@@ -45,7 +38,7 @@ body.octo-sidepanel-v3 #root {
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at top right, rgba(124, 92, 252, 0.08), transparent 28%),
+    radial-gradient(circle at top right, var(--octo-shell-accent), transparent 28%),
     var(--octo-sidepanel-shell-bg);
 }
 
@@ -68,12 +61,12 @@ body.octo-sidepanel-v3 #root {
   border-radius: 5px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #8b6bff 0%, #7c5cfc 60%, #5b3fe8 100%);
-  color: white;
+  background: var(--octo-logo-grad);
+  color: var(--wk-text-inverse);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  box-shadow: 0 1px 2px rgba(124, 92, 252, 0.34);
+  box-shadow: var(--octo-logo-shadow);
 }
 
 .octo-sidepanel-demo-name {
@@ -170,15 +163,15 @@ body.octo-sidepanel-v3 .wk-sidepanel-rail-badge {
   height: 17px;
   border-radius: 100px;
   padding: 0 5px;
-  background: #f54a45;
-  color: #fff;
+  background: var(--octo-badge-bg);
+  color: var(--wk-text-inverse);
   font: 700 10.5px var(--wk-font-sans);
   line-height: 17px;
   border: 0;
   box-shadow:
-    0 0 0 1.5px var(--wk-bg-rail),
-    0 0 0 2.5px #f54a45,
-    0 1px 3px rgba(245, 74, 69, 0.35);
+    0 0 0 1.5px var(--octo-badge-ring),
+    0 0 0 2.5px var(--octo-badge-bg),
+    0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-rail-badge::before {
@@ -196,7 +189,7 @@ body.octo-sidepanel-v3 .wk-sidepanel-header {
   padding: 0 12px;
   gap: 8px;
   border-bottom: 1px solid var(--octo-sidepanel-border);
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--octo-header-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -258,7 +251,7 @@ body.octo-sidepanel-v3 .wk-sidepanel-header-peer {
   min-height: 28px;
   padding: 0 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--wk-bg-hover) 82%, white 18%);
+  background: var(--octo-peer-bg);
   font: 500 12px var(--wk-font-sans);
 }
 
@@ -269,7 +262,7 @@ body.octo-sidepanel-v3 .wk-sidepanel-header-peer b {
 
 body.octo-sidepanel-v3 .wk-sidepanel-content {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0)),
+    var(--octo-content-overlay),
     var(--wk-bg-app);
 }
 
@@ -292,13 +285,13 @@ body.octo-sidepanel-v3 .wk-message-item-last {
 body.octo-sidepanel-v3 .wk-conversation-footer {
   padding: 10px 14px 10px;
   border-top: 1px solid var(--octo-sidepanel-border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(28, 28, 35, 0.015));
+  background: var(--octo-footer-grad);
 }
 
 body.octo-sidepanel-v3 .wk-conversation-footer-content {
-  border: 1px solid color-mix(in srgb, var(--wk-border-default) 90%, white 10%);
+  border: 1px solid var(--octo-footer-border-mix);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--octo-footer-input-bg);
   box-shadow: var(--octo-sidepanel-shadow);
   overflow: hidden;
 }
@@ -332,7 +325,7 @@ body.octo-sidepanel-v3 .wk-sidepanel-picker-overlay {
   justify-content: flex-start;
   align-items: stretch;
   padding-top: 0;
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--octo-picker-overlay-bg);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -342,10 +335,8 @@ body.octo-sidepanel-v3 .wk-sidepanel-picker-card {
   max-height: 100%;
   border: none;
   border-radius: 0 24px 24px 0;
-  box-shadow:
-    0 22px 48px rgba(20, 20, 28, 0.12),
-    0 6px 16px rgba(20, 20, 28, 0.08);
-  background: rgba(249, 249, 252, 0.94);
+  box-shadow: var(--octo-picker-shadow);
+  background: var(--octo-picker-card-bg);
   border-right: 1px solid var(--octo-sidepanel-border);
 }
 
@@ -361,7 +352,7 @@ body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-search {
 body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-search-input-wrap {
   min-height: 38px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--octo-picker-search-bg);
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-tabs {
@@ -392,12 +383,10 @@ body.octo-sidepanel-v3 .wk-sidepanel-more-menu {
   left: auto;
   top: calc(100% + 6px);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--octo-menu-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow:
-    0 18px 40px rgba(20, 20, 28, 0.14),
-    0 6px 20px rgba(20, 20, 28, 0.08);
+  box-shadow: var(--octo-menu-shadow);
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-empty {
@@ -418,36 +407,7 @@ body.octo-sidepanel-v3 .wk-sidepanel-empty-btn {
   right: 12px;
 }
 
-body[theme-mode='dark'] .octo-sidepanel-shell {
-  background:
-    radial-gradient(circle at top right, rgba(124, 92, 252, 0.16), transparent 28%),
-    var(--wk-bg-app);
-}
-
-body[theme-mode='dark'] .octo-sidepanel-demo-bar {
-  background: var(--wk-bg-rail);
-}
-
-body[theme-mode='dark'] .wk-sidepanel-header {
-  background: rgba(16, 17, 21, 0.72);
-}
-
-body[theme-mode='dark'] .wk-conversation-footer-content {
-  background: rgba(20, 22, 28, 0.84);
-}
-
-body[theme-mode='dark'] .wk-sidepanel-picker-overlay {
-  background: rgba(13, 14, 18, 0.76);
-}
-
-body[theme-mode='dark'] .wk-sidepanel-picker-card,
-body[theme-mode='dark'] .wk-sidepanel-more-menu {
-  background: rgba(18, 19, 24, 0.94);
-}
-
-body[theme-mode='dark'] {
-  --octo-sidepanel-drawer-bg: #18191f;
-}
+/* Dark mode overrides removed - theme tokens in tokens.css handle all themes */
 
 body.octo-sidepanel-v3 .octo-sidepanel-drawer {
   position: absolute;
@@ -460,7 +420,7 @@ body.octo-sidepanel-v3 .octo-sidepanel-drawer {
   flex-direction: column;
   background: var(--octo-sidepanel-drawer-bg);
   border-right: 1px solid var(--octo-sidepanel-border);
-  box-shadow: 16px 0 40px -18px rgba(28, 28, 35, 0.18);
+  box-shadow: var(--wk-shadow-panel);
   z-index: 12;
   opacity: 0;
   pointer-events: none;
@@ -546,13 +506,13 @@ body.octo-sidepanel-v3 .octo-sidepanel-gi-avatar {
   width: 48px;
   height: 48px;
   border-radius: 11px;
-  background: linear-gradient(135deg, #8b6bff 0%, #7c5cfc 100%);
-  color: #fff;
+  background: var(--octo-gi-avatar-grad);
+  color: var(--wk-text-inverse);
   display: grid;
   place-items: center;
-  font: 700 18px var(--wk-font-mono, ui-monospace, monospace);
+  font: 700 18px var(--wk-font-mono);
   flex-shrink: 0;
-  box-shadow: 0 3px 12px rgba(124, 92, 252, 0.32);
+  box-shadow: var(--octo-gi-avatar-shadow);
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-gi-body {
@@ -575,7 +535,7 @@ body.octo-sidepanel-v3 .octo-sidepanel-gi-name {
 body.octo-sidepanel-v3 .octo-sidepanel-gi-channel {
   padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(124, 92, 252, 0.1);
+  background: var(--octo-gi-channel-bg);
   color: var(--wk-brand-primary);
   font: 600 11px var(--wk-font-mono, ui-monospace, monospace);
 }
@@ -638,7 +598,7 @@ body.octo-sidepanel-v3 .octo-sidepanel-gi-toggle-label {
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-gi-action.is-danger {
-  color: var(--wk-text-danger, #ef4444);
+  color: var(--wk-text-danger);
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-gi-action.is-danger .octo-sidepanel-gi-toggle-icon {
@@ -653,7 +613,7 @@ body.octo-sidepanel-v3 .octo-sidepanel-gi-switch {
   width: 28px;
   height: 16px;
   border-radius: 999px;
-  background: rgba(125, 129, 149, 0.18);
+  background: var(--octo-switch-track);
   position: relative;
   flex-shrink: 0;
 }
@@ -666,8 +626,8 @@ body.octo-sidepanel-v3 .octo-sidepanel-gi-switch::after {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  background: var(--octo-switch-thumb);
+  box-shadow: var(--octo-switch-thumb-shadow);
   transition: transform 160ms ease;
 }
 
@@ -757,30 +717,30 @@ body.octo-sidepanel-v3 .octo-sidepanel-mem-avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  color: #fff;
+  color: var(--wk-text-inverse);
   display: grid;
   place-items: center;
   font: 600 10px var(--wk-font-sans);
   font-weight: 600;
   flex-shrink: 0;
   position: relative;
-  background: linear-gradient(135deg, #a78bfa, #7c5cfc);
+  background: var(--octo-avatar-default);
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-mem-avatar.is-teal {
-  background: linear-gradient(135deg, #34d4b8, #0f9a7e);
+  background: var(--octo-avatar-teal);
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-mem-avatar.is-amber {
-  background: linear-gradient(135deg, #f5a524, #d98b0c);
+  background: var(--octo-avatar-amber);
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-mem-avatar.is-coral {
-  background: linear-gradient(135deg, #f97171, #e04545);
+  background: var(--octo-avatar-coral);
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-mem-avatar.is-ai {
-  background: linear-gradient(90deg, #63b3ff 0%, #8b6bff 100%);
+  background: var(--octo-avatar-ai);
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-mem-text {
@@ -824,81 +784,16 @@ body.octo-sidepanel-v3 .octo-sidepanel-mem-badge {
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-mem-badge-ai {
-  background: linear-gradient(90deg, #63b3ff 0%, #8b6bff 100%);
-  color: #fff;
+  background: var(--octo-badge-ai-bg);
+  color: var(--wk-text-inverse);
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-mem-badge-owner {
-  background: var(--wk-mention, #f97316);
-  color: #fff;
+  background: var(--wk-mention);
+  color: var(--wk-text-inverse);
 }
 
-/* ---------- Settings Popover ---------- */
-
-.octo-settings-pop {
-  position: absolute;
-  top: 38px;
-  right: 8px;
-  z-index: 100;
-  min-width: 180px;
-  padding: 8px 0;
-  border-radius: var(--wk-r-lg, 8px);
-  background: var(--wk-bg-app, #fff);
-  border: 1px solid var(--wk-border-default, rgba(28,28,35,0.08));
-  box-shadow: var(--wk-shadow-pop, 0 12px 32px rgba(28,28,35,0.18));
-}
-
-.octo-settings-section {
-  padding: 6px 12px 4px;
-  color: var(--wk-text-tertiary, rgba(28,28,35,0.45));
-  font: 600 10.5px var(--wk-font-mono, ui-monospace, monospace);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.octo-settings-themes,
-.octo-settings-layouts {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 2px 6px 6px;
-}
-
-.octo-settings-theme-btn,
-.octo-settings-layout-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 6px 8px;
-  border: none;
-  border-radius: var(--wk-r-sm, 4px);
-  background: transparent;
-  color: var(--wk-text-secondary, rgba(28,28,35,0.58));
-  font: 500 12.5px var(--wk-font-sans, sans-serif);
-  cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
-}
-
-.octo-settings-theme-btn:hover,
-.octo-settings-layout-btn:hover {
-  background: var(--wk-bg-hover, rgba(28,28,35,0.05));
-  color: var(--wk-text-primary, #1C1C23);
-}
-
-.octo-settings-theme-btn.is-active,
-.octo-settings-layout-btn.is-active {
-  background: var(--wk-bg-active, rgba(28,28,35,0.08));
-  color: var(--wk-text-primary, #1C1C23);
-  font-weight: 600;
-}
-
-.octo-settings-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+/* ---------- Settings Popover (legacy, kept for compatibility) ---------- */
 
 /* ================================================================
    消息时间线布局
@@ -1126,4 +1021,324 @@ body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
   font-size: 12px;
   font-family: var(--wk-font-mono);
   color: var(--wk-ink-60);
+}
+
+/* ================================================================
+   全屏编辑器 (Full Composer)
+   ================================================================ */
+
+.octo-fullcomp {
+  position: absolute; inset: 0; z-index: 20;
+  background: var(--wk-bg-app);
+  display: flex; flex-direction: column;
+  animation: slide-up 200ms var(--wk-ease);
+}
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.octo-fullcomp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--wk-sp-3) var(--wk-sp-4);
+  border-bottom: 1px solid var(--wk-ink-05);
+}
+.octo-fullcomp-title { font-size: 14px; font-weight: 600; color: var(--wk-ink-80); }
+.octo-fullcomp-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--wk-ink-45); font-size: 18px;
+}
+.octo-fullcomp-close:hover { color: var(--wk-ink-80); }
+.octo-fullcomp-body { flex: 1; padding: var(--wk-sp-4); overflow: auto; }
+.octo-fullcomp-textarea {
+  width: 100%; min-height: 70vh; border: none; outline: none;
+  background: transparent; resize: none;
+  font-size: 14px; line-height: 1.7;
+  color: var(--wk-ink-80);
+  font-family: var(--wk-font-sans);
+}
+.octo-fullcomp-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--wk-sp-2) var(--wk-sp-4);
+  border-top: 1px solid var(--wk-ink-05);
+}
+.octo-fullcomp-hint { font-size: 11px; color: var(--wk-ink-35); }
+.octo-fullcomp-send {
+  background: var(--wk-brand); color: var(--wk-text-inverse); border: none;
+  padding: 6px 16px; border-radius: var(--wk-r-md);
+  font-size: 13px; cursor: pointer;
+}
+.octo-fullcomp-send:hover { background: var(--wk-brand-600); }
+
+/* ================================================================
+   Lightbox 图片放大
+   ================================================================ */
+
+.octo-lightbox {
+  position: fixed; inset: 0; z-index: 50;
+  background: var(--wk-backdrop);
+  display: flex; align-items: center; justify-content: center;
+  animation: fade-in 150ms ease;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.octo-lightbox img {
+  max-width: 90%; max-height: 85vh;
+  border-radius: var(--wk-r-lg);
+  box-shadow: var(--wk-shadow-overlay);
+}
+.octo-lightbox-close {
+  position: absolute; top: 16px; right: 16px;
+  background: rgba(0,0,0,0.5); color: white;
+  border: none; border-radius: 50%;
+  width: 32px; height: 32px; cursor: pointer;
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+.octo-lightbox-close:hover { background: rgba(0,0,0,0.7); }
+
+/* ================================================================
+   搜索 Popover
+   ================================================================ */
+
+.octo-search-pop {
+  position: absolute; top: 48px; left: 0; right: 0;
+  background: var(--wk-bg-app);
+  border-bottom: 1px solid var(--wk-ink-08);
+  box-shadow: var(--wk-shadow-md);
+  z-index: 15;
+  animation: slide-down 160ms var(--wk-ease);
+}
+@keyframes slide-down {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.octo-search-input {
+  width: 100%; border: none; outline: none;
+  padding: var(--wk-sp-3) var(--wk-sp-4);
+  font-size: 14px; background: transparent;
+  color: var(--wk-ink-80);
+}
+.octo-search-input::placeholder { color: var(--wk-ink-35); }
+.octo-search-tabs {
+  display: flex; border-bottom: 1px solid var(--wk-ink-05);
+  padding: 0 var(--wk-sp-4);
+}
+.octo-search-tab {
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  font-size: 12px; color: var(--wk-ink-45);
+  background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.octo-search-tab:hover { color: var(--wk-ink-80); }
+.octo-search-tab.is-active {
+  color: var(--wk-brand); border-bottom-color: var(--wk-brand);
+}
+.octo-search-results {
+  max-height: 300px; overflow-y: auto;
+  padding: var(--wk-sp-2) 0;
+}
+.octo-search-result-item {
+  display: flex; align-items: center; gap: var(--wk-sp-3);
+  padding: var(--wk-sp-2) var(--wk-sp-4);
+  cursor: pointer;
+}
+.octo-search-result-item:hover { background: var(--wk-bg-hover); }
+.octo-search-result-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: var(--wk-text-inverse);
+  flex-shrink: 0;
+}
+.octo-search-result-name {
+  font-size: 13px; color: var(--wk-ink-80);
+}
+.octo-search-result-sub {
+  font-size: 11px; color: var(--wk-ink-35);
+}
+.octo-search-empty {
+  padding: var(--wk-sp-6) var(--wk-sp-4);
+  text-align: center; color: var(--wk-ink-35);
+  font-size: 13px;
+}
+
+/* ================================================================
+   通讯录 Drawer
+   ================================================================ */
+
+.octo-contacts-drawer {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: calc(100% - 48px);
+  background: var(--wk-bg-app);
+  z-index: 12;
+  transform: translateX(-100%);
+  transition: transform 240ms var(--wk-ease-slide);
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--wk-ink-05);
+}
+.octo-contacts-drawer.is-open {
+  transform: translateX(0);
+}
+.octo-contacts-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--wk-sp-3) var(--wk-sp-4);
+  border-bottom: 1px solid var(--wk-ink-05);
+}
+.octo-contacts-title { font-size: 15px; font-weight: 600; color: var(--wk-ink-80); }
+.octo-contacts-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--wk-ink-45); font-size: 16px;
+}
+.octo-contacts-close:hover { color: var(--wk-ink-80); }
+.octo-contacts-body { flex: 1; overflow-y: auto; position: relative; }
+.octo-contacts-section {
+  font-size: 11px; font-weight: 600; color: var(--wk-ink-35);
+  padding: var(--wk-sp-3) var(--wk-sp-4) var(--wk-sp-1);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.octo-contacts-item {
+  display: flex; align-items: center; gap: var(--wk-sp-3);
+  padding: var(--wk-sp-2) var(--wk-sp-4);
+  cursor: pointer;
+}
+.octo-contacts-item:hover { background: var(--wk-bg-hover); }
+.octo-contacts-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; color: var(--wk-text-inverse);
+  flex-shrink: 0;
+}
+.octo-contacts-name { font-size: 14px; color: var(--wk-ink-80); }
+.octo-contacts-sub { font-size: 11px; color: var(--wk-ink-35); }
+.octo-contacts-index {
+  position: absolute; right: 2px; top: 50%;
+  transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 1px;
+}
+.octo-contacts-index-letter {
+  font-size: 9px; color: var(--wk-ink-35);
+  padding: 1px 4px; cursor: pointer;
+  border-radius: var(--wk-r-xs);
+}
+.octo-contacts-index-letter:hover {
+  color: var(--wk-brand); background: var(--wk-brand-soft);
+}
+
+/* ================================================================
+   Toast 系统
+   ================================================================ */
+
+.octo-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--octo-toast-bg);
+  color: var(--octo-toast-text);
+  padding: 7px 14px;
+  border-radius: var(--octo-toast-radius);
+  font: var(--octo-toast-font);
+  text-transform: var(--octo-toast-transform);
+  letter-spacing: var(--octo-toast-ls);
+  box-shadow: var(--octo-toast-shadow);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transition: opacity var(--wk-dur) var(--wk-ease),
+              transform var(--wk-dur) var(--wk-ease);
+  white-space: nowrap;
+}
+
+.octo-toast.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* ================================================================
+   Settings Popover (segmented control style)
+   ================================================================ */
+
+.octo-settings-pop {
+  position: absolute;
+  top: 38px;
+  right: 8px;
+  z-index: 100;
+  min-width: 200px;
+  padding: var(--wk-sp-2);
+  border-radius: 10px;
+  background: var(--octo-popover-bg);
+  border: 1px solid var(--octo-popover-border);
+  box-shadow: var(--octo-popover-shadow);
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 140ms var(--wk-ease),
+              transform 140ms var(--wk-ease);
+}
+
+.octo-settings-pop.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.octo-settings-section {
+  padding: 6px 10px 4px;
+  color: var(--wk-text-tertiary);
+  font: 500 10.5px var(--wk-font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.octo-settings-seg {
+  display: flex;
+  padding: 3px;
+  background: var(--octo-seg-bg);
+  border-radius: 7px;
+  margin: 2px 4px 4px;
+}
+
+.octo-settings-seg-btn {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 5px 6px;
+  font: 500 11.5px var(--wk-font-sans);
+  color: var(--wk-text-secondary);
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all var(--wk-dur-fast) var(--wk-ease);
+}
+
+.octo-settings-seg-btn:hover {
+  color: var(--wk-text-primary);
+}
+
+.octo-settings-seg-btn.is-active {
+  background: var(--octo-seg-active-bg);
+  color: var(--wk-text-primary);
+  box-shadow: var(--octo-seg-active-shadow);
+}
+
+.octo-settings-seg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.octo-settings-seg-dot[data-theme="paper"] {
+  background: var(--octo-dot-paper);
+}
+
+.octo-settings-seg-dot[data-theme="terminal"] {
+  background: var(--octo-dot-terminal);
+}
+
+.octo-settings-seg-dot[data-theme="moonwire"] {
+  background: var(--octo-dot-moonwire);
 }

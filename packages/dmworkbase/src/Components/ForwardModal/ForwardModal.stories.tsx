@@ -54,6 +54,60 @@ const mockItems: ForwardItem[] = [
   },
 ]
 
+/** 树状展示 mock：父群 → 子区缩进紧跟 */
+const mockTreeItems: ForwardItem[] = [
+  {
+    channelID: "user-001",
+    channelType: 1,
+    displayName: "Alice",
+  },
+  {
+    channelID: "group-001",
+    channelType: 2,
+    displayName: "前端开发群",
+    hasThreads: true,
+  },
+  {
+    channelID: "thread-001",
+    channelType: 5,
+    displayName: "需求讨论",
+    isThread: true,
+    parentChannelID: "group-001",
+  },
+  {
+    channelID: "thread-002",
+    channelType: 5,
+    displayName: "Bug 追踪",
+    isThread: true,
+    parentChannelID: "group-001",
+  },
+  {
+    channelID: "group-002",
+    channelType: 2,
+    displayName: "产品讨论组",
+    hasThreads: true,
+  },
+  {
+    channelID: "thread-003",
+    channelType: 5,
+    displayName: "版本规划",
+    isThread: true,
+    parentChannelID: "group-002",
+  },
+  {
+    channelID: "group-003",
+    channelType: 2,
+    displayName: "运营群",
+    hasThreads: false,
+  },
+  {
+    channelID: "bot-001",
+    channelType: 1,
+    displayName: "哇哈哈助手",
+    isAI: true,
+  },
+]
+
 // ---- 可交互 wrapper ----
 
 function Interactive(props: Partial<ForwardModalProps> & { initialItems?: ForwardItem[] }) {
@@ -193,5 +247,105 @@ export const Loading: Story = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText("加载中…")).toBeInTheDocument()
+  },
+}
+
+/** 树状展示：父群下子区缩进显示，群聊和子区独立勾选 */
+export const TreeView: Story = {
+  render: () => <Interactive initialItems={mockTreeItems} />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+
+    // 父群和子区都在列表里
+    await expect(canvas.getByText("前端开发群")).toBeInTheDocument()
+    await expect(canvas.getByText("需求讨论")).toBeInTheDocument()
+    await expect(canvas.getByText("Bug 追踪")).toBeInTheDocument()
+    await expect(canvas.getByText("产品讨论组")).toBeInTheDocument()
+    await expect(canvas.getByText("版本规划")).toBeInTheDocument()
+
+    // 选中父群，不影响子区
+    await userEvent.click(canvas.getByText("前端开发群"))
+    await expect(canvas.getByRole("button", { name: /确认\(1\)/i })).toBeInTheDocument()
+
+    // 再选中子区，两者独立
+    await userEvent.click(canvas.getByText("需求讨论"))
+    await expect(canvas.getByRole("button", { name: /确认\(2\)/i })).toBeInTheDocument()
+
+    // 取消父群，子区仍选中
+    await userEvent.click(canvas.getByText("前端开发群"))
+    await expect(canvas.getByRole("button", { name: /确认\(1\)/i })).toBeInTheDocument()
+  },
+}
+
+/** 树状连接线可见：父群下子区有 └─ 折角线 */
+export const TreeViewWithLines: Story = {
+  render: () => <Interactive initialItems={mockTreeItems} />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    // 子区在列表里（连接线由 CSS 渲染，play function 验证结构正确即可）
+    await expect(canvas.getByText("需求讨论")).toBeInTheDocument()
+    await expect(canvas.getByText("Bug 追踪")).toBeInTheDocument()
+    await expect(canvas.getByText("版本规划")).toBeInTheDocument()
+  },
+}
+
+/** 已选区头像角标：群聊显示 Hash，子区显示 ThreadIcon */
+export const SelectedAreaBadges: Story = {
+  render: () => <Interactive initialItems={mockTreeItems} selectedIDs={["group-001", "thread-001"]} />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+
+    // 已选区存在，且有 2 个已选头像 wrap
+    const selectedList = canvasElement.querySelector(".wk-forward-modal-selected-list")
+    await expect(selectedList).not.toBeNull()
+    const avatarWraps = canvasElement.querySelectorAll(
+      ".wk-forward-modal-selected-list .wk-forward-modal-avatar-wrap"
+    )
+    await expect(avatarWraps.length).toBe(2)
+
+    // group-001 是群聊（hasThreads=true）→ 应渲染 Hash badge
+    const hashBadges = canvasElement.querySelectorAll(
+      ".wk-forward-modal-selected-list .wk-forward-modal-badge--hash"
+    )
+    await expect(hashBadges.length).toBeGreaterThanOrEqual(1)
+
+    // thread-001 是子区（isThread=true）→ 应渲染 ThreadIcon badge
+    const threadBadges = canvasElement.querySelectorAll(
+      ".wk-forward-modal-selected-list .wk-forward-modal-badge--thread"
+    )
+    await expect(threadBadges.length).toBeGreaterThanOrEqual(1)
+
+    // 取消选中子区，thread badge 消失
+    await userEvent.click(canvas.getByText("需求讨论"))
+    const threadBadgesAfter = canvasElement.querySelectorAll(
+      ".wk-forward-modal-selected-list .wk-forward-modal-badge--thread"
+    )
+    await expect(threadBadgesAfter.length).toBe(0)
+  },
+}
+
+/** 搜索方案 A：命中子区时带出父群 */
+export const SearchTreeViewA: Story = {
+  render: () => <Interactive initialItems={mockTreeItems} />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+
+    // 搜索子区名「需求」
+    const input = canvas.getByPlaceholderText("搜索")
+    await userEvent.clear(input)
+    await userEvent.type(input, "需求")
+
+    // 命中「需求讨论」，其父群「前端开发群」也应带出
+    await expect(canvas.getByText("需求讨论")).toBeInTheDocument()
+    await expect(canvas.getByText("前端开发群")).toBeInTheDocument()
+
+    // 不相关的群/子区不显示
+    await expect(canvas.queryByText("产品讨论组")).not.toBeInTheDocument()
+    await expect(canvas.queryByText("版本规划")).not.toBeInTheDocument()
+
+    // 清空搜索，所有项恢复
+    await userEvent.clear(input)
+    await expect(canvas.getByText("产品讨论组")).toBeInTheDocument()
+    await expect(canvas.getByText("运营群")).toBeInTheDocument()
   },
 }

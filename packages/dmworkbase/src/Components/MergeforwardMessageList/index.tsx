@@ -10,7 +10,11 @@ import WKAvatar, { isBot } from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import WKViewQueueHeader from "../WKViewQueueHeader";
 import WKApp from "../../App";
+import { downloadFile } from "../../Utils/download";
 import MarkdownContent from "../../Messages/Text/MarkdownContent";
+import Lightbox from "yet-another-react-lightbox";
+import Download from "yet-another-react-lightbox/plugins/download";
+import "yet-another-react-lightbox/styles.css";
 
 import "./index.css"
 
@@ -19,7 +23,17 @@ export interface MergeforwardMessageListProps {
     mergeforwardContent: MergeforwardContent
 }
 
-export default class MergeforwardMessageList extends Component<MergeforwardMessageListProps> {
+interface MergeforwardMessageListState {
+    previewImgSrc: string | null
+}
+
+export default class MergeforwardMessageList extends Component<MergeforwardMessageListProps, MergeforwardMessageListState> {
+    constructor(props: MergeforwardMessageListProps) {
+        super(props)
+        this.state = {
+            previewImgSrc: null,
+        }
+    }
 
     getTitle(content: MergeforwardContent) {
         if (content.channelType === ChannelTypeGroup) {
@@ -127,9 +141,13 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
         if(msg.contentType === MessageContentType.image) {
            const imageContent = msg.content as ImageContent
            const size = this.imageScale(imageContent.width,imageContent.height)
+           const src = this.getImageSrc(imageContent) || ""
 
-           return <img style={{"width":`${size.width}px`,"height":`${size.height}px`,borderRadius:"var(--wk-r-xs, 4px)"}} src={this.getImageSrc(imageContent)}>
-           </img>
+           return <img
+               style={{"width":`${size.width}px`,"height":`${size.height}px`,borderRadius:"var(--wk-r-xs, 4px)",cursor:"pointer"}}
+               src={src}
+               onClick={() => this.setState({ previewImgSrc: src })}
+           />
         }
         if (msg.contentType === MessageContentTypeConst.file) {
             const fileContent = msg.content as FileContent
@@ -139,16 +157,9 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
             return (
                 <div
                     className={`wk-mergeforward-file${url ? " wk-mergeforward-file--clickable" : ""}`}
-                    onClick={() => {
-                        if (url && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/"))) {
-                            const a = document.createElement("a")
-                            a.href = url
-                            a.download = fileContent.name || "file"
-                            a.target = "_blank"
-                            document.body.appendChild(a)
-                            a.click()
-                            document.body.removeChild(a)
-                        }
+                    onClick={async () => {
+                        if (!url) return
+                        await downloadFile(url, fileContent.name || "file")
                     }}
                 >
                     <div className="wk-mergeforward-file__icon" style={{ backgroundColor: iconBg }}>
@@ -170,7 +181,8 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
 
     render(): ReactNode {
         const { mergeforwardContent } = this.props
-        return <div className="wk-mergeforwardmessagelist">
+        const { previewImgSrc } = this.state
+        return <><div className="wk-mergeforwardmessagelist">
             <div className="wk-mergeforwardmessagelist-header">
                 <WKViewQueueHeader hideBack={true} title={this.getTitle(mergeforwardContent)}></WKViewQueueHeader>
             </div>
@@ -221,5 +233,18 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
                 </div>
             </div>
         </div>
+        <Lightbox
+            open={!!previewImgSrc}
+            close={() => this.setState({ previewImgSrc: null })}
+            slides={previewImgSrc ? [{ src: previewImgSrc, alt: "", download: previewImgSrc }] : []}
+            plugins={[Download]}
+            carousel={{ finite: true }}
+            controller={{ closeOnBackdropClick: true }}
+            render={{
+                buttonPrev: () => null,
+                buttonNext: () => null,
+            }}
+        />
+        </>
     }
 }

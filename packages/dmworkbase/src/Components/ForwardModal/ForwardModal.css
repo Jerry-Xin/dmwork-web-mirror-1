@@ -45,6 +45,8 @@
 .wk-forward-modal-selected-avatar {
   flex-shrink: 0;
   cursor: pointer;
+  display: inline-block;
+  position: relative;
 }
 
 /* 搜索框行 */
@@ -93,6 +95,31 @@
   padding: 8px 10px;
   cursor: pointer;
   gap: 10px;
+}
+
+/* 子区缩进 + 树状连接线 */
+.wk-forward-modal-item--child {
+  padding-left: 42px;
+  position: relative;
+}
+
+/* └─ 折角线（每个子区左侧） */
+.wk-forward-modal-item--child::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 50%;
+  width: 12px;
+  border-left: 1.5px solid var(--wk-border-default, #e0e0e0);
+  border-bottom: 1.5px solid var(--wk-border-default, #e0e0e0);
+  border-bottom-left-radius: 3px;
+}
+
+/* 相邻子区之间补竖线 */
+.wk-forward-modal-item--child + .wk-forward-modal-item--child::before {
+  top: -50%;
+  bottom: 50%;
 }
 
 .wk-forward-modal-item-body {

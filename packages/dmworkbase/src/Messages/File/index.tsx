@@ -4,6 +4,7 @@ import { MessageCell } from "../MessageCell"
 import MessageBase from "../Base"
 import WKApp from "../../App"
 import { FileContent } from "./FileContent"
+import { downloadFile } from "../../Utils/download"
 import { WKSDK, Task, TaskStatus } from "wukongimjssdk"
 import { Toast } from "@douyinfe/semi-ui"
 import WKModal from "../../Components/WKModal"
@@ -97,7 +98,6 @@ interface RestartableTask extends Task {
 }
 
 interface FileCellState {
-    downloading: boolean
     uploadProgress: number       // 0~100 整数百分比
     uploadStatus: TaskStatus | null
     textPreviewVisible: boolean
@@ -121,7 +121,6 @@ export class FileCell extends MessageCell<any, FileCellState> {
     constructor(props: any) {
         super(props)
         this.state = {
-            downloading: false,
             uploadProgress: 0,
             uploadStatus: null,
             textPreviewVisible: false,
@@ -165,39 +164,13 @@ export class FileCell extends MessageCell<any, FileCellState> {
         return ""
     }
 
-    handleDownload = async () => {
+    handleDownload = () => {
         const { message } = this.props
         const content = message.content as FileContent
         const url = this.getFileURL(content)
         if (!url || !isSafeURL(url)) return
 
-        try {
-            if (isTextFile(content.extension, content.name)) {
-                // Text files: fetch as ArrayBuffer and decode as UTF-8 to avoid CDN charset issues
-                const resp = await fetch(url)
-                const buf = await resp.arrayBuffer()
-                const text = new TextDecoder("utf-8").decode(buf)
-                const blob = new Blob([text], { type: "text/plain;charset=utf-8" })
-                const blobUrl = URL.createObjectURL(blob)
-                const a = document.createElement("a")
-                a.href = blobUrl
-                a.download = content.name || "file"
-                document.body.appendChild(a)
-                a.click()
-                document.body.removeChild(a)
-                URL.revokeObjectURL(blobUrl)
-            } else {
-                const a = document.createElement("a")
-                a.href = url
-                a.download = content.name || "file"
-                a.target = "_blank"
-                document.body.appendChild(a)
-                a.click()
-                document.body.removeChild(a)
-            }
-        } catch {
-            alert("文件下载失败")
-        }
+        downloadFile(url, content.name || "file")
     }
 
     handlePreview = () => {
@@ -219,13 +192,23 @@ export class FileCell extends MessageCell<any, FileCellState> {
     }
 
     handleTextPreview = async (url: string, name: string, extension: string) => {
+        const TEXT_PREVIEW_LIMIT = 5 * 1024 * 1024 // 5MB
         try {
             const response = await fetch(url)
             if (!response.ok) {
                 Toast.error("文件预览失败")
                 return
             }
+            const contentLength = parseInt(response.headers.get('Content-Length') || '0', 10)
+            if (contentLength > TEXT_PREVIEW_LIMIT) {
+                alert('File too large to preview')
+                return
+            }
             const buffer = await response.arrayBuffer()
+            if (buffer.byteLength > TEXT_PREVIEW_LIMIT) {
+                alert('File too large to preview')
+                return
+            }
             const text = new TextDecoder("utf-8").decode(buffer)
             this.setState({
                 textPreviewVisible: true,

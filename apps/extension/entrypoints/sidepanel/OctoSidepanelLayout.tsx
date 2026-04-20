@@ -540,6 +540,7 @@ export default class OctoSidepanelLayout extends Component<
   };
 
   private scheduleLoad() {
+    if (this.state.showPicker) return;
     if (this.loadDebounceTimer) clearTimeout(this.loadDebounceTimer);
     this.loadDebounceTimer = setTimeout(() => {
       this.loadChannelPickerData();
@@ -2278,6 +2279,14 @@ export default class OctoSidepanelLayout extends Component<
                 {this.renderInfoDrawer()}
               </div>
 
+              {/* Picker Backdrop — dims the rail when picker is open */}
+              {showPicker && (
+                <div
+                  className="wk-sidepanel-picker-backdrop is-open"
+                  onClick={this.handlePickerClose}
+                />
+              )}
+
               {/* Channel Picker Drawer — covers main area but not Rail */}
               <div className={`wk-sidepanel-picker-drawer${showPicker ? ' is-open' : ''}`}>
                 <ChannelPicker
@@ -2287,7 +2296,7 @@ export default class OctoSidepanelLayout extends Component<
                   selectedId={selectedChannel?.channelID}
                   onSelect={this.handleChannelSelect}
                   onClose={this.handlePickerClose}
-                  onRefresh={this.handleRefresh}
+                  showSearch={false}
                   loading={this.state.pickerLoading}
                 />
               </div>

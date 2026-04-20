@@ -645,11 +645,33 @@ body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer {
   top: 0;
   left: 0;
   bottom: 0;
-  right: 0;
+  right: 48px;
   background: var(--wk-bg-app);
+  border-right: 1px solid var(--octo-sidepanel-border);
   z-index: 56;
   display: none;
   flex-direction: column;
+}
+
+body.octo-sidepanel-v3 .wk-sidepanel-picker-backdrop {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 48px;
+  background: var(--wk-backdrop);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 55;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+
+body.octo-sidepanel-v3 .wk-sidepanel-picker-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer.is-open {
@@ -660,8 +682,11 @@ body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer .wk-channel-picker {
   background: transparent;
   flex: 1;
   min-height: 0;
+  max-height: none;
+  flex-shrink: 1;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer .wk-channel-picker-search {
@@ -1614,10 +1639,10 @@ body[data-layout="cli"] .octo-attach-grid .octo-attach-file-row {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--wk-ink-08);
-  box-shadow: 16px 0 40px rgba(0,0,0,0.08);
 }
 .octo-contacts-drawer.is-open {
   transform: translateX(0);
+  box-shadow: 16px 0 40px rgba(0,0,0,0.08);
 }
 .octo-contacts-header {
   display: flex;

@@ -56,10 +56,86 @@ body.octo-sidepanel-v3 #root {
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: transparent;
 }
 
+/* ── Top Status Bar ── */
+.wk-sidepanel-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+  padding: 0 12px 0 16px;
+  background: var(--wk-bg-surface);
+  border-bottom: 1px solid var(--wk-border-subtle);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.wk-sidepanel-topbar-space {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wk-sidepanel-topbar-space-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--wk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.wk-sidepanel-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.wk-sidepanel-topbar-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--wk-text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.wk-sidepanel-topbar-btn:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+.wk-sidepanel-topbar-btn.is-active {
+  color: var(--wk-brand-primary);
+}
+
+.wk-sidepanel-topbar-settings-wrap {
+  position: relative;
+}
+
+.wk-topbar-settings-pop {
+  position: fixed;
+  top: 40px;
+  right: 56px;
+  z-index: 9999;
+}
+
 body.octo-sidepanel-v3 .wk-sidepanel-body {
+  flex: 1;
+  min-height: 0;
   flex-direction: row-reverse;
   background: transparent;
 }

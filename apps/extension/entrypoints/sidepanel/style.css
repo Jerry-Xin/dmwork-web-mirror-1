@@ -1536,8 +1536,9 @@ body[data-layout="cli"] .octo-attach-grid .octo-attach-file-row {
 .octo-search-pop {
   position: absolute;
   top: 48px;
-  left: 8px;
   right: 8px;
+  width: 320px;
+  max-width: calc(100% - 16px);
   background: var(--wk-bg-app);
   border: 1px solid var(--wk-ink-08);
   border-radius: 12px;

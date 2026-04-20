@@ -560,6 +560,15 @@ export default class OctoSidepanelLayout extends Component<
         this.setState({ showSpaceSwitcher: false });
       }
     }
+    // Close search popover
+    if (this.state.showSearch) {
+      if (
+        !target.closest(".octo-search-pop") &&
+        !target.closest(".wk-sidepanel-header-search")
+      ) {
+        this.setState({ showSearch: false });
+      }
+    }
   };
 
   private setTheme = (isDark: boolean) => {

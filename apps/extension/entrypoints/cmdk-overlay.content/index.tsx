@@ -16,7 +16,7 @@ export default defineContentScript({
         const app = document.createElement('div');
         container.append(app);
         const root = ReactDOM.createRoot(app);
-        root.render(<CmdKOverlay ctx={ctx} />);
+        root.render(<CmdKOverlay />);
         return root;
       },
       onRemove(root) {

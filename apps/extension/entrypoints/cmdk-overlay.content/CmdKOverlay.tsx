@@ -1,10 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import SelectionHint from './SelectionHint';
 
-interface CmdKOverlayProps {
-  ctx: any;
-}
-
 export interface PanelContext {
   selectedText: string;
   pageUrl: string;
@@ -12,11 +8,16 @@ export interface PanelContext {
   hostname: string;
 }
 
-export default function CmdKOverlay({ ctx }: CmdKOverlayProps) {
+interface InjectedPanelFrame {
+  host: HTMLDivElement;
+  iframe: HTMLIFrameElement;
+}
+
+export default function CmdKOverlay() {
   const [selectionText, setSelectionText] = useState('');
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const iframeUiRef = useRef<any>(null);
+  const iframeUiRef = useRef<InjectedPanelFrame | null>(null);
   const prevOverflowRef = useRef('');
 
   useEffect(() => {
@@ -56,41 +57,65 @@ export default function CmdKOverlay({ ctx }: CmdKOverlayProps) {
     prevOverflowRef.current = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    const ui = createIframeUi(ctx, {
-      page: '/cmdk.html',
-      position: 'modal',
-      zIndex: 2147483647,
-      onBeforeMount(_wrapper, iframe) {
-        // WXT only sets inset values for iframe modal UIs. Because iframe is a
-        // replaced element, browsers can keep its intrinsic 300x150 size unless
-        // we explicitly stretch it to the viewport.
-        iframe.style.width = '100vw';
-        iframe.style.height = '100vh';
-        iframe.style.maxWidth = 'none';
-        iframe.style.maxHeight = 'none';
-        iframe.style.display = 'block';
-        iframe.style.border = 'none';
-        iframe.style.background = 'transparent';
-        iframe.allow = 'clipboard-read; clipboard-write';
-      },
-      onMount(_wrapper, iframe) {
-        iframe.addEventListener('load', () => {
-          iframe.contentWindow?.postMessage({ type: 'CMDK_OPEN', context: panelContext }, '*');
-        });
-      },
-    });
-    ui.mount();
-    iframeUiRef.current = ui;
+    const host = document.createElement('div');
+    host.setAttribute('data-octo-cmdk-iframe-host', 'true');
+    host.style.position = 'fixed';
+    host.style.inset = '0';
+    host.style.zIndex = '2147483647';
+    host.style.background = 'transparent';
+    host.style.opacity = '1';
+    host.style.pointerEvents = 'auto';
+
+    const shadowRoot = host.attachShadow({ mode: 'open' });
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.inset = '0';
+    wrapper.style.width = '100vw';
+    wrapper.style.height = '100vh';
+    wrapper.style.background = 'transparent';
+    wrapper.style.opacity = '1';
+    wrapper.style.pointerEvents = 'auto';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = browser.runtime.getURL('cmdk.html');
+    iframe.style.position = 'fixed';
+    iframe.style.inset = '0';
+    iframe.style.width = '100vw';
+    iframe.style.height = '100vh';
+    iframe.style.maxWidth = 'none';
+    iframe.style.maxHeight = 'none';
+    iframe.style.display = 'block';
+    iframe.style.border = 'none';
+    iframe.style.background = 'transparent';
+    iframe.style.opacity = '1';
+    iframe.allow = 'clipboard-read; clipboard-write';
+
+    iframe.addEventListener('load', () => {
+      iframe.contentWindow?.postMessage({ type: 'CMDK_OPEN', context: panelContext }, '*');
+    }, { once: true });
+
+    wrapper.append(iframe);
+    shadowRoot.append(wrapper);
+    document.documentElement.append(host);
+    iframeUiRef.current = { host, iframe };
     setPanelOpen(true);
-  }, [ctx, panelOpen, selectionText]);
+  }, [panelOpen, selectionText]);
 
   const closePanel = useCallback(() => {
     if (iframeUiRef.current) {
-      iframeUiRef.current.remove();
+      iframeUiRef.current.host.remove();
       iframeUiRef.current = null;
     }
     document.body.style.overflow = prevOverflowRef.current;
     setPanelOpen(false);
+  }, []);
+
+  useEffect(() => () => {
+    if (iframeUiRef.current) {
+      iframeUiRef.current.host.remove();
+      iframeUiRef.current = null;
+    }
+    document.body.style.overflow = prevOverflowRef.current;
   }, []);
 
   // Listen for close from iframe

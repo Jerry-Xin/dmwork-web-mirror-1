@@ -580,6 +580,13 @@ html, body {
   max-height: calc(100% - 80px);
 }
 
+/* Portal emoji panel for CmdK — escapes overflow:hidden */
+.octo-composer-emoji-panel.is-portal {
+  z-index: 999999;
+  width: 340px;
+  max-height: 400px;
+}
+
 .octo-cmdk-picker {
   border-top: 1px solid var(--wk-border-subtle);
   background: var(--wk-bg-base, #f7f8fa);

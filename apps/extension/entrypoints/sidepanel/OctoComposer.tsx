@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TiptapMention from "@tiptap/extension-mention";
@@ -1028,17 +1029,30 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
           </div>
         )}
 
-        {renderToolbar && emojiOpen && (
-          <>
-            <div className="octo-composer-emoji-mask" />
-            <div className="octo-composer-emoji-panel" ref={emojiPanelRef}>
-              <EmojiPanelComponent
-                onEmoji={handleEmoji}
-                onSticker={(sticker: any) => void handleSticker(sticker)}
-              />
-            </div>
-          </>
-        )}
+        {renderToolbar && emojiOpen && (() => {
+          const emojiContent = (
+            <>
+              <div className="octo-composer-emoji-mask" onClick={() => setEmojiOpen(false)} />
+              <div
+                className={`octo-composer-emoji-panel${contextClassName === 'cmdk' ? ' is-portal' : ''}`}
+                ref={emojiPanelRef}
+                style={contextClassName === 'cmdk' && emojiButtonRef.current ? {
+                  position: 'fixed',
+                  bottom: `${window.innerHeight - emojiButtonRef.current.getBoundingClientRect().top + 8}px`,
+                  left: `${emojiButtonRef.current.getBoundingClientRect().left}px`,
+                } : undefined}
+              >
+                <EmojiPanelComponent
+                  onEmoji={handleEmoji}
+                  onSticker={(sticker: any) => void handleSticker(sticker)}
+                />
+              </div>
+            </>
+          );
+          return contextClassName === 'cmdk'
+            ? createPortal(emojiContent, document.body)
+            : emojiContent;
+        })()}
 
         <input
           accept="image/*,*/*"

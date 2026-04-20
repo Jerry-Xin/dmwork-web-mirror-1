@@ -41,9 +41,7 @@ html, body {
   justify-content: center;
   align-items: flex-start;
   padding: 11vh 16px 24px;
-  background: rgba(20, 20, 28, 0.48);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: transparent;
   animation: octo-cmdk-fade-in 160ms ease;
 }
 
@@ -726,6 +724,61 @@ html, body {
 
 .octo-cmdk .wk-emojipanel-tab-item-selected {
   background-color: var(--wk-bg-surface, #fff);
+}
+
+/* ── Dark theme overrides ── */
+body[theme-mode=dark] .octo-cmdk-panel {
+  background: var(--wk-bg-surface, #1e1f26);
+  border-color: var(--wk-border-default, rgba(255,255,255,0.08));
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
+}
+
+body[theme-mode=dark] .octo-cmdk-top {
+  border-bottom-color: var(--wk-border-subtle, rgba(255,255,255,0.05));
+  background:
+    radial-gradient(circle at top left, rgba(139, 107, 255, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(124, 92, 252, 0.04), transparent);
+}
+
+body[theme-mode=dark] .octo-cmdk-quote {
+  background: linear-gradient(180deg, rgba(124, 92, 252, 0.06), rgba(124, 92, 252, 0.03));
+}
+
+body[theme-mode=dark] .octo-cmdk-quote:not(.is-expanded) .octo-cmdk-quote-body::after {
+  background: linear-gradient(180deg, transparent, var(--wk-bg-surface, #1e1f26));
+}
+
+body[theme-mode=dark] .octo-cmdk-composer {
+  border-color: var(--wk-border-default, rgba(255,255,255,0.08));
+  background: var(--wk-bg-elevated, #2a2b33);
+}
+
+body[theme-mode=dark] .octo-cmdk-foot {
+  border-top-color: var(--wk-border-subtle, rgba(255,255,255,0.05));
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.05));
+}
+
+body[theme-mode=dark] .octo-cmdk-picker {
+  border-top-color: var(--wk-border-subtle, rgba(255,255,255,0.05));
+  background: var(--wk-bg-base, #18191f);
+}
+
+body[theme-mode=dark] .octo-cmdk-picker .wk-channel-picker-search-input-wrap {
+  background: var(--wk-bg-surface, #1e1f26);
+}
+
+body[theme-mode=dark] .octo-cmdk-send-plane {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.5);
+}
+
+body[theme-mode=dark] .octo-cmdk .wk-emojitoolbar-emojipanel {
+  background-color: var(--wk-bg-surface, #1e1f26);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
+}
+
+body[theme-mode=dark] .octo-cmdk .wk-emojipanel-tab {
+  background-color: var(--wk-bg-base, #18191f);
 }
 
 @media (max-width: 640px) {

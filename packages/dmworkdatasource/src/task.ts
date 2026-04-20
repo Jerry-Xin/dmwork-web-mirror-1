@@ -78,7 +78,11 @@ export class MediaMessageUploadTask extends MessageTask {
 
     buildContentDisposition(filename: string): string {
         const encoded = encodeURIComponent(filename)
-        const asciiName = filename.replace(/[^\x20-\x7E]/g, '_')
+        // RFC 2616 quoted-string: escape \ and "
+        const asciiName = filename
+            .replace(/[^\x20-\x7E]/g, '_')
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"')
         return `attachment; filename="${asciiName}"; filename*=UTF-8''${encoded}`
     }
 

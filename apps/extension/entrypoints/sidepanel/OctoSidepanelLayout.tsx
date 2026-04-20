@@ -6,6 +6,8 @@ import {
   ChannelTypePerson,
   WKSDK,
   ChannelInfo,
+  MessageContentManager,
+  SystemContent,
 } from "wukongimjssdk";
 import {
   ChannelTypeCommunityTopic,
@@ -80,7 +82,11 @@ interface OctoSidepanelLayoutState {
   showSearch: boolean;
   searchQuery: string;
   searchTab: "contacts" | "groups" | "files";
-  searchResults: any[];
+  searchResult: {
+    friends?: any[];
+    groups?: any[];
+    messages?: any[];
+  } | null;
   // Contacts Drawer
   showContacts: boolean;
   // Create Menu (rail)
@@ -102,6 +108,32 @@ function getFirstChar(name: string): string {
   const ch = name.charAt(0);
   if (/[a-zA-Z0-9]/.test(ch)) return ch.toUpperCase();
   return ch;
+}
+
+function stripMark(html: string): string {
+  if (!html) return "";
+  return html.replace(/<\/?mark>/gi, "");
+}
+
+function sanitizeHighlight(html: string): string {
+  if (!html) return "";
+  const OPEN = "\x00MARK_OPEN\x00";
+  const CLOSE = "\x00MARK_CLOSE\x00";
+  let out = html.replace(/<mark>/gi, OPEN).replace(/<\/mark>/gi, CLOSE);
+  out = out
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+  out = out
+    .replace(new RegExp(OPEN, "g"), "<mark>")
+    .replace(new RegExp(CLOSE, "g"), "</mark>");
+  return out;
+}
+
+function jsonToUint8Array(json: any): Uint8Array {
+  return new TextEncoder().encode(JSON.stringify(json));
 }
 
 function avatarGradient(name: string): string {
@@ -304,7 +336,7 @@ export default class OctoSidepanelLayout extends Component<
       showSearch: false,
       searchQuery: "",
       searchTab: "contacts",
-      searchResults: [],
+      searchResult: null,
       // Contacts Drawer
       showContacts: false,
       // Create Menu (rail)
@@ -1106,143 +1138,200 @@ export default class OctoSidepanelLayout extends Component<
   // ================================================================
 
   private searchDebounceTimer?: ReturnType<typeof setTimeout>;
+  private searchRequestId = 0;
+  private searchComposing = false;
 
   private handleSearchToggle = () => {
-    this.setState((prev) => ({
-      showSearch: !prev.showSearch,
-      searchQuery: "",
-      searchTab: "contacts" as const,
-      searchResults: [],
-    }));
+    this.setState(
+      (prev) => ({
+        showSearch: !prev.showSearch,
+        searchQuery: "",
+        searchTab: "contacts" as const,
+        searchResult: null,
+      }),
+      () => {
+        if (this.state.showSearch) {
+          void this.doSearch("", "contacts");
+        }
+      }
+    );
   };
 
   private handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     this.setState({ searchQuery: query });
     if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
-    if (!query.trim()) {
-      this.setState({ searchResults: [] });
-      return;
-    }
+    if (this.searchComposing) return; // IME mid-composition, wait for compositionend
+    this.searchDebounceTimer = setTimeout(() => {
+      void this.doSearch(query.trim(), this.state.searchTab);
+    }, 300);
+  };
+
+  private handleSearchCompositionStart = () => {
+    this.searchComposing = true;
+  };
+
+  private handleSearchCompositionEnd = (
+    e: React.CompositionEvent<HTMLInputElement>
+  ) => {
+    this.searchComposing = false;
+    const query = (e.target as HTMLInputElement).value;
+    this.setState({ searchQuery: query });
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
     this.searchDebounceTimer = setTimeout(() => {
       void this.doSearch(query.trim(), this.state.searchTab);
     }, 300);
   };
 
   private handleSearchTabChange = (tab: "contacts" | "groups" | "files") => {
-    this.setState({ searchTab: tab, searchResults: [] });
-    const { searchQuery } = this.state;
-    if (searchQuery.trim()) {
-      void this.doSearch(searchQuery.trim(), tab);
-    }
+    this.setState({ searchTab: tab });
+    void this.doSearch(this.state.searchQuery.trim(), tab);
   };
 
   private async doSearch(
     keyword: string,
     tab: "contacts" | "groups" | "files"
   ) {
+    // Match web vm.ts: content_type = [8] on files tab, [] otherwise
+    const contentTypes: number[] = tab === "files" ? [8] : [];
+    const spaceId = WKApp.shared.currentSpaceId;
+    const searchUrl = spaceId
+      ? `/search/global?space_id=${encodeURIComponent(spaceId)}`
+      : "/search/global";
+    // Race guard — ignore stale responses
+    this.searchRequestId += 1;
+    const reqId = this.searchRequestId;
     try {
-      // Map tab to content_type array (matches web client format)
-      // contacts/groups: empty array = search all; files: [8] = file type only
-      const contentTypeMap: Record<string, number[]> = {
-        contacts: [],
-        groups: [],
-        files: [8],
-      };
-      const contentTypes = contentTypeMap[tab] ?? [];
-      const spaceId = WKApp.shared.currentSpaceId;
-      const searchUrl = spaceId
-        ? `/search/global?space_id=${encodeURIComponent(spaceId)}`
-        : "/search/global";
       const res = await WKApp.apiClient.post(searchUrl, {
         keyword,
         content_type: contentTypes,
         page: 1,
         limit: 20,
       });
-      // Normalize results from API response (fields match web client: friends, groups, messages)
-      const results: any[] = [];
-      if (tab === "contacts" && res?.friends) {
-        for (const c of res.friends) {
-          results.push({
-            id: c.uid || c.id,
-            name: c.channel_name || c.name || c.uid,
-            sub: c.channel_remark || c.remark || "",
-          });
+      if (reqId !== this.searchRequestId) return;
+      // Prefer channel_remark over channel_name when present (mirrors web vm)
+      res?.friends?.forEach((v: any) => {
+        if (v.channel_remark) v.channel_name = v.channel_remark;
+      });
+      res?.groups?.forEach((v: any) => {
+        if (v.channel_remark) v.channel_name = v.channel_remark;
+      });
+      res?.messages?.forEach((v: any) => {
+        if (v.channel?.channel_remark) {
+          v.channel.channel_name = v.channel.channel_remark;
         }
-      }
-      if (tab === "groups" && res?.groups) {
-        for (const g of res.groups) {
-          results.push({
-            id: g.group_no || g.id,
-            name: g.channel_name || g.name,
-            sub: `${g.member_count || ""} 人`,
-          });
-        }
-      }
-      if (tab === "files" && res?.messages) {
-        for (const m of res.messages) {
-          results.push({
-            id: m.message_id || m.id,
-            name: m.from_name || m.sender_name || "文件",
-            sub: m.payload?.content?.substring(0, 40) || "",
-          });
-        }
-      }
-      // Fallback: if current tab has no results but other fields exist, try to extract from any available data
-      if (results.length === 0) {
-        if (res?.friends) {
-          for (const c of res.friends) {
-            results.push({
-              id: c.uid || c.id,
-              name: c.channel_name || c.name || c.uid,
-              sub: c.channel_remark || c.remark || "",
-            });
+        // Decode file/message payloads via MessageContentManager
+        if (v.payload) {
+          try {
+            const contentType = v.payload.type;
+            const mc = MessageContentManager.shared().getMessageContent(
+              contentType
+            );
+            if (mc) {
+              mc.decode(jsonToUint8Array(v.payload));
+              if (mc instanceof SystemContent) {
+                (mc as any).content.content = "[系统消息]";
+              }
+              v.content = mc;
+            }
+          } catch {
+            // Ignore decode errors — fall back to raw payload fields
           }
         }
-        if (res?.groups) {
-          for (const g of res.groups) {
-            results.push({
-              id: g.group_no || g.id,
-              name: g.channel_name || g.name,
-              sub: `${g.member_count || ""} 人`,
-            });
-          }
-        }
-        if (res?.messages) {
-          for (const m of res.messages) {
-            results.push({
-              id: m.message_id || m.id,
-              name: m.from_name || m.sender_name || "消息",
-              sub: m.payload?.content?.substring(0, 40) || "",
-            });
-          }
-        }
-      }
-      this.setState({ searchResults: results });
+      });
+      this.setState({
+        searchResult: {
+          friends: res?.friends || [],
+          groups: res?.groups || [],
+          messages: res?.messages || [],
+        },
+      });
     } catch (e) {
+      if (reqId !== this.searchRequestId) return;
       console.warn("[OctoSidepanelLayout] Search failed:", e);
-      this.setState({ searchResults: [] });
+      this.setState({ searchResult: null });
     }
   }
 
   private renderSearchPopover() {
     if (!this.state.showSearch) return null;
-    const { searchQuery, searchTab, searchResults } = this.state;
+    const { searchQuery, searchTab, searchResult } = this.state;
+    const friends = searchResult?.friends ?? [];
+    const groups = searchResult?.groups ?? [];
+    const messages = searchResult?.messages ?? [];
+    const counts: Record<"contacts" | "groups" | "files", number> = {
+      contacts: friends.length,
+      groups: groups.length,
+      files: messages.length,
+    };
     const tabs: { key: "contacts" | "groups" | "files"; label: string }[] = [
       { key: "contacts", label: "联系人" },
       { key: "groups", label: "群组" },
       { key: "files", label: "文件" },
     ];
+
+    type Item = { id: string; name: string; sub: string };
+    const items: Item[] = [];
+    if (searchTab === "contacts") {
+      for (const c of friends) {
+        items.push({
+          id: String(c.channel_id || c.uid || c.id),
+          name: c.channel_name || c.uid || "",
+          sub: "",
+        });
+      }
+    } else if (searchTab === "groups") {
+      for (const g of groups) {
+        items.push({
+          id: String(g.channel_id || g.group_no || g.id),
+          name: g.channel_name || "",
+          sub: g.member_count ? `${g.member_count} 人` : "",
+        });
+      }
+    } else {
+      for (const m of messages) {
+        const fileName =
+          (m.content as any)?.content?.name ||
+          (m.content as any)?.name ||
+          m.payload?.name ||
+          m.payload?.content ||
+          "文件";
+        const fromChannel = m.channel?.channel_name || "";
+        items.push({
+          id: String(m.message_id || m.id),
+          name: fileName,
+          sub: fromChannel,
+        });
+      }
+    }
+
     return (
       <div className="octo-search-pop">
-        <input
-          className="octo-search-input"
-          placeholder="搜索联系人、群组、文件…"
-          value={searchQuery}
-          onChange={this.handleSearchInput}
-          autoFocus
-        />
+        <div className="octo-search-input-wrap">
+          <svg
+            className="octo-search-input-icon"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            className="octo-search-input"
+            placeholder="搜索联系人、群组、文件…"
+            value={searchQuery}
+            onChange={this.handleSearchInput}
+            onCompositionStart={this.handleSearchCompositionStart}
+            onCompositionEnd={this.handleSearchCompositionEnd}
+            autoFocus
+          />
+        </div>
         <div className="octo-search-tabs">
           {tabs.map((tab) => (
             <button
@@ -1253,30 +1342,49 @@ export default class OctoSidepanelLayout extends Component<
               onClick={() => this.handleSearchTabChange(tab.key)}
               type="button"
             >
-              {tab.label}
+              <span>{tab.label}</span>
+              {counts[tab.key] > 0 && (
+                <span className="octo-search-tab-count">
+                  {counts[tab.key]}
+                </span>
+              )}
             </button>
           ))}
         </div>
         <div className="octo-search-results">
-          {searchQuery.trim() === "" ? (
-            <div className="octo-search-empty">输入关键词开始搜索</div>
-          ) : searchResults.length === 0 ? (
-            <div className="octo-search-empty">无匹配结果</div>
+          {items.length === 0 ? (
+            <div className="octo-search-empty">
+              {searchResult === null
+                ? "加载中…"
+                : searchQuery.trim() === ""
+                ? "暂无数据"
+                : "无匹配结果"}
+            </div>
           ) : (
-            searchResults.map((item: any) => (
-              <div key={item.id} className="octo-search-result-item">
-                <span
-                  className="octo-search-result-avatar"
-                  style={{ background: avatarGradient(item.name) }}
-                >
-                  {getFirstChar(item.name)}
-                </span>
-                <span>
-                  <div className="octo-search-result-name">{item.name}</div>
-                  <div className="octo-search-result-sub">{item.sub}</div>
-                </span>
-              </div>
-            ))
+            items.map((item) => {
+              const plain = stripMark(item.name) || "?";
+              return (
+                <div key={item.id} className="octo-search-result-item">
+                  <span
+                    className="octo-search-result-avatar"
+                    style={{ background: avatarGradient(plain) }}
+                  >
+                    {getFirstChar(plain)}
+                  </span>
+                  <span className="octo-search-result-text">
+                    <div
+                      className="octo-search-result-name"
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeHighlight(item.name),
+                      }}
+                    />
+                    {item.sub && (
+                      <div className="octo-search-result-sub">{item.sub}</div>
+                    )}
+                  </span>
+                </div>
+              );
+            })
           )}
         </div>
       </div>

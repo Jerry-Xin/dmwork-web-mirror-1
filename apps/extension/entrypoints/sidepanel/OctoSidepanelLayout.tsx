@@ -39,6 +39,7 @@ import { ChannelSettingManager } from "@dmwork/base/src/Service/ChannelSetting";
 import {
   SpaceService,
   type SpaceMember,
+  type Space,
 } from "@dmwork/base/src/Service/SpaceService";
 import CreateCategoryModal from "@dmwork/base/src/Components/CreateCategoryModal";
 import { setExtensionTheme } from "../../utils/extensionStorage";
@@ -98,6 +99,10 @@ interface OctoSidepanelLayoutState {
   showCreateCategoryModal: boolean;
   // Space name for top bar
   spaceName: string;
+  // Space switcher
+  spaces: Space[];
+  currentSpaceId: string;
+  showSpaceSwitcher: boolean;
 }
 
 interface OctoComposerInputContext extends MessageInputContext {
@@ -348,6 +353,10 @@ export default class OctoSidepanelLayout extends Component<
       showCreateCategoryModal: false,
       // Space name
       spaceName: "",
+      // Space switcher
+      spaces: [],
+      currentSpaceId: "",
+      showSpaceSwitcher: false,
     };
   }
 
@@ -439,6 +448,10 @@ export default class OctoSidepanelLayout extends Component<
     }
     if (this.state.showSettings) {
       this.setState({ showSettings: false });
+      return;
+    }
+    if (this.state.showSpaceSwitcher) {
+      this.setState({ showSpaceSwitcher: false });
       return;
     }
     if (this.state.showCreateMenu) {
@@ -538,6 +551,15 @@ export default class OctoSidepanelLayout extends Component<
         this.setState({ showCreateMenu: false });
       }
     }
+    // Close space switcher
+    if (this.state.showSpaceSwitcher) {
+      if (
+        !target.closest(".octo-space-switcher-pop") &&
+        !target.closest(".wk-sidepanel-topbar-space")
+      ) {
+        this.setState({ showSpaceSwitcher: false });
+      }
+    }
   };
 
   private setTheme = (isDark: boolean) => {
@@ -564,6 +586,7 @@ export default class OctoSidepanelLayout extends Component<
     this.setState((prev) => ({
       showSettings: !prev.showSettings,
       showCreateMenu: false,
+      showSpaceSwitcher: false,
     }));
   };
 
@@ -571,7 +594,71 @@ export default class OctoSidepanelLayout extends Component<
     this.setState((prev) => ({
       showCreateMenu: !prev.showCreateMenu,
       showSettings: false,
+      showSpaceSwitcher: false,
     }));
+  };
+
+  private toggleSpaceSwitcher = () => {
+    this.setState((prev) => ({
+      showSpaceSwitcher: !prev.showSpaceSwitcher,
+      showSettings: false,
+      showCreateMenu: false,
+    }));
+  };
+
+  private handleSpaceSelect = async (spaceId: string) => {
+    if (spaceId === this.state.currentSpaceId) {
+      this.setState({ showSpaceSwitcher: false });
+      return;
+    }
+
+    let spaces = this.state.spaces;
+    try {
+      spaces = await SpaceService.shared.getMySpaces();
+    } catch (e) {
+      console.warn("[OctoSidepanelLayout] Failed to refresh spaces:", e);
+    }
+
+    const target = spaces.find((s) => s.space_id === spaceId);
+    if (!target) {
+      showToast("该 Space 已不存在");
+      this.setState({ spaces, showSpaceSwitcher: false });
+      return;
+    }
+
+    WKApp.shared.currentSpaceId = spaceId;
+    localStorage.setItem("currentSpaceId", spaceId);
+    try {
+      WKApp.mittBus.emit("space-changed", target);
+    } catch {}
+    WKApp.shared.notifyListener();
+
+    WKApp.shared.openChannel = undefined as any;
+    WKSDK.shared().conversationManager.conversations = [];
+
+    this.setState({
+      spaces,
+      currentSpaceId: spaceId,
+      spaceName: target.name || "Octo",
+      showSpaceSwitcher: false,
+      selectedChannel: null,
+      selectedChannelName: "",
+      showInfoDrawer: false,
+      members: [],
+      drawerMuted: null,
+      channels: [],
+      privateChats: [],
+      categories: [],
+      pickerLoading: true,
+    });
+
+    try {
+      await WKSDK.shared().conversationManager.sync({});
+      await this.loadChannelPickerData();
+    } catch (e) {
+      console.warn("[OctoSidepanelLayout] Failed to reload after space switch:", e);
+      this.setState({ pickerLoading: false });
+    }
   };
 
   private scheduleLoad() {
@@ -593,7 +680,13 @@ export default class OctoSidepanelLayout extends Component<
       if (currentSpace) {
         WKApp.shared.currentSpaceId = currentSpace.space_id;
         localStorage.setItem("currentSpaceId", currentSpace.space_id);
-        this.setState({ spaceName: currentSpace.name || "Octo" });
+        this.setState({
+          spaceName: currentSpace.name || "Octo",
+          spaces,
+          currentSpaceId: currentSpace.space_id,
+        });
+      } else {
+        this.setState({ spaces });
       }
     } catch (e) {
       console.warn("[OctoSidepanelLayout] Failed to init space:", e);
@@ -1705,7 +1798,15 @@ export default class OctoSidepanelLayout extends Component<
   }
 
   private renderTopBar() {
-    const { spaceName, theme, showSettings, readingMode } = this.state;
+    const {
+      spaceName,
+      theme,
+      showSettings,
+      readingMode,
+      spaces,
+      currentSpaceId,
+      showSpaceSwitcher,
+    } = this.state;
     const selectedChannel = this.state.selectedChannel;
     const isPinned = selectedChannel
       ? this.state.pinnedIds.has(selectedChannel.channelID)
@@ -1713,17 +1814,99 @@ export default class OctoSidepanelLayout extends Component<
 
     // Map theme state to active theme option for UI
     const activeThemeOption = theme === "dark" ? "moon" : "paper";
+    const hasMultipleSpaces = spaces.length > 1;
 
     return (
       <div className="wk-sidepanel-topbar">
-        <div className="wk-sidepanel-topbar-space">
+        <button
+          type="button"
+          className={`wk-sidepanel-topbar-space${
+            showSpaceSwitcher ? " is-active" : ""
+          }${hasMultipleSpaces ? "" : " is-disabled"}`}
+          title={hasMultipleSpaces ? "切换空间" : spaceName}
+          onClick={hasMultipleSpaces ? this.toggleSpaceSwitcher : undefined}
+          disabled={!hasMultipleSpaces}
+        >
           <span className="wk-sidepanel-topbar-logo">O</span>
           <span className="wk-sidepanel-topbar-brand">Octo</span>
           <span className="wk-sidepanel-topbar-sep">|</span>
           <span className="wk-sidepanel-topbar-space-name">
             {spaceName || "Workspace"}
           </span>
-        </div>
+          {hasMultipleSpaces && (
+            <svg
+              className="wk-sidepanel-topbar-space-caret"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
+        </button>
+        {showSpaceSwitcher && hasMultipleSpaces && (
+          <div className="octo-space-switcher-pop is-open">
+            <div className="octo-space-switcher-title">切换空间</div>
+            <div className="octo-space-switcher-list">
+              {spaces.map((space) => {
+                const isCurrent = space.space_id === currentSpaceId;
+                const meta =
+                  space.max_users > 0
+                    ? `${space.member_count}/${space.max_users} 人`
+                    : `${space.member_count} 人`;
+                return (
+                  <button
+                    key={space.space_id}
+                    type="button"
+                    className={`octo-space-item${isCurrent ? " is-current" : ""}`}
+                    onClick={() => {
+                      void this.handleSpaceSelect(space.space_id);
+                    }}
+                  >
+                    {space.logo ? (
+                      <img
+                        className="octo-space-item-avatar"
+                        src={space.logo}
+                        alt=""
+                      />
+                    ) : (
+                      <span
+                        className="octo-space-item-avatar"
+                        style={{ background: avatarGradient(space.name || space.space_id) }}
+                      >
+                        {getFirstChar(space.name || "?")}
+                      </span>
+                    )}
+                    <span className="octo-space-item-text">
+                      <span className="octo-space-item-name">{space.name}</span>
+                      <span className="octo-space-item-meta">{meta}</span>
+                    </span>
+                    {isCurrent && (
+                      <svg
+                        className="octo-space-item-check"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="wk-sidepanel-topbar-actions">
           {/* 固定/取消固定当前频道 */}
           {selectedChannel && (

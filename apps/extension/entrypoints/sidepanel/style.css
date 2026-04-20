@@ -1502,6 +1502,7 @@ body[data-layout="cli"] .octo-attach-grid .octo-attach-file-row {
   border-bottom: 1px solid var(--wk-ink-08);
   box-shadow: var(--wk-shadow-md);
   z-index: 15;
+  overflow: hidden;
   animation: slide-down 160ms var(--wk-ease);
 }
 @keyframes slide-down {
@@ -1518,46 +1519,56 @@ body[data-layout="cli"] .octo-attach-grid .octo-attach-file-row {
   width: 100%;
   border: none;
   outline: none;
-  padding: var(--wk-sp-3) var(--wk-sp-4);
-  font-size: 14px;
+  padding: 10px 12px;
+  font: 500 13px var(--wk-font-sans);
   background: transparent;
-  color: var(--wk-ink-80);
+  color: var(--wk-ink-100);
 }
 .octo-search-input::placeholder {
-  color: var(--wk-ink-35);
+  color: var(--wk-ink-45);
 }
 .octo-search-tabs {
   display: flex;
-  border-bottom: 1px solid var(--wk-ink-05);
-  padding: 0 var(--wk-sp-4);
+  padding: 4px 6px 0;
+  gap: 2px;
+  border-bottom: 1px solid var(--wk-ink-08);
 }
 .octo-search-tab {
-  padding: var(--wk-sp-2) var(--wk-sp-3);
-  font-size: 12px;
-  color: var(--wk-ink-45);
+  flex: 1;
+  padding: 7px 8px 8px;
+  font: 500 12px var(--wk-font-sans);
+  color: var(--wk-ink-60);
   background: none;
   border: none;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: color 120ms var(--wk-ease), border-color 120ms var(--wk-ease);
 }
 .octo-search-tab:hover {
-  color: var(--wk-ink-80);
+  color: var(--wk-ink-100);
 }
 .octo-search-tab.is-active {
   color: var(--wk-brand);
   border-bottom-color: var(--wk-brand);
 }
 .octo-search-results {
-  max-height: 300px;
+  max-height: 320px;
   overflow-y: auto;
-  padding: var(--wk-sp-2) 0;
+  padding: 4px 0;
 }
 .octo-search-result-item {
   display: flex;
   align-items: center;
-  gap: var(--wk-sp-3);
-  padding: var(--wk-sp-2) var(--wk-sp-4);
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: background 100ms var(--wk-ease);
 }
 .octo-search-result-item:hover {
   background: var(--wk-bg-hover);
@@ -1566,21 +1577,24 @@ body[data-layout="cli"] .octo-attach-grid .octo-attach-file-row {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--wk-text-inverse);
+  font: 600 11.5px var(--wk-font-sans);
+  color: #fff;
+  background: linear-gradient(135deg, var(--wk-brand), var(--wk-brand-600));
   flex-shrink: 0;
 }
 .octo-search-result-name {
-  font-size: 13px;
-  color: var(--wk-ink-80);
+  font: 500 13px var(--wk-font-sans);
+  color: var(--wk-ink-100);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .octo-search-result-sub {
-  font-size: 11px;
-  color: var(--wk-ink-35);
+  font: 400 11px var(--wk-font-sans);
+  color: var(--wk-ink-45);
 }
 .octo-search-empty {
   padding: var(--wk-sp-6) var(--wk-sp-4);

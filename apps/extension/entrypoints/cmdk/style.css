@@ -574,6 +574,88 @@ html, body {
   z-index: 999999;
   width: 340px;
   max-height: 400px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--wk-bg-app, #fff);
+  box-shadow:
+    0 24px 64px rgba(20, 20, 28, 0.18),
+    0 12px 28px rgba(20, 20, 28, 0.1),
+    0 0 0 1px var(--wk-ink-08);
+}
+
+.octo-composer-emoji-panel.is-portal .wk-emojipanel {
+  width: 100%;
+  height: 340px;
+  max-height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--wk-bg-app, #fff);
+  box-shadow:
+    0 24px 64px rgba(20, 20, 28, 0.18),
+    0 12px 28px rgba(20, 20, 28, 0.1),
+    0 0 0 1px var(--wk-ink-08);
+}
+
+.octo-composer-emoji-panel.is-portal .wk-emojipanel-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow-y: auto;
+}
+
+.octo-composer-emoji-panel.is-portal .wk-emojipanel-content ul {
+  margin-left: 0;
+  padding: 10px 10px 6px;
+}
+
+.octo-composer-emoji-panel.is-portal .wk-emojipanel-content ul li {
+  padding: 4px;
+}
+
+.octo-composer-emoji-panel.is-portal .wk-emojipanel-content ul li img {
+  width: 24px;
+  height: 24px;
+}
+
+.octo-composer-emoji-panel.is-portal .wk-emojipanel-tab {
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 6px 10px 8px;
+  gap: 6px;
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 28, 0.02),
+    rgba(20, 20, 28, 0.06)
+  );
+  border-top: 1px solid var(--wk-ink-08);
+  border-radius: 0;
+}
+
+.octo-composer-emoji-panel.is-portal .wk-emojipanel-tab-item {
+  width: 36px;
+  height: 32px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.octo-composer-emoji-panel.is-portal .wk-emojipanel-tab-item img {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+}
+
+.octo-composer-emoji-panel.is-portal .wk-emojipanel-tab-item-selected {
+  background: var(--wk-bg-app, #fff);
+  box-shadow:
+    0 10px 24px rgba(20, 20, 28, 0.1),
+    inset 0 0 0 1px var(--wk-ink-08);
 }
 
 .octo-cmdk-picker {
@@ -714,64 +796,60 @@ html, body {
   font-size: 11px;
   color: var(--wk-ink-35);
   padding-left: 8px;
+  flex-shrink: 0;
 }
 
 .octo-cmdk .octo-composer-count-current {
   color: var(--wk-ink-60);
 }
 
-.octo-cmdk .octo-composer-send {
-  width: 34px;
-  height: 34px;
+body .octo-cmdk .octo-composer-send {
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: none;
-  border-radius: 50%;
-  background: var(--wk-ink-08);
+  border-radius: 8px;
+  background: transparent;
   color: var(--wk-ink-35);
   display: grid;
   place-items: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 120ms, box-shadow 120ms, background 160ms, color 160ms;
+  margin-left: 4px;
+  transition: background 160ms, color 160ms;
 }
 
-.octo-cmdk .octo-composer-send svg,
-.octo-cmdk .octo-composer-send-icon {
-  width: 18px;
-  height: 18px;
+body .octo-cmdk .octo-composer-send svg,
+body .octo-cmdk .octo-composer-send-icon {
+  width: 17px;
+  height: 17px;
   transform: translate(-1px, 1px);
 }
 
-.octo-cmdk .octo-composer-send:hover:not(:disabled) {
-  transform: translateY(-1px);
+body .octo-cmdk .octo-composer-send:hover:not(:disabled) {
+  background: var(--wk-ink-08);
+  color: var(--wk-ink-60);
 }
 
-.octo-cmdk .octo-composer-send.is-active {
-  background: linear-gradient(135deg, #8B6BFF 0%, #7C5CFC 60%, #5B3FE8 100%);
-  color: #fff;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.18) inset,
-    0 4px 10px rgba(124,92,252,0.32),
-    0 1px 2px rgba(28,28,35,0.18);
+body .octo-cmdk .octo-composer-send.is-active {
+  color: var(--wk-brand, #7C5CFC);
 }
 
-.octo-cmdk .octo-composer-send.is-active:hover {
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.22) inset,
-    0 6px 14px rgba(124,92,252,0.42),
-    0 1px 2px rgba(28,28,35,0.22);
+body .octo-cmdk .octo-composer-send.is-active:hover {
+  background: rgba(124, 92, 252, 0.10);
+  color: var(--wk-brand, #7C5CFC);
 }
 
-.octo-cmdk .octo-composer-send:active {
+body .octo-cmdk .octo-composer-send:active {
   transform: translateY(0);
 }
 
-.octo-cmdk .octo-composer-send:disabled {
+body .octo-cmdk .octo-composer-send:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
-.octo-cmdk .octo-composer-send.is-sending svg {
+body .octo-cmdk .octo-composer-send.is-sending svg {
   animation: octo-cmdk-send-pulse 0.8s ease-in-out infinite;
 }
 
@@ -830,7 +908,7 @@ body[theme-mode=dark] .octo-cmdk .octo-composer-toolbar {
 }
 
 body[theme-mode=dark] .octo-cmdk .octo-composer-send {
-  background: rgba(255,255,255,0.08);
+  background: transparent;
 }
 
 @media (max-width: 640px) {

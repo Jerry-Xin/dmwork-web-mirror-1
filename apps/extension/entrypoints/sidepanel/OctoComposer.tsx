@@ -1036,11 +1036,16 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
               <div
                 className={`octo-composer-emoji-panel${contextClassName === 'cmdk' ? ' is-portal' : ''}`}
                 ref={emojiPanelRef}
-                style={contextClassName === 'cmdk' && emojiButtonRef.current ? {
-                  position: 'fixed',
-                  bottom: `${window.innerHeight - emojiButtonRef.current.getBoundingClientRect().top + 8}px`,
-                  left: `${emojiButtonRef.current.getBoundingClientRect().left}px`,
-                } : undefined}
+                style={contextClassName === 'cmdk' && emojiButtonRef.current ? (() => {
+                  const btnRect = emojiButtonRef.current!.getBoundingClientRect();
+                  const availableAbove = btnRect.top - 8;
+                  return {
+                    position: 'fixed' as const,
+                    bottom: `${window.innerHeight - btnRect.top + 8}px`,
+                    left: `${btnRect.left}px`,
+                    maxHeight: `${Math.max(availableAbove, 200)}px`,
+                  };
+                })() : undefined}
               >
                 <EmojiPanelComponent
                   onEmoji={handleEmoji}

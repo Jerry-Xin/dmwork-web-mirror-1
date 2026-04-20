@@ -119,6 +119,27 @@ body.octo-sidepanel-v3 .wk-sidepanel-rail-pin {
   transform: translateX(-50%);
 }
 
+/* V3: unify rail avatar chip — purple gradient for both groups & private chats.
+   Mention (@) keeps its own orange style via .wk-sidepanel-rail-icon-mention. */
+body.octo-sidepanel-v3 .wk-sidepanel-rail-icon {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--wk-r-sm, 6px);
+  background: var(--wk-brand-grad, linear-gradient(135deg, #8B6BFF 0%, #5B3FE8 100%));
+  color: #fff;
+  font-weight: 600;
+}
+body.octo-sidepanel-v3 .wk-sidepanel-rail-icon-pm {
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  font-size: 13px;
+}
+body.octo-sidepanel-v3 .wk-sidepanel-rail-icon-mention {
+  background: #F97316;
+  border-radius: var(--wk-r-sm, 6px);
+}
+
 /* V3: Rail is on the right (row-reverse), so popovers open to the left */
 /* Rail overflow clips absolutely-positioned popovers — override to visible.
    The rail-list part scrolls independently via flex + min-height:0. */

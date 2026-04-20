@@ -923,6 +923,10 @@ export default class OctoSidepanelLayout extends Component<
       if (next.has(channelId)) {
         next.delete(channelId);
       } else {
+        if (next.size >= 7) {
+          showToast("最多固定 7 个会话");
+          return null;
+        }
         next.add(channelId);
       }
       localStorage.setItem("octo_sidepanel_pinned", JSON.stringify([...next]));
@@ -1794,13 +1798,7 @@ export default class OctoSidepanelLayout extends Component<
     const { channels, privateChats, pinnedIds } = this.state;
     const all = [...channels, ...privateChats];
 
-    const pinned = all.filter((t) => pinnedIds.has(t.channelId));
-    const unpinnedActive = all.filter(
-      (t) =>
-        !pinnedIds.has(t.channelId) &&
-        ((t.unread > 0 && !t.muted) || t.mentionCount > 0)
-    );
-    const visible = [...pinned, ...unpinnedActive];
+    const visible = all.filter((t) => pinnedIds.has(t.channelId));
     const hiddenCount = all.length - visible.length;
 
     return { visible, hiddenCount };
@@ -2052,10 +2050,7 @@ export default class OctoSidepanelLayout extends Component<
                   @
                 </span>
               ) : isPrivate ? (
-                <span
-                  className="wk-sidepanel-rail-icon wk-sidepanel-rail-icon-pm"
-                  style={{ background: avatarGradient(item.name) }}
-                >
+                <span className="wk-sidepanel-rail-icon wk-sidepanel-rail-icon-pm">
                   {getFirstChar(item.name)}
                 </span>
               ) : (

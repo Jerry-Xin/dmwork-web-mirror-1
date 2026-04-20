@@ -255,6 +255,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
   const [plainText, setPlainText] = useState("");
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
   const [members, setMembers] = useState<Subscriber[]>([]);
+  const membersRef = useRef<Subscriber[]>([]);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [slashMenuVisible, setSlashMenuVisible] = useState(false);
@@ -271,9 +272,9 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
 
   const syncMembers = useCallback(() => {
     if (membersProp) {
-      setMembers(
-        membersProp.filter((member) => member.uid !== WKApp.loginInfo.uid)
-      );
+      const filtered = membersProp.filter((member) => member.uid !== WKApp.loginInfo.uid);
+      setMembers(filtered);
+      membersRef.current = filtered;
       return;
     }
     const contextMembers = (((conversationContext as any).vm?.subscribers as
@@ -281,9 +282,9 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
       | undefined) ||
       WKSDK.shared().channelManager.getSubscribes(channel) ||
       []) as Subscriber[];
-    setMembers(
-      contextMembers.filter((member) => member.uid !== WKApp.loginInfo.uid)
-    );
+    const filtered = contextMembers.filter((member) => member.uid !== WKApp.loginInfo.uid);
+    setMembers(filtered);
+    membersRef.current = filtered;
   }, [channel, conversationContext, membersProp]);
 
   const sendMediaAndWait = useCallback(
@@ -351,8 +352,8 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
         },
         suggestion: createMentionSuggestion(
           ({ query }) => {
-            const source = members.length
-              ? members
+            const source = membersRef.current.length
+              ? membersRef.current
               : ((conversationContext as any).vm?.subscribers as
                   | Subscriber[]
                   | undefined) || [];

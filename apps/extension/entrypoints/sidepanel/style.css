@@ -1812,6 +1812,18 @@ body[data-layout="cli"] .octo-attach-grid .octo-attach-file-row {
   background: var(--octo-dot-dark);
 }
 
+.octo-settings-seg-dot[data-theme="paper"] {
+  background: #4CAF50;
+}
+
+.octo-settings-seg-dot[data-theme="term"] {
+  background: #FF9800;
+}
+
+.octo-settings-seg-dot[data-theme="moon"] {
+  background: #2196F3;
+}
+
 /* ── Bug fix: Emoji picker clipped by overflow:hidden ancestors ────────── */
 /* In the sidepanel the emoji panel is rendered inside several containers
    that all have overflow:hidden (wk-sidepanel-content, wk-conversation,
@@ -1881,14 +1893,42 @@ body.octo-sidepanel-v3 .wk-sidepanel-topbar {
 body.octo-sidepanel-v3 .wk-sidepanel-topbar-space {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
+}
+
+body.octo-sidepanel-v3 .wk-sidepanel-topbar-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--wk-brand-gradient);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+body.octo-sidepanel-v3 .wk-sidepanel-topbar-brand {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--wk-text-primary);
+  flex-shrink: 0;
+}
+
+body.octo-sidepanel-v3 .wk-sidepanel-topbar-sep {
+  color: var(--wk-text-tertiary);
+  font-size: 13px;
+  font-weight: 300;
+  flex-shrink: 0;
+  opacity: 0.5;
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-topbar-space-name {
   font-size: 13px;
-  font-weight: 700;
-  color: var(--wk-text-primary);
+  font-weight: 500;
+  color: var(--wk-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

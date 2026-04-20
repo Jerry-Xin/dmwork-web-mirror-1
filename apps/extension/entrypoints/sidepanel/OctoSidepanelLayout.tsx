@@ -69,6 +69,7 @@ interface OctoSidepanelLayoutState {
   drawerMuted: boolean | null;
   theme: string;
   layout: string;
+  readingMode: 'message' | 'cli';
   showSettings: boolean;
   // Full Composer
   showFullComposer: boolean;
@@ -292,6 +293,7 @@ export default class OctoSidepanelLayout extends Component<
       drawerMuted: null,
       theme: "light",
       layout: "message",
+      readingMode: "message",
       showSettings: false,
       // Full Composer
       showFullComposer: false,
@@ -1542,17 +1544,23 @@ export default class OctoSidepanelLayout extends Component<
   }
 
   private renderTopBar() {
-    const { spaceName, theme, showSettings } = this.state;
+    const { spaceName, theme, showSettings, readingMode } = this.state;
     const selectedChannel = this.state.selectedChannel;
     const isPinned = selectedChannel
       ? this.state.pinnedIds.has(selectedChannel.channelID)
       : false;
 
+    // Map theme state to active theme option for UI
+    const activeThemeOption = theme === "dark" ? "moon" : "paper";
+
     return (
       <div className="wk-sidepanel-topbar">
         <div className="wk-sidepanel-topbar-space">
+          <span className="wk-sidepanel-topbar-logo">O</span>
+          <span className="wk-sidepanel-topbar-brand">Octo</span>
+          <span className="wk-sidepanel-topbar-sep">|</span>
           <span className="wk-sidepanel-topbar-space-name">
-            {spaceName || "Octo"}
+            {spaceName || "Workspace"}
           </span>
         </div>
         <div className="wk-sidepanel-topbar-actions">
@@ -1566,64 +1574,12 @@ export default class OctoSidepanelLayout extends Component<
               onClick={() => this.togglePin(selectedChannel.channelID)}
               type="button"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 2L12 12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M17 7L7 7"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M8 12L5 20L12 17L19 20L16 12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="17" x2="12" y2="22" />
+                <path d="M5 17h14l-2-7V4H7v6z" />
               </svg>
             </button>
           )}
-          {/* 换肤 */}
-          <button
-            className="wk-sidepanel-topbar-btn"
-            title={theme === "dark" ? "切换到亮色" : "切换到暗色"}
-            onClick={() => this.setTheme(theme !== "dark")}
-            type="button"
-          >
-            {theme === "dark" ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-                <path
-                  d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
-          </button>
           {/* 设置 */}
           <div className="wk-sidepanel-topbar-settings-wrap">
             <button
@@ -1653,22 +1609,42 @@ export default class OctoSidepanelLayout extends Component<
             </button>
             {showSettings && (
               <div className="octo-settings-pop is-open wk-topbar-settings-pop">
+                {/* 阅读模式 */}
+                <div className="octo-settings-section">阅读模式</div>
+                <div className="octo-settings-seg">
+                  {[
+                    { id: "message" as const, label: "消息版" },
+                    { id: "cli" as const, label: "CLI" },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      className={`octo-settings-seg-btn${
+                        readingMode === m.id ? " is-active" : ""
+                      }`}
+                      onClick={() => this.setState({ readingMode: m.id })}
+                    >
+                      <span>{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {/* 主题 */}
                 <div className="octo-settings-section">主题</div>
                 <div className="octo-settings-seg">
                   {[
-                    { id: "light", label: "亮色", isDark: false },
-                    { id: "dark", label: "暗色", isDark: true },
+                    { id: "paper", label: "Paper", isDark: false, dotTheme: "paper" },
+                    { id: "term", label: "Term", isDark: false, dotTheme: "term" },
+                    { id: "moon", label: "Moon", isDark: true, dotTheme: "moon" },
                   ].map((t) => (
                     <button
                       key={t.id}
                       className={`octo-settings-seg-btn${
-                        this.state.theme === t.id ? " is-active" : ""
+                        activeThemeOption === t.id ? " is-active" : ""
                       }`}
                       onClick={() => this.setTheme(t.isDark)}
                     >
                       <span
                         className="octo-settings-seg-dot"
-                        data-theme={t.id}
+                        data-theme={t.dotTheme}
                       />
                       <span>{t.label}</span>
                     </button>

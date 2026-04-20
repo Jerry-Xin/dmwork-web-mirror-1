@@ -388,7 +388,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
             mentionActiveRef.current = active;
           },
           {
-            appendTo: () => rootRef.current || document.body,
+            appendTo: () => contextClassName === 'cmdk' ? document.body : (rootRef.current || document.body),
           }
         ),
         renderLabel({ node }) {

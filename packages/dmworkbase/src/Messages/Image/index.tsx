@@ -19,6 +19,7 @@ export class ImageContent extends MediaMessageContent {
     imgData?: string
     caption?: string
     mentionUids?: string[]
+    name?: string
     constructor(file?: File, imgData?: string, width?: number, height?: number, caption?: string, mentionUids?: string[]) {
         super()
         this.file = file
@@ -27,6 +28,9 @@ export class ImageContent extends MediaMessageContent {
         this.height = height || 0
         this.caption = caption
         this.mentionUids = mentionUids
+        if (file) {
+            this.name = file.name
+        }
     }
     decodeJSON(content: any) {
         this.width = content["width"] || 0
@@ -34,6 +38,7 @@ export class ImageContent extends MediaMessageContent {
         this.url = content["url"] || ''
         this.caption = content["caption"] || ''
         this.mentionUids = content["mention_uids"] || []
+        this.name = content["name"] || undefined
         this.remoteUrl = this.url
     }
     encodeJSON() {
@@ -43,6 +48,9 @@ export class ImageContent extends MediaMessageContent {
         }
         if (this.mentionUids && this.mentionUids.length > 0) {
             json["mention_uids"] = this.mentionUids
+        }
+        if (this.name) {
+            json["name"] = this.name
         }
         return json
     }
@@ -127,16 +135,24 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
     }
 
     getImageSrc(content: ImageContent) {
-        if (content.url && content.url !== "") { // 等待发送的消息
-            let downloadURL = WKApp.dataSource.commonDataSource.getImageURL(content.url, { width: content.width, height: content.height })
-            if (downloadURL.indexOf("?") !== -1) {
-                downloadURL += "&filename=image.png"
-            } else {
-                downloadURL += "?filename=image.png"
-            }
-            return downloadURL
+        if (content.url && content.url !== "") {
+            return WKApp.dataSource.commonDataSource.getImageURL(content.url, { width: content.width, height: content.height })
         }
         return content.imgData
+    }
+
+    /** Build download URL with response-content-disposition for cross-origin */
+    getDownloadUrl(imageURL: string, filename: string): string {
+        if (!imageURL) return imageURL
+        try {
+            const parsed = new URL(imageURL, window.location.href)
+            if (parsed.origin !== window.location.origin && filename) {
+                const disposition = `attachment;filename*=UTF-8''${encodeURIComponent(filename)}`
+                parsed.searchParams.set('response-content-disposition', disposition)
+                return parsed.href
+            }
+        } catch { /* ignore */ }
+        return imageURL
     }
 
     getImageElement() {
@@ -214,7 +230,7 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
             <Lightbox
                 open={showPreview}
                 close={() => this.setState({ showPreview: false })}
-                slides={[{ src: imageURL, alt: '', download: imageURL }]}
+                slides={[{ src: imageURL, alt: '', download: { url: this.getDownloadUrl(imageURL, content.name || 'image.png'), filename: content.name || 'image.png' } }]}
                 plugins={[Download]}
                 carousel={{ finite: true }}
                 controller={{ closeOnBackdropClick: true }}

@@ -18,9 +18,17 @@ export function downloadFile(url: string, filename: string): void {
     const resolvedUrl = parsedUrl.href;
     if (!isSafeUrl(resolvedUrl)) return;
 
+    let downloadUrl = resolvedUrl;
+    if (parsedUrl.origin !== window.location.origin && filename) {
+        const encodedFilename = encodeURIComponent(filename);
+        const disposition = `attachment;filename*=UTF-8''${encodedFilename}`;
+        parsedUrl.searchParams.set('response-content-disposition', disposition);
+        downloadUrl = parsedUrl.href;
+    }
+
     try {
         const a = document.createElement("a");
-        a.href = resolvedUrl;
+        a.href = downloadUrl;
         a.download = filename;
         if (parsedUrl.origin !== window.location.origin) {
             a.target = "_blank";
@@ -32,7 +40,7 @@ export function downloadFile(url: string, filename: string): void {
     } catch (err) {
         console.warn("downloadFile: anchor click failed, trying window.open", err);
         try {
-            const w = window.open(resolvedUrl, "_blank");
+            const w = window.open(downloadUrl, "_blank");
             if (!w) {
                 console.warn("downloadFile: window.open returned null (popup blocked?)");
             }

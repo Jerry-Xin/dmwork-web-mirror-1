@@ -8,6 +8,7 @@ import Lightbox from "yet-another-react-lightbox"
 import Download from "yet-another-react-lightbox/plugins/download"
 import "yet-another-react-lightbox/styles.css"
 import { Toast } from "@douyinfe/semi-ui"
+import { downloadFile } from "../../Utils/download"
 
 const SMALL_FILE_THRESHOLD = 1024 * 1024 // 1MB 以下不显示进度覆盖层
 
@@ -141,20 +142,6 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
         return content.imgData
     }
 
-    /** Build download URL with response-content-disposition for cross-origin */
-    getDownloadUrl(imageURL: string, filename: string): string {
-        if (!imageURL) return imageURL
-        try {
-            const parsed = new URL(imageURL, window.location.href)
-            if (parsed.origin !== window.location.origin && filename) {
-                const disposition = `attachment;filename*=UTF-8''${encodeURIComponent(filename)}`
-                parsed.searchParams.set('response-content-disposition', disposition)
-                return parsed.href
-            }
-        } catch { /* ignore */ }
-        return imageURL
-    }
-
     getImageElement() {
         const { message } = this.props
         const content = message.content as ImageContent
@@ -230,8 +217,13 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
             <Lightbox
                 open={showPreview}
                 close={() => this.setState({ showPreview: false })}
-                slides={[{ src: imageURL, alt: '', download: { url: this.getDownloadUrl(imageURL, content.name || 'image.png'), filename: content.name || 'image.png' } }]}
+                slides={[{ src: imageURL, alt: '' }]}
                 plugins={[Download]}
+                download={{ download: ({ slide }) => {
+                    if (slide?.src) {
+                        downloadFile(slide.src, content.name || 'image.png')
+                    }
+                }}}
                 carousel={{ finite: true }}
                 controller={{ closeOnBackdropClick: true }}
                 render={{

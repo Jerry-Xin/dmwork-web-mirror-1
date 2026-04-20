@@ -2,6 +2,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { downloadFile } from '@dmwork/base/src/Utils/download'
 
+// Mock WKApp.apiClient
+vi.mock('@dmwork/base/src/App', () => ({
+  default: {
+    apiClient: {
+      get: vi.fn(),
+    },
+  },
+}))
+
+import WKApp from '@dmwork/base/src/App'
+
 describe('downloadFile', () => {
   let capturedAnchor: HTMLAnchorElement | null = null
 
@@ -19,48 +30,43 @@ describe('downloadFile', () => {
     vi.restoreAllMocks()
   })
 
-  it('appends response-content-disposition for cross-origin URLs', () => {
-    downloadFile('https://cdn.example.com/image.png', 'photo.png')
+  it('calls presigned API for cross-origin URLs', async () => {
+    vi.mocked(WKApp.apiClient.get).mockResolvedValue({ url: 'https://cdn.example.com/signed-url', filename: 'photo.png' })
 
+    await downloadFile('https://cdn.example.com/image.png', 'photo.png')
+
+    expect(WKApp.apiClient.get).toHaveBeenCalledWith(
+      expect.stringContaining('file/download/url?path=')
+    )
     expect(capturedAnchor).not.toBeNull()
-    const href = capturedAnchor!.href
-    expect(href).toContain('response-content-disposition=')
-    expect(href).toContain('photo.png')
+    expect(capturedAnchor!.href).toBe('https://cdn.example.com/signed-url')
   })
 
-  it('uses & separator when cross-origin URL already has query params', () => {
-    downloadFile('https://cdn.example.com/image.png?token=abc', 'photo.png')
+  it('does not add response-content-disposition to cross-origin URLs', async () => {
+    vi.mocked(WKApp.apiClient.get).mockResolvedValue({ url: 'https://cdn.example.com/signed', filename: 'photo.png' })
+
+    await downloadFile('https://cdn.example.com/image.png', 'photo.png')
 
     expect(capturedAnchor).not.toBeNull()
-    expect(capturedAnchor!.href).toContain('&response-content-disposition=')
+    expect(capturedAnchor!.href).not.toContain('response-content-disposition')
   })
 
-  it('uses ? separator when cross-origin URL has no query params', () => {
-    downloadFile('https://cdn.example.com/image.png', 'photo.png')
+  it('falls back to original URL when presigned API fails', async () => {
+    vi.mocked(WKApp.apiClient.get).mockRejectedValue(new Error('network'))
+
+    await downloadFile('https://cdn.example.com/image.png', 'photo.png')
 
     expect(capturedAnchor).not.toBeNull()
-    expect(capturedAnchor!.href).toContain('image.png?response-content-disposition=')
+    expect(capturedAnchor!.href).toBe('https://cdn.example.com/image.png')
   })
 
-  it('encodes Unicode filenames in response-content-disposition', () => {
-    downloadFile('https://cdn.example.com/image.png', '测试图片.png')
-
-    expect(capturedAnchor).not.toBeNull()
-    const href = capturedAnchor!.href
-    // The filename is first encodeURIComponent-ed in the disposition value,
-    // then the whole disposition is encodeURIComponent-ed for the query param,
-    // so % signs become %25 (double-encoded).
-    expect(href).toContain('response-content-disposition=')
-    expect(href).toContain('%25E6%25B5%258B') // 测 double-encoded
-  })
-
-  it('does nothing for empty URL', () => {
-    downloadFile('', 'photo.png')
+  it('does nothing for empty URL', async () => {
+    await downloadFile('', 'photo.png')
     expect(capturedAnchor).toBeNull()
   })
 
-  it('does nothing for javascript: URL', () => {
-    downloadFile('javascript:alert(1)', 'photo.png')
+  it('does nothing for javascript: URL', async () => {
+    await downloadFile('javascript:alert(1)', 'photo.png')
     expect(capturedAnchor).toBeNull()
   })
 })

@@ -1,11 +1,27 @@
 import { isSafeUrl } from "./security";
+import WKApp from "../App";
+
+/**
+ * Get a presigned download URL from the backend.
+ * Falls back to the original URL on error.
+ */
+export async function getPresignedDownloadUrl(remotePath: string, filename: string): Promise<string> {
+    try {
+        const resp = await WKApp.apiClient.get(`file/download/url?path=${encodeURIComponent(remotePath)}&filename=${encodeURIComponent(filename)}`)
+        if (resp && resp.url) {
+            return resp.url
+        }
+    } catch (err) {
+        console.warn("getPresignedDownloadUrl: failed, falling back to original URL", err)
+    }
+    return remotePath
+}
 
 /**
  * Download a file via anchor-click.
- * CDN serves Content-Disposition header to provide the correct filename.
- * For cross-origin URLs, opens in a new tab as safety fallback.
+ * For cross-origin URLs, fetches a presigned download URL from the backend.
  */
-export function downloadFile(url: string, filename: string): void {
+export async function downloadFile(url: string, filename: string): Promise<void> {
     if (!url) return;
 
     let parsedUrl: URL;
@@ -19,18 +35,17 @@ export function downloadFile(url: string, filename: string): void {
     if (!isSafeUrl(resolvedUrl)) return;
 
     let downloadUrl = resolvedUrl;
-    if (parsedUrl.origin !== window.location.origin && filename) {
-        const encodedFilename = encodeURIComponent(filename);
-        const disposition = `attachment;filename*=UTF-8''${encodedFilename}`;
-        parsedUrl.searchParams.set('response-content-disposition', disposition);
-        downloadUrl = parsedUrl.href;
+    const isCrossOrigin = parsedUrl.origin !== window.location.origin;
+
+    if (isCrossOrigin && filename) {
+        downloadUrl = await getPresignedDownloadUrl(resolvedUrl, filename);
     }
 
     try {
         const a = document.createElement("a");
         a.href = downloadUrl;
         a.download = filename;
-        if (parsedUrl.origin !== window.location.origin) {
+        if (isCrossOrigin) {
             a.target = "_blank";
             a.rel = "noopener";
         }

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<title>Cmd+K v3 · test harness</title>
+<link rel="stylesheet" href="../shared/tokens.css"/>
+<link rel="stylesheet" href="content.css"/>
+<style>
+  body { margin: 0; font-family: var(--wk-font-sans); }
+  .theme-bar {
+    position: fixed; top: 8px; left: 8px; z-index: 9999;
+    display: flex; gap: 6px;
+  }
+  .theme-bar button {
+    padding: 4px 10px; font-size: 12px; border-radius: 6px;
+    border: 1px solid rgba(0,0,0,0.15); background: #fff; cursor: pointer;
+  }
+  .fake-page {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(127,59,245,.08), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(78,234,255,.06), transparent 40%),
+      linear-gradient(180deg,#FAFAFB,#F0F1F3);
+    padding: 40px;
+  }
+  .fake-card {
+    max-width: 900px; margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 0 0 1px rgba(28,28,35,.05);
+    color: rgba(28,28,35,.6);
+  }
+</style>
+</head>
+<body data-theme="paper">
+<script>document.documentElement.setAttribute('data-theme','paper');</script>
+<div class="theme-bar">
+  <button onclick="setTheme('paper')">Paper</button>
+  <button onclick="setTheme('terminal')">Terminal</button>
+  <button onclick="setTheme('moonwire')">Moonwire</button>
+  <button onclick="toggleExpand()">Toggle Expand</button>
+</div>
+
+<div class="fake-page">
+  <div class="fake-card">
+    <h1 style="font-size:18px;font-weight:700;color:rgba(28,28,35,.9);margin-bottom:8px;">lark-cli README</h1>
+    <p style="font-size:14px;line-height:24px;">飞书官方 lark-cli 工具，覆盖消息、文档、多维表格、电子表格、幻灯片、日历、邮箱等 14 大业务域，200+ 精选命令，22 个 AI Agent Skills 开箱即用。</p>
+  </div>
+</div>
+
+<!-- Cmd+K panel mounted into a fake Shadow-DOM-equivalent wrapper (uses same class prefixes) -->
+<div class="octo-cmdk" role="dialog">
+  <div class="octo-cmdk-panel">
+
+    <div class="octo-cmdk-top" title="按住可拖动浮层">
+      <span class="octo-cmdk-avatar">✦</span>
+      <div class="octo-cmdk-title">发送到 <strong>Octo</strong></div>
+      <div class="octo-cmdk-spacer"></div>
+      <button class="octo-cmdk-target-btn" type="button">
+        <span class="octo-cmdk-target-glyph"></span>
+        <span class="octo-cmdk-target-name">FT-A2 Team</span>
+        <span class="octo-cmdk-target-thread">🧵 Extension 对齐</span>
+        <span class="octo-cmdk-target-chev">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l5 5 5-5"/></svg>
+        </span>
+      </button>
+      <button class="octo-cmdk-close" title="关闭 (Esc)" type="button">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      </button>
+    </div>
+
+    <div class="octo-cmdk-quote">
+      <div class="octo-cmdk-q-meta">
+        <span class="octo-cmdk-q-favicon" style="background:#1F2328">Gh</span>
+        <span class="octo-cmdk-q-src">GitHub · larksuite/cli · README.zh.md</span>
+        <span class="octo-cmdk-q-sep">·</span>
+        <span class="octo-cmdk-q-count">选中 148 字</span>
+      </div>
+      <div class="octo-cmdk-q-body" id="qb">为 Agent 原生设计 — 22 个 Skills 开箱即用，适配主流 AI 工具，Agent 无需额外适配即可操作飞书 覆盖面广 — 14 大业务域、200+ 精选命令、22 个 AI Agent Skills</div>
+      <button class="octo-cmdk-q-expand" id="qe" onclick="toggleExpand()">展开</button>
+    </div>
+
+    <div class="octo-cmdk-imgs">
+      <div class="octo-cmdk-img" style="background:linear-gradient(135deg,#F7A27C 0%,#9D7CF7 100%)">
+        <button class="octo-cmdk-img-x">×</button>
+      </div>
+      <div class="octo-cmdk-img" style="background:linear-gradient(135deg,#7CC7F7,#4EEAFF)">
+        <button class="octo-cmdk-img-x">×</button>
+      </div>
+      <button class="octo-cmdk-add" title="添加图片 (⌘I)">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4 10h12"/></svg>
+      </button>
+    </div>
+
+    <div class="octo-cmdk-input-wrap">
+      <textarea class="octo-cmdk-input" rows="3" placeholder="告诉 Octo 你想怎么处理这段内容…"></textarea>
+    </div>
+
+    <div class="octo-cmdk-foot">
+      <div class="octo-cmdk-tools">
+        <button class="octo-cmdk-tool octo-cmdk-tool-mention" title="@ 提及" type="button">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="3"/><path d="M13 10v1.5a1.75 1.75 0 0 0 3.5 0V10a6.5 6.5 0 1 0-3 5.5"/></svg>
+        </button>
+        <button class="octo-cmdk-tool" title="截图" type="button">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h2l1.2-2h7.6L15 6.5h2a1.5 1.5 0 0 1 1.5 1.5v7.5A1.5 1.5 0 0 1 17 17H3a1.5 1.5 0 0 1-1.5-1.5V8A1.5 1.5 0 0 1 3 6.5z"/><circle cx="10" cy="11.5" r="3"/></svg>
+        </button>
+        <button class="octo-cmdk-tool" title="附件" type="button">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 5L7.75 10.75a2.12 2.12 0 0 0 3 3l6-6A4 4 0 0 0 11 2L4.5 8.5A6 6 0 0 0 13 17l4.25-4.25"/></svg>
+        </button>
+        <button class="octo-cmdk-tool" title="Emoji" type="button">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><circle cx="7.25" cy="8.25" r="0.5" fill="currentColor" stroke="none"/><circle cx="12.75" cy="8.25" r="0.5" fill="currentColor" stroke="none"/><path d="M7 12.4c.8 1.1 1.9 1.6 3 1.6s2.2-.5 3-1.6"/></svg>
+        </button>
+      </div>
+      <div class="octo-cmdk-hint">
+        <span><span class="octo-cmdk-kbd">ESC</span> 关闭</span>
+      </div>
+      <button class="octo-cmdk-send-plane is-active" type="button" title="发送 (⌘↵)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.5L20 4l-3.5 16.5-5-7z"/><path d="M11.5 13.5L20 4"/></svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function setTheme(t) {
+  document.body.setAttribute('data-theme', t);
+  document.documentElement.setAttribute('data-theme', t);
+}
+function toggleExpand() {
+  const b = document.getElementById('qb');
+  const e = document.getElementById('qe');
+  b.classList.toggle('is-expanded');
+  e.textContent = b.classList.contains('is-expanded') ? '收起' : '展开';
+  if (b.classList.contains('is-expanded')) {
+    b.textContent = '为 Agent 原生设计 — 22 个 Skills 开箱即用，适配主流 AI 工具，Agent 无需额外适配即可操作飞书 覆盖面广 — 14 大业务域、200+ 精选命令、22 个 AI Agent Skills AI 友好调优 — 每条命令经过 Agent 实测验证，提供更友好的参数、智能默认值和结构化输出，大幅提升 Agent 调用成功率 开源零门槛 — MIT 协议，开箱即用，npm install 即可使用';
+  } else {
+    b.textContent = '为 Agent 原生设计 — 22 个 Skills 开箱即用，适配主流 AI 工具，Agent 无需额外适配即可操作飞书 覆盖面广 — 14 大业务域、200+ 精选命令、22 个 AI Agent Skills';
+  }
+}
+</script>
+</body>
+</html>

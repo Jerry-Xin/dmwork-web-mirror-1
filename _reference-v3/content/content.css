@@ -1,0 +1,851 @@
+/* Octo Extension · Content Script (Shadow DOM) styles
+ * 只包含 FAB / Cmd+K 浮层 / Toast —— 侧栏主 UI 在 sidepanel/ 里
+ */
+
+.octo-root {
+  font-family: var(--wk-font-sans);
+  color: var(--wk-text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.octo-root *,
+.octo-root *::before,
+.octo-root *::after { box-sizing: border-box; }
+
+/* ============================================================
+   按钮
+   ============================================================ */
+.octo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--wk-r-sm);
+  border: 1px solid var(--wk-border-default);
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--wk-dur-fast) var(--wk-ease);
+}
+.octo-btn:hover:not(:disabled) { background: var(--wk-bg-hover); }
+.octo-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.octo-btn-primary {
+  background: var(--wk-brand-gradient);
+  color: #fff;
+  border-color: transparent;
+}
+.octo-btn-primary:hover:not(:disabled) {
+  background: var(--wk-brand-gradient-hover);
+  box-shadow: 0 4px 12px var(--wk-brand-glow);
+}
+.octo-btn-sm { padding: 4px 10px; font-size: 12px; }
+
+.octo-input-text {
+  width: 100%;
+  background: var(--wk-bg-base);
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-sm);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+}
+.octo-input-text:focus {
+  outline: none;
+  border-color: var(--wk-brand-primary);
+  box-shadow: 0 0 0 3px var(--wk-brand-glow);
+}
+
+.octo-empty-small {
+  padding: 16px;
+  text-align: center;
+  color: var(--wk-text-tertiary);
+  font-size: 13px;
+}
+
+/* ============================================================
+   Selection hint — 选中文字后在选区旁弹出的小按钮
+   点击 = 触发 ⌘K 浮层，教用户快捷键
+   ============================================================ */
+.octo-select-hint {
+  position: fixed;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 8px;
+  background: var(--wk-brand-gradient);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(124, 92, 252, 0.4), 0 1px 2px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  z-index: 2147483645;
+  pointer-events: auto;
+  transition: transform var(--wk-dur-fast) var(--wk-ease), opacity var(--wk-dur-fast);
+  opacity: 0.96;
+  font-family: var(--wk-font-sans);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  animation: octo-hint-in 180ms var(--wk-ease-bounce);
+}
+.octo-select-hint.is-visible { display: inline-flex; }
+.octo-select-hint:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(124, 92, 252, 0.5), 0 2px 4px rgba(0, 0, 0, 0.16);
+  opacity: 1;
+}
+.octo-select-hint svg { width: 15px; height: 15px; flex: 0 0 auto; }
+.octo-select-hint-label {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.octo-select-hint-kbd {
+  font-family: var(--wk-font-mono);
+  font-size: 10px;
+  padding: 2px 5px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+@keyframes octo-hint-in {
+  from { transform: translateY(4px) scale(0.92); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 0.95; }
+}
+
+/* ============================================================
+   Cmd+K overlay v3 — 对齐 Octo Cmd+K v3.html
+   结构：p-top(avatar + title + target + close)
+        → quote(purple bar + favicon + meta + body + expand)
+        → imgs(72×72 tiles + dashed +)
+        → p-input textarea
+        → p-foot(tools + ESC hint + circular send-plane)
+   ============================================================ */
+.octo-cmdk {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 28, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: grid;
+  place-items: start center;
+  padding-top: 14vh;
+  z-index: 2147483646;
+  pointer-events: auto;
+  animation: octo-fade-in var(--wk-dur-fast) var(--wk-ease);
+}
+@keyframes octo-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.octo-cmdk-panel {
+  width: 580px;
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 20vh);
+  background: var(--wk-bg-app);
+  border-radius: 14px;
+  box-shadow:
+    0 24px 60px -12px rgba(16,16,24,0.35),
+    0 8px 24px -8px rgba(16,16,24,0.15),
+    0 0 0 1px var(--wk-ink-08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: octo-cmdk-in 220ms cubic-bezier(.2,.9,.3,1.1);
+  transition: box-shadow var(--wk-dur-fast) var(--wk-ease);
+}
+.octo-cmdk-panel.is-dragging {
+  box-shadow:
+    0 24px 60px -12px rgba(16,16,24,0.4),
+    0 0 0 2px var(--wk-brand-glow);
+}
+.octo-cmdk-panel.is-dragover {
+  box-shadow:
+    0 24px 60px -12px rgba(16,16,24,0.4),
+    0 0 0 3px var(--wk-brand);
+}
+@keyframes octo-cmdk-in {
+  from { transform: translateY(6px) scale(0.98); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+/* ============ p-top: avatar + title + target chip + close ============ */
+.octo-cmdk-top {
+  padding: 14px 16px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--wk-ink-08);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+.octo-cmdk-top.is-dragging { cursor: grabbing; }
+.octo-cmdk-avatar {
+  width: 28px; height: 28px;
+  border-radius: 999px;
+  background: var(--wk-ai-grad);
+  display: grid; place-items: center;
+  color: #fff; font-size: 14px;
+  flex-shrink: 0;
+}
+.octo-cmdk-title {
+  font-size: 13px;
+  color: var(--wk-ink-60);
+  display: flex; align-items: center; gap: 6px;
+  font-weight: 400;
+  flex-shrink: 0;
+}
+.octo-cmdk-title strong {
+  color: var(--wk-ink-100);
+  font-weight: 600;
+  background: linear-gradient(90deg, var(--wk-link, #3250EB), var(--wk-thread, #7F3BF5));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.octo-cmdk-spacer { flex: 1; }
+
+.octo-cmdk-target-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px;
+  color: var(--wk-ink-60);
+  background: var(--wk-bg-chip);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  max-width: 240px;
+  flex-shrink: 0;
+}
+.octo-cmdk-target-btn:hover:not(:disabled) { background: var(--wk-ink-08); }
+.octo-cmdk-target-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.octo-cmdk-target-glyph {
+  width: 6px; height: 6px;
+  background: var(--wk-ink-100);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+.octo-cmdk-target-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--wk-ink-80);
+}
+.octo-cmdk-target-thread {
+  color: var(--wk-thread, var(--wk-brand));
+  background: var(--wk-brand-soft);
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.octo-cmdk-target-chev {
+  display: inline-grid;
+  place-items: center;
+  color: var(--wk-ink-35);
+  flex-shrink: 0;
+}
+
+.octo-cmdk-close {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  background: transparent; border: none;
+  border-radius: 6px;
+  color: var(--wk-ink-35);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.octo-cmdk-close:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-ink-100);
+}
+
+/* ============ Quote (selected context) ============ */
+.octo-cmdk-quote {
+  margin: 12px 16px 0;
+  padding: 10px 12px 10px 14px;
+  background: var(--wk-ink-05);
+  border-radius: 8px;
+  position: relative;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.octo-cmdk-quote::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 10px; bottom: 10px;
+  width: 3px;
+  background: var(--wk-thread, var(--wk-brand));
+  border-radius: 2px;
+}
+.octo-cmdk-q-meta {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px;
+  color: var(--wk-ink-35);
+  font-family: var(--wk-font-sans);
+}
+.octo-cmdk-q-favicon {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  display: grid; place-items: center;
+  color: #fff;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+.octo-cmdk-q-src {
+  color: var(--wk-ink-60);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.octo-cmdk-q-sep { color: var(--wk-ink-35); }
+.octo-cmdk-q-count {
+  color: var(--wk-ink-45);
+  flex-shrink: 0;
+}
+.octo-cmdk-q-body {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--wk-ink-80);
+  position: relative;
+  max-height: 80px;
+  overflow: hidden;
+  padding-right: 48px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.octo-cmdk-q-body.is-expanded {
+  max-height: 240px;
+  overflow-y: auto;
+}
+.octo-cmdk-q-body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  top: auto;
+  height: 24px;
+  background: linear-gradient(180deg, transparent, var(--wk-ink-05));
+  pointer-events: none;
+}
+.octo-cmdk-q-body.is-expanded::after { display: none; }
+.octo-cmdk-q-expand {
+  position: absolute;
+  right: 10px; bottom: 8px;
+  font-size: 11px;
+  color: var(--wk-thread, var(--wk-brand));
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 2px 4px;
+}
+.octo-cmdk-q-expand:hover { text-decoration: underline; }
+
+/* ============ Images strip ============ */
+.octo-cmdk-imgs {
+  margin: 10px 16px 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.octo-cmdk-imgs::-webkit-scrollbar { height: 6px; }
+.octo-cmdk-imgs::-webkit-scrollbar-thumb {
+  background: var(--wk-ink-12);
+  border-radius: 3px;
+}
+.octo-cmdk-img {
+  width: 72px; height: 72px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: inset 0 0 0 1px var(--wk-ink-08);
+  cursor: pointer;
+  overflow: hidden;
+  background: var(--wk-ink-05);
+}
+.octo-cmdk-img-thumb {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.octo-cmdk-img-x {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  font-size: 10px;
+  line-height: 1;
+  display: grid; place-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.octo-cmdk-img:hover .octo-cmdk-img-x { opacity: 1; }
+.octo-cmdk-add {
+  width: 72px; height: 72px;
+  border-radius: 6px;
+  border: 1.5px dashed var(--wk-ink-08);
+  display: grid; place-items: center;
+  color: var(--wk-ink-35);
+  cursor: pointer;
+  flex-shrink: 0;
+  background: transparent;
+  font-family: inherit;
+}
+.octo-cmdk-add:hover {
+  border-color: var(--wk-thread, var(--wk-brand));
+  color: var(--wk-thread, var(--wk-brand));
+}
+.octo-cmdk-add:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Attachment chips (non-image files) */
+.octo-cmdk-chips {
+  margin: 10px 16px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ============ Input ============ */
+.octo-cmdk-input-wrap {
+  padding: 12px 16px 0;
+}
+.octo-cmdk-input-wrap .octo-cmdk-input {
+  width: 100%;
+  min-height: 64px;
+  max-height: 220px;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--wk-ink-100);
+  background: transparent;
+  padding: 4px 0;
+  margin: 0;
+}
+.octo-cmdk-input-wrap .octo-cmdk-input::placeholder {
+  color: var(--wk-ink-35);
+}
+
+/* Attachment chips */
+.octo-cmdk-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px 0;
+}
+.octo-cmdk-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  background: var(--wk-bg-elevated);
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-sm);
+  max-width: 100%;
+}
+.octo-cmdk-chip-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--wk-r-xs);
+  background: var(--wk-bg-base);
+}
+.octo-cmdk-chip-icon {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  font-size: 20px;
+  background: var(--wk-bg-base);
+  border-radius: var(--wk-r-xs);
+}
+.octo-cmdk-chip-meta {
+  flex: 1;
+  min-width: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.octo-cmdk-chip-name {
+  font-size: 12px;
+  color: var(--wk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+.octo-cmdk-chip-size {
+  font-size: 10px;
+  color: var(--wk-text-tertiary);
+  font-family: var(--wk-font-mono);
+}
+.octo-cmdk-chip-rm {
+  width: 20px; height: 20px;
+  border-radius: var(--wk-r-full);
+  background: transparent;
+  border: none;
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+  font-size: 14px;
+  display: grid;
+  place-items: center;
+}
+.octo-cmdk-chip-rm:hover {
+  background: var(--wk-bg-active);
+  color: var(--wk-text-primary);
+}
+
+.octo-cmdk-input {
+  width: calc(100% - 32px);
+  margin: 12px 16px 0;
+  border: 1px solid var(--wk-border-default);
+  background: var(--wk-bg-base);
+  border-radius: var(--wk-r-md);
+  padding: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--wk-text-primary);
+  resize: none;
+}
+.octo-cmdk-input:focus {
+  outline: none;
+  border-color: var(--wk-brand-primary);
+  box-shadow: 0 0 0 3px var(--wk-brand-glow);
+}
+
+/* Emoji picker */
+.octo-cmdk-emojis {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  padding: 12px 16px 0;
+}
+.octo-cmdk-emoji {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: var(--wk-r-sm);
+  cursor: pointer;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+  transition: background var(--wk-dur-fast) var(--wk-ease);
+}
+.octo-cmdk-emoji:hover { background: var(--wk-bg-hover); }
+
+/* ============ p-foot: tools + hint + circular send-plane ============ */
+.octo-cmdk-foot {
+  padding: 10px 12px 12px 16px;
+  border-top: 1px solid var(--wk-ink-08);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, transparent, rgba(28,28,35,0.015));
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.octo-cmdk-tools {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.octo-cmdk-tool {
+  width: 28px; height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--wk-ink-60);
+  cursor: pointer;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  transition: all var(--wk-dur-fast) var(--wk-ease);
+}
+.octo-cmdk-tool:hover:not(:disabled) {
+  background: var(--wk-bg-hover);
+  color: var(--wk-ink-100);
+}
+.octo-cmdk-tool.is-active {
+  background: var(--wk-brand-soft);
+  color: var(--wk-brand);
+}
+.octo-cmdk-tool:disabled { opacity: 0.5; cursor: not-allowed; }
+.octo-cmdk-tool svg { width: 18px; height: 18px; }
+
+/* @ 提及 — 珊瑚色 */
+.octo-cmdk-tool-mention {
+  color: var(--wk-mention);
+}
+.octo-cmdk-tool-mention:hover:not(:disabled) {
+  color: var(--wk-mention-d);
+  background: rgba(249, 115, 22, 0.10);
+}
+
+.octo-cmdk-hint {
+  flex: 1;
+  font-size: 11px;
+  color: var(--wk-ink-35);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 8px;
+}
+.octo-cmdk-kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 5px;
+  font-family: var(--wk-font-mono);
+  font-size: 10.5px;
+  color: var(--wk-ink-60);
+  background: var(--wk-bg-chip);
+  border-radius: 4px;
+  border-bottom: 1.5px solid var(--wk-ink-08);
+  line-height: 14px;
+  margin-right: 4px;
+}
+
+.octo-cmdk-err {
+  color: #E04545;
+  font-size: 12px;
+  padding: 4px 8px;
+  background: rgba(245, 74, 69, 0.08);
+  border-radius: 4px;
+  margin-right: 4px;
+}
+
+/* Send — circular 34×34 paper-plane, grey when inactive, brand gradient when active */
+.octo-cmdk-send-plane {
+  width: 34px; height: 34px;
+  border: none;
+  display: grid; place-items: center;
+  cursor: pointer;
+  border-radius: 50%;
+  background: var(--wk-ink-08);
+  color: var(--wk-ink-35);
+  transition: transform 120ms, box-shadow 120ms, background 160ms, color 160ms;
+  flex-shrink: 0;
+}
+.octo-cmdk-send-plane svg {
+  width: 18px; height: 18px;
+  transform: translate(-1px, 1px);
+}
+.octo-cmdk-send-plane:hover:not(:disabled) { transform: translateY(-1px); }
+.octo-cmdk-send-plane.is-active {
+  background: linear-gradient(135deg, #8B6BFF 0%, #7C5CFC 60%, #5B3FE8 100%);
+  color: #fff;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.18) inset,
+    0 4px 10px rgba(124,92,252,0.32),
+    0 1px 2px rgba(28,28,35,0.18);
+}
+.octo-cmdk-send-plane.is-active:hover {
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.22) inset,
+    0 6px 14px rgba(124,92,252,0.42),
+    0 1px 2px rgba(28,28,35,0.22);
+}
+.octo-cmdk-send-plane:active { transform: translateY(0); }
+.octo-cmdk-send-plane:disabled { cursor: not-allowed; opacity: 0.6; }
+.octo-cmdk-send-plane.is-sending svg {
+  animation: octo-send-pulse 0.8s ease-in-out infinite;
+}
+@keyframes octo-send-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+/* Target Picker */
+.octo-cmdk-picker {
+  border-top: 1px solid var(--wk-border-default);
+  padding: 12px;
+  background: var(--wk-bg-base);
+  max-height: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.octo-cmdk-picker-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.octo-cmdk-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--wk-r-sm);
+  color: var(--wk-text-primary);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+.octo-cmdk-picker-item:hover { background: var(--wk-bg-hover); }
+.octo-cmdk-picker-item.is-current { background: var(--wk-ai-surface); color: var(--wk-text-accent); }
+.octo-cmdk-pk-icon {
+  width: 18px;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--wk-text-tertiary);
+  font-size: 13px;
+}
+.octo-cmdk-picker-item.is-pm .octo-cmdk-pk-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--wk-brand-primary), #9C5AFF);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+.octo-cmdk-pk-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.octo-cmdk-pk-mention {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #F97316;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.octo-cmdk-pk-lvl-0 { padding-left: 10px; }
+.octo-cmdk-pk-lvl-1 { padding-left: 20px; }
+.octo-cmdk-pk-lvl-2 { padding-left: 38px; position: relative; }
+.octo-cmdk-pk-lvl-2::before {
+  content: '';
+  position: absolute;
+  left: 26px;
+  top: 0; bottom: 50%;
+  width: 1px;
+  background: var(--wk-border-subtle);
+}
+.octo-cmdk-pk-lvl-2::after {
+  content: '';
+  position: absolute;
+  left: 26px;
+  top: 50%;
+  width: 8px; height: 1px;
+  background: var(--wk-border-subtle);
+}
+.octo-cmdk-pk-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px 4px;
+  background: transparent;
+  border: none;
+  color: var(--wk-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+.octo-cmdk-pk-cat:hover { color: var(--wk-text-primary); }
+.octo-cmdk-pk-arrow {
+  color: var(--wk-text-tertiary);
+  font-size: 10px;
+  width: 12px;
+  display: inline-block;
+}
+.octo-cmdk-pk-cat-static {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--wk-text-secondary);
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+.octo-cmdk-pk-more-subs {
+  display: block;
+  width: 100%;
+  padding: 4px 10px 4px 38px;
+  background: transparent;
+  border: none;
+  color: var(--wk-text-tertiary);
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.octo-cmdk-pk-more-subs:hover { color: var(--wk-brand-primary); }
+
+/* ============================================================
+   Toast
+   ============================================================ */
+.octo-toast-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 2147483647;
+  pointer-events: none;
+}
+.octo-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--wk-bg-surface);
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  padding: 8px 12px;
+  box-shadow: var(--wk-shadow-lg);
+  min-width: 240px;
+  max-width: 380px;
+  font-size: 13px;
+  animation: octo-toast-in var(--wk-dur) var(--wk-ease);
+}
+@keyframes octo-toast-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.octo-toast.is-success { border-left: 3px solid var(--wk-color-success); }
+.octo-toast.is-error   { border-left: 3px solid var(--wk-color-error); }
+.octo-toast.is-warning { border-left: 3px solid var(--wk-color-warning); }
+.octo-toast.is-info    { border-left: 3px solid var(--wk-color-info); }
+.octo-toast-text { flex: 1; color: var(--wk-text-primary); }
+.octo-toast-close {
+  background: transparent;
+  border: none;
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+  font-size: 16px;
+  width: 20px; height: 20px;
+  border-radius: var(--wk-r-sm);
+}
+.octo-toast-close:hover { background: var(--wk-bg-hover); color: var(--wk-text-primary); }

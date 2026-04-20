@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Octo v3</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Geist+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../shared/tokens.css" />
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body data-theme="paper" data-layout="message">
+    <!-- 根容器；由 sidepanel.js 按 v7 结构渲染为
+         .ext > .demo-bar + .body(.rail + .main) + #ovLayer -->
+    <div id="app" class="ext"></div>
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

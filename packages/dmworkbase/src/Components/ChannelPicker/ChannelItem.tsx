@@ -63,7 +63,6 @@ export default function ChannelItem({
           // 私聊：圆形渐变头像 + 首字母
           <span
             className="wk-channel-picker-avatar"
-            style={{ background: avatarGradient(item.name) }}
           >
             {item.name.charAt(0).toUpperCase()}
           </span>

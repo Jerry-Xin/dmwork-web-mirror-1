@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Octo v3 · Paper Terminal Moon",
+  "short_name": "Octo v3",
+  "version": "0.4.0",
+  "description": "Octo v3：对齐 Claude Design Extension v7 — 三主题（Paper/Terminal/Moonwire）× 两布局（消息版/CLI），Rail + Main + Overlay 系统。",
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Octo v3"
+  },
+  "options_page": "options/options.html",
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "permissions": ["storage", "notifications", "activeTab", "scripting", "alarms", "sidePanel", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*", "content/content.css", "shared/tokens.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -29,7 +29,8 @@ export class MediaMessageUploadTask extends MessageTask {
         if(mediaContent.file) {
             try {
                 const fileName = this.getUUID();
-                const path = `/${this.message.channel.channelType}/${this.message.channel.channelID}/${fileName}${mediaContent.extension ?? ""}`
+                const ext = mediaContent.extension ? `.${mediaContent.extension}` : ""
+                const path = `/${this.message.channel.channelType}/${this.message.channel.channelID}/${fileName}${ext}`
                 const credentials = await this.getUploadCredentials(mediaContent.file, path)
                 if(credentials) {
                     await this.uploadFile(mediaContent.file, credentials)
@@ -70,9 +71,9 @@ export class MediaMessageUploadTask extends MessageTask {
                     this.update()
                 }
             }
-        }).catch(error => {
-            // Don't overwrite cancel/restart status — abort triggers catch too
-            if (this.status !== TaskStatus.cancel && this.status !== TaskStatus.processing) {
+        }).catch(() => {
+            // Don't overwrite cancel status — abort triggers catch too
+            if (this.status !== TaskStatus.cancel) {
                 this.status = TaskStatus.fail
                 this.update()
             }

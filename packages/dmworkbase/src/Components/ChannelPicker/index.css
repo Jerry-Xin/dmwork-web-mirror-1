@@ -93,64 +93,16 @@
 }
 
 /* ============================================================
-   Tab 切换（原型无 Tab，但保留当前实现，视觉对齐原型分类标题风格）
+   私聊 Section 标题 — 统一面板模式下分隔群聊/私聊
    ============================================================ */
-.wk-channel-picker-tabs {
-  display: flex;
-  gap: 18px;
-  padding: 0 0;
-  border-bottom: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
-  flex-shrink: 0;
-}
-
-.wk-channel-picker-tab {
-  position: relative;
-  background: transparent;
-  border: none;
-  padding: 6px 2px 8px;
-  font-size: 13px;
-  font-family: inherit;
+.wk-channel-picker-section-title {
+  padding: 10px 10px 4px;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--wk-text-secondary, #5c6070);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: color var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
-}
-
-.wk-channel-picker-tab:hover {
-  color: var(--wk-text-primary, #111318);
-}
-
-.wk-channel-picker-tab.is-active {
-  color: var(--wk-text-primary, #111318);
-  font-weight: 600;
-}
-
-.wk-channel-picker-tab.is-active::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 2px;
-  background: var(--wk-brand-primary, #7c5cfc);
-  border-radius: 1px;
-}
-
-.wk-channel-picker-tab-badge {
-  background: var(--wk-color-error, #ff5c72);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
+  letter-spacing: 0.02em;
+  border-top: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
+  margin-top: 4px;
 }
 
 /* ============================================================

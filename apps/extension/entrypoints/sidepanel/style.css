@@ -119,25 +119,42 @@ body.octo-sidepanel-v3 .wk-sidepanel-rail-pin {
   transform: translateX(-50%);
 }
 
-/* V3: unify rail avatar chip — purple gradient for both groups & private chats.
-   Mention (@) keeps its own orange style via .wk-sidepanel-rail-icon-mention. */
-body.octo-sidepanel-v3 .wk-sidepanel-rail-icon {
-  width: 100%;
-  height: 100%;
-  border-radius: var(--wk-r-sm, 6px);
-  background: var(--wk-brand-grad, linear-gradient(135deg, #8B6BFF 0%, #5B3FE8 100%));
+/* V3: rail avatar tiles — port prototype styles.
+   Groups (.r-ch equivalent): 26x26 rounded square, 4-color palette by letter.
+   Private (.r-pm equivalent): 26x26 circle, uniform purple gradient.
+   Mention: orange, handled by existing .wk-sidepanel-rail-icon-mention. */
+body.octo-sidepanel-v3 .wk-sidepanel-rail-icon-ch {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
   color: #fff;
-  font-weight: 600;
+  font: 600 12px var(--wk-font-sans);
+  letter-spacing: 0.02em;
+}
+body.octo-sidepanel-v3 .wk-sidepanel-rail-icon-ch.c-orange {
+  background: var(--wk-c-orange);
+}
+body.octo-sidepanel-v3 .wk-sidepanel-rail-icon-ch.c-purple {
+  background: var(--wk-c-purple);
+}
+body.octo-sidepanel-v3 .wk-sidepanel-rail-icon-ch.c-emerald {
+  background: var(--wk-c-emerald);
+}
+body.octo-sidepanel-v3 .wk-sidepanel-rail-icon-ch.c-blue {
+  background: var(--wk-c-blue);
 }
 body.octo-sidepanel-v3 .wk-sidepanel-rail-icon-pm {
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  width: 100%;
-  height: 100%;
-  font-size: 13px;
-}
-body.octo-sidepanel-v3 .wk-sidepanel-rail-icon-mention {
-  background: #F97316;
-  border-radius: var(--wk-r-sm, 6px);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font: 600 11px var(--wk-font-sans);
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #A78BFA, #7C5CFC);
 }
 
 /* V3: Rail is on the right (row-reverse), so popovers open to the left */

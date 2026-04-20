@@ -118,6 +118,19 @@ function getFirstChar(name: string): string {
   return ch;
 }
 
+const RAIL_COLOR_FOR_LETTER: Record<string, string> = {
+  D: "c-orange", F: "c-purple", T: "c-emerald",
+  P: "c-blue",   E: "c-blue",   A: "c-emerald",
+  S: "c-orange", M: "c-purple", B: "c-blue",
+  L: "c-emerald", O: "c-purple",
+};
+
+function railColorClass(letter: string): string {
+  return RAIL_COLOR_FOR_LETTER[letter.toUpperCase()] || "c-purple";
+}
+
+const RAIL_PIN_LIMIT = 7;
+
 function stripMark(html: string): string {
   if (!html) return "";
   return html.replace(/<\/?mark>/gi, "");
@@ -865,6 +878,20 @@ export default class OctoSidepanelLayout extends Component<
         pickerLoading: false,
       });
 
+      // Auto-seed: if no pins yet, pin the first 3 threads so rail is not empty.
+      if (this.state.pinnedIds.size === 0) {
+        const allItems = [...channelList, ...privateChatList];
+        const seed = new Set<string>();
+        for (const t of allItems.slice(0, 3)) seed.add(t.channelId);
+        if (seed.size > 0) {
+          localStorage.setItem(
+            "octo_sidepanel_pinned",
+            JSON.stringify([...seed])
+          );
+          this.setState({ pinnedIds: seed });
+        }
+      }
+
       if (
         !this.state.selectedChannel &&
         (channelList.length > 0 || privateChatList.length > 0)
@@ -923,8 +950,8 @@ export default class OctoSidepanelLayout extends Component<
       if (next.has(channelId)) {
         next.delete(channelId);
       } else {
-        if (next.size >= 7) {
-          showToast("最多固定 7 个会话");
+        if (next.size >= RAIL_PIN_LIMIT) {
+          showToast(`最多固定 ${RAIL_PIN_LIMIT} 个`);
           return null;
         }
         next.add(channelId);
@@ -2054,7 +2081,11 @@ export default class OctoSidepanelLayout extends Component<
                   {getFirstChar(item.name)}
                 </span>
               ) : (
-                <span className="wk-sidepanel-rail-icon">
+                <span
+                  className={`wk-sidepanel-rail-icon wk-sidepanel-rail-icon-ch ${railColorClass(
+                    getFirstChar(item.name)
+                  )}`}
+                >
                   {getFirstChar(item.name)}
                 </span>
               )}

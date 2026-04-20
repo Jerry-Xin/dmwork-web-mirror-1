@@ -1,13 +1,18 @@
 /* ChannelPicker — 频道选择器组件
  * 使用 --wk-* CSS 变量，支持多主题
  * 类名前缀: wk-channel-picker-
+ * 样式对齐 v3 原型 (.octo-cmdk-picker)
  */
 
 .wk-channel-picker {
+  border-top: 1px solid var(--wk-border-default, rgba(0, 0, 0, 0.08));
+  padding: 12px;
+  background: var(--wk-bg-base, #f5f5f7);
+  max-height: 260px;
   display: flex;
   flex-direction: column;
-  background: var(--wk-bg-surface, #fff);
-  border-radius: var(--wk-r-md, 10px);
+  gap: 8px;
+  flex-shrink: 0;
   overflow: hidden;
   font-family: var(--wk-font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
   font-size: 13px;
@@ -15,24 +20,23 @@
 }
 
 /* ============================================================
-   搜索栏
+   搜索栏 — 对齐原型 .octo-input-text
    ============================================================ */
 .wk-channel-picker-search {
   display: flex;
   gap: 6px;
-  padding: var(--wk-sp-2, 8px);
-  border-bottom: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
+  align-items: center;
 }
 
 .wk-channel-picker-search-input-wrap {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: var(--wk-sp-2, 8px);
-  background: var(--wk-bg-surface, #fff);
+  gap: 8px;
+  background: var(--wk-bg-base, #f5f5f7);
   border: 1px solid var(--wk-border-default, rgba(0, 0, 0, 0.08));
   border-radius: var(--wk-r-sm, 6px);
-  padding: 0 var(--wk-sp-2, 8px);
+  padding: 0 12px;
   transition: border-color var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
 }
 
@@ -53,7 +57,7 @@
   border: none;
   background: transparent;
   outline: none;
-  padding: 6px 0;
+  padding: 8px 0;
   font-size: 13px;
   font-family: inherit;
   color: var(--wk-text-primary, #111318);
@@ -89,12 +93,12 @@
 }
 
 /* ============================================================
-   Tab 切换
+   Tab 切换（原型无 Tab，但保留当前实现，视觉对齐原型分类标题风格）
    ============================================================ */
 .wk-channel-picker-tabs {
   display: flex;
   gap: 18px;
-  padding: 0 14px;
+  padding: 0 0;
   border-bottom: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
   flex-shrink: 0;
 }
@@ -103,7 +107,7 @@
   position: relative;
   background: transparent;
   border: none;
-  padding: 8px 2px 10px;
+  padding: 6px 2px 8px;
   font-size: 13px;
   font-family: inherit;
   color: var(--wk-text-secondary, #5c6070);
@@ -150,20 +154,21 @@
 }
 
 /* ============================================================
-   列表区
+   列表区 — 对齐原型 .octo-cmdk-picker-list
    ============================================================ */
 .wk-channel-picker-list {
   flex: 1;
   overflow-y: auto;
-  padding: var(--wk-sp-1, 4px);
-  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 /* ============================================================
-   分类折叠头
+   分类折叠头 — 对齐原型 .octo-cmdk-pk-cat
    ============================================================ */
 .wk-channel-picker-cat-group {
-  margin-bottom: 2px;
+  /* no extra margin — gap on parent handles spacing */
 }
 
 .wk-channel-picker-cat {
@@ -171,7 +176,7 @@
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 8px 14px 4px;
+  padding: 6px 10px 4px;
   background: transparent;
   border: none;
   font-size: 11px;
@@ -180,7 +185,7 @@
   color: var(--wk-text-secondary, #5c6070);
   cursor: pointer;
   letter-spacing: 0.02em;
-  text-transform: uppercase;
+  text-align: left;
   transition: color var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
 }
 
@@ -200,23 +205,23 @@
 }
 
 .wk-channel-picker-cat-static {
-  padding: 8px 14px 4px;
+  padding: 8px 10px 4px;
   font-size: 11px;
   font-weight: 500;
   color: var(--wk-text-secondary, #5c6070);
   letter-spacing: 0.02em;
-  text-transform: uppercase;
+  opacity: 0.8;
 }
 
 /* ============================================================
-   频道列表项（通用）
+   频道列表项（通用）— 对齐原型 .octo-cmdk-picker-item
    ============================================================ */
 .wk-channel-picker-item {
   display: flex;
   align-items: center;
-  gap: var(--wk-sp-2, 8px);
+  gap: 8px;
   width: 100%;
-  padding: 6px 10px 6px 14px;
+  padding: 6px 10px;
   background: transparent;
   border: none;
   border-radius: var(--wk-r-sm, 6px);
@@ -233,52 +238,54 @@
 }
 
 .wk-channel-picker-item.is-current {
-  background: var(--wk-brand-glow, rgba(124, 92, 252, 0.3));
+  background: var(--wk-ai-surface, rgba(124, 92, 252, 0.12));
+  color: var(--wk-text-accent, #7c5cfc);
 }
 
 .wk-channel-picker-item.is-muted {
   opacity: 0.55;
 }
 
-/* 缩进层级 */
+/* 缩进层级 — 对齐原型 .octo-cmdk-pk-lvl-* */
 .wk-channel-picker-level-0 {
-  padding-left: 14px;
+  padding-left: 20px;
 }
 
 .wk-channel-picker-level-1 {
-  padding-left: 40px;
+  padding-left: 38px;
   position: relative;
 }
 
+/* 树线 — 对齐原型 .octo-cmdk-pk-lvl-2 pseudo-elements */
 .wk-channel-picker-level-1::before {
   content: '';
   position: absolute;
-  left: 28px;
+  left: 26px;
   top: 0;
   bottom: 50%;
   width: 1px;
-  background: var(--wk-border-default, rgba(0, 0, 0, 0.08));
+  background: var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
 }
 
 .wk-channel-picker-level-1::after {
   content: '';
   position: absolute;
-  left: 28px;
+  left: 26px;
   top: 50%;
   width: 8px;
   height: 1px;
-  background: var(--wk-border-default, rgba(0, 0, 0, 0.08));
+  background: var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
 }
 
 /* ============================================================
-   频道图标
+   频道图标 — 对齐原型 .octo-cmdk-pk-icon
    ============================================================ */
 .wk-channel-picker-icon {
-  width: 16px;
+  width: 18px;
   flex-shrink: 0;
   text-align: center;
   color: var(--wk-text-tertiary, #9498a8);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
 }
 
@@ -294,27 +301,27 @@
   justify-content: center;
 }
 
-/* 私聊头像 */
+/* 私聊头像 — 对齐原型 .octo-cmdk-picker-item.is-pm .octo-cmdk-pk-icon */
 .wk-channel-picker-pm .wk-channel-picker-icon {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
 }
 
 .wk-channel-picker-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
+  background: linear-gradient(135deg, var(--wk-brand-primary, #7c5cfc), #9C5AFF);
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1;
 }
 
 /* ============================================================
-   名称 + 内容区
+   名称 + 内容区 — 对齐原型 .octo-cmdk-pk-name
    ============================================================ */
 .wk-channel-picker-main {
   flex: 1;
@@ -347,7 +354,7 @@
 }
 
 /* ============================================================
-   角标 — 未读 / @ / 静音
+   角标 — 未读 / @ / 静音 — 对齐原型 .octo-cmdk-pk-mention
    ============================================================ */
 .wk-channel-picker-unread {
   flex-shrink: 0;
@@ -385,9 +392,9 @@
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  background: #f97316;
+  background: #F97316;
   color: #fff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   border-radius: 5px;
   display: inline-flex;
@@ -403,12 +410,12 @@
 }
 
 /* ============================================================
-   子区展开按钮
+   子区展开按钮 — 对齐原型 .octo-cmdk-pk-more-subs
    ============================================================ */
 .wk-channel-picker-more-subs {
   display: block;
   width: 100%;
-  padding: 4px 14px 6px 40px;
+  padding: 4px 10px 4px 38px;
   background: transparent;
   border: none;
   font-size: 11px;
@@ -424,7 +431,7 @@
 }
 
 .wk-channel-picker-more-subs.has-mention {
-  color: #f97316;
+  color: #F97316;
 }
 
 .wk-channel-picker-more-subs.has-mention:hover {
@@ -437,7 +444,7 @@
   height: 16px;
   padding: 0 4px;
   margin-left: 6px;
-  background: #f97316;
+  background: #F97316;
   color: #fff;
   font-size: 9px;
   font-weight: 700;

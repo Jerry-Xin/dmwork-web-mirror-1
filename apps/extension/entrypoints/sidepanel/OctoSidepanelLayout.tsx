@@ -33,6 +33,7 @@ import { ErrorBoundary } from '@dmwork/base/src/Components/ErrorBoundary';
 import { ChannelSettingManager } from '@dmwork/base/src/Service/ChannelSetting';
 import { SpaceService } from '@dmwork/base/src/Service/SpaceService';
 import CreateCategoryModal from '@dmwork/base/src/Components/CreateCategoryModal';
+import { setExtensionTheme } from '../../utils/extensionStorage';
 
 
 const HashIconComponent = HashIcon as any;
@@ -226,6 +227,8 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     document.body.setAttribute('data-layout', layout);
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-layout', layout);
+    // Ensure browser.storage.local has the current theme for CmdK iframe & overlay
+    void setExtensionTheme(theme);
     this.setState({ theme, layout });
 
     this.initSpace().then(async () => {
@@ -386,6 +389,8 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('octo_v3_theme', theme);
+    // Sync to browser.storage.local so CmdK iframe & overlay can pick it up
+    void setExtensionTheme(theme);
     this.setState({ theme });
   };
 

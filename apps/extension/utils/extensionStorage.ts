@@ -64,3 +64,16 @@ export async function setExtensionPreferences(
     [EXTENSION_STORAGE_KEYS.preferences]: preferences,
   });
 }
+
+export const DEFAULT_THEME = 'paper';
+
+export async function getExtensionTheme(): Promise<string> {
+  const result = await browser.storage.local.get(EXTENSION_STORAGE_KEYS.theme);
+  return (result[EXTENSION_STORAGE_KEYS.theme] as string | undefined) ?? DEFAULT_THEME;
+}
+
+export async function setExtensionTheme(theme: string): Promise<void> {
+  await browser.storage.local.set({
+    [EXTENSION_STORAGE_KEYS.theme]: theme,
+  });
+}

@@ -5,6 +5,7 @@ export const EXTENSION_STORAGE_KEYS = {
   authState: "dmwork:extension:auth-state",
   pendingConversation: "dmwork:extension:pending-conversation",
   preferences: "dmwork:extension:preferences",
+  theme: "octo_v3_theme",
 } as const;
 
 export interface ExtensionPreferences {

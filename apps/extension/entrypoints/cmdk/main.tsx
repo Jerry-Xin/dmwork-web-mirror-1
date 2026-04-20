@@ -10,9 +10,10 @@ import { ContactsModule } from '@dmwork/contacts';
 import { version as pkgVersion } from '../../../web/package.json';
 import {
   DEFAULT_API_URL,
+  EXTENSION_STORAGE_KEYS,
   normalizeApiURL,
 } from '../../utils/extensionRuntime';
-import { getExtensionAuthState } from '../../utils/extensionStorage';
+import { getExtensionAuthState, getExtensionTheme } from '../../utils/extensionStorage';
 import CmdKApp from './CmdKApp';
 
 (window as any).__POWERED_EXTENSION__ = true;
@@ -52,7 +53,24 @@ async function ensureAuth(): Promise<void> {
   }
 }
 
-void ensureAuth().then(() => {
+async function applyTheme(): Promise<void> {
+  const theme = await getExtensionTheme();
+  document.body.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+// Listen for theme changes from sidepanel
+browser.storage.onChanged.addListener(
+  (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, areaName: string) => {
+    if (areaName === 'local' && changes[EXTENSION_STORAGE_KEYS.theme]) {
+      const newTheme = (changes[EXTENSION_STORAGE_KEYS.theme].newValue as string) || 'paper';
+      document.body.setAttribute('data-theme', newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+    }
+  },
+);
+
+void Promise.all([ensureAuth(), applyTheme()]).then(() => {
   WKApp.shared.startup();
   const container = document.getElementById('root')!;
   const root = createRoot(container);

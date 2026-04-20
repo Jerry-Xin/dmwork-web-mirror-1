@@ -755,13 +755,9 @@ export class Conversation
           onClick={async () => {
             const rawUrl = content.url || content.remoteUrl || "";
             if (!rawUrl) return;
-            let fileUrl =
+            const fileUrl =
               WKApp.dataSource.commonDataSource.getFileURL(rawUrl);
             if (!fileUrl) return;
-            // Resolve relative URLs to absolute
-            if (!fileUrl.startsWith("http")) {
-              fileUrl = window.location.origin + "/" + fileUrl.replace(/^\//, "");
-            }
             await downloadFile(fileUrl, content.name || "file", { fileSize: content.size });
           }}
         >

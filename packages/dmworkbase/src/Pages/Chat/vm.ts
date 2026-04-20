@@ -499,11 +499,9 @@ export async function handleGlobalSearchClick(item: any, type: string,hideModal?
     } else if (type === "file") {
         hideModal?.()
         const payload = item.payload;
-        let downloadURL = WKApp.dataSource.commonDataSource.getFileURL(payload.url || '');
-        if (downloadURL && !downloadURL.startsWith('http')) {
-            downloadURL = window.location.origin + '/' + downloadURL.replace(/^\//, '');
-        }
-        // Validate URL protocol to prevent XSS attacks (fixes #347)
+        if (!payload.url) return;
+        const downloadURL = WKApp.dataSource.commonDataSource.getFileURL(payload.url);
+        if (!downloadURL) return;
         if (isSafeUrl(downloadURL)) {
             await downloadFile(downloadURL, payload.name || "file", { fileSize: payload.size });
         }

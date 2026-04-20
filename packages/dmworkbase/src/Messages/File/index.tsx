@@ -227,7 +227,7 @@ export class FileCell extends MessageCell<any, FileCellState> {
                 document.body.appendChild(a)
                 a.click()
                 document.body.removeChild(a)
-                URL.revokeObjectURL(blobUrl)
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
             // Non-text-file path: use shared downloadFile() utility
             } else {
                 await downloadFile(url, content.name || "file", {

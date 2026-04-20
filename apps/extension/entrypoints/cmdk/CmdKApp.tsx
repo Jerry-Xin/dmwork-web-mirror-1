@@ -755,6 +755,8 @@ export default function CmdKApp() {
     if (target.closest('[data-tippy-root]') || target.closest('.tippy-box') || target.closest('.tippy-content')) return;
     // 检查点击是否在 emoji 面板内
     if (target.closest('.wk-emojitoolbar-emojipanel') || target.closest('.wk-emojitoolbar')) return;
+    // 检查点击是否在 portal emoji 面板内（OctoComposer portal 到 body 的表情面板）
+    if (target.closest('.octo-composer-emoji-panel') || target.closest('.octo-composer-emoji-mask')) return;
     // 真的点了空白处，关闭
     notifyClose('cancel');
   }, [notifyClose]);

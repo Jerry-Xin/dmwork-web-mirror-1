@@ -36,7 +36,10 @@ import type ConversationContext from "@dmwork/base/src/Components/Conversation/c
 import type { MessageInputContext } from "@dmwork/base/src/Components/MessageInput";
 import { ErrorBoundary } from "@dmwork/base/src/Components/ErrorBoundary";
 import { ChannelSettingManager } from "@dmwork/base/src/Service/ChannelSetting";
-import { SpaceService } from "@dmwork/base/src/Service/SpaceService";
+import {
+  SpaceService,
+  type SpaceMember,
+} from "@dmwork/base/src/Service/SpaceService";
 import CreateCategoryModal from "@dmwork/base/src/Components/CreateCategoryModal";
 import { setExtensionTheme } from "../../utils/extensionStorage";
 
@@ -1395,13 +1398,10 @@ export default class OctoSidepanelLayout extends Component<
   // Contacts Drawer
   // ================================================================
 
-  private contactsList: Array<{
-    id: string;
-    name: string;
-    sub: string;
-    robot?: boolean;
-  }> = [];
+  private contactsMembers: SpaceMember[] = [];
+  private contactsMyBots: any[] = [];
   private contactsLoaded = false;
+  private contactsKeyword = "";
 
   private toggleContacts = () => {
     const nextShow = !this.state.showContacts;
@@ -1412,18 +1412,20 @@ export default class OctoSidepanelLayout extends Component<
   };
 
   private async loadContacts() {
+    const spaceId = WKApp.shared.currentSpaceId;
+    if (!spaceId) {
+      console.warn("[OctoSidepanelLayout] No currentSpaceId for contacts");
+      return;
+    }
     try {
-      const results = await WKApp.apiClient.get("friend/sync", {
-        param: { version: "", api_version: "1" },
-      });
-      if (Array.isArray(results)) {
-        this.contactsList = results.map((r: any) => ({
-          id: r.uid || r.id || "",
-          name: r.remark || r.name || r.uid || "",
-          sub: r.robot === 1 ? "AI 伙伴 · 已接入" : "",
-          robot: r.robot === 1,
-        }));
-      }
+      const [members, myBots] = await Promise.all([
+        SpaceService.shared.getMembers(spaceId, 1, 10000),
+        WKApp.apiClient
+          .get("/robot/my_bots", { param: { space_id: spaceId } })
+          .catch(() => []),
+      ]);
+      this.contactsMembers = members || [];
+      this.contactsMyBots = myBots || [];
       this.contactsLoaded = true;
       this.forceUpdate();
     } catch (e) {
@@ -1431,116 +1433,166 @@ export default class OctoSidepanelLayout extends Component<
     }
   }
 
-  private getGroupedContacts() {
-    const aiPartners = this.contactsList.filter((c) => c.robot);
-    const friends = this.contactsList.filter((c) => !c.robot);
+  private getProcessedContacts(keyword?: string) {
+    const myUID = WKApp.loginInfo.uid || "";
 
-    // Group by first letter
-    const grouped: Record<string, typeof friends> = {};
-    for (const f of friends) {
-      const ch = getFirstChar(f.name);
-      const letter = /[A-Z]/.test(ch) ? ch : "#";
-      if (!grouped[letter]) grouped[letter] = [];
-      grouped[letter].push(f);
+    // AI 伙伴：my_bots 接口返回的已添加 AI
+    let aiPartners = (this.contactsMyBots || []).map((b: any) => ({
+      uid: b.uid,
+      name: b.name || b.uid,
+      avatar: b.avatar || "",
+      role: 3,
+      robot: 1,
+      created_at: "",
+    })) as SpaceMember[];
+
+    // 我的朋友：空间内所有人类成员，排除自己
+    let friends = this.contactsMembers.filter(
+      (m) => m.uid !== myUID && m.robot !== 1
+    );
+
+    // 搜索过滤
+    if (keyword && keyword.trim()) {
+      const kw = keyword.toLowerCase();
+      aiPartners = aiPartners.filter((m) =>
+        m.name.toLowerCase().includes(kw)
+      );
+      friends = friends.filter((m) => m.name.toLowerCase().includes(kw));
     }
 
-    return { aiPartners, grouped, letters: Object.keys(grouped).sort() };
+    return { aiPartners, friends };
   }
+
+  private handleContactsSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    this.contactsKeyword = e.target.value;
+    this.forceUpdate();
+  };
+
+  private handleContactClick = (uid: string) => {
+    this.setState({ showContacts: false });
+    WKApp.endpoints.showConversation(
+      new Channel(uid, ChannelTypePerson)
+    );
+  };
 
   private renderContactsDrawer() {
     const { showContacts } = this.state;
-    const { aiPartners, grouped, letters } = this.getGroupedContacts();
+    const { aiPartners, friends } =
+      this.getProcessedContacts(this.contactsKeyword);
 
     return (
-      <div className={`octo-contacts-drawer${showContacts ? " is-open" : ""}`}>
-        <div className="octo-contacts-header">
-          <span className="octo-contacts-title">通讯录</span>
+      <div
+        className={`octo-contacts-drawer${showContacts ? " is-open" : ""}`}
+      >
+        {/* 头部 */}
+        <div className="cd-head">
           <button
-            className="octo-contacts-close"
+            className="cd-back"
+            onClick={this.toggleContacts}
+            type="button"
+            title="返回"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <div className="cd-title">通讯录</div>
+          <button
+            className="cd-textbtn"
             onClick={this.toggleContacts}
             type="button"
           >
-            ×
+            关闭
           </button>
         </div>
-        <div className="octo-contacts-body">
+
+        {/* 搜索栏 */}
+        <div className="cd-search">
+          <div className="cd-input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              placeholder="搜索朋友、AI 伙伴…"
+              value={this.contactsKeyword}
+              onChange={this.handleContactsSearch}
+            />
+          </div>
+        </div>
+
+        {/* 内容 */}
+        <div className="cd-body">
           {!this.contactsLoaded && (
-            <div className="octo-contacts-section">加载中…</div>
+            <div className="cd-section">加载中…</div>
           )}
 
           {/* AI 伙伴 */}
           {aiPartners.length > 0 && (
             <>
-              <div className="octo-contacts-section">AI 伙伴</div>
-              {aiPartners.map((f) => (
-                <div key={f.id} className="octo-contacts-item">
-                  <span
-                    className="octo-contacts-avatar"
-                    style={{ background: "var(--octo-avatar-ai)" }}
+              <div className="cd-section">
+                AI 伙伴 · {aiPartners.length}
+              </div>
+              {aiPartners.map((m) => (
+                <div
+                  key={m.uid}
+                  className="cd-row"
+                  onClick={() => this.handleContactClick(m.uid)}
+                >
+                  <div className="cd-av ai">
+                    {getFirstChar(m.name)}
+                  </div>
+                  <div className="cd-txt">
+                    <span className="cd-nm">
+                      {m.name}{" "}
+                      <span className="cd-badge-ai">Agent</span>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* 我的朋友 */}
+          {friends.length > 0 && (
+            <>
+              <div className="cd-section">
+                我的朋友 · {friends.length}
+              </div>
+              {friends.map((m) => (
+                <div
+                  key={m.uid}
+                  className="cd-row"
+                  onClick={() => this.handleContactClick(m.uid)}
+                >
+                  <div
+                    className="cd-av"
+                    style={{ background: avatarGradient(m.name) }}
                   >
-                    {getFirstChar(f.name)}
-                  </span>
-                  <span>
-                    <div className="octo-contacts-name">{f.name}</div>
-                    <div className="octo-contacts-sub">{f.sub}</div>
+                    {getFirstChar(m.name)}
+                  </div>
+                  <div className="cd-txt">
+                    <span className="cd-nm">{m.name}</span>
+                  </div>
+                  <span className="cd-chev">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
                   </span>
                 </div>
               ))}
             </>
           )}
 
-          {/* 我的朋友 A-Z */}
-          {letters.length > 0 && (
-            <div className="octo-contacts-section">我的朋友</div>
-          )}
-          {letters.map((letter) => (
-            <React.Fragment key={letter}>
-              <div
-                className="octo-contacts-section"
-                id={`contacts-letter-${letter}`}
-              >
-                {letter}
+          {this.contactsLoaded &&
+            aiPartners.length === 0 &&
+            friends.length === 0 && (
+              <div className="cd-empty">
+                <span className="cd-empty-icon">👤</span>
+                <span>暂无联系人</span>
               </div>
-              {grouped[letter].map((f) => (
-                <div key={f.id} className="octo-contacts-item">
-                  <span
-                    className="octo-contacts-avatar"
-                    style={{ background: avatarGradient(f.name) }}
-                  >
-                    {getFirstChar(f.name)}
-                  </span>
-                  <span>
-                    <div className="octo-contacts-name">{f.name}</div>
-                    <div className="octo-contacts-sub">{f.sub}</div>
-                  </span>
-                </div>
-              ))}
-            </React.Fragment>
-          ))}
-
-          {this.contactsLoaded && this.contactsList.length === 0 && (
-            <div className="octo-contacts-section">暂无联系人</div>
-          )}
-
-          {/* 右侧字母索引条 */}
-          {letters.length > 0 && (
-            <div className="octo-contacts-index">
-              {letters.map((letter) => (
-                <span
-                  key={letter}
-                  className="octo-contacts-index-letter"
-                  onClick={() => {
-                    const el = document.getElementById(
-                      `contacts-letter-${letter}`
-                    );
-                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                >
-                  {letter}
-                </span>
-              ))}
-            </div>
-          )}
+            )}
         </div>
       </div>
     );
@@ -2408,6 +2460,14 @@ export default class OctoSidepanelLayout extends Component<
                   loading={this.state.pickerLoading}
                 />
               </div>
+
+              {/* Contacts Backdrop — dims the rail when contacts is open */}
+              {this.state.showContacts && (
+                <div
+                  className="wk-sidepanel-contacts-backdrop is-open"
+                  onClick={this.toggleContacts}
+                />
+              )}
 
               {/* Contacts Drawer — covers main area but not Rail */}
               {this.renderContactsDrawer()}

@@ -98,6 +98,7 @@ export interface ConversationProps {
     checkedCount: number;
   }) => void;
   hideMessageInput?: boolean;
+  readingMode?: "message" | "cli";
 }
 
 const ConversationSelectionStateBridge: React.FC<{
@@ -271,6 +272,9 @@ export class Conversation
   }
   editOn(): boolean {
     return this.vm.editOn;
+  }
+  getReadingMode(): "message" | "cli" {
+    return this.props.readingMode === "cli" ? "cli" : "message";
   }
   setEditOn(edit: boolean): void {
     this.vm.editOn = edit;
@@ -1305,6 +1309,9 @@ export class Conversation
               <div
                 className={classNames(
                   "wk-conversation",
+                  this.props.readingMode === "cli"
+                    ? "wk-conversation--cli"
+                    : undefined,
                   vm.fileDragEnter ? "wk-conversation-dragover" : undefined,
                   vm.currentReplyMessage
                     ? "wk-conversation-hasreply"

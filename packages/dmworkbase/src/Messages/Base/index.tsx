@@ -241,6 +241,8 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
         const showHead = this.needHead()
         const showAvatar = this.needAvatar()
         const timeStr = moment(message.timestamp * 1000).format('HH:mm')
+        const isCli = typeof context.getReadingMode === "function" && context.getReadingMode() === "cli"
+        const selfDisplayName = displayName || "我"
 
         return (
             <div className={classNames("wk-message-base", context.editOn() ? "wk-message-base-check-open" : undefined)} onClick={context.editOn() ? (event) => {
@@ -285,11 +287,20 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                                     <span className="wk-msg-head-time">{timeStr}</span>
                                 </div>
                             )}
-                            {/* 发送消息的 head: 仅 time，右对齐 */}
+                            {/* 发送消息的 head: CLI 下显示姓名+时间（与对方一致）；消息版下仅时间，右对齐 */}
                             {showHead && message.send && (
-                                <div className="wk-msg-head wk-msg-head-right">
-                                    <span className="wk-msg-head-time">{timeStr}</span>
-                                </div>
+                                isCli ? (
+                                    <div className="wk-msg-head">
+                                        <span className="wk-msg-head-name" style={{ color: getTitleColor(selfDisplayName) }}>
+                                            {selfDisplayName}
+                                        </span>
+                                        <span className="wk-msg-head-time">{timeStr}</span>
+                                    </div>
+                                ) : (
+                                    <div className="wk-msg-head wk-msg-head-right">
+                                        <span className="wk-msg-head-time">{timeStr}</span>
+                                    </div>
+                                )
                             )}
 
                             <div className={this.getBubbleBoxClassName()}>

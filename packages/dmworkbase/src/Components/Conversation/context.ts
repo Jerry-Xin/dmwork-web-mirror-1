@@ -134,4 +134,7 @@ export default interface ConversationContext {
      * @param threadName 子区名称
      */
     openThreadPanel?(threadChannelId: string, threadName: string): void
+
+    /** 当前阅读模式（消息版 / CLI），供 MessageCell 感知布局差异 */
+    getReadingMode?(): "message" | "cli"
 }

@@ -346,7 +346,7 @@ export default class OctoSidepanelLayout extends Component<
       drawerMuted: null,
       theme: "light",
       layout: "message",
-      readingMode: "message",
+      readingMode: "cli",
       showSettings: false,
       // Full Composer
       showFullComposer: false,
@@ -2010,7 +2010,6 @@ export default class OctoSidepanelLayout extends Component<
                 <div className="octo-settings-seg">
                   {[
                     { id: "paper", label: "Paper", isDark: false, dotTheme: "paper" },
-                    { id: "term", label: "Term", isDark: false, dotTheme: "term" },
                     { id: "moon", label: "Moon", isDark: true, dotTheme: "moon" },
                   ].map((t) => (
                     <button
@@ -2581,6 +2580,7 @@ export default class OctoSidepanelLayout extends Component<
                           key={selectedChannel.getChannelKey()}
                           channel={selectedChannel}
                           hideMessageInput={true}
+                          readingMode={this.state.readingMode}
                           onContext={(
                             ctx: ConversationContext & {
                               messageInputContext?: MessageInputContext;

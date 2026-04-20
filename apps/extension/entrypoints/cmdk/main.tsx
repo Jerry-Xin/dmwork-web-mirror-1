@@ -10,6 +10,7 @@ import { ContactsModule } from '@dmwork/contacts';
 import { version as pkgVersion } from '../../../web/package.json';
 import {
   DEFAULT_API_URL,
+  EXTENSION_STORAGE_KEYS,
   normalizeApiURL,
 } from '../../utils/extensionRuntime';
 import { getExtensionAuthState } from '../../utils/extensionStorage';
@@ -52,22 +53,25 @@ async function ensureAuth(): Promise<void> {
   }
 }
 
-// Apply theme synchronously from localStorage (CmdK iframe shares extension origin with sidepanel)
-function applyTheme() {
-  const theme = localStorage.getItem('octo_v3_theme') || 'paper';
+// Apply theme from extension storage (not localStorage — iframe origin ≠ extension origin)
+function setThemeAttr(theme: string) {
   document.body.setAttribute('data-theme', theme);
   document.documentElement.setAttribute('data-theme', theme);
 }
 
-// Listen for theme changes from sidepanel via storage event
-window.addEventListener('storage', (e: StorageEvent) => {
-  if (e.key === 'octo_v3_theme' && e.newValue) {
-    document.body.setAttribute('data-theme', e.newValue);
-    document.documentElement.setAttribute('data-theme', e.newValue);
+// Fire-and-forget: read theme from browser.storage.local, won't block render
+void browser.storage.local.get(EXTENSION_STORAGE_KEYS.theme).then((result) => {
+  const theme = (result[EXTENSION_STORAGE_KEYS.theme] as string) || 'paper';
+  setThemeAttr(theme);
+}).catch(() => { /* ignore — default paper theme is fine */ });
+
+// Listen for real-time theme changes from sidepanel
+browser.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes[EXTENSION_STORAGE_KEYS.theme]) {
+    const newTheme = (changes[EXTENSION_STORAGE_KEYS.theme].newValue as string) || 'paper';
+    setThemeAttr(newTheme);
   }
 });
-
-applyTheme();
 
 void ensureAuth().then(() => {
   WKApp.shared.startup();

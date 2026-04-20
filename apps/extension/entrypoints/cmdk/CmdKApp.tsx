@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import MessageInput, {
+import {
   type MentionModel,
   type MessageInputContext,
   formatMentionTextV2,
@@ -31,6 +31,7 @@ import {
   WKSDK,
 } from 'wukongimjssdk';
 import { resolveApp } from '../cmdk-overlay.content/url-apps';
+import OctoComposer, { type OctoComposerContext } from '../sidepanel/OctoComposer';
 
 interface PanelContext {
   selectedText: string;
@@ -82,8 +83,6 @@ const BLOCKED_EXTENSIONS = [
   'wsf',
   'ps1',
 ];
-const MessageInputView = MessageInput as any;
-
 function buildCmdkMessageText(text: string, context: PanelContext | null) {
   const parts: string[] = [];
   const quotedText = context?.selectedText;
@@ -102,20 +101,6 @@ function buildCmdkMessageText(text: string, context: PanelContext | null) {
   parts.push(text.trim());
 
   return formatMentionTextV2(parts.join('\n\n'));
-}
-
-function renderSharedToolbar(context: ConversationContext) {
-  const toolbars = WKApp.endpoints.chatToolbarsWithKey(context);
-
-  return (
-    <ul className="octo-cmdk-chattoolbars">
-      {toolbars.map((toolbar) => (
-        <li key={toolbar.sid} className="octo-cmdk-chattoolbars-item">
-          {toolbar.node as any}
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
@@ -208,11 +193,8 @@ export default function CmdKApp() {
   const [members, setMembers] = useState<Subscriber[] | undefined>(undefined);
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
   const [composerKey, setComposerKey] = useState(0);
-  const [draftText, setDraftText] = useState('');
   const [quoteExpanded, setQuoteExpanded] = useState(false);
-  const inputContextRef = useRef<MessageInputContext | null>(null);
-  const inputDomRef = useRef<HTMLElement | null>(null);
-  const inputDomListenerRef = useRef<(() => void) | null>(null);
+  const inputContextRef = useRef<OctoComposerContext | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const dragFileCallbackRef = useRef<((file: File) => void) | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -292,13 +274,19 @@ export default function CmdKApp() {
       text: () => undefined,
     };
     const channel = new Channel(selected?.id || '', selected?.type ?? ChannelTypePerson);
-
-    return {
+    const contextValue: ConversationContext & {
+      _messageInputContext?: OctoComposerContext;
+      _pendingInsertText?: string;
+    } = {
       sendMessage: noopAsync,
       resendMessage: noopAsync,
       scrollToBottom: noop,
       insertText: (text: string) => {
-        inputContextRef.current?.insertText(text);
+        if (contextValue._messageInputContext) {
+          contextValue._messageInputContext.insertText(text);
+          return;
+        }
+        contextValue._pendingInsertText = `${contextValue._pendingInsertText || ''}${text}`;
       },
       editOn: () => false,
       setEditOn: noop,
@@ -314,7 +302,7 @@ export default function CmdKApp() {
       showContextMenus: noop,
       hideContextMenus: noop,
       channel: () => channel,
-      messageInputContext: () => inputContextRef.current || fallbackInputContext,
+      messageInputContext: () => contextValue._messageInputContext || fallbackInputContext,
       setDragFileCallback: (callback: (file: File) => void) => {
         dragFileCallbackRef.current = callback;
       },
@@ -326,6 +314,8 @@ export default function CmdKApp() {
       locateMessage: noop,
       getCachedSelectedText: () => null,
     };
+
+    return contextValue;
   }, [
     addPendingAttachments,
     clearPendingAttachments,
@@ -334,51 +324,6 @@ export default function CmdKApp() {
     selected?.id,
     selected?.type,
   ]);
-
-  const sharedToolbar = useMemo(() => renderSharedToolbar(mockContext), [mockContext]);
-
-  const syncDraftText = useCallback(() => {
-    window.requestAnimationFrame(() => {
-      setDraftText(inputContextRef.current?.text?.() || '');
-    });
-  }, []);
-
-  const handleInputRef = useCallback((node: HTMLElement | null) => {
-    if (inputDomRef.current === node) {
-      return;
-    }
-
-    if (inputDomRef.current && inputDomListenerRef.current) {
-      inputDomRef.current.removeEventListener('input', inputDomListenerRef.current);
-      inputDomRef.current.removeEventListener('keyup', inputDomListenerRef.current);
-      inputDomRef.current.removeEventListener('paste', inputDomListenerRef.current);
-    }
-
-    inputDomRef.current = node;
-    inputDomListenerRef.current = null;
-
-    if (!node) {
-      return;
-    }
-
-    const listener = () => {
-      syncDraftText();
-    };
-
-    node.addEventListener('input', listener);
-    node.addEventListener('keyup', listener);
-    node.addEventListener('paste', listener);
-    inputDomListenerRef.current = listener;
-    syncDraftText();
-  }, [syncDraftText]);
-
-  useEffect(() => () => {
-    if (inputDomRef.current && inputDomListenerRef.current) {
-      inputDomRef.current.removeEventListener('input', inputDomListenerRef.current);
-      inputDomRef.current.removeEventListener('keyup', inputDomListenerRef.current);
-      inputDomRef.current.removeEventListener('paste', inputDomListenerRef.current);
-    }
-  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -514,23 +459,14 @@ export default function CmdKApp() {
 
     (async () => {
       try {
-        const apiURL = WKApp.apiClient.config.apiURL;
-        const token = WKApp.loginInfo.token;
-        const response = await fetch(
-          `${apiURL}groups/${encodeURIComponent(selected.id)}/members?limit=1000`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              token: token || '',
-            },
-          },
+        const data = await WKApp.apiClient.get(
+          `groups/${encodeURIComponent(selected.id)}/members`,
+          { param: { limit: 1000 } },
         );
 
-        if (!cancelled && response.ok) {
-          const data = await response.json();
+        if (!cancelled && Array.isArray(data)) {
           setMembers(
-            (data || []).map((member: { uid: string; name: string }) => {
+            data.map((member: { uid: string; name: string }) => {
               const subscriber = new Subscriber();
               subscriber.uid = member.uid;
               subscriber.name = member.name;
@@ -744,7 +680,6 @@ export default function CmdKApp() {
       }
 
       clearPendingAttachments();
-      setDraftText('');
       setComposerKey((prev) => prev + 1);
       notifyClose('sent');
     } catch (sendError: any) {
@@ -752,7 +687,6 @@ export default function CmdKApp() {
       if (hasText && !inputContextRef.current?.text?.()?.trim()) {
         window.setTimeout(() => {
           inputContextRef.current?.insertText(text);
-          syncDraftText();
         }, 0);
       }
     } finally {
@@ -768,12 +702,7 @@ export default function CmdKApp() {
     sendContent,
     sendQueuedAttachments,
     ensureSdkConnected,
-    syncDraftText,
   ]);
-
-  const handleTriggerSend = useCallback(() => {
-    void handleSend(inputContextRef.current?.text?.() || '');
-  }, [handleSend]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -861,7 +790,6 @@ export default function CmdKApp() {
     : '#';
   const imageAttachments = pendingAttachments.filter((file) => file.type.startsWith('image/'));
   const fileAttachments = pendingAttachments.filter((file) => !file.type.startsWith('image/'));
-  const canSend = Boolean(selected) && !sending && (pendingAttachments.length > 0 || draftText.trim() !== '');
 
   const pickerChannels: ChannelPickerItem[] = threads
     .filter((item) => item.channelType !== ChannelTypePerson)
@@ -1009,45 +937,28 @@ export default function CmdKApp() {
             <div className="octo-cmdk-center"><div className="octo-cmdk-loading">加载会话列表…</div></div>
           ) : (
             <>
-              <div className="octo-cmdk-composer">
-                <div className="octo-cmdk-source-info">
-                  <div className="octo-cmdk-source-title">{title}</div>
-                  <div className="octo-cmdk-source-url">{appLabel}</div>
-                </div>
+              {error && <div className="octo-cmdk-composer-error">{error}</div>}
 
-                <MessageInputView
+              <div className="octo-cmdk-composer-wrap">
+                <OctoComposer
                   key={`${selected?.id || '__empty'}-${composerKey}`}
-                  context={mockContext}
-                  onSend={handleSend}
+                  channel={new Channel(selected?.id || '', selected?.type ?? ChannelTypePerson)}
+                  conversationContext={mockContext}
+                  contextClassName="cmdk"
                   members={members}
-                  hasPendingAttachments={pendingAttachments.length > 0}
-                  onContext={(value: MessageInputContext) => {
+                  renderToolbar={true}
+                  onContext={(value) => {
                     inputContextRef.current = value;
-                    setDraftText(value.text?.() || '');
                   }}
-                  onInputRef={handleInputRef}
+                  onSendText={handleSend}
+                  placeholder={
+                    selectedThread
+                      ? (selectedThread.channelType === ChannelTypePerson
+                        ? `发消息给 ${selectedThread.name}`
+                        : `#${selectedThread.name}`)
+                      : '输入消息'
+                  }
                 />
-              </div>
-
-              <div className="octo-cmdk-foot">
-                {error && <span className="octo-cmdk-err">{error}</span>}
-                <div className="octo-cmdk-tools">{sharedToolbar}</div>
-                <div className="octo-cmdk-hint">
-                  <span className="octo-cmdk-kbd">ESC</span>
-                  <span>关闭</span>
-                </div>
-                <button
-                  className={`octo-cmdk-send-plane${canSend ? ' is-active' : ''}${sending ? ' is-sending' : ''}`}
-                  disabled={!canSend}
-                  title="发送"
-                  onClick={handleTriggerSend}
-                  type="button"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
-                </button>
               </div>
 
               {pickerOpen && (

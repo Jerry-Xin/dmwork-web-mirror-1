@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import '@dmwork/base/src/theme/tokens.css';
+import '../sidepanel/style.css';
 import './style.css';
 import { BaseModule, WKApp } from '@dmwork/base';
 import StorageService from '@dmwork/base/src/Service/StorageService';
@@ -17,6 +18,7 @@ import { getExtensionAuthState } from '../../utils/extensionStorage';
 import CmdKApp from './CmdKApp';
 
 (window as any).__POWERED_EXTENSION__ = true;
+document.body.classList.add('octo-sidepanel-v3');
 
 StorageService.shared.setItem = (key, value) => localStorage.setItem(key, value);
 StorageService.shared.getItem = (key) => localStorage.getItem(key);

@@ -62,8 +62,10 @@ import AttachmentPreview from "../AttachmentPreview";
 import { buildChatContext, ChatContextChannelInfo } from "./chatContext";
 import FoldSessionExpandedList from "./FoldSessionExpandedList";
 
-const foldSessionAvatarIcon = new URL("./fold-session-avatar.svg", import.meta.url)
-  .href;
+const foldSessionAvatarIcon = new URL(
+  "./fold-session-avatar.svg",
+  import.meta.url
+).href;
 
 const FoldImage: React.FC<{ src: string }> = ({ src }) => {
   const [open, setOpen] = React.useState(false);
@@ -94,6 +96,7 @@ export interface ConversationProps {
     editOn: boolean;
     checkedCount: number;
   }) => void;
+  hideMessageInput?: boolean;
 }
 
 const ConversationSelectionStateBridge: React.FC<{
@@ -123,6 +126,13 @@ export class Conversation
   contextMenusContext!: ContextMenusContext;
   avatarMenusContext!: ContextMenusContext; // 点击头像弹出的菜单
   _messageInputContext!: MessageInputContext;
+  private fallbackMessageInputContext: MessageInputContext = {
+    insertText: (text: string) => {
+      this._pendingInsertText = text;
+    },
+    addMention: () => {},
+    text: () => undefined,
+  };
   private _pendingInsertText?: string;
   scrollTimer: number | null = null;
   updateBrowseToMessageSeqAndReminderDoneing: boolean = false;
@@ -130,7 +140,10 @@ export class Conversation
   private _cachedSelectedText: string | null = null;
   private _beforeUnloadHandler: () => void;
   private _guardId: symbol = Symbol("pendingAttachmentGuard");
-  private onOpenThreadPanel?: (threadChannelId: string, threadName: string) => void;
+  private onOpenThreadPanel?: (
+    threadChannelId: string,
+    threadName: string
+  ) => void;
 
   constructor(props: any) {
     super(props);
@@ -480,8 +493,8 @@ export class Conversation
     return this._cachedSelectedText;
   }
 
-  messageInputContext(): MessageInputContext | undefined {
-    return this._messageInputContext;
+  messageInputContext(): MessageInputContext {
+    return this._messageInputContext || this.fallbackMessageInputContext;
   }
 
   forceStandaloneMessage(message: Message): boolean {
@@ -868,7 +881,10 @@ export class Conversation
         )}
       >
         <div className="wk-message-item-fold-session-shell">
-          <div className="wk-message-item-fold-session-avatar" aria-hidden="true">
+          <div
+            className="wk-message-item-fold-session-avatar"
+            aria-hidden="true"
+          >
             <img
               className="wk-message-item-fold-session-avatar-icon"
               src={foldSessionAvatarIcon}
@@ -1255,7 +1271,8 @@ export class Conversation
   }
 
   render() {
-    const { chatBg, channel, initLocateMessageSeq } = this.props;
+    const { chatBg, channel, initLocateMessageSeq, hideMessageInput } =
+      this.props;
 
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
 
@@ -1441,185 +1458,194 @@ export class Conversation
                     }}
                   ></MultiplePanel>
                 </div>
-                <div
-                  className="wk-conversation-footer"
-                  style={
-                    this.state.inputExpanded
-                      ? {
-                          flex: 1,
-                          minHeight: 0,
-                          overflow: "hidden",
-                          paddingTop: "var(--wk-sp-2)",
-                        }
-                      : undefined
-                  }
-                >
-                  {vm.pendingAttachments.length > 0 && (
-                    <AttachmentPreview
-                      conversationContext={this}
-                      files={vm.pendingAttachments}
-                    />
-                  )}
+                {!hideMessageInput && (
                   <div
-                    className="wk-conversation-footer-content"
+                    className="wk-conversation-footer"
                     style={
                       this.state.inputExpanded
                         ? {
-                            height: "100%",
+                            flex: 1,
+                            minHeight: 0,
                             overflow: "hidden",
-                            display: "flex",
-                            flexDirection: "column",
+                            paddingTop: "var(--wk-sp-2)",
                           }
                         : undefined
                     }
                   >
-                    <MessageInput
-                      botCommands={botCommands}
-                      hasPendingAttachments={vm.pendingAttachments.length > 0}
-                      members={this.vm.subscribers.filter(
-                        (s) => s.uid !== WKApp.loginInfo.uid
-                      )}
-                      onExpandChange={(expanded) => {
-                        this.setState({ inputExpanded: expanded });
-                      }}
-                      onContext={(ctx) => {
-                        this._messageInputContext = ctx;
-                        // flush 延迟的 insertText（componentDidMount 时 context 可能还没就绪）
-                        if (this._pendingInsertText) {
-                          ctx.insertText(this._pendingInsertText);
-                          this._pendingInsertText = undefined;
-                        }
-                      }}
-                      toolbar={this.chatToolbarUI()}
-                      context={this}
-                      getChatContext={() => {
-                        const { channel } = this.props;
-                        return buildChatContext({
-                          messages: this.vm.messagesOfOrigin || [],
-                          subscribers: this.vm.subscribers,
-                          channelType: channel.channelType,
-                          loginUID: WKApp.loginInfo.uid,
-                          channelInfo:
-                            channel.channelType === ChannelTypePerson
-                              ? (WKSDK.shared().channelManager.getChannelInfo(
-                                  channel
-                                ) as ChatContextChannelInfo | null)
-                              : undefined,
-                        });
-                      }}
-                      onSend={async (text: string, mention?: MentionModel) => {
-                        const content = new MessageText(text);
-                        if (mention) {
-                          const mn = new Mention();
-                          mn.all = mention.all;
-                          mn.uids = mention.uids;
-                          mn.entities = mention.entities;
-                          content.mention = mn;
-                        }
-                        if (vm.currentReplyMessage) {
-                          if (vm.currentHandlerType === 2) {
-                            // 编辑消息
-                            let json = content.encodeJSON();
-                            json["type"] = MessageContentType.text;
-                            await vm.editMessage(
-                              vm.currentReplyMessage.messageID,
-                              vm.currentReplyMessage.messageSeq,
-                              vm.currentReplyMessage.channel.channelID,
-                              vm.currentReplyMessage.channel.channelType,
-                              JSON.stringify(json)
-                            );
+                    {vm.pendingAttachments.length > 0 && (
+                      <AttachmentPreview
+                        conversationContext={this}
+                        files={vm.pendingAttachments}
+                      />
+                    )}
+                    <div
+                      className="wk-conversation-footer-content"
+                      style={
+                        this.state.inputExpanded
+                          ? {
+                              height: "100%",
+                              overflow: "hidden",
+                              display: "flex",
+                              flexDirection: "column",
+                            }
+                          : undefined
+                      }
+                    >
+                      <MessageInput
+                        botCommands={botCommands}
+                        hasPendingAttachments={vm.pendingAttachments.length > 0}
+                        members={this.vm.subscribers.filter(
+                          (s) => s.uid !== WKApp.loginInfo.uid
+                        )}
+                        onExpandChange={(expanded) => {
+                          this.setState({ inputExpanded: expanded });
+                        }}
+                        onContext={(ctx) => {
+                          this._messageInputContext = ctx;
+                          // flush 延迟的 insertText（componentDidMount 时 context 可能还没就绪）
+                          if (this._pendingInsertText) {
+                            ctx.insertText(this._pendingInsertText);
+                            this._pendingInsertText = undefined;
+                          }
+                        }}
+                        toolbar={this.chatToolbarUI()}
+                        context={this}
+                        getChatContext={() => {
+                          const { channel } = this.props;
+                          return buildChatContext({
+                            messages: this.vm.messagesOfOrigin || [],
+                            subscribers: this.vm.subscribers,
+                            channelType: channel.channelType,
+                            loginUID: WKApp.loginInfo.uid,
+                            channelInfo:
+                              channel.channelType === ChannelTypePerson
+                                ? (WKSDK.shared().channelManager.getChannelInfo(
+                                    channel
+                                  ) as ChatContextChannelInfo | null)
+                                : undefined,
+                          });
+                        }}
+                        onSend={async (
+                          text: string,
+                          mention?: MentionModel
+                        ) => {
+                          const content = new MessageText(text);
+                          if (mention) {
+                            const mn = new Mention();
+                            mn.all = mention.all;
+                            mn.uids = mention.uids;
+                            (mn as any).entities = mention.entities;
+                            content.mention = mn;
+                          }
+                          if (vm.currentReplyMessage) {
+                            if (vm.currentHandlerType === 2) {
+                              // 编辑消息
+                              let json = content.encodeJSON();
+                              json["type"] = MessageContentType.text;
+                              await vm.editMessage(
+                                vm.currentReplyMessage.messageID,
+                                vm.currentReplyMessage.messageSeq,
+                                vm.currentReplyMessage.channel.channelID,
+                                vm.currentReplyMessage.channel.channelType,
+                                JSON.stringify(json)
+                              );
+                              vm.currentReplyMessage = undefined;
+                              return;
+                            }
+                            const reply = new Reply();
+                            reply.messageID = vm.currentReplyMessage.messageID;
+                            reply.messageSeq =
+                              vm.currentReplyMessage.messageSeq;
+                            reply.fromUID = vm.currentReplyMessage.fromUID;
+                            const channelInfo =
+                              WKSDK.shared().channelManager.getChannelInfo(
+                                new Channel(
+                                  vm.currentReplyMessage.fromUID,
+                                  ChannelTypePerson
+                                )
+                              );
+                            if (channelInfo) {
+                              reply.fromName = channelInfo.title;
+                            }
+                            reply.content = vm.currentReplyMessage.content;
+                            content.reply = reply;
                             vm.currentReplyMessage = undefined;
-                            return;
                           }
-                          const reply = new Reply();
-                          reply.messageID = vm.currentReplyMessage.messageID;
-                          reply.messageSeq = vm.currentReplyMessage.messageSeq;
-                          reply.fromUID = vm.currentReplyMessage.fromUID;
-                          const channelInfo =
-                            WKSDK.shared().channelManager.getChannelInfo(
-                              new Channel(
-                                vm.currentReplyMessage.fromUID,
-                                ChannelTypePerson
-                              )
-                            );
-                          if (channelInfo) {
-                            reply.fromName = channelInfo.title;
-                          }
-                          reply.content = vm.currentReplyMessage.content;
-                          content.reply = reply;
-                          vm.currentReplyMessage = undefined;
-                        }
 
-                        // ── 附件队列发送 (#143 / #144) ──────────────
-                        const attachments = [...vm.pendingAttachments];
-                        if (attachments.length > 0) {
-                          // 先清空预览区，发送过程中不允许继续追加（防止重复）
-                          // 注意：清空在循环前，失败文件不会自动回滚到队列（设计如此，符合 IM 惯例）
-                          this.clearPendingAttachments();
-                          for (const file of attachments) {
-                            try {
-                              if (file.type && file.type.startsWith("image/")) {
-                                const reader = new FileReader();
-                                const previewUrl = await new Promise<string>(
-                                  (resolve) => {
-                                    reader.onloadend = () =>
-                                      resolve(reader.result as string);
-                                    reader.onerror = () => resolve(""); // 文件损坏时不阻塞后续附件
-                                    reader.readAsDataURL(file);
+                          // ── 附件队列发送 (#143 / #144) ──────────────
+                          const attachments = [...vm.pendingAttachments];
+                          if (attachments.length > 0) {
+                            // 先清空预览区，发送过程中不允许继续追加（防止重复）
+                            // 注意：清空在循环前，失败文件不会自动回滚到队列（设计如此，符合 IM 惯例）
+                            this.clearPendingAttachments();
+                            for (const file of attachments) {
+                              try {
+                                if (
+                                  file.type &&
+                                  file.type.startsWith("image/")
+                                ) {
+                                  const reader = new FileReader();
+                                  const previewUrl = await new Promise<string>(
+                                    (resolve) => {
+                                      reader.onloadend = () =>
+                                        resolve(reader.result as string);
+                                      reader.onerror = () => resolve(""); // 文件损坏时不阻塞后续附件
+                                      reader.readAsDataURL(file);
+                                    }
+                                  );
+                                  if (!previewUrl) {
+                                    Toast.error(`图片「${file.name}」读取失败`);
+                                    continue;
                                   }
-                                );
-                                if (!previewUrl) {
-                                  Toast.error(`图片「${file.name}」读取失败`);
-                                  continue;
+                                  // 读取真实宽高，供渲染层正确计算尺寸
+                                  const { width, height } = await new Promise<{
+                                    width: number;
+                                    height: number;
+                                  }>((resolve) => {
+                                    const img = new Image();
+                                    img.onload = () =>
+                                      resolve({
+                                        width: img.naturalWidth,
+                                        height: img.naturalHeight,
+                                      });
+                                    img.onerror = () =>
+                                      resolve({ width: 0, height: 0 });
+                                    img.src = previewUrl;
+                                  });
+                                  await this.sendMediaAndWait(
+                                    new ImageContent(
+                                      file,
+                                      previewUrl,
+                                      width,
+                                      height
+                                    )
+                                  );
+                                } else {
+                                  const name = file.name || "unknown";
+                                  const dotIndex = name.lastIndexOf(".");
+                                  const ext =
+                                    dotIndex > 0
+                                      ? name.substring(dotIndex + 1)
+                                      : "";
+                                  await this.sendMediaAndWait(
+                                    new FileContent(file, name, ext, file.size)
+                                  );
                                 }
-                                // 读取真实宽高，供渲染层正确计算尺寸
-                                const { width, height } = await new Promise<{
-                                  width: number;
-                                  height: number;
-                                }>((resolve) => {
-                                  const img = new Image();
-                                  img.onload = () =>
-                                    resolve({
-                                      width: img.naturalWidth,
-                                      height: img.naturalHeight,
-                                    });
-                                  img.onerror = () =>
-                                    resolve({ width: 0, height: 0 });
-                                  img.src = previewUrl;
-                                });
-                                await this.sendMediaAndWait(
-                                  new ImageContent(
-                                    file,
-                                    previewUrl,
-                                    width,
-                                    height
-                                  )
-                                );
-                              } else {
-                                const name = file.name || "unknown";
-                                const dotIndex = name.lastIndexOf(".");
-                                const ext =
-                                  dotIndex > 0
-                                    ? name.substring(dotIndex + 1)
-                                    : "";
-                                await this.sendMediaAndWait(
-                                  new FileContent(file, name, ext, file.size)
-                                );
+                              } catch (err) {
+                                Toast.error(`文件「${file.name}」发送失败`);
                               }
-                            } catch (err) {
-                              Toast.error(`文件「${file.name}」发送失败`);
                             }
                           }
-                        }
 
-                        // 文字（有内容才发，await 保证在附件全部发完后才发）
-                        if (text && text.trim() !== "") {
-                          await this.sendMessage(content);
-                        }
-                      }}
-                    ></MessageInput>
+                          // 文字（有内容才发，await 保证在附件全部发完后才发）
+                          if (text && text.trim() !== "") {
+                            await this.sendMessage(content);
+                          }
+                        }}
+                      ></MessageInput>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <ContextMenus
                 onContext={(ctx) => {

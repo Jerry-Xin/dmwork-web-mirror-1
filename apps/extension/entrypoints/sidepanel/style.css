@@ -1,4 +1,4 @@
-@import './tokens.css';
+@import "./tokens.css";
 
 /* Component tokens are now defined per-theme in tokens.css */
 
@@ -37,8 +37,11 @@ body.octo-sidepanel-v3 #root {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(circle at top right, var(--octo-shell-accent), transparent 28%),
+  background: radial-gradient(
+      circle at top right,
+      var(--octo-shell-accent),
+      transparent 28%
+    ),
     var(--octo-sidepanel-shell-bg);
 }
 
@@ -102,10 +105,8 @@ body.octo-sidepanel-v3 .wk-sidepanel-rail-badge {
   font: 700 10.5px var(--wk-font-sans);
   line-height: 17px;
   border: 0;
-  box-shadow:
-    0 0 0 1.5px var(--octo-badge-ring),
-    0 0 0 2.5px var(--octo-badge-bg),
-    0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 1.5px var(--octo-badge-ring),
+    0 0 0 2.5px var(--octo-badge-bg), 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-rail-badge::before {
@@ -128,7 +129,7 @@ body.octo-sidepanel-v3 .wk-sidepanel-rail {
 body.octo-sidepanel-v3 .wk-rail-settings-pop {
   position: fixed !important;
   left: auto !important;
-  right: 56px !important;  /* rail 48px + 8px gap */
+  right: 56px !important; /* rail 48px + 8px gap */
   bottom: 10px !important;
   z-index: 9999 !important;
 }
@@ -136,7 +137,7 @@ body.octo-sidepanel-v3 .wk-rail-settings-pop {
 body.octo-sidepanel-v3 .wk-rail-create-menu {
   position: fixed;
   left: auto;
-  right: 56px;  /* rail 48px + 8px gap */
+  right: 56px; /* rail 48px + 8px gap */
   bottom: 50px;
   z-index: 9999;
 }
@@ -218,9 +219,7 @@ body.octo-sidepanel-v3 .wk-sidepanel-header-peer b {
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-content {
-  background:
-    var(--octo-content-overlay),
-    var(--wk-bg-app);
+  background: var(--octo-content-overlay), var(--wk-bg-app);
 }
 
 body.octo-sidepanel-v3 .wk-sidepanel-content .wk-conversation {
@@ -237,6 +236,367 @@ body.octo-sidepanel-v3 .wk-conversation-messages {
 
 body.octo-sidepanel-v3 .wk-message-item-last {
   margin-bottom: 6px;
+}
+
+body.octo-sidepanel-v3 .octo-sidepanel-conversation-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+body.octo-sidepanel-v3 .octo-sidepanel-conversation-shell .wk-conversation {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+body.octo-sidepanel-v3 .octo-composer-shell {
+  flex-shrink: 0;
+  padding: 10px 14px 10px;
+  background: var(--wk-bg-app);
+  border-top: 1px solid var(--wk-ink-08);
+}
+
+body.octo-sidepanel-v3 .octo-composer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--wk-bg-app);
+  border: 1px solid var(--wk-ink-12);
+  border-radius: var(--wk-r-xl);
+  transition: border-color var(--wk-dur) var(--wk-ease),
+    box-shadow var(--wk-dur) var(--wk-ease);
+  overflow: visible;
+}
+
+body.octo-sidepanel-v3 .octo-composer:focus-within {
+  border-color: var(--wk-brand);
+  box-shadow: 0 0 0 3px var(--wk-brand-glow);
+}
+
+body.octo-sidepanel-v3 .octo-composer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px 4px;
+  border-bottom: 1px solid var(--wk-ink-05);
+}
+
+body.octo-sidepanel-v3 .octo-composer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--wk-ink-08);
+  border-radius: var(--wk-r-pill);
+  background: var(--wk-bg-chip);
+  color: var(--wk-ink-80);
+  font-size: 11.5px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-chip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--wk-ink-08);
+  color: var(--wk-ink-60);
+  font: 600 10px var(--wk-font-mono);
+  letter-spacing: 0.02em;
+}
+
+body.octo-sidepanel-v3 .octo-composer-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wk-ink-100);
+}
+
+body.octo-sidepanel-v3 .octo-composer-chip-size {
+  color: var(--wk-ink-45);
+  font: 500 10.5px var(--wk-font-mono);
+}
+
+body.octo-sidepanel-v3 .octo-composer-chip-remove {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wk-ink-45);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+body.octo-sidepanel-v3 .octo-composer-chip-remove:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-ink-100);
+}
+
+body.octo-sidepanel-v3 .octo-composer-chip-remove-icon {
+  width: 12px;
+  height: 12px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-input-wrap {
+  position: relative;
+  padding: 0;
+}
+
+body.octo-sidepanel-v3 .octo-composer-editor {
+  position: relative;
+  padding: 0 14px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-editor .ProseMirror {
+  min-height: 40px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 11px 0 4px;
+  outline: none;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--wk-ink-100);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+body.octo-sidepanel-v3 .octo-composer-editor .ProseMirror p {
+  margin: 0;
+}
+
+body.octo-sidepanel-v3 .octo-composer-editor .mention {
+  color: var(--wk-brand);
+  font-weight: 600;
+  padding: 0 2px;
+}
+
+body.octo-sidepanel-v3
+  .octo-composer-editor
+  .ProseMirror
+  p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--wk-ink-35);
+  pointer-events: none;
+  height: 0;
+}
+
+body.octo-sidepanel-v3 .octo-composer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 4px 6px 6px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-tools {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+body.octo-sidepanel-v3 .octo-composer-tool {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--wk-ink-45);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--wk-dur-fast) var(--wk-ease),
+    color var(--wk-dur-fast) var(--wk-ease);
+}
+
+body.octo-sidepanel-v3 .octo-composer-tool:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-ink-100);
+}
+
+body.octo-sidepanel-v3 .octo-composer-tool svg {
+  width: 16px;
+  height: 16px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-tool-mention {
+  color: var(--wk-mention);
+}
+
+body.octo-sidepanel-v3 .octo-composer-tool-mention:hover {
+  color: var(--wk-mention-d);
+  background: rgba(249, 115, 22, 0.1);
+}
+
+body.octo-sidepanel-v3 .octo-composer-toolbar-spacer {
+  flex: 1;
+  min-width: 6px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--wk-ink-35);
+  font: 500 10.5px var(--wk-font-mono);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+body.octo-sidepanel-v3 .octo-composer-count-current {
+  color: var(--wk-ink-60);
+}
+
+body.octo-sidepanel-v3 .octo-composer-send {
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--wk-ink-45);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--wk-dur-fast) var(--wk-ease),
+    color var(--wk-dur-fast) var(--wk-ease),
+    transform var(--wk-dur-fast) var(--wk-ease);
+}
+
+body.octo-sidepanel-v3 .octo-composer-send:hover:not(:disabled) {
+  color: var(--wk-brand);
+  background: var(--wk-brand-soft);
+  transform: translateX(1px);
+}
+
+body.octo-sidepanel-v3 .octo-composer-send.is-active {
+  color: var(--wk-brand);
+}
+
+body.octo-sidepanel-v3 .octo-composer-send-icon {
+  width: 17px;
+  height: 17px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-send:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+body.octo-sidepanel-v3 .octo-composer-send.is-sending svg {
+  animation: octo-composer-send-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes octo-composer-send-pulse {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(1px);
+  }
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-panel {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: calc(100% + 14px);
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 140px);
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-panel .wk-emojipanel {
+  width: 100%;
+  height: 340px;
+  max-height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--wk-bg-app);
+  box-shadow:
+    0 24px 64px rgba(20, 20, 28, 0.18),
+    0 12px 28px rgba(20, 20, 28, 0.1),
+    0 0 0 1px var(--wk-ink-08);
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-panel .wk-emojipanel-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow-y: auto;
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-panel .wk-emojipanel-content ul {
+  margin-left: 0;
+  padding: 10px 10px 6px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-panel .wk-emojipanel-content ul li {
+  padding: 4px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-panel .wk-emojipanel-content ul li img {
+  width: 24px;
+  height: 24px;
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-panel .wk-emojipanel-tab {
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 6px 10px 8px;
+  gap: 6px;
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 28, 0.02),
+    rgba(20, 20, 28, 0.06)
+  );
+  border-top: 1px solid var(--wk-ink-08);
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-panel .wk-emojipanel-tab-item {
+  width: 36px;
+  height: 32px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+body.octo-sidepanel-v3 .octo-composer-emoji-panel .wk-emojipanel-tab-item img {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+}
+
+body.octo-sidepanel-v3
+  .octo-composer-emoji-panel
+  .wk-emojipanel-tab-item-selected {
+  background: var(--wk-bg-app);
+  box-shadow:
+    0 10px 24px rgba(20, 20, 28, 0.1),
+    inset 0 0 0 1px var(--wk-ink-08);
 }
 
 body.octo-sidepanel-v3 .wk-conversation-footer {
@@ -309,7 +669,9 @@ body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-search {
   border-bottom: none;
 }
 
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-search-input-wrap {
+body.octo-sidepanel-v3
+  .wk-sidepanel-picker-card
+  .wk-channel-picker-search-input-wrap {
   min-height: 38px;
   border-radius: 12px;
   background: var(--octo-picker-search-bg);
@@ -512,7 +874,8 @@ body.octo-sidepanel-v3 .octo-sidepanel-gi-section {
   font: 600 10.5px var(--wk-font-mono, ui-monospace, monospace);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border-top: 1px solid color-mix(in srgb, var(--octo-sidepanel-border) 70%, transparent 30%);
+  border-top: 1px solid
+    color-mix(in srgb, var(--octo-sidepanel-border) 70%, transparent 30%);
   margin-top: 6px;
 }
 
@@ -562,7 +925,9 @@ body.octo-sidepanel-v3 .octo-sidepanel-gi-action.is-danger {
   color: var(--wk-text-danger);
 }
 
-body.octo-sidepanel-v3 .octo-sidepanel-gi-action.is-danger .octo-sidepanel-gi-toggle-icon {
+body.octo-sidepanel-v3
+  .octo-sidepanel-gi-action.is-danger
+  .octo-sidepanel-gi-toggle-icon {
   color: inherit;
 }
 
@@ -592,11 +957,15 @@ body.octo-sidepanel-v3 .octo-sidepanel-gi-switch::after {
   transition: transform 160ms ease;
 }
 
-body.octo-sidepanel-v3 .octo-sidepanel-gi-toggle.is-on .octo-sidepanel-gi-switch {
+body.octo-sidepanel-v3
+  .octo-sidepanel-gi-toggle.is-on
+  .octo-sidepanel-gi-switch {
   background: var(--wk-brand-primary);
 }
 
-body.octo-sidepanel-v3 .octo-sidepanel-gi-toggle.is-on .octo-sidepanel-gi-switch::after {
+body.octo-sidepanel-v3
+  .octo-sidepanel-gi-toggle.is-on
+  .octo-sidepanel-gi-switch::after {
   transform: translateX(12px);
 }
 
@@ -642,7 +1011,9 @@ body.octo-sidepanel-v3 .octo-sidepanel-mem-caret svg {
   display: block;
 }
 
-body.octo-sidepanel-v3 .octo-sidepanel-mem-group.is-open .octo-sidepanel-mem-caret {
+body.octo-sidepanel-v3
+  .octo-sidepanel-mem-group.is-open
+  .octo-sidepanel-mem-caret {
   transform: rotate(90deg);
 }
 
@@ -856,7 +1227,7 @@ body.octo-sidepanel-v3 .collapsed {
 }
 
 body.octo-sidepanel-v3 .collapsed::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -946,14 +1317,14 @@ body.octo-sidepanel-v3 .verb {
 
 /* message 布局：缩略图方格 */
 
-body[data-layout='message'] .octo-attach-grid {
+body[data-layout="message"] .octo-attach-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   padding: 4px 0;
 }
 
-body[data-layout='message'] .octo-attach-grid .octo-attach-thumb {
+body[data-layout="message"] .octo-attach-grid .octo-attach-thumb {
   width: 56px;
   height: 56px;
   border-radius: var(--wk-r-sm);
@@ -964,18 +1335,18 @@ body[data-layout='message'] .octo-attach-grid .octo-attach-thumb {
 
 /* cli 布局：文件行 */
 
-body[data-layout='cli'] .octo-attach-grid {
+body[data-layout="cli"] .octo-attach-grid {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 4px 0;
 }
 
-body[data-layout='cli'] .octo-attach-grid .octo-attach-thumb {
+body[data-layout="cli"] .octo-attach-grid .octo-attach-thumb {
   display: none;
 }
 
-body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
+body[data-layout="cli"] .octo-attach-grid .octo-attach-file-row {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -989,79 +1360,144 @@ body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
    ================================================================ */
 
 .octo-fullcomp {
-  position: absolute; inset: 0; z-index: 20;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
   background: var(--wk-bg-app);
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   animation: slide-up 200ms var(--wk-ease);
 }
 @keyframes slide-up {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 .octo-fullcomp-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: var(--wk-sp-3) var(--wk-sp-4);
   border-bottom: 1px solid var(--wk-ink-05);
 }
-.octo-fullcomp-title { font-size: 14px; font-weight: 600; color: var(--wk-ink-80); }
-.octo-fullcomp-close {
-  background: none; border: none; cursor: pointer;
-  color: var(--wk-ink-45); font-size: 18px;
+.octo-fullcomp-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wk-ink-80);
 }
-.octo-fullcomp-close:hover { color: var(--wk-ink-80); }
-.octo-fullcomp-body { flex: 1; padding: var(--wk-sp-4); overflow: auto; }
+.octo-fullcomp-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--wk-ink-45);
+  font-size: 18px;
+}
+.octo-fullcomp-close:hover {
+  color: var(--wk-ink-80);
+}
+.octo-fullcomp-body {
+  flex: 1;
+  padding: var(--wk-sp-4);
+  overflow: auto;
+}
 .octo-fullcomp-textarea {
-  width: 100%; min-height: 70vh; border: none; outline: none;
-  background: transparent; resize: none;
-  font-size: 14px; line-height: 1.7;
+  width: 100%;
+  min-height: 70vh;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.7;
   color: var(--wk-ink-80);
   font-family: var(--wk-font-sans);
 }
 .octo-fullcomp-foot {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: var(--wk-sp-2) var(--wk-sp-4);
   border-top: 1px solid var(--wk-ink-05);
 }
-.octo-fullcomp-hint { font-size: 11px; color: var(--wk-ink-35); }
-.octo-fullcomp-send {
-  background: var(--wk-brand); color: var(--wk-text-inverse); border: none;
-  padding: 6px 16px; border-radius: var(--wk-r-md);
-  font-size: 13px; cursor: pointer;
+.octo-fullcomp-hint {
+  font-size: 11px;
+  color: var(--wk-ink-35);
 }
-.octo-fullcomp-send:hover { background: var(--wk-brand-600); }
+.octo-fullcomp-send {
+  background: var(--wk-brand);
+  color: var(--wk-text-inverse);
+  border: none;
+  padding: 6px 16px;
+  border-radius: var(--wk-r-md);
+  font-size: 13px;
+  cursor: pointer;
+}
+.octo-fullcomp-send:hover {
+  background: var(--wk-brand-600);
+}
 
 /* ================================================================
    Lightbox 图片放大
    ================================================================ */
 
 .octo-lightbox {
-  position: fixed; inset: 0; z-index: 50;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
   background: var(--wk-backdrop);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   animation: fade-in 150ms ease;
 }
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .octo-lightbox img {
-  max-width: 90%; max-height: 85vh;
+  max-width: 90%;
+  max-height: 85vh;
   border-radius: var(--wk-r-lg);
   box-shadow: var(--wk-shadow-overlay);
 }
 .octo-lightbox-close {
-  position: absolute; top: 16px; right: 16px;
-  background: rgba(0,0,0,0.5); color: white;
-  border: none; border-radius: 50%;
-  width: 32px; height: 32px; cursor: pointer;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
   font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.octo-lightbox-close:hover { background: rgba(0,0,0,0.7); }
+.octo-lightbox-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
 
 /* ================================================================
    搜索 Popover
    ================================================================ */
 
 .octo-search-pop {
-  position: absolute; top: 48px; left: 0; right: 0;
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
   background: var(--wk-bg-app);
   border-bottom: 1px solid var(--wk-ink-08);
   box-shadow: var(--wk-shadow-md);
@@ -1069,55 +1505,87 @@ body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
   animation: slide-down 160ms var(--wk-ease);
 }
 @keyframes slide-down {
-  from { transform: translateY(-8px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 .octo-search-input {
-  width: 100%; border: none; outline: none;
+  width: 100%;
+  border: none;
+  outline: none;
   padding: var(--wk-sp-3) var(--wk-sp-4);
-  font-size: 14px; background: transparent;
+  font-size: 14px;
+  background: transparent;
   color: var(--wk-ink-80);
 }
-.octo-search-input::placeholder { color: var(--wk-ink-35); }
+.octo-search-input::placeholder {
+  color: var(--wk-ink-35);
+}
 .octo-search-tabs {
-  display: flex; border-bottom: 1px solid var(--wk-ink-05);
+  display: flex;
+  border-bottom: 1px solid var(--wk-ink-05);
   padding: 0 var(--wk-sp-4);
 }
 .octo-search-tab {
   padding: var(--wk-sp-2) var(--wk-sp-3);
-  font-size: 12px; color: var(--wk-ink-45);
-  background: none; border: none; cursor: pointer;
+  font-size: 12px;
+  color: var(--wk-ink-45);
+  background: none;
+  border: none;
+  cursor: pointer;
   border-bottom: 2px solid transparent;
 }
-.octo-search-tab:hover { color: var(--wk-ink-80); }
+.octo-search-tab:hover {
+  color: var(--wk-ink-80);
+}
 .octo-search-tab.is-active {
-  color: var(--wk-brand); border-bottom-color: var(--wk-brand);
+  color: var(--wk-brand);
+  border-bottom-color: var(--wk-brand);
 }
 .octo-search-results {
-  max-height: 300px; overflow-y: auto;
+  max-height: 300px;
+  overflow-y: auto;
   padding: var(--wk-sp-2) 0;
 }
 .octo-search-result-item {
-  display: flex; align-items: center; gap: var(--wk-sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-3);
   padding: var(--wk-sp-2) var(--wk-sp-4);
   cursor: pointer;
 }
-.octo-search-result-item:hover { background: var(--wk-bg-hover); }
+.octo-search-result-item:hover {
+  background: var(--wk-bg-hover);
+}
 .octo-search-result-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 600; color: var(--wk-text-inverse);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wk-text-inverse);
   flex-shrink: 0;
 }
 .octo-search-result-name {
-  font-size: 13px; color: var(--wk-ink-80);
+  font-size: 13px;
+  color: var(--wk-ink-80);
 }
 .octo-search-result-sub {
-  font-size: 11px; color: var(--wk-ink-35);
+  font-size: 11px;
+  color: var(--wk-ink-35);
 }
 .octo-search-empty {
   padding: var(--wk-sp-6) var(--wk-sp-4);
-  text-align: center; color: var(--wk-ink-35);
+  text-align: center;
+  color: var(--wk-ink-35);
   font-size: 13px;
 }
 
@@ -1126,62 +1594,107 @@ body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
    ================================================================ */
 
 .octo-contacts-drawer {
-  position: absolute; top: 0; bottom: 0; left: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
   width: calc(100% - 48px);
   background: var(--wk-bg-app);
   z-index: 12;
   transform: translateX(-100%);
   transition: transform 240ms var(--wk-ease-slide);
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid var(--wk-ink-05);
 }
 .octo-contacts-drawer.is-open {
   transform: translateX(0);
 }
 .octo-contacts-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: var(--wk-sp-3) var(--wk-sp-4);
   border-bottom: 1px solid var(--wk-ink-05);
 }
-.octo-contacts-title { font-size: 15px; font-weight: 600; color: var(--wk-ink-80); }
-.octo-contacts-close {
-  background: none; border: none; cursor: pointer;
-  color: var(--wk-ink-45); font-size: 16px;
+.octo-contacts-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wk-ink-80);
 }
-.octo-contacts-close:hover { color: var(--wk-ink-80); }
-.octo-contacts-body { flex: 1; overflow-y: auto; position: relative; }
+.octo-contacts-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--wk-ink-45);
+  font-size: 16px;
+}
+.octo-contacts-close:hover {
+  color: var(--wk-ink-80);
+}
+.octo-contacts-body {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
 .octo-contacts-section {
-  font-size: 11px; font-weight: 600; color: var(--wk-ink-35);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--wk-ink-35);
   padding: var(--wk-sp-3) var(--wk-sp-4) var(--wk-sp-1);
-  text-transform: uppercase; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .octo-contacts-item {
-  display: flex; align-items: center; gap: var(--wk-sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-3);
   padding: var(--wk-sp-2) var(--wk-sp-4);
   cursor: pointer;
 }
-.octo-contacts-item:hover { background: var(--wk-bg-hover); }
+.octo-contacts-item:hover {
+  background: var(--wk-bg-hover);
+}
 .octo-contacts-avatar {
-  width: 32px; height: 32px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 600; color: var(--wk-text-inverse);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-inverse);
   flex-shrink: 0;
 }
-.octo-contacts-name { font-size: 14px; color: var(--wk-ink-80); }
-.octo-contacts-sub { font-size: 11px; color: var(--wk-ink-35); }
+.octo-contacts-name {
+  font-size: 14px;
+  color: var(--wk-ink-80);
+}
+.octo-contacts-sub {
+  font-size: 11px;
+  color: var(--wk-ink-35);
+}
 .octo-contacts-index {
-  position: absolute; right: 2px; top: 50%;
+  position: absolute;
+  right: 2px;
+  top: 50%;
   transform: translateY(-50%);
-  display: flex; flex-direction: column; align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 1px;
 }
 .octo-contacts-index-letter {
-  font-size: 9px; color: var(--wk-ink-35);
-  padding: 1px 4px; cursor: pointer;
+  font-size: 9px;
+  color: var(--wk-ink-35);
+  padding: 1px 4px;
+  cursor: pointer;
   border-radius: var(--wk-r-xs);
 }
 .octo-contacts-index-letter:hover {
-  color: var(--wk-brand); background: var(--wk-brand-soft);
+  color: var(--wk-brand);
+  background: var(--wk-brand-soft);
 }
 
 /* ================================================================
@@ -1205,7 +1718,7 @@ body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
   pointer-events: none;
   z-index: 9999;
   transition: opacity var(--wk-dur) var(--wk-ease),
-              transform var(--wk-dur) var(--wk-ease);
+    transform var(--wk-dur) var(--wk-ease);
   white-space: nowrap;
 }
 
@@ -1233,8 +1746,7 @@ body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
   opacity: 0;
   transform: translateY(-4px) scale(0.98);
   pointer-events: none;
-  transition: opacity 140ms var(--wk-ease),
-              transform 140ms var(--wk-ease);
+  transition: opacity 140ms var(--wk-ease), transform 140ms var(--wk-ease);
 }
 
 .octo-settings-pop.is-open {
@@ -1423,5 +1935,3 @@ body.octo-sidepanel-v3 .wk-topbar-settings-pop {
   right: 56px;
   z-index: 9999;
 }
-
-

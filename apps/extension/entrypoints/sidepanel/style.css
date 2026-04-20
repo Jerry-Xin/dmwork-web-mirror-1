@@ -820,14 +820,35 @@ body.octo-sidepanel-v3 .octo-sidepanel-drawer {
   flex-direction: column;
   background: var(--octo-sidepanel-drawer-bg);
   border-right: 1px solid var(--octo-sidepanel-border);
-  box-shadow: var(--wk-shadow-panel);
-  z-index: 12;
+  box-shadow: 16px 0 40px -18px rgba(28, 28, 35, 0.18);
+  z-index: 56;
   opacity: 0;
   pointer-events: none;
   transform: translateX(-12px);
   transition: transform 220ms ease, opacity 180ms ease;
   overflow: hidden;
   isolation: isolate;
+}
+
+/* Info Drawer Backdrop — dims the rail strip when drawer is open */
+body.octo-sidepanel-v3 .wk-sidepanel-info-backdrop {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 48px;
+  background: var(--wk-backdrop);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 55;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+body.octo-sidepanel-v3 .wk-sidepanel-info-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 body.octo-sidepanel-v3 .octo-sidepanel-drawer::before {

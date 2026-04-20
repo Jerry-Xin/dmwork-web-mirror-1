@@ -2653,9 +2653,18 @@ export default class OctoSidepanelLayout extends Component<
 
                 {/* Full Composer — covers entire main area */}
                 {this.renderFullComposer()}
-
-                {this.renderInfoDrawer()}
               </div>
+
+              {/* Info Drawer Backdrop — dims the rail when info drawer is open */}
+              {this.state.showInfoDrawer && (
+                <div
+                  className="wk-sidepanel-info-backdrop is-open"
+                  onClick={() => this.setState({ showInfoDrawer: false })}
+                />
+              )}
+
+              {/* Info Drawer — covers main area (top-to-bottom) but not Rail */}
+              {this.renderInfoDrawer()}
 
               {/* Picker Backdrop — dims the rail when picker is open */}
               {showPicker && (

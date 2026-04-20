@@ -52,8 +52,19 @@ export default function ChannelPicker({
   loading = false,
 }: ChannelPickerProps) {
   const [query, setQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'group' | 'private'>('group');
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [expandedThreadParents, setExpandedThreadParents] = useState<Set<string>>(new Set());
+
+  // 统计未读数
+  const groupUnread = useMemo(
+    () => channels.reduce((sum: number, c: ChannelPickerItem) => sum + (c.muted ? 0 : c.unread), 0),
+    [channels],
+  );
+  const privateUnread = useMemo(
+    () => privateChats.reduce((sum: number, c: ChannelPickerItem) => sum + (c.muted ? 0 : c.unread), 0),
+    [privateChats],
+  );
 
   // 搜索过滤
   const lowerQuery = query.trim().toLowerCase();
@@ -279,20 +290,40 @@ export default function ChannelPicker({
         </div>
       )}
 
+      {/* Tab 切换 */}
+      <div className="wk-channel-picker-tabs">
+        <button
+          className={`wk-channel-picker-tab${activeTab === 'group' ? ' is-active' : ''}`}
+          onClick={() => setActiveTab('group')}
+        >
+          群聊
+          {groupUnread > 0 && (
+            <span className="wk-channel-picker-tab-badge">
+              {groupUnread > 99 ? '99+' : groupUnread}
+            </span>
+          )}
+        </button>
+        <button
+          className={`wk-channel-picker-tab${activeTab === 'private' ? ' is-active' : ''}`}
+          onClick={() => setActiveTab('private')}
+        >
+          私聊
+          {privateUnread > 0 && (
+            <span className="wk-channel-picker-tab-badge">
+              {privateUnread > 99 ? '99+' : privateUnread}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* 列表区 */}
       <div className="wk-channel-picker-list">
         {loading ? (
           <div className="wk-channel-picker-loading">加载中…</div>
+        ) : activeTab === 'group' ? (
+          renderGroupList()
         ) : (
-          <>
-            {renderGroupList()}
-            {filteredPrivateChats.length > 0 && (
-              <>
-                <div className="wk-channel-picker-section-title">私聊</div>
-                {renderPrivateList()}
-              </>
-            )}
-          </>
+          renderPrivateList()
         )}
       </div>
     </div>

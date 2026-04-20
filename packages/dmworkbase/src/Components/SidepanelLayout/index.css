@@ -509,41 +509,32 @@
 }
 
 /* ============================================================
-   Picker Overlay — 频道选择器浮窗覆盖层
+   Picker Drawer — 频道选择器抽屉（覆盖 main 区域）
    ============================================================ */
-.wk-sidepanel-picker-overlay {
+.wk-sidepanel-picker-drawer {
   position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(4px);
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 16px;
-}
-
-.wk-sidepanel-picker-card {
-  width: calc(100% - 24px);
-  max-height: calc(100% - 32px);
-  background: var(--wk-bg-surface, #fff);
-  border: 1px solid var(--wk-border-default, rgba(0, 0, 0, 0.08));
-  border-radius: var(--wk-r-md, 8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
-  display: flex;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: var(--wk-bg-app, #fff);
+  z-index: 56;
+  display: none;
   flex-direction: column;
-  overflow: hidden;
-  animation: wk-menu-in 120ms ease;
 }
 
-.wk-sidepanel-picker-card .wk-channel-picker {
+.wk-sidepanel-picker-drawer.is-open {
+  display: flex;
+}
+
+.wk-sidepanel-picker-drawer .wk-channel-picker {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-.wk-sidepanel-picker-card .wk-channel-picker-list {
+.wk-sidepanel-picker-drawer .wk-channel-picker-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -611,14 +602,8 @@ body[theme-mode='dark'] .wk-sidepanel-more-menu {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-body[theme-mode='dark'] .wk-sidepanel-picker-overlay {
-  background: rgba(30, 30, 30, 0.85);
-}
-
-body[theme-mode='dark'] .wk-sidepanel-picker-card {
-  background: var(--wk-bg-surface, #1e1e1e);
-  border-color: var(--wk-border-default, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+body[theme-mode='dark'] .wk-sidepanel-picker-drawer {
+  background: var(--wk-bg-app, #1e1e1e);
 }
 
 body[theme-mode='dark'] .wk-sidepanel-rail-badge {

@@ -152,7 +152,6 @@ body.octo-sidepanel-v3 .wk-sidepanel-header {
   -webkit-backdrop-filter: blur(8px);
 }
 
-body.octo-sidepanel-v3 .wk-sidepanel-header-toggle,
 body.octo-sidepanel-v3 .wk-sidepanel-header-more {
   width: 24px;
   height: 24px;
@@ -641,62 +640,57 @@ body.octo-sidepanel-v3 .wk-conversation-chattoolbars-item {
   flex-shrink: 0;
 }
 
-body.octo-sidepanel-v3 .wk-sidepanel-picker-overlay {
-  justify-content: flex-start;
-  align-items: stretch;
-  padding-top: 0;
-  background: var(--octo-picker-overlay-bg);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: var(--wk-bg-app);
+  z-index: 56;
+  display: none;
+  flex-direction: column;
 }
 
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card {
-  width: calc(100% - 56px);
-  max-height: 100%;
-  border: none;
-  border-radius: 0 24px 24px 0;
-  box-shadow: var(--octo-picker-shadow);
-  background: var(--octo-picker-card-bg);
-  border-right: 1px solid var(--octo-sidepanel-border);
+body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer.is-open {
+  display: flex;
 }
 
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker {
+body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer .wk-channel-picker {
   background: transparent;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-search {
+body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer .wk-channel-picker-search {
   padding: 10px 12px 8px;
   border-bottom: none;
 }
 
 body.octo-sidepanel-v3
-  .wk-sidepanel-picker-card
+  .wk-sidepanel-picker-drawer
   .wk-channel-picker-search-input-wrap {
   min-height: 38px;
   border-radius: 12px;
   background: var(--octo-picker-search-bg);
 }
 
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-tabs {
-  gap: 18px;
-  padding: 0 14px;
-}
-
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-tab {
-  padding-top: 6px;
-  padding-bottom: 12px;
-}
-
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-list {
+body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer .wk-channel-picker-list {
   padding: 6px 8px 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  max-height: none;
 }
 
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-cat,
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-cat-static {
+body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer .wk-channel-picker-cat,
+body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer .wk-channel-picker-cat-static {
   letter-spacing: 0.04em;
 }
 
-body.octo-sidepanel-v3 .wk-sidepanel-picker-card .wk-channel-picker-item {
+body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer .wk-channel-picker-item {
   border-radius: 10px;
 }
 

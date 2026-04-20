@@ -2132,21 +2132,6 @@ export default class OctoSidepanelLayout extends Component<
 
               <div className="wk-sidepanel-main">
                 <header className="wk-sidepanel-header">
-                  <button
-                    className="wk-sidepanel-header-toggle"
-                    title="切换频道"
-                    onClick={this.handlePickerToggle}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M6 9l6 6 6-6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
                   {selectedChannel ? (
                     <>
                       {this.getChannelIcon(selectedChannel)}
@@ -2282,22 +2267,6 @@ export default class OctoSidepanelLayout extends Component<
                     </div>
                   )}
 
-                  {showPicker && (
-                    <div className="wk-sidepanel-picker-overlay">
-                      <div className="wk-sidepanel-picker-card">
-                        <ChannelPicker
-                          channels={this.state.channels}
-                          categories={this.state.categories}
-                          privateChats={this.state.privateChats}
-                          selectedId={selectedChannel?.channelID}
-                          onSelect={this.handleChannelSelect}
-                          onClose={this.handlePickerClose}
-                          onRefresh={this.handleRefresh}
-                          loading={this.state.pickerLoading}
-                        />
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Search Popover — positioned inside main, below header */}
@@ -2307,6 +2276,20 @@ export default class OctoSidepanelLayout extends Component<
                 {this.renderFullComposer()}
 
                 {this.renderInfoDrawer()}
+              </div>
+
+              {/* Channel Picker Drawer — covers main area but not Rail */}
+              <div className={`wk-sidepanel-picker-drawer${showPicker ? ' is-open' : ''}`}>
+                <ChannelPicker
+                  channels={this.state.channels}
+                  categories={this.state.categories}
+                  privateChats={this.state.privateChats}
+                  selectedId={selectedChannel?.channelID}
+                  onSelect={this.handleChannelSelect}
+                  onClose={this.handlePickerClose}
+                  onRefresh={this.handleRefresh}
+                  loading={this.state.pickerLoading}
+                />
               </div>
 
               {/* Contacts Drawer — covers main area but not Rail */}

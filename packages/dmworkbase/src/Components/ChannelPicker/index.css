@@ -93,16 +93,57 @@
 }
 
 /* ============================================================
-   私聊 Section 标题 — 统一面板模式下分隔群聊/私聊
+   Tab 切换 — pill / 胶囊样式
    ============================================================ */
-.wk-channel-picker-section-title {
-  padding: 10px 10px 4px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--wk-text-secondary, #5c6070);
-  letter-spacing: 0.02em;
-  border-top: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
-  margin-top: 4px;
+.wk-channel-picker-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 2px 6px;
+  flex-shrink: 0;
+}
+
+.wk-channel-picker-tab {
+  border: 0;
+  background: transparent;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--wk-ink-45);
+  padding: 5px 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 100px;
+  transition: all 150ms ease;
+  letter-spacing: -0.01em;
+}
+
+.wk-channel-picker-tab:hover {
+  color: var(--wk-ink-80);
+  background: var(--wk-bg-hover);
+}
+
+.wk-channel-picker-tab.is-active {
+  color: var(--wk-ink-100);
+  background: var(--wk-bg-app);
+  box-shadow: 0 1px 2px rgba(28, 28, 35, 0.06), 0 0 0 1px var(--wk-ink-08);
+  font-weight: 700;
+}
+
+.wk-channel-picker-tab-badge {
+  background: var(--wk-color-error, #ff5c72);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+  min-width: 16px;
+  height: 15px;
+  padding: 0 5px;
+  border-radius: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 /* ============================================================

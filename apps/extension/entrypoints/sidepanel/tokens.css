@@ -1,12 +1,7 @@
 /**
  * Octo Sidepanel Design Tokens
- * Three themes: paper (default) / terminal / moonwire
- * Two layouts: message / cli (consumed via body[data-layout])
- *
- * Theme DNA:
- *   paper     - default purple-white, general purpose
- *   terminal  - warm cream Serif, Cursor DNA
- *   moonwire  - near-black indigo-purple, Linear DNA
+ * Two themes: light (default) / dark
+ * Aligned with web client: body[theme-mode=dark]
  *
  * All color usage in the sidepanel MUST reference these tokens.
  * Hardcoded colors are forbidden per AGENTS.md / DEVELOPMENT.md.
@@ -17,7 +12,6 @@
   --wk-font-sans: "PingFang SC", "Source Han Sans SC", "Noto Sans SC",
                   -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
   --wk-font-mono: "JetBrains Mono", "SF Mono", "Menlo", monospace;
-  --wk-font-serif: "Source Serif 4", Georgia, serif;
 
   /* ---------- Spacing ---------- */
   --wk-sp-1:  4px;
@@ -48,9 +42,9 @@
 }
 
 /* ============================================================
-   Theme: paper (default, purple-white, general purpose)
+   Theme: Light (default)
    ============================================================ */
-body[data-theme="paper"], body:not([data-theme]) {
+body:not([theme-mode=dark]) {
   --wk-ink-100: #1C1C23;
   --wk-ink-80:  rgba(28,28,35,0.82);
   --wk-ink-70:  rgba(28,28,35,0.72);
@@ -184,9 +178,8 @@ body[data-theme="paper"], body:not([data-theme]) {
   --octo-popover-border: var(--wk-border-default);
 
   /* Theme dot colors for settings */
-  --octo-dot-paper: #7C5CFC;
-  --octo-dot-terminal: #f54e00;
-  --octo-dot-moonwire: #7170ff;
+  --octo-dot-light: #7C5CFC;
+  --octo-dot-dark: #7170ff;
 
   /* Segmented control */
   --octo-seg-bg: var(--wk-ink-05);
@@ -197,158 +190,9 @@ body[data-theme="paper"], body:not([data-theme]) {
 }
 
 /* ============================================================
-   Theme: terminal (warm cream Serif, Cursor DNA)
+   Theme: Dark (body[theme-mode=dark])
    ============================================================ */
-body[data-theme="terminal"] {
-  --wk-ink-100: #26251e;
-  --wk-ink-80:  rgba(38,37,30,0.85);
-  --wk-ink-70:  rgba(38,37,30,0.72);
-  --wk-ink-60:  rgba(38,37,30,0.60);
-  --wk-ink-45:  rgba(38,37,30,0.48);
-  --wk-ink-35:  rgba(38,37,30,0.36);
-  --wk-ink-12:  rgba(38,37,30,0.14);
-  --wk-ink-08:  rgba(38,37,30,0.10);
-  --wk-ink-05:  rgba(38,37,30,0.06);
-  --wk-ink-03:  rgba(38,37,30,0.04);
-
-  --wk-bg-app:    #f7f6f1;
-  --wk-bg-rail:   #efeee7;
-  --wk-bg-hover:  rgba(38,37,30,0.05);
-  --wk-bg-active: rgba(38,37,30,0.09);
-  --wk-bg-chip:   #ebeae3;
-  --wk-bg-quote:  rgba(38,37,30,0.04);
-  --wk-bg-deep:   #eceae2;
-
-  --wk-brand:      #f54e00;
-  --wk-brand-600:  #cf2d56;
-  --wk-brand-glow: rgba(245,78,0,0.18);
-  --wk-brand-soft: rgba(245,78,0,0.08);
-  --wk-brand-grad: linear-gradient(135deg, #f54e00 0%, #cf2d56 100%);
-
-  --wk-ai-start:   #dfa88f;
-  --wk-ai-end:     #c0a8dd;
-  --wk-ai-grad:    linear-gradient(135deg, #dfa88f 0%, #c0a8dd 100%);
-  --wk-thread:     #9fbbe0;
-
-  --wk-mention:    #cf2d56;
-  --wk-mention-d:  #a0233f;
-  --wk-unread:     #cf2d56;
-  --wk-success:    #1f8a65;
-  --wk-link:       #f54e00;
-
-  --wk-c-orange:   #f54e00;
-  --wk-c-purple:   #9fbbe0;
-  --wk-c-emerald:  #1f8a65;
-  --wk-c-blue:     #6a8ab5;
-
-  --wk-shadow-sm:      0 1px 2px rgba(38,37,30,0.05);
-  --wk-shadow-md:      0 4px 12px rgba(38,37,30,0.08);
-  --wk-shadow-pop:     0 8px 24px rgba(38,37,30,0.14);
-  --wk-shadow-panel:   -14px 0 32px rgba(38,37,30,0.07);
-  --wk-shadow-lg:      0 12px 32px rgba(38,37,30,0.12);
-  --wk-shadow-overlay: 0 20px 48px rgba(38,37,30,0.2), 0 8px 16px rgba(38,37,30,0.08);
-
-  --wk-backdrop: rgba(38,37,30,0.22);
-
-  --wk-brand-primary:  var(--wk-brand);
-  --wk-brand-gradient: var(--wk-brand-grad);
-  --wk-text-primary:   var(--wk-ink-100);
-  --wk-text-secondary: var(--wk-ink-60);
-  --wk-text-tertiary:  var(--wk-ink-45);
-  --wk-text-accent:    var(--wk-brand);
-  --wk-text-inverse:   #f7f6f1;
-  --wk-text-danger:    #cf2d56;
-  --wk-bg-base:        var(--wk-bg-rail);
-  --wk-bg-surface:     var(--wk-bg-app);
-  --wk-bg-elevated:    var(--wk-bg-chip);
-  --wk-border-subtle:  var(--wk-ink-05);
-  --wk-border-default: var(--wk-ink-08);
-  --wk-border-strong:  var(--wk-ink-12);
-  --wk-border-glow:    var(--wk-brand-glow);
-  --wk-color-success:  var(--wk-success);
-  --wk-color-warning:  #c98200;
-  --wk-color-error:    #cf2d56;
-  --wk-color-info:     #6a8ab5;
-  --wk-ai-surface:     var(--wk-brand-soft);
-  --wk-ai-border:      var(--wk-brand-glow);
-  --wk-ai-glow:        var(--wk-brand-soft);
-
-  --wk-font-sans: "Inter", "Source Serif 4", "PingFang SC", "Source Han Sans SC", "Noto Sans SC", sans-serif;
-  --wk-font-mono: "JetBrains Mono", "Berkeley Mono", "SF Mono", monospace;
-
-  /* Sidepanel component tokens */
-  --octo-sidepanel-shell-bg: var(--wk-bg-app);
-  --octo-sidepanel-border: var(--wk-border-subtle);
-  --octo-sidepanel-drawer-bg: var(--wk-bg-app);
-  --octo-sidepanel-shadow:
-    0 14px 40px rgba(38, 37, 30, 0.06),
-    0 4px 18px rgba(38, 37, 30, 0.04);
-  --octo-shell-accent: rgba(245, 78, 0, 0.06);
-  --octo-header-bg: rgba(247, 246, 241, 0.72);
-  --octo-content-overlay: linear-gradient(180deg, rgba(247, 246, 241, 0.28), rgba(247, 246, 241, 0));
-  --octo-footer-grad: linear-gradient(180deg, rgba(247, 246, 241, 0), rgba(38, 37, 30, 0.015));
-  --octo-footer-input-bg: rgba(247, 246, 241, 0.8);
-  --octo-picker-overlay-bg: rgba(247, 246, 241, 0.78);
-  --octo-picker-card-bg: rgba(239, 238, 231, 0.94);
-  --octo-menu-bg: rgba(247, 246, 241, 0.96);
-  --octo-menu-shadow:
-    0 18px 40px rgba(38, 37, 30, 0.14),
-    0 6px 20px rgba(38, 37, 30, 0.08);
-  --octo-picker-shadow:
-    0 22px 48px rgba(38, 37, 30, 0.12),
-    0 6px 16px rgba(38, 37, 30, 0.08);
-  --octo-scrollbar-thumb: rgba(38, 37, 30, 0.18);
-  --octo-logo-grad: var(--wk-brand-grad);
-  --octo-logo-shadow: 0 1px 2px rgba(245, 78, 0, 0.34);
-  --octo-badge-bg: var(--wk-unread);
-  --octo-badge-ring: var(--wk-bg-rail);
-  --octo-switch-track: rgba(38, 37, 30, 0.14);
-  --octo-switch-thumb: #f7f6f1;
-  --octo-switch-thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
-  --octo-avatar-default: linear-gradient(135deg, #dfa88f, #c0a8dd);
-  --octo-avatar-teal: linear-gradient(135deg, #34d4b8, #1f8a65);
-  --octo-avatar-amber: linear-gradient(135deg, #f5a524, #d98b0c);
-  --octo-avatar-coral: linear-gradient(135deg, #cf2d56, #a0233f);
-  --octo-avatar-ai: linear-gradient(90deg, #9fbbe0 0%, #c0a8dd 100%);
-  --octo-gi-avatar-grad: var(--wk-brand-grad);
-  --octo-gi-avatar-shadow: 0 3px 12px rgba(245, 78, 0, 0.24);
-  --octo-gi-channel-bg: rgba(245, 78, 0, 0.1);
-  --octo-badge-ai-bg: linear-gradient(90deg, #9fbbe0 0%, #c0a8dd 100%);
-  --octo-picker-search-bg: rgba(247, 246, 241, 0.9);
-  --octo-peer-bg: color-mix(in srgb, var(--wk-bg-hover) 82%, var(--wk-bg-app) 18%);
-  --octo-footer-border-mix: color-mix(in srgb, var(--wk-border-default) 90%, var(--wk-bg-app) 10%);
-
-  /* Toast tokens (terminal: mono uppercase dark pill) */
-  --octo-toast-bg: #26251e;
-  --octo-toast-text: #f7f6f1;
-  --octo-toast-shadow: 0 8px 24px rgba(38,37,30,0.24);
-  --octo-toast-radius: var(--wk-r-xs);
-  --octo-toast-font: 500 11px var(--wk-font-mono);
-  --octo-toast-transform: uppercase;
-  --octo-toast-ls: 0.02em;
-
-  /* Settings popover tokens */
-  --octo-popover-bg: var(--octo-menu-bg);
-  --octo-popover-shadow: var(--octo-menu-shadow);
-  --octo-popover-border: var(--wk-border-default);
-
-  /* Theme dot colors for settings */
-  --octo-dot-paper: #7C5CFC;
-  --octo-dot-terminal: #f54e00;
-  --octo-dot-moonwire: #7170ff;
-
-  /* Segmented control */
-  --octo-seg-bg: var(--wk-ink-05);
-  --octo-seg-active-bg: var(--wk-bg-app);
-  --octo-seg-active-shadow: 0 1px 2px rgba(38,37,30,0.08);
-
-  color-scheme: light;
-}
-
-/* ============================================================
-   Theme: moonwire (near-black, indigo-purple, Linear DNA)
-   ============================================================ */
-body[data-theme="moonwire"] {
+body[theme-mode=dark] {
   --wk-ink-100: #f7f8f8;
   --wk-ink-80:  rgba(247,248,248,0.88);
   --wk-ink-70:  rgba(247,248,248,0.76);
@@ -400,7 +244,9 @@ body[data-theme="moonwire"] {
   --wk-backdrop: rgba(0,0,0,0.55);
 
   --wk-brand-primary:  var(--wk-brand);
+  --wk-brand-primary-hover: var(--wk-brand-600);
   --wk-brand-gradient: var(--wk-brand-grad);
+  --wk-brand-gradient-hover: linear-gradient(135deg, #7C5CFC 0%, #5B3FE8 100%);
   --wk-text-primary:   var(--wk-ink-100);
   --wk-text-secondary: var(--wk-ink-60);
   --wk-text-tertiary:  var(--wk-ink-45);
@@ -467,7 +313,7 @@ body[data-theme="moonwire"] {
   --octo-peer-bg: color-mix(in srgb, var(--wk-bg-hover) 82%, var(--wk-bg-app) 18%);
   --octo-footer-border-mix: color-mix(in srgb, var(--wk-border-default) 90%, var(--wk-bg-app) 10%);
 
-  /* Toast tokens (moonwire: inverted light pill) */
+  /* Toast tokens (inverted light pill) */
   --octo-toast-bg: #f7f8f8;
   --octo-toast-text: #08090a;
   --octo-toast-shadow: 0 8px 24px rgba(0,0,0,0.5);
@@ -482,9 +328,8 @@ body[data-theme="moonwire"] {
   --octo-popover-border: var(--wk-border-default);
 
   /* Theme dot colors for settings */
-  --octo-dot-paper: #7C5CFC;
-  --octo-dot-terminal: #f54e00;
-  --octo-dot-moonwire: #7170ff;
+  --octo-dot-light: #7C5CFC;
+  --octo-dot-dark: #7170ff;
 
   /* Segmented control */
   --octo-seg-bg: rgba(255,255,255,0.06);

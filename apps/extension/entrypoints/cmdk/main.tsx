@@ -54,21 +54,25 @@ async function ensureAuth(): Promise<void> {
 }
 
 // Apply theme from extension storage (not localStorage — iframe origin ≠ extension origin)
+// Aligned with web client: use body[theme-mode=dark]
 function setThemeAttr(theme: string) {
-  document.body.setAttribute('data-theme', theme);
-  document.documentElement.setAttribute('data-theme', theme);
+  if (theme === 'dark') {
+    document.body.setAttribute('theme-mode', 'dark');
+  } else {
+    document.body.removeAttribute('theme-mode');
+  }
 }
 
 // Fire-and-forget: read theme from browser.storage.local, won't block render
 void browser.storage.local.get(EXTENSION_STORAGE_KEYS.theme).then((result) => {
-  const theme = (result[EXTENSION_STORAGE_KEYS.theme] as string) || 'paper';
+  const theme = (result[EXTENSION_STORAGE_KEYS.theme] as string) || 'light';
   setThemeAttr(theme);
-}).catch(() => { /* ignore — default paper theme is fine */ });
+}).catch(() => { /* ignore — default light theme is fine */ });
 
 // Listen for real-time theme changes from sidepanel
 browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'local' && changes[EXTENSION_STORAGE_KEYS.theme]) {
-    const newTheme = (changes[EXTENSION_STORAGE_KEYS.theme].newValue as string) || 'paper';
+    const newTheme = (changes[EXTENSION_STORAGE_KEYS.theme].newValue as string) || 'light';
     setThemeAttr(newTheme);
   }
 });

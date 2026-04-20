@@ -198,7 +198,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       showAiMembers: true,
       showHumanMembers: true,
       drawerMuted: null,
-      theme: 'paper',
+      theme: 'light',
       layout: 'message',
       showSettings: false,
       // Full Composer
@@ -221,11 +221,15 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
   }
 
   componentDidMount() {
-    const theme = localStorage.getItem('octo_v3_theme') || 'paper';
+    const themeMode = localStorage.getItem('theme-mode');
+    const theme = themeMode === '1' ? 'dark' : 'light';
     const layout = localStorage.getItem('octo_v3_layout') || 'message';
-    document.body.setAttribute('data-theme', theme);
+    if (theme === 'dark') {
+      document.body.setAttribute('theme-mode', 'dark');
+    } else {
+      document.body.removeAttribute('theme-mode');
+    }
     document.body.setAttribute('data-layout', layout);
-    document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-layout', layout);
     // Ensure browser.storage.local has the current theme for CmdK iframe & overlay
     void setExtensionTheme(theme);
@@ -385,10 +389,14 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     }
   };
 
-  private setTheme = (theme: string) => {
-    document.body.setAttribute('data-theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('octo_v3_theme', theme);
+  private setTheme = (isDark: boolean) => {
+    const theme = isDark ? 'dark' : 'light';
+    if (isDark) {
+      document.body.setAttribute('theme-mode', 'dark');
+    } else {
+      document.body.removeAttribute('theme-mode');
+    }
+    localStorage.setItem('theme-mode', isDark ? '1' : '0');
     // Sync to browser.storage.local so CmdK iframe & overlay can pick it up
     void setExtensionTheme(theme);
     this.setState({ theme });
@@ -1399,8 +1407,8 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
             <div className="octo-settings-pop is-open wk-rail-settings-pop">
               <div className="octo-settings-section">主题</div>
               <div className="octo-settings-seg">
-                {[{id:'paper',label:'Paper'},{id:'terminal',label:'Terminal'},{id:'moonwire',label:'Moonwire'}].map(t => (
-                  <button key={t.id} className={`octo-settings-seg-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.id)}>
+                {[{id:'light',label:'亮色',isDark:false},{id:'dark',label:'暗色',isDark:true}].map(t => (
+                  <button key={t.id} className={`octo-settings-seg-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.isDark)}>
                     <span className="octo-settings-seg-dot" data-theme={t.id} />
                     <span>{t.label}</span>
                   </button>

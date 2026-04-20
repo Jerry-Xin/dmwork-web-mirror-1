@@ -2,26 +2,26 @@
  * useOctoTheme — theme/layout state management with localStorage persistence
  *
  * Keys:
- *   octo_v3_theme  → 'paper' | 'terminal' | 'moonwire'
+ *   theme-mode     → '0' (light) | '1' (dark) — aligned with web client
  *   octo_v3_layout → 'message' | 'cli'
  *
- * Applies data-theme and data-layout to both <html> and <body>.
+ * Applies theme-mode attribute to <body> (same as web client).
  */
 
 import { useState, useCallback, useEffect } from 'react'
 
-export type OctoTheme = 'paper' | 'terminal' | 'moonwire'
+export type OctoTheme = 'light' | 'dark'
 export type OctoLayout = 'message' | 'cli'
 
-const THEME_KEY = 'octo_v3_theme'
+const THEME_KEY = 'theme-mode'
 const LAYOUT_KEY = 'octo_v3_layout'
-const DEFAULT_THEME: OctoTheme = 'paper'
+const DEFAULT_THEME: OctoTheme = 'light'
 const DEFAULT_LAYOUT: OctoLayout = 'message'
 
 function readTheme(): OctoTheme {
   try {
     const v = localStorage.getItem(THEME_KEY)
-    if (v === 'paper' || v === 'terminal' || v === 'moonwire') return v
+    if (v === '1') return 'dark'
   } catch { /* noop */ }
   return DEFAULT_THEME
 }
@@ -35,8 +35,11 @@ function readLayout(): OctoLayout {
 }
 
 function applyTheme(theme: OctoTheme): void {
-  document.documentElement.dataset.theme = theme
-  document.body.dataset.theme = theme
+  if (theme === 'dark') {
+    document.body.setAttribute('theme-mode', 'dark')
+  } else {
+    document.body.removeAttribute('theme-mode')
+  }
 }
 
 function applyLayout(layout: OctoLayout): void {
@@ -64,7 +67,7 @@ export function useOctoTheme(): OctoThemeState {
   const setTheme = useCallback((t: OctoTheme) => {
     setThemeState(t)
     applyTheme(t)
-    try { localStorage.setItem(THEME_KEY, t) } catch { /* noop */ }
+    try { localStorage.setItem(THEME_KEY, t === 'dark' ? '1' : '0') } catch { /* noop */ }
   }, [])
 
   const setLayout = useCallback((l: OctoLayout) => {

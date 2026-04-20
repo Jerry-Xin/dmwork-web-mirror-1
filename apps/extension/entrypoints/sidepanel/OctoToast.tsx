@@ -2,9 +2,8 @@
  * OctoToast — global toast notification system
  *
  * Theme-aware:
- *   paper     → dark pill, normal text
- *   terminal  → dark pill, uppercase mono
- *   moonwire  → inverted light pill
+ *   light → dark pill, normal text
+ *   dark  → inverted light pill
  *
  * All styling driven by --octo-toast-* tokens in tokens.css.
  *

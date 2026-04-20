@@ -3,7 +3,7 @@
  *
  * Two segments:
  *   1. Layout: message (日常阅读) / cli (紧凑终端)
- *   2. Theme:  paper / terminal / moonwire (each with a colored dot)
+ *   2. Theme:  light (亮色) / dark (暗色)
  *
  * Click outside to close. Selecting an option applies immediately.
  */
@@ -22,9 +22,8 @@ interface OctoSettingsPopoverProps {
 }
 
 const THEME_OPTIONS: Array<{ id: OctoTheme; label: string }> = [
-  { id: 'paper', label: 'Paper' },
-  { id: 'terminal', label: 'Term' },
-  { id: 'moonwire', label: 'Moon' },
+  { id: 'light', label: '亮色' },
+  { id: 'dark', label: '暗色' },
 ]
 
 const LAYOUT_OPTIONS: Array<{ id: OctoLayout; label: string }> = [
@@ -33,9 +32,8 @@ const LAYOUT_OPTIONS: Array<{ id: OctoLayout; label: string }> = [
 ]
 
 const THEME_LABELS: Record<OctoTheme, string> = {
-  paper: 'Paper',
-  terminal: 'Terminal',
-  moonwire: 'Moonwire',
+  light: '亮色',
+  dark: '暗色',
 }
 
 const LAYOUT_LABELS: Record<OctoLayout, string> = {

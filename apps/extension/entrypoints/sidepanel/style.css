@@ -1292,16 +1292,12 @@ body[data-layout='cli'] .octo-attach-grid .octo-attach-file-row {
   flex-shrink: 0;
 }
 
-.octo-settings-seg-dot[data-theme="paper"] {
-  background: var(--octo-dot-paper);
+.octo-settings-seg-dot[data-theme="light"] {
+  background: var(--octo-dot-light);
 }
 
-.octo-settings-seg-dot[data-theme="terminal"] {
-  background: var(--octo-dot-terminal);
-}
-
-.octo-settings-seg-dot[data-theme="moonwire"] {
-  background: var(--octo-dot-moonwire);
+.octo-settings-seg-dot[data-theme="dark"] {
+  background: var(--octo-dot-dark);
 }
 
 /* ── Bug fix: Emoji picker clipped by overflow:hidden ancestors ────────── */

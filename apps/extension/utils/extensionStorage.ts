@@ -65,7 +65,7 @@ export async function setExtensionPreferences(
   });
 }
 
-export const DEFAULT_THEME = 'paper';
+export const DEFAULT_THEME = 'light';
 
 export async function getExtensionTheme(): Promise<string> {
   const result = await browser.storage.local.get(EXTENSION_STORAGE_KEYS.theme);

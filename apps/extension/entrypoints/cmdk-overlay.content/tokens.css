@@ -1,7 +1,6 @@
 /**
- * Octo v2 Extension Design Tokens · 4 主题
- * 默认：Paper（浅色，Octo 品牌紫）
- * 可切：cc-dark（Claude Code 近黑橙）/ cursor-nocturne（Cursor 深蓝沉浸）/ dim（温柔夜色）
+ * Octo Extension Overlay Design Tokens — Light / Dark
+ * Aligned with web client theme-mode system.
  */
 
 /* ============================================================
@@ -36,9 +35,10 @@
 }
 
 /* ============================================================
-   Theme A · Paper (默认，浅色 · Octo 品牌紫)
+   Theme: Light (default)
    ============================================================ */
 :host, :root,
+:host([data-theme="light"]), :root[data-theme="light"],
 :host([data-theme="paper"]), :root[data-theme="paper"] {
   --wk-brand-primary:        #7C5CFC;
   --wk-brand-primary-hover:  #6B4FD8;
@@ -82,137 +82,47 @@
 }
 
 /* ============================================================
-   Theme B · Claude Code Dark (近黑 + 橙色，对齐 CC 终端原生)
+   Theme: Dark
    ============================================================ */
-:host([data-theme="cc-dark"]), :root[data-theme="cc-dark"],
-:host([data-theme="dark"]), :root[data-theme="dark"] {
-  --wk-brand-primary:        #D77700;
-  --wk-brand-primary-hover:  #FF9966;
-  --wk-brand-secondary:      #FF9966;
-  --wk-brand-gradient:       linear-gradient(135deg, #D77700, #FF9966);
-  --wk-brand-gradient-hover: linear-gradient(135deg, #C96E00, #FF8855);
-  --wk-brand-gradient-subtle: linear-gradient(135deg, rgba(215,119,0,0.14), rgba(255,153,102,0.08));
-  --wk-brand-glow:           rgba(215, 119, 0, 0.35);
+:host([data-theme="dark"]), :root[data-theme="dark"],
+:host([data-theme="cc-dark"]), :root[data-theme="cc-dark"] {
+  --wk-brand-primary:        #7170ff;
+  --wk-brand-primary-hover:  #828fff;
+  --wk-brand-secondary:      #828fff;
+  --wk-brand-gradient:       linear-gradient(135deg, #828fff, #5e6ad2);
+  --wk-brand-gradient-hover: linear-gradient(135deg, #7C5CFC, #5B3FE8);
+  --wk-brand-gradient-subtle: linear-gradient(135deg, rgba(113,112,255,0.14), rgba(130,143,255,0.08));
+  --wk-brand-glow:           rgba(113, 112, 255, 0.35);
 
-  --wk-color-success: #4EBA65;
-  --wk-color-warning: #FFC107;
+  --wk-color-success: #10b981;
+  --wk-color-warning: #F5A524;
   --wk-color-error:   #FF6B7A;
-  --wk-color-info:    #89B1FF;
+  --wk-color-info:    #5fb8ff;
 
-  --wk-ai-surface: #1F1F1F;
-  --wk-ai-border:  #3A3A3A;
-  --wk-ai-glow:    rgba(215, 119, 0, 0.08);
+  --wk-ai-surface: rgba(113, 112, 255, 0.06);
+  --wk-ai-border:  rgba(113, 112, 255, 0.15);
+  --wk-ai-glow:    rgba(113, 112, 255, 0.08);
 
-  --wk-bg-deep:     #0F0F0F;
-  --wk-bg-base:     #1A1A1A;
-  --wk-bg-surface:  #252525;
-  --wk-bg-elevated: #303030;
-  --wk-bg-hover:    #2A2A2A;
-  --wk-bg-active:   #353535;
+  --wk-bg-deep:     #0f1011;
+  --wk-bg-base:     #18191f;
+  --wk-bg-surface:  #1e1f26;
+  --wk-bg-elevated: #2a2b33;
+  --wk-bg-hover:    #2a2b33;
+  --wk-bg-active:   #35363f;
 
-  --wk-text-primary:   #FFFFFF;
-  --wk-text-secondary: #C0C0C0;
-  --wk-text-tertiary:  #808080;
-  --wk-text-accent:    #FF9966;
-  --wk-text-inverse:   #0F0F0F;
+  --wk-text-primary:   #f7f8f8;
+  --wk-text-secondary: #d0d6e0;
+  --wk-text-tertiary:  #8a8f98;
+  --wk-text-accent:    #828fff;
+  --wk-text-inverse:   #0f1011;
 
-  --wk-border-subtle:  rgba(255, 255, 255, 0.06);
-  --wk-border-default: rgba(255, 255, 255, 0.10);
-  --wk-border-strong:  rgba(255, 255, 255, 0.16);
-  --wk-border-glow:    rgba(255, 153, 102, 0.25);
+  --wk-border-subtle:  rgba(255, 255, 255, 0.05);
+  --wk-border-default: rgba(255, 255, 255, 0.08);
+  --wk-border-strong:  rgba(255, 255, 255, 0.12);
+  --wk-border-glow:    rgba(113, 112, 255, 0.25);
 
   --wk-shadow-sm:      0 1px 2px rgba(0,0,0,0.4);
   --wk-shadow-md:      0 4px 12px rgba(0,0,0,0.5);
   --wk-shadow-lg:      0 12px 32px rgba(0,0,0,0.55);
   --wk-shadow-overlay: 0 20px 48px rgba(0,0,0,0.6), 0 8px 16px rgba(0,0,0,0.4);
-}
-
-/* ============================================================
-   Theme C · Cursor Nocturne (深蓝黑 + 柔和蓝紫，沉浸阅读)
-   ============================================================ */
-:host([data-theme="cursor-nocturne"]), :root[data-theme="cursor-nocturne"] {
-  --wk-brand-primary:        #5EB3FF;
-  --wk-brand-primary-hover:  #7EB3FF;
-  --wk-brand-secondary:      #7EB3FF;
-  --wk-brand-gradient:       linear-gradient(135deg, #5EB3FF, #9B7CFF);
-  --wk-brand-gradient-hover: linear-gradient(135deg, #4FA3EF, #8B6CEF);
-  --wk-brand-gradient-subtle: linear-gradient(135deg, rgba(94,179,255,0.12), rgba(155,124,255,0.08));
-  --wk-brand-glow:           rgba(94, 179, 255, 0.3);
-
-  --wk-color-success: #27A644;
-  --wk-color-warning: #FFBC33;
-  --wk-color-error:   #FF6B80;
-  --wk-color-info:    #7EB3FF;
-
-  --wk-ai-surface: #14192E;
-  --wk-ai-border:  rgba(126, 179, 255, 0.2);
-  --wk-ai-glow:    rgba(94, 179, 255, 0.06);
-
-  --wk-bg-deep:     #0A0E1A;
-  --wk-bg-base:     #121824;
-  --wk-bg-surface:  #1A2332;
-  --wk-bg-elevated: #242D3D;
-  --wk-bg-hover:    #1E2A3A;
-  --wk-bg-active:   #2A3546;
-
-  --wk-text-primary:   #E8EEF5;
-  --wk-text-secondary: #A8B2C4;
-  --wk-text-tertiary:  #6A7590;
-  --wk-text-accent:    #7EB3FF;
-  --wk-text-inverse:   #0A0E1A;
-
-  --wk-border-subtle:  rgba(255, 255, 255, 0.06);
-  --wk-border-default: rgba(255, 255, 255, 0.10);
-  --wk-border-strong:  rgba(255, 255, 255, 0.16);
-  --wk-border-glow:    rgba(126, 179, 255, 0.25);
-
-  --wk-shadow-sm:      0 1px 2px rgba(0,0,0,0.35);
-  --wk-shadow-md:      0 4px 12px rgba(0,0,0,0.45);
-  --wk-shadow-lg:      0 12px 32px rgba(0,0,0,0.5);
-  --wk-shadow-overlay: 0 20px 48px rgba(0,0,0,0.6), 0 8px 16px rgba(0,0,0,0.4);
-}
-
-/* ============================================================
-   Theme D · Dim (GitHub Dim 风格 · 温柔夜色)
-   ============================================================ */
-:host([data-theme="dim"]), :root[data-theme="dim"] {
-  --wk-brand-primary:        #C08532;
-  --wk-brand-primary-hover:  #D5A572;
-  --wk-brand-secondary:      #D5A572;
-  --wk-brand-gradient:       linear-gradient(135deg, #C08532, #D5A572);
-  --wk-brand-gradient-hover: linear-gradient(135deg, #B07822, #CA9960);
-  --wk-brand-gradient-subtle: linear-gradient(135deg, rgba(192,133,50,0.14), rgba(213,165,114,0.08));
-  --wk-brand-glow:           rgba(192, 133, 50, 0.3);
-
-  --wk-color-success: #3FB950;
-  --wk-color-warning: #D29922;
-  --wk-color-error:   #F85149;
-  --wk-color-info:    #79C0FF;
-
-  --wk-ai-surface: #23242F;
-  --wk-ai-border:  rgba(192, 133, 50, 0.18);
-  --wk-ai-glow:    rgba(192, 133, 50, 0.06);
-
-  --wk-bg-deep:     #1A1B20;
-  --wk-bg-base:     #21222C;
-  --wk-bg-surface:  #2D2E3A;
-  --wk-bg-elevated: #3A3C4A;
-  --wk-bg-hover:    #343644;
-  --wk-bg-active:   #40424F;
-
-  --wk-text-primary:   #E0E1E6;
-  --wk-text-secondary: #9EA5B5;
-  --wk-text-tertiary:  #6B7485;
-  --wk-text-accent:    #D5A572;
-  --wk-text-inverse:   #1A1B20;
-
-  --wk-border-subtle:  rgba(180, 188, 200, 0.10);
-  --wk-border-default: rgba(180, 188, 200, 0.16);
-  --wk-border-strong:  rgba(180, 188, 200, 0.22);
-  --wk-border-glow:    rgba(213, 165, 114, 0.25);
-
-  --wk-shadow-sm:      0 1px 2px rgba(0,0,0,0.3);
-  --wk-shadow-md:      0 4px 12px rgba(0,0,0,0.4);
-  --wk-shadow-lg:      0 12px 32px rgba(0,0,0,0.45);
-  --wk-shadow-overlay: 0 20px 48px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.35);
 }

@@ -84,8 +84,6 @@ interface OctoSidepanelLayoutState {
   showCreateMenu: boolean;
   // Create Category Modal
   showCreateCategoryModal: boolean;
-  // Space name for top bar
-  spaceName: string;
 }
 
 function getFirstChar(name: string): string {
@@ -219,8 +217,6 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       showCreateMenu: false,
       // Create Category Modal
       showCreateCategoryModal: false,
-      // Space name
-      spaceName: '',
     };
   }
 
@@ -381,7 +377,7 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     const target = e.target as HTMLElement;
     // Close settings popover
     if (this.state.showSettings) {
-      if (!target.closest('.octo-settings-pop') && !target.closest('.wk-rail-action-settings') && !target.closest('.wk-sidepanel-topbar-settings-wrap')) {
+      if (!target.closest('.octo-settings-pop') && !target.closest('.wk-rail-action-settings')) {
         this.setState({ showSettings: false });
       }
     }
@@ -432,14 +428,11 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     try {
       const spaces = await SpaceService.shared.getMySpaces();
       const savedSpaceId = localStorage.getItem('currentSpaceId');
-      let currentSpace = spaces.find((s) => s.space_id === savedSpaceId);
-      if (!currentSpace && spaces.length > 0) {
-        currentSpace = spaces[0];
-      }
-      if (currentSpace) {
-        WKApp.shared.currentSpaceId = currentSpace.space_id;
-        localStorage.setItem('currentSpaceId', currentSpace.space_id);
-        this.setState({ spaceName: currentSpace.name || 'Octo' });
+      if (savedSpaceId && spaces.find((s) => s.space_id === savedSpaceId)) {
+        WKApp.shared.currentSpaceId = savedSpaceId;
+      } else if (spaces.length > 0) {
+        WKApp.shared.currentSpaceId = spaces[0].space_id;
+        localStorage.setItem('currentSpaceId', spaces[0].space_id);
       }
     } catch (e) {
       console.warn('[OctoSidepanelLayout] Failed to init space:', e);
@@ -1240,82 +1233,6 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
     return { visible, hiddenCount };
   }
 
-  private renderTopBar() {
-    const { spaceName, theme, showSettings } = this.state;
-    const selectedChannel = this.state.selectedChannel;
-    const isPinned = selectedChannel ? this.state.pinnedIds.has(selectedChannel.channelID) : false;
-
-    return (
-      <div className="wk-sidepanel-topbar">
-        <div className="wk-sidepanel-topbar-space">
-          <span className="wk-sidepanel-topbar-space-name">{spaceName || 'Octo'}</span>
-        </div>
-        <div className="wk-sidepanel-topbar-actions">
-          {/* 固定/取消固定当前频道 */}
-          {selectedChannel && (
-            <button
-              className={`wk-sidepanel-topbar-btn${isPinned ? ' is-active' : ''}`}
-              title={isPinned ? '取消固定' : '固定到 Rail'}
-              onClick={() => this.togglePin(selectedChannel.channelID)}
-              type="button"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <path d="M17 7L7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <path d="M8 12L5 20L12 17L19 20L16 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          )}
-          {/* 换肤 */}
-          <button
-            className="wk-sidepanel-topbar-btn"
-            title={theme === 'dark' ? '切换到亮色' : '切换到暗色'}
-            onClick={() => this.setTheme(theme !== 'dark')}
-            type="button"
-          >
-            {theme === 'dark' ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </button>
-          {/* 设置 */}
-          <div className="wk-sidepanel-topbar-settings-wrap">
-            <button
-              className={`wk-sidepanel-topbar-btn${showSettings ? ' is-active' : ''}`}
-              title="设置"
-              onClick={this.toggleSettings}
-              type="button"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            {showSettings && (
-              <div className="octo-settings-pop is-open wk-topbar-settings-pop">
-                <div className="octo-settings-section">主题</div>
-                <div className="octo-settings-seg">
-                  {[{id:'light',label:'亮色',isDark:false},{id:'dark',label:'暗色',isDark:true}].map(t => (
-                    <button key={t.id} className={`octo-settings-seg-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.isDark)}>
-                      <span className="octo-settings-seg-dot" data-theme={t.id} />
-                      <span>{t.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   private renderRail() {
     const { selectedChannel, pinnedIds } = this.state;
     const { visible, hiddenCount } = this.getRailItems();
@@ -1474,6 +1391,32 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
           )}
         </div>
 
+        <div className="wk-rail-action-wrap">
+          <button
+            className={`wk-rail-action wk-rail-action-settings${this.state.showSettings ? ' is-active' : ''}`}
+            title="设置"
+            onClick={this.toggleSettings}
+            type="button"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {this.state.showSettings && (
+            <div className="octo-settings-pop is-open wk-rail-settings-pop">
+              <div className="octo-settings-section">主题</div>
+              <div className="octo-settings-seg">
+                {[{id:'light',label:'亮色',isDark:false},{id:'dark',label:'暗色',isDark:true}].map(t => (
+                  <button key={t.id} className={`octo-settings-seg-btn${this.state.theme===t.id?' is-active':''}`} onClick={() => this.setTheme(t.isDark)}>
+                    <span className="octo-settings-seg-dot" data-theme={t.id} />
+                    <span>{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </nav>
     );
   }
@@ -1634,7 +1577,6 @@ export default class OctoSidepanelLayout extends Component<{}, OctoSidepanelLayo
       <div className="octo-sidepanel-shell">
         <div className="octo-sidepanel-app">
         <div className="wk-sidepanel-layout">
-        {this.renderTopBar()}
         <div className="wk-sidepanel-body">
           {this.renderRail()}
 

@@ -93,63 +93,59 @@
 }
 
 /* ============================================================
-   Tab 切换（原型无 Tab，但保留当前实现，视觉对齐原型分类标题风格）
+   Tab 切换 — pill / 胶囊样式
    ============================================================ */
 .wk-channel-picker-tabs {
   display: flex;
-  gap: 18px;
-  padding: 0 0;
-  border-bottom: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.05));
+  gap: 4px;
+  padding: 0 2px 6px;
+  position: relative;
+  margin-top: 0;
   flex-shrink: 0;
 }
 
 .wk-channel-picker-tab {
-  position: relative;
+  border: 0;
   background: transparent;
-  border: none;
-  padding: 6px 2px 8px;
+  font-weight: 700;
   font-size: 13px;
   font-family: inherit;
-  color: var(--wk-text-secondary, #5c6070);
+  color: var(--wk-ink-45);
+  padding: 5px 11px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: color var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
+  border-radius: 100px;
+  transition: all var(--wk-dur-fast, 150ms) var(--wk-ease, ease);
+  letter-spacing: -0.01em;
 }
 
 .wk-channel-picker-tab:hover {
-  color: var(--wk-text-primary, #111318);
+  color: var(--wk-ink-80);
+  background: var(--wk-bg-hover);
 }
 
 .wk-channel-picker-tab.is-active {
-  color: var(--wk-text-primary, #111318);
-  font-weight: 600;
-}
-
-.wk-channel-picker-tab.is-active::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 2px;
-  background: var(--wk-brand-primary, #7c5cfc);
-  border-radius: 1px;
+  color: var(--wk-ink-100);
+  font-weight: 700;
+  background: var(--wk-bg-app);
+  box-shadow: 0 1px 2px rgba(28, 28, 35, 0.06), 0 0 0 1px var(--wk-ink-08);
 }
 
 .wk-channel-picker-tab-badge {
-  background: var(--wk-color-error, #ff5c72);
+  background: var(--wk-unread);
   color: #fff;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 9.5px;
+  font-weight: 800;
   min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
+  height: 15px;
+  padding: 0 5px;
+  border-radius: 100px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  letter-spacing: -0.01em;
   line-height: 1;
 }
 

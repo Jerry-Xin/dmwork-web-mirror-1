@@ -19,6 +19,8 @@ export interface ChannelPickerCategory {
   order: number;
 }
 
+export type ChannelPickerLayoutMode = "tabbed" | "single-panel";
+
 export interface ChannelPickerProps {
   /** 频道列表（群聊） */
   channels: ChannelPickerItem[];
@@ -38,6 +40,8 @@ export interface ChannelPickerProps {
   onCreate?: () => void;
   /** 是否显示搜索栏，默认 true */
   showSearch?: boolean;
+  /** 列表布局模式 */
+  layoutMode?: ChannelPickerLayoutMode;
   /** 加载中 */
   loading?: boolean;
 }

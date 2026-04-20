@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import type { ChannelPickerProps, ChannelPickerItem } from './types';
-import ChannelItem from './ChannelItem';
-import './index.css';
+import React, { useMemo, useState } from "react";
+import type { ChannelPickerProps, ChannelPickerItem } from "./types";
+import ChannelItem from "./ChannelItem";
+import "./index.css";
 
 /** 搜索图标 SVG */
 const SearchIcon = () => (
@@ -21,7 +21,14 @@ const SearchIcon = () => (
 
 /** 刷新图标 SVG */
 const RefreshIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M2 8a6 6 0 0110.5-4" />
     <path d="M14 8a6 6 0 01-10.5 4" />
     <polyline points="12.5 2 12.5 5 9.5 5" />
@@ -31,13 +38,19 @@ const RefreshIcon = () => (
 
 /** 新建图标 SVG */
 const PlusIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+  >
     <path d="M8 3v10M3 8h10" />
   </svg>
 );
 
 export type { ChannelPickerItem, ChannelPickerProps };
-export type { ChannelPickerCategory } from './types';
+export type { ChannelPickerCategory, ChannelPickerLayoutMode } from "./types";
 
 export default function ChannelPicker({
   channels,
@@ -49,21 +62,35 @@ export default function ChannelPicker({
   onRefresh,
   onCreate,
   showSearch = true,
+  layoutMode = "tabbed",
   loading = false,
 }: ChannelPickerProps) {
-  const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'group' | 'private'>('group');
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
-  const [expandedThreadParents, setExpandedThreadParents] = useState<Set<string>>(new Set());
+  const [query, setQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"group" | "private">("group");
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedThreadParents, setExpandedThreadParents] = useState<
+    Set<string>
+  >(new Set());
+  const isSinglePanel = layoutMode === "single-panel";
 
   // 统计未读数
   const groupUnread = useMemo(
-    () => channels.reduce((sum: number, c: ChannelPickerItem) => sum + (c.muted ? 0 : c.unread), 0),
-    [channels],
+    () =>
+      channels.reduce(
+        (sum: number, c: ChannelPickerItem) => sum + (c.muted ? 0 : c.unread),
+        0
+      ),
+    [channels]
   );
   const privateUnread = useMemo(
-    () => privateChats.reduce((sum: number, c: ChannelPickerItem) => sum + (c.muted ? 0 : c.unread), 0),
-    [privateChats],
+    () =>
+      privateChats.reduce(
+        (sum: number, c: ChannelPickerItem) => sum + (c.muted ? 0 : c.unread),
+        0
+      ),
+    [privateChats]
   );
 
   // 搜索过滤
@@ -76,16 +103,27 @@ export default function ChannelPicker({
 
   const filteredPrivateChats = useMemo(() => {
     if (!lowerQuery) return privateChats;
-    return privateChats.filter((c) => c.name.toLowerCase().includes(lowerQuery));
+    return privateChats.filter((c) =>
+      c.name.toLowerCase().includes(lowerQuery)
+    );
   }, [privateChats, lowerQuery]);
+
+  const filteredAllItems = useMemo(() => {
+    if (!lowerQuery) return [];
+    return [...filteredChannels, ...filteredPrivateChats];
+  }, [filteredChannels, filteredPrivateChats, lowerQuery]);
 
   // 按分类组织频道 + 子区
   const categoryTree = useMemo(() => {
     const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
 
     // 从 channels 中分离出子区和普通频道
-    const threads = filteredChannels.filter((c) => c.channelType === 5 && c.parentChannelId);
-    const normalChannels = filteredChannels.filter((c) => c.channelType !== 5 || !c.parentChannelId);
+    const threads = filteredChannels.filter(
+      (c) => c.channelType === 5 && c.parentChannelId
+    );
+    const normalChannels = filteredChannels.filter(
+      (c) => c.channelType !== 5 || !c.parentChannelId
+    );
 
     // 子区按父频道分组
     const threadsByParent = new Map<string, ChannelPickerItem[]>();
@@ -96,7 +134,9 @@ export default function ChannelPicker({
     }
 
     // 找到默认分类（如果有），未分类频道归入其中
-    const defaultCategory = sortedCategories.find((c) => c.id.startsWith('default-'));
+    const defaultCategory = sortedCategories.find((c) =>
+      c.id.startsWith("default-")
+    );
 
     // 按分类分组
     const channelsByCategory = new Map<string, ChannelPickerItem[]>();
@@ -117,7 +157,12 @@ export default function ChannelPicker({
       }
     }
 
-    return { sortedCategories, channelsByCategory, uncategorized, threadsByParent };
+    return {
+      sortedCategories,
+      channelsByCategory,
+      uncategorized,
+      threadsByParent,
+    };
   }, [filteredChannels, categories]);
 
   const toggleCategory = (catId: string) => {
@@ -151,7 +196,10 @@ export default function ChannelPicker({
     const visibleThreads = isExpanded ? threads : threads.slice(0, MAX_VISIBLE);
     const hiddenCount = threads.length - visibleThreads.length;
     const hiddenThreads = isExpanded ? [] : threads.slice(MAX_VISIBLE);
-    const hiddenMentionCount = hiddenThreads.reduce((sum: number, t: ChannelPickerItem) => sum + t.mentionCount, 0);
+    const hiddenMentionCount = hiddenThreads.reduce(
+      (sum: number, t: ChannelPickerItem) => sum + t.mentionCount,
+      0
+    );
 
     return (
       <React.Fragment key={ch.channelId}>
@@ -172,12 +220,16 @@ export default function ChannelPicker({
         ))}
         {hiddenCount > 0 && (
           <button
-            className={`wk-channel-picker-more-subs${hiddenMentionCount > 0 ? ' has-mention' : ''}`}
+            className={`wk-channel-picker-more-subs${
+              hiddenMentionCount > 0 ? " has-mention" : ""
+            }`}
             onClick={() => toggleThreadExpand(ch.channelId)}
           >
             + {hiddenCount} 个子区
             {hiddenMentionCount > 0 && (
-              <span className="wk-channel-picker-row-mention">@{hiddenMentionCount}</span>
+              <span className="wk-channel-picker-row-mention">
+                @{hiddenMentionCount}
+              </span>
             )}
           </button>
         )}
@@ -193,11 +245,14 @@ export default function ChannelPicker({
     );
   };
 
-  const renderGroupList = () => {
-    const { sortedCategories, channelsByCategory, uncategorized } = categoryTree;
+  const renderGroupList = (showEmptyState: boolean) => {
+    const { sortedCategories, channelsByCategory, uncategorized } =
+      categoryTree;
 
     if (filteredChannels.length === 0) {
-      return <div className="wk-channel-picker-empty">未找到频道</div>;
+      return showEmptyState ? (
+        <div className="wk-channel-picker-empty">未找到频道</div>
+      ) : null;
     }
 
     return (
@@ -215,7 +270,7 @@ export default function ChannelPicker({
                 onClick={() => toggleCategory(cat.id)}
               >
                 <span className="wk-channel-picker-cat-arrow">
-                  {isCollapsed ? '▸' : '▾'}
+                  {isCollapsed ? "▸" : "▾"}
                 </span>
                 <span className="wk-channel-picker-cat-name">{cat.name}</span>
               </button>
@@ -238,9 +293,11 @@ export default function ChannelPicker({
     );
   };
 
-  const renderPrivateList = () => {
+  const renderPrivateList = (showEmptyState: boolean) => {
     if (filteredPrivateChats.length === 0) {
-      return <div className="wk-channel-picker-empty">未找到联系人</div>;
+      return showEmptyState ? (
+        <div className="wk-channel-picker-empty">未找到联系人</div>
+      ) : null;
     }
 
     return filteredPrivateChats.map((item) => (
@@ -254,8 +311,49 @@ export default function ChannelPicker({
     ));
   };
 
+  const renderSinglePanelList = () => {
+    if (lowerQuery) {
+      if (filteredAllItems.length === 0) {
+        return <div className="wk-channel-picker-empty">未找到会话</div>;
+      }
+
+      return filteredAllItems.map((item) => (
+        <ChannelItem
+          key={`${item.channelType}:${item.channelId}`}
+          item={item}
+          isSelected={item.channelId === selectedId}
+          isPrivate={item.channelType === 1}
+          onClick={() => onSelect(item)}
+        />
+      ));
+    }
+
+    const hasGroups = filteredChannels.length > 0;
+    const hasPrivateChats = filteredPrivateChats.length > 0;
+
+    if (!hasGroups && !hasPrivateChats) {
+      return <div className="wk-channel-picker-empty">暂无可选会话</div>;
+    }
+
+    return (
+      <>
+        {hasGroups && renderGroupList(false)}
+        {hasPrivateChats && (
+          <>
+            <div className="wk-channel-picker-cat-static">私聊</div>
+            {renderPrivateList(false)}
+          </>
+        )}
+      </>
+    );
+  };
+
   return (
-    <div className="wk-channel-picker">
+    <div
+      className={`wk-channel-picker${
+        isSinglePanel ? " wk-channel-picker--single-panel" : ""
+      }`}
+    >
       {/* 搜索栏 */}
       {showSearch && (
         <div className="wk-channel-picker-search">
@@ -291,39 +389,47 @@ export default function ChannelPicker({
       )}
 
       {/* Tab 切换 */}
-      <div className="wk-channel-picker-tabs">
-        <button
-          className={`wk-channel-picker-tab${activeTab === 'group' ? ' is-active' : ''}`}
-          onClick={() => setActiveTab('group')}
-        >
-          群聊
-          {groupUnread > 0 && (
-            <span className="wk-channel-picker-tab-badge">
-              {groupUnread > 99 ? '99+' : groupUnread}
-            </span>
-          )}
-        </button>
-        <button
-          className={`wk-channel-picker-tab${activeTab === 'private' ? ' is-active' : ''}`}
-          onClick={() => setActiveTab('private')}
-        >
-          私聊
-          {privateUnread > 0 && (
-            <span className="wk-channel-picker-tab-badge">
-              {privateUnread > 99 ? '99+' : privateUnread}
-            </span>
-          )}
-        </button>
-      </div>
+      {!isSinglePanel && (
+        <div className="wk-channel-picker-tabs">
+          <button
+            className={`wk-channel-picker-tab${
+              activeTab === "group" ? " is-active" : ""
+            }`}
+            onClick={() => setActiveTab("group")}
+          >
+            群聊
+            {groupUnread > 0 && (
+              <span className="wk-channel-picker-tab-badge">
+                {groupUnread > 99 ? "99+" : groupUnread}
+              </span>
+            )}
+          </button>
+          <button
+            className={`wk-channel-picker-tab${
+              activeTab === "private" ? " is-active" : ""
+            }`}
+            onClick={() => setActiveTab("private")}
+          >
+            私聊
+            {privateUnread > 0 && (
+              <span className="wk-channel-picker-tab-badge">
+                {privateUnread > 99 ? "99+" : privateUnread}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* 列表区 */}
       <div className="wk-channel-picker-list">
         {loading ? (
           <div className="wk-channel-picker-loading">加载中…</div>
-        ) : activeTab === 'group' ? (
-          renderGroupList()
+        ) : isSinglePanel ? (
+          renderSinglePanelList()
+        ) : activeTab === "group" ? (
+          renderGroupList(true)
         ) : (
-          renderPrivateList()
+          renderPrivateList(true)
         )}
       </div>
     </div>

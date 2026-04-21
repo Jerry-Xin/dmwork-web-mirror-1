@@ -1008,8 +1008,28 @@ export default class OctoSidepanelLayout extends Component<
         pickerLoading: false,
       });
 
+      // Prune stale pins: drop ids that no longer map to a visible channel/pm.
+      // Keeps pinnedIds.size aligned with what the user sees in the rail.
+      const validIds = new Set<string>();
+      for (const item of channelList) validIds.add(item.channelId);
+      for (const item of privateChatList) validIds.add(item.channelId);
+      const currentPins = this.state.pinnedIds;
+      let pinsChanged = false;
+      const prunedPins = new Set<string>();
+      for (const id of currentPins) {
+        if (validIds.has(id)) prunedPins.add(id);
+        else pinsChanged = true;
+      }
+      if (pinsChanged) {
+        localStorage.setItem(
+          "octo_sidepanel_pinned",
+          JSON.stringify([...prunedPins])
+        );
+        this.setState({ pinnedIds: prunedPins });
+      }
+
       // Auto-seed: if no pins yet, pin the first 3 threads so rail is not empty.
-      if (this.state.pinnedIds.size === 0) {
+      if ((pinsChanged ? prunedPins : currentPins).size === 0) {
         const allItems = [...channelList, ...privateChatList];
         const seed = new Set<string>();
         for (const t of allItems.slice(0, 3)) seed.add(t.channelId);

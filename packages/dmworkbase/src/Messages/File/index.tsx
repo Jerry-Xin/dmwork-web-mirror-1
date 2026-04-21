@@ -184,6 +184,7 @@ export class FileCell extends MessageCell<any, FileCellState> {
             return
         }
 
+        console.log('[handlePreview] url:', url, 'content.url:', content.url, 'content.remoteUrl:', (content as any).remoteUrl)
         window.open(url, "_blank")
     }
 

@@ -164,13 +164,13 @@ export class FileCell extends MessageCell<any, FileCellState> {
         return ""
     }
 
-    handleDownload = () => {
+    handleDownload = async () => {
         const { message } = this.props
         const content = message.content as FileContent
         const url = this.getFileURL(content)
         if (!url || !isSafeURL(url)) return
 
-        downloadFile(url, content.name || "file")
+        await downloadFile(url, content.name || "file")
     }
 
     handlePreview = () => {
@@ -184,11 +184,7 @@ export class FileCell extends MessageCell<any, FileCellState> {
             return
         }
 
-        try {
-            window.open(url, "_blank")
-        } catch {
-            alert("文件预览失败")
-        }
+        window.open(url, "_blank")
     }
 
     handleTextPreview = async (url: string, name: string, extension: string) => {

@@ -1,11 +1,43 @@
 import { isSafeUrl } from "./security";
+import WKApp from "../App";
+
+/**
+ * Get a presigned download URL from the backend.
+ * Falls back to the original URL on error.
+ */
+export async function getPresignedDownloadUrl(remotePath: string, filename: string): Promise<string> {
+    try {
+        const resp = await WKApp.apiClient.get(`file/download/url?path=${encodeURIComponent(remotePath)}&filename=${encodeURIComponent(filename)}`)
+        if (resp && resp.url) {
+            return resp.url
+        }
+    } catch (err) {
+        console.warn("getPresignedDownloadUrl: failed, falling back to original URL", err)
+    }
+    return remotePath
+}
+
+/**
+ * Get a presigned preview URL (Content-Disposition: inline) from the backend.
+ * Falls back to the original URL on error.
+ */
+export async function getPresignedPreviewUrl(remotePath: string, filename: string): Promise<string> {
+    try {
+        const resp = await WKApp.apiClient.get(`file/download/url?path=${encodeURIComponent(remotePath)}&filename=${encodeURIComponent(filename)}&disposition=inline`)
+        if (resp && resp.url) {
+            return resp.url
+        }
+    } catch (err) {
+        console.warn("getPresignedPreviewUrl: failed, falling back to original URL", err)
+    }
+    return remotePath
+}
 
 /**
  * Download a file via anchor-click.
- * CDN serves Content-Disposition header to provide the correct filename.
- * For cross-origin URLs, opens in a new tab as safety fallback.
+ * For cross-origin URLs, fetches a presigned download URL from the backend.
  */
-export function downloadFile(url: string, filename: string): void {
+export async function downloadFile(url: string, filename: string): Promise<void> {
     if (!url) return;
 
     let parsedUrl: URL;
@@ -18,11 +50,18 @@ export function downloadFile(url: string, filename: string): void {
     const resolvedUrl = parsedUrl.href;
     if (!isSafeUrl(resolvedUrl)) return;
 
+    let downloadUrl = resolvedUrl;
+    const isCrossOrigin = parsedUrl.origin !== window.location.origin;
+
+    if (isCrossOrigin && filename) {
+        downloadUrl = await getPresignedDownloadUrl(resolvedUrl, filename);
+    }
+
     try {
         const a = document.createElement("a");
-        a.href = resolvedUrl;
+        a.href = downloadUrl;
         a.download = filename;
-        if (parsedUrl.origin !== window.location.origin) {
+        if (isCrossOrigin) {
             a.target = "_blank";
             a.rel = "noopener";
         }
@@ -32,7 +71,7 @@ export function downloadFile(url: string, filename: string): void {
     } catch (err) {
         console.warn("downloadFile: anchor click failed, trying window.open", err);
         try {
-            const w = window.open(resolvedUrl, "_blank");
+            const w = window.open(downloadUrl, "_blank");
             if (!w) {
                 console.warn("downloadFile: window.open returned null (popup blocked?)");
             }

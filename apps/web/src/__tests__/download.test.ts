@@ -1,5 +1,16 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { downloadFile } from '../../../../packages/dmworkbase/src/Utils/download'
+import { downloadFile, getPresignedDownloadUrl } from '../../../../packages/dmworkbase/src/Utils/download'
+
+// Mock WKApp.apiClient
+vi.mock('../../../../packages/dmworkbase/src/App', () => ({
+    default: {
+        apiClient: {
+            get: vi.fn(),
+        },
+    },
+}))
+
+import WKApp from '../../../../packages/dmworkbase/src/App'
 
 // Track anchors created by download functions
 let clickedAnchors: HTMLAnchorElement[] = []
@@ -42,31 +53,50 @@ describe('downloadFile', () => {
         })
 
         it('should not fetch for same-origin URLs', async () => {
-            const fetchSpy = vi.spyOn(globalThis, 'fetch')
-
             await downloadFile(`${window.location.origin}/files/doc.pdf`, 'doc.pdf')
 
-            expect(fetchSpy).not.toHaveBeenCalled()
+            expect(WKApp.apiClient.get).not.toHaveBeenCalled()
         })
     })
 
     describe('cross-origin anchor download', () => {
         it('should set target="_blank" and rel="noopener" for cross-origin URLs', async () => {
+            vi.mocked(WKApp.apiClient.get).mockResolvedValue({ url: 'https://cdn.example.com/abc123_file.pdf?signed=1', filename: 'file.pdf' })
+
             await downloadFile('https://cdn.example.com/abc123_file.pdf', 'file.pdf')
 
             expect(clickedAnchors).toHaveLength(1)
-            expect(clickedAnchors[0].href).toBe('https://cdn.example.com/abc123_file.pdf')
             expect(clickedAnchors[0].download).toBe('file.pdf')
             expect(clickedAnchors[0].target).toBe('_blank')
             expect(clickedAnchors[0].rel).toBe('noopener')
         })
 
-        it('should not fetch for cross-origin URLs', async () => {
-            const fetchSpy = vi.spyOn(globalThis, 'fetch')
+        it('should call presigned download API for cross-origin URLs', async () => {
+            vi.mocked(WKApp.apiClient.get).mockResolvedValue({ url: 'https://cdn.example.com/signed-url', filename: 'file.txt' })
 
             await downloadFile('https://cdn.example.com/file.txt', 'file.txt')
 
-            expect(fetchSpy).not.toHaveBeenCalled()
+            expect(WKApp.apiClient.get).toHaveBeenCalledWith(
+                expect.stringContaining('file/download/url?path=')
+            )
+            expect(clickedAnchors[0].href).toBe('https://cdn.example.com/signed-url')
+        })
+
+        it('should fall back to original URL when presigned API fails', async () => {
+            vi.mocked(WKApp.apiClient.get).mockRejectedValue(new Error('network error'))
+
+            await downloadFile('https://cdn.example.com/file.txt', 'file.txt')
+
+            expect(clickedAnchors).toHaveLength(1)
+            expect(clickedAnchors[0].href).toBe('https://cdn.example.com/file.txt')
+        })
+
+        it('should not add response-content-disposition to cross-origin URLs', async () => {
+            vi.mocked(WKApp.apiClient.get).mockResolvedValue({ url: 'https://cdn.example.com/signed', filename: 'file.pdf' })
+
+            await downloadFile('https://cdn.example.com/abc123_file.pdf', 'file.pdf')
+
+            expect(clickedAnchors[0].href).not.toContain('response-content-disposition')
         })
     })
 
@@ -124,5 +154,44 @@ describe('downloadFile', () => {
 
             expect(clickedAnchors).toHaveLength(0)
         })
+    })
+})
+
+describe('getPresignedDownloadUrl', () => {
+    it('should return signed URL from API response', async () => {
+        vi.mocked(WKApp.apiClient.get).mockResolvedValue({ url: 'https://cdn.example.com/signed-url', filename: 'test.pdf' })
+
+        const result = await getPresignedDownloadUrl('https://cdn.example.com/test.pdf', 'test.pdf')
+
+        expect(result).toBe('https://cdn.example.com/signed-url')
+        expect(WKApp.apiClient.get).toHaveBeenCalledWith(
+            'file/download/url?path=https%3A%2F%2Fcdn.example.com%2Ftest.pdf&filename=test.pdf'
+        )
+    })
+
+    it('should encode Unicode filenames in API request', async () => {
+        vi.mocked(WKApp.apiClient.get).mockResolvedValue({ url: 'https://cdn.example.com/signed', filename: '测试.png' })
+
+        await getPresignedDownloadUrl('https://cdn.example.com/image.png', '测试.png')
+
+        expect(WKApp.apiClient.get).toHaveBeenCalledWith(
+            expect.stringContaining('filename=%E6%B5%8B%E8%AF%95.png')
+        )
+    })
+
+    it('should fall back to original URL on API error', async () => {
+        vi.mocked(WKApp.apiClient.get).mockRejectedValue(new Error('500'))
+
+        const result = await getPresignedDownloadUrl('https://cdn.example.com/test.pdf', 'test.pdf')
+
+        expect(result).toBe('https://cdn.example.com/test.pdf')
+    })
+
+    it('should fall back to original URL when response has no url field', async () => {
+        vi.mocked(WKApp.apiClient.get).mockResolvedValue({})
+
+        const result = await getPresignedDownloadUrl('https://cdn.example.com/test.pdf', 'test.pdf')
+
+        expect(result).toBe('https://cdn.example.com/test.pdf')
     })
 })

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockApiGet = vi.fn()
 
-vi.mock('../App', () => ({
+vi.mock('../../App', () => ({
   default: {
     apiClient: {
       get: (...args: any[]) => mockApiGet(...args),
@@ -10,11 +10,11 @@ vi.mock('../App', () => ({
   },
 }))
 
-vi.mock('./security', () => ({
+vi.mock('../security', () => ({
   isSafeUrl: (url: string) => url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'),
 }))
 
-import { getPresignedDownloadUrl, getPresignedPreviewUrl } from './download'
+import { getPresignedDownloadUrl, getPresignedPreviewUrl } from '../download'
 
 describe('getPresignedDownloadUrl', () => {
   beforeEach(() => {

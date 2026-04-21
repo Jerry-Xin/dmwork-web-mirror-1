@@ -143,7 +143,6 @@ export class EmojiPanel extends Component<EmojiPanelProps, EmojiPanelState> {
                                     onEmoji(emoji)
                                 }
                             }}>
-                                {/* <img src={require(`./emoji/${emoji.image}`)}> </img> */}
                                 <img src={emoji.image}></img>
                             </li>
                         }) : undefined
@@ -156,7 +155,6 @@ export class EmojiPanel extends Component<EmojiPanelProps, EmojiPanelState> {
                                     onSticker(sticker)
                                 }
                             }}>
-                                {/* <img src={require(`./emoji/${emoji.image}`)}> </img> */}
                                 <tgs-player style={{ width: "74px", height: "74px" }} autoplay mode="normal" src={WKApp.dataSource.commonDataSource.getFileURL(sticker.path)}></tgs-player>
                             </li>
                         }) : undefined

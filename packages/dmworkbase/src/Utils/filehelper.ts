@@ -1,4 +1,12 @@
 
+import fileIcon from "./extends/file.png";
+import wordIcon from "./extends/word.png";
+import excelIcon from "./extends/excel.png";
+import pptIcon from "./extends/ppt.png";
+import pdfIcon from "./extends/pdf.png";
+import zipIcon from "./extends/zip.png";
+import rarIcon from "./extends/rar.png";
+
 export enum FileType {
     Unkown, // 未知类型
     Word, // word类型
@@ -66,28 +74,28 @@ export default class FileHelper {
             return null;
         }
         const fileType = this.getFileType(fileName);
-        let fileIcon = "extends/file.png";
-        let fileBgColor = "rgb(255, 182, 24)";;
+        let icon = fileIcon;
+        let fileBgColor = "rgb(255, 182, 24)";
         if (fileType === FileType.Word) {
-            fileIcon = "extends/word.png"
-            fileBgColor = "rgb(73, 126, 247)"
+            icon = wordIcon;
+            fileBgColor = "rgb(73, 126, 247)";
         } else if (fileType === FileType.Excel) {
-            fileIcon = "extends/excel.png"
+            icon = excelIcon;
             fileBgColor = "rgb(39, 204, 163)";
         } else if (fileType === FileType.PPT) {
-            fileIcon = "extends/ppt.png"
+            icon = pptIcon;
             fileBgColor = "rgb(255, 182, 24)";
         } else if (fileType === FileType.PDF) {
-            fileIcon = "extends/pdf.png"
+            icon = pdfIcon;
             fileBgColor = "rgb(255, 91, 16)";
         } else if (fileType === FileType.ZIP) {
-            fileIcon = "extends/zip.png"
+            icon = zipIcon;
             fileBgColor = "rgb(234, 156, 112)";
         } else if (fileType === FileType.RAR) {
-            fileIcon = "extends/rar.png"
+            icon = rarIcon;
             fileBgColor = "rgb(245, 180, 80)";
         }
-        return { icon: require(`./${fileIcon}`), color: fileBgColor }
+        return { icon, color: fileBgColor };
     }
     // 格式化文件大小
     static getFileSizeFormat(size: number) {

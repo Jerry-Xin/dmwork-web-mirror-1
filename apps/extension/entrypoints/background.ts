@@ -10,6 +10,7 @@ import {
   getExtensionAuthState,
   getExtensionPreferences,
   setExtensionPreferences,
+  setExtensionSidepanelActive,
   setPendingConversation,
 } from "../utils/extensionStorage";
 
@@ -347,8 +348,30 @@ async function dispatchConversationOpen(notificationId: string): Promise<void> {
   }
 }
 
+async function requestConversationOpen(target: {
+  channelId: string;
+  channelType: number;
+}, windowId?: number): Promise<void> {
+  await setPendingConversation(target);
+  const targetWindowId = windowId ?? (await focusChromeWindow());
+  if (targetWindowId) {
+    await browser.windows.update(targetWindowId, { focused: true });
+    await openSidePanel(targetWindowId);
+  }
+
+  try {
+    await browser.runtime.sendMessage({
+      type: EXTENSION_MESSAGE_TYPE.openConversation,
+      target,
+    } satisfies ExtensionRuntimeMessage);
+  } catch (error) {
+    console.debug("[Extension] Sidepanel is not ready yet, pending target kept.", error);
+  }
+}
+
 async function handleRuntimeMessage(
   message: ExtensionRuntimeMessage,
+  sender?: any,
 ): Promise<ExtensionAuthResponse | void> {
   if (message.type === EXTENSION_MESSAGE_TYPE.offscreenReady) {
     return getStoredAuthResponse();
@@ -407,6 +430,28 @@ async function handleRuntimeMessage(
     return;
   }
 
+  if (message.type === EXTENSION_MESSAGE_TYPE.requestOpenConversation) {
+    // 必须同步调用 sidePanel.open()，不能有 await，否则用户手势上下文丢失
+    const windowId = sender?.tab?.windowId;
+    if (windowId && chromeApi?.sidePanel?.open) {
+      chromeApi.sidePanel
+        .open({ windowId })
+        .catch((err: any) =>
+          console.debug("[Extension] sidePanel.open failed:", err)
+        );
+    }
+    // 异步设置 pending + 通知侧栏
+    void setPendingConversation(message.target).then(() => {
+      browser.runtime
+        .sendMessage({
+          type: EXTENSION_MESSAGE_TYPE.openConversation,
+          target: message.target,
+        } satisfies ExtensionRuntimeMessage)
+        .catch(() => {});
+    });
+    return;
+  }
+
   if (message.type === EXTENSION_MESSAGE_TYPE.offscreenNewMessage) {
     void getExtensionPreferences().then((preferences) => {
       if (!preferences.notificationsEnabled || !preferences.notificationsVisible) {
@@ -428,8 +473,8 @@ async function handleRuntimeMessage(
 export default defineBackground(async () => {
   console.log("Hello background!", { id: browser.runtime.id });
 
-  browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
-    return handleRuntimeMessage(message);
+  browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage, sender: any) => {
+    return handleRuntimeMessage(message, sender);
   });
 
   browser.notifications.onClicked.addListener((notificationId) => {
@@ -455,6 +500,20 @@ export default defineBackground(async () => {
   browser.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
     .catch((error) => console.error(error));
+
+  // Chrome 141+ onOpened / 142+ onClosed — 比 pagehide 更可靠地追踪侧栏生命周期
+  if (chromeApi?.sidePanel?.onOpened) {
+    chromeApi.sidePanel.onOpened.addListener(() => {
+      markSidepanelActive();
+      void setExtensionSidepanelActive(true);
+    });
+  }
+  if (chromeApi?.sidePanel?.onClosed) {
+    chromeApi.sidePanel.onClosed.addListener(() => {
+      clearSidepanelActive();
+      void setExtensionSidepanelActive(false);
+    });
+  }
 
   await buildContextMenus();
   await ensureOffscreenDocument();

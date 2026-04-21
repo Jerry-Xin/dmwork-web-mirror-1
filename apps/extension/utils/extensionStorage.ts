@@ -2,11 +2,17 @@ import type {
   ConversationTarget,
   ExtensionAuthState,
   ExtensionPreferences,
+  SidepanelSessionState,
 } from "./extensionRuntime";
 import {
   DEFAULT_EXTENSION_PREFERENCES,
   EXTENSION_STORAGE_KEYS,
 } from "./extensionRuntime";
+
+const DEFAULT_SIDEPANEL_SESSION: SidepanelSessionState = {
+  active: false,
+  selectedTarget: null,
+};
 
 export async function getExtensionAuthState(): Promise<ExtensionAuthState | null> {
   const result = await browser.storage.local.get(EXTENSION_STORAGE_KEYS.authState);
@@ -43,6 +49,46 @@ export async function setPendingConversation(
 
 export async function clearPendingConversation(): Promise<void> {
   await browser.storage.local.remove(EXTENSION_STORAGE_KEYS.pendingConversation);
+}
+
+export async function getExtensionSidepanelSession(): Promise<SidepanelSessionState> {
+  const result = await browser.storage.local.get(
+    EXTENSION_STORAGE_KEYS.sidepanelSession,
+  );
+  const stored = result[EXTENSION_STORAGE_KEYS.sidepanelSession] as
+    | SidepanelSessionState
+    | undefined;
+
+  return {
+    ...DEFAULT_SIDEPANEL_SESSION,
+    ...(stored ?? {}),
+  };
+}
+
+export async function setExtensionSidepanelSession(
+  session: SidepanelSessionState,
+): Promise<void> {
+  await browser.storage.local.set({
+    [EXTENSION_STORAGE_KEYS.sidepanelSession]: session,
+  });
+}
+
+export async function setExtensionSidepanelActive(active: boolean): Promise<void> {
+  const current = await getExtensionSidepanelSession();
+  await setExtensionSidepanelSession({
+    ...current,
+    active,
+  });
+}
+
+export async function setExtensionSidepanelSelectedConversation(
+  target: ConversationTarget | null,
+): Promise<void> {
+  const current = await getExtensionSidepanelSession();
+  await setExtensionSidepanelSession({
+    ...current,
+    selectedTarget: target,
+  });
 }
 
 export async function getExtensionPreferences(): Promise<ExtensionPreferences> {

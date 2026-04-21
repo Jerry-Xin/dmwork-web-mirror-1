@@ -14,7 +14,11 @@ import {
   EXTENSION_STORAGE_KEYS,
   normalizeApiURL,
 } from '../../utils/extensionRuntime';
-import { getExtensionAuthState } from '../../utils/extensionStorage';
+import {
+  hydrateWKAppFromExtensionAuth,
+  installExtensionLogoutBridge,
+  registerExtensionAuthRuntimeSync,
+} from '../../utils/extensionAuthSession';
 import CmdKApp from './CmdKApp';
 
 (window as any).__POWERED_EXTENSION__ = true;
@@ -32,27 +36,28 @@ WKApp.config.appName = 'Octo';
 WKApp.shared.currentSpaceId = localStorage.getItem('currentSpaceId') || '';
 
 WKApp.loginInfo.load();
+installExtensionLogoutBridge({
+  useOriginalLogout: false,
+  onLoggedOut: () => {
+    try {
+      window.close();
+      return;
+    } catch {
+      window.location.reload();
+    }
+  },
+});
 
 WKApp.shared.registerModule(new BaseModule());
 WKApp.shared.registerModule(new DataSourceModule());
 WKApp.shared.registerModule(new LoginModule());
 WKApp.shared.registerModule(new ContactsModule());
 
-async function ensureAuth(): Promise<void> {
-  if (WKApp.loginInfo.isLogined()) return;
+async function ensureAuth(): Promise<boolean> {
+  if (WKApp.loginInfo.isLogined()) return true;
 
-  const auth = await getExtensionAuthState();
-  if (auth?.loggedIn && auth.token) {
-    WKApp.loginInfo.uid = auth.uid;
-    WKApp.loginInfo.token = auth.token;
-    WKApp.loginInfo.save();
-    WKApp.apiClient.config.apiURL = normalizeApiURL(auth.apiURL);
-    WKApp.apiClient.config.tokenCallback = () => auth.token;
-    WKApp.shared.currentSpaceId = auth.currentSpaceId || localStorage.getItem('currentSpaceId') || '';
-    if (auth.currentSpaceId) {
-      localStorage.setItem('currentSpaceId', auth.currentSpaceId);
-    }
-  }
+  const auth = await hydrateWKAppFromExtensionAuth();
+  return !!auth?.loggedIn;
 }
 
 // Apply theme from extension storage (not localStorage — iframe origin ≠ extension origin)
@@ -66,22 +71,47 @@ function setThemeAttr(theme: string) {
 }
 
 // Fire-and-forget: read theme from browser.storage.local, won't block render
-void browser.storage.local.get(EXTENSION_STORAGE_KEYS.theme).then((result) => {
+void browser.storage.local.get(EXTENSION_STORAGE_KEYS.theme).then((result: Record<string, unknown>) => {
   const theme = (result[EXTENSION_STORAGE_KEYS.theme] as string) || 'light';
   setThemeAttr(theme);
 }).catch(() => { /* ignore — default light theme is fine */ });
 
 // Listen for real-time theme changes from sidepanel
-browser.storage.onChanged.addListener((changes, areaName) => {
+browser.storage.onChanged.addListener((
+  changes: Record<string, { newValue?: unknown }>,
+  areaName: string,
+) => {
   if (areaName === 'local' && changes[EXTENSION_STORAGE_KEYS.theme]) {
     const newTheme = (changes[EXTENSION_STORAGE_KEYS.theme].newValue as string) || 'light';
     setThemeAttr(newTheme);
   }
 });
 
-void ensureAuth().then(() => {
+const disposeAuthSync = registerExtensionAuthRuntimeSync({
+  onAuthCleared: () => {
+    try {
+      window.close();
+    } catch {
+      window.location.reload();
+    }
+  },
+});
+
+window.addEventListener('beforeunload', () => {
+  disposeAuthSync();
+});
+
+function LoggedOutNotice() {
+  return (
+    <div className="octo-cmdk">
+      <div className="octo-cmdk-center">请先在侧边栏登录后再使用 Octo</div>
+    </div>
+  );
+}
+
+void ensureAuth().then((authed) => {
   WKApp.shared.startup();
   const container = document.getElementById('root')!;
   const root = createRoot(container);
-  root.render(<CmdKApp />);
+  root.render(authed ? <CmdKApp /> : <LoggedOutNotice />);
 });

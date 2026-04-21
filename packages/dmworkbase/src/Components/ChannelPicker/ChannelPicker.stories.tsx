@@ -9,7 +9,7 @@ import type {
 
 const categories: ChannelPickerCategory[] = [
   { id: "important", name: "重要工作", order: 1 },
-  { id: "default-0", name: "默认分组", order: 2 },
+  { id: "default-0", name: "默认分组", order: 2, isDefault: true },
 ];
 
 const channels: ChannelPickerItem[] = [

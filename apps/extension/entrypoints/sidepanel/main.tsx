@@ -23,16 +23,18 @@ import {
   EXTENSION_MESSAGE_TYPE,
   normalizeApiURL,
   type ConversationTarget,
-  type ExtensionAuthState,
   type ExtensionRuntimeMessage,
 } from '../../utils/extensionRuntime';
 import {
-  clearExtensionAuthState,
   clearPendingConversation,
   getPendingConversation,
-  setExtensionAuthState,
+  setExtensionSidepanelActive,
   setPendingConversation,
 } from '../../utils/extensionStorage';
+import {
+  installExtensionLogoutBridge,
+  syncExtensionAuthStateFromWKApp,
+} from '../../utils/extensionAuthSession';
 
 // 标记扩展环境（Layout 等组件据此跳过 window.location.href 硬跳转）
 (window as any).__POWERED_EXTENSION__ = true;
@@ -50,37 +52,6 @@ WKApp.config.appVersion = pkgVersion;
 WKApp.config.appName = 'Octo';
 
 WKApp.loginInfo.load();
-
-function getAuthSnapshot(): ExtensionAuthState {
-  return {
-    loggedIn: WKApp.loginInfo.isLogined(),
-    uid: WKApp.loginInfo.uid || '',
-    token: WKApp.loginInfo.token || '',
-    apiURL,
-    currentSpaceId: localStorage.getItem('currentSpaceId') || '',
-  };
-}
-
-async function syncExtensionAuthState(): Promise<void> {
-  const auth = getAuthSnapshot();
-  if (auth.loggedIn && auth.token) {
-    await setExtensionAuthState(auth);
-    await browser.runtime.sendMessage({
-      type: EXTENSION_MESSAGE_TYPE.authChanged,
-      auth,
-    } satisfies ExtensionRuntimeMessage).catch(() => {});
-    return;
-  }
-
-  await clearExtensionAuthState();
-  await browser.runtime.sendMessage({
-    type: EXTENSION_MESSAGE_TYPE.authCleared,
-  } satisfies ExtensionRuntimeMessage).catch(() => {});
-  await browser.runtime.sendMessage({
-    type: EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync,
-    hasUnread: false,
-  } satisfies ExtensionRuntimeMessage).catch(() => {});
-}
 
 async function openConversation(target: ConversationTarget): Promise<boolean> {
   if (!WKApp.shared.isLogined()) {
@@ -130,35 +101,16 @@ window.setInterval(() => {
     return;
   }
   lastSyncedSpaceId = currentSpaceId;
-  void syncExtensionAuthState();
+  void syncExtensionAuthStateFromWKApp(apiURL);
   syncSidepanelBadge();
 }, 1000);
 
 const originalLoginSave = WKApp.loginInfo.save.bind(WKApp.loginInfo);
 WKApp.loginInfo.save = () => {
   originalLoginSave();
-  void syncExtensionAuthState();
+  void syncExtensionAuthStateFromWKApp(apiURL);
 };
-
-const originalLogout = WKApp.shared.logout.bind(WKApp.shared);
-WKApp.shared.logout = () => {
-  void clearPendingConversation()
-    .then(() => clearExtensionAuthState())
-    .then(() =>
-      browser.runtime.sendMessage({
-        type: EXTENSION_MESSAGE_TYPE.authCleared,
-      } satisfies ExtensionRuntimeMessage).catch(() => {}),
-    )
-    .then(() =>
-      browser.runtime.sendMessage({
-        type: EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync,
-        hasUnread: false,
-      } satisfies ExtensionRuntimeMessage).catch(() => {}),
-    )
-    .finally(() => {
-      originalLogout();
-    });
-};
+installExtensionLogoutBridge();
 
 // 注册模块
 WKApp.shared.registerModule(new BaseModule());
@@ -171,7 +123,7 @@ WKApp.shared.startup();
 // 注册扩展专用主页布局（替代 MainPage）
 WKApp.shared.extensionMainPage = OctoSidepanelLayout as any;
 
-void syncExtensionAuthState();
+void syncExtensionAuthStateFromWKApp(apiURL);
 
 function hasUnreadConversation(): boolean {
   for (const conversation of WKSDK.shared().conversationManager.conversations) {
@@ -213,6 +165,7 @@ function syncSidepanelBadge(): void {
 }
 
 function syncSidepanelState(active: boolean): void {
+  void setExtensionSidepanelActive(active);
   void browser.runtime.sendMessage({
     type: EXTENSION_MESSAGE_TYPE.sidepanelState,
     active,

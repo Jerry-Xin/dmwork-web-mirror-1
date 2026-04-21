@@ -2,6 +2,59 @@ import React from 'react';
 import type { ChannelPickerItem } from './types';
 import ThreadIcon from '../Icons/ThreadIcon';
 
+const TITLE_COLORS = [
+  "#8C8DFF",
+  "#7983C2",
+  "#6D8DDE",
+  "#5979F0",
+  "#6695DF",
+  "#8F7AC5",
+  "#9D77A5",
+  "#8A64D0",
+  "#AA66C3",
+  "#A75C96",
+  "#C8697D",
+  "#B74D62",
+  "#BD637C",
+  "#B3798E",
+  "#9B6D77",
+  "#B87F7F",
+  "#C5595A",
+  "#AA4848",
+  "#B0665E",
+  "#B76753",
+  "#BB5334",
+  "#C97B46",
+  "#BE6C2C",
+  "#CB7F40",
+  "#A47758",
+  "#B69370",
+  "#A49373",
+  "#AA8A46",
+  "#AA8220",
+  "#76A048",
+  "#9CAD23",
+  "#A19431",
+  "#AA9100",
+  "#A09555",
+  "#C49B4B",
+  "#5FB05F",
+  "#6AB48F",
+  "#71B15C",
+  "#B3B357",
+  "#A3B561",
+  "#909F45",
+  "#93B289",
+  "#3D98D0",
+  "#429AB6",
+  "#4EABAA",
+  "#6BC0CE",
+  "#64B5D9",
+  "#3E9CCB",
+  "#2887C4",
+  "#52A98B",
+];
+
 interface ChannelItemProps {
   item: ChannelPickerItem;
   isSelected: boolean;
@@ -10,17 +63,22 @@ interface ChannelItemProps {
   /** 是否为私聊模式 */
   isPrivate?: boolean;
   onClick: () => void;
+  onContextMenu?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-/** 根据名字生成一个确定性渐变色 */
-function avatarGradient(name: string): string {
+function hascode(str: string): number {
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  if (hash === 0 && str.length > 0) {
+    for (let i = 0; i < str.length; i += 1) {
+      hash = hash * 31 + str.charCodeAt(i);
+    }
   }
-  const h1 = Math.abs(hash) % 360;
-  const h2 = (h1 + 40) % 360;
-  return `linear-gradient(135deg, hsl(${h1},65%,55%), hsl(${h2},65%,45%))`;
+  return hash;
+}
+
+function getTitleColor(title: string = ''): string {
+  const v = hascode(title);
+  return TITLE_COLORS[v % TITLE_COLORS.length];
 }
 
 /** 格式化时间为相对描述 */
@@ -44,7 +102,9 @@ export default function ChannelItem({
   level = 0,
   isPrivate = false,
   onClick,
+  onContextMenu,
 }: ChannelItemProps) {
+  const avatarBackground = getTitleColor(item.name);
   const cls = [
     'wk-channel-picker-item',
     `wk-channel-picker-level-${level}`,
@@ -56,13 +116,14 @@ export default function ChannelItem({
     .join(' ');
 
   return (
-    <button className={cls} onClick={onClick}>
+    <button className={cls} onClick={onClick} onContextMenu={onContextMenu}>
       {/* 图标 / 头像 */}
       <span className="wk-channel-picker-icon">
         {isPrivate ? (
-          // 私聊：圆形渐变头像 + 首字母
+          // 私聊：圆形头像 + 首字母，背景色与消息用户名配色规则一致
           <span
             className="wk-channel-picker-avatar"
+            style={{ background: avatarBackground }}
           >
             {item.name.charAt(0).toUpperCase()}
           </span>

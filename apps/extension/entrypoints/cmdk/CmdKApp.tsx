@@ -16,6 +16,7 @@ import type {
   ChannelPickerItem,
   ChannelPickerCategory,
 } from "@dmwork/base/src/Components/ChannelPicker";
+import CreateCategoryModal from "@dmwork/base/src/Components/CreateCategoryModal";
 import CategoryService from "@dmwork/base/src/Service/CategoryService";
 import { MessageReasonCode } from "@dmwork/base/src/Service/Const";
 import {
@@ -27,6 +28,7 @@ import { ImageContent } from "@dmwork/base/src/Messages/Image";
 import { FileContent } from "@dmwork/base/src/Messages/File/FileContent";
 import {
   Channel,
+  ChannelInfo,
   ChannelTypePerson,
   ConnectStatus,
   Mention,
@@ -40,6 +42,17 @@ import { resolveApp } from "../cmdk-overlay.content/url-apps";
 import OctoComposer, {
   type OctoComposerContext,
 } from "../sidepanel/OctoComposer";
+import {
+  buildChannelPickerCategoryContextMenus,
+  buildChannelPickerItemContextMenus,
+} from "../../utils/channelPickerContextMenus";
+import {
+  getExtensionSidepanelSession,
+} from "../../utils/extensionStorage";
+import {
+  EXTENSION_MESSAGE_TYPE,
+  type ExtensionRuntimeMessage,
+} from "../../utils/extensionRuntime";
 
 interface PanelContext {
   selectedText: string;
@@ -65,7 +78,10 @@ interface CategoryItem {
   id: string;
   name: string;
   order: number;
+  isDefault?: boolean;
 }
+
+const CreateCategoryModalComponent = CreateCategoryModal as any;
 
 const QUOTE_MAX_LENGTH = 500;
 const TITLE_DISPLAY_LIMIT = 60;
@@ -91,6 +107,12 @@ const BLOCKED_EXTENSIONS = [
   "wsf",
   "ps1",
 ];
+
+interface FetchDataOptions {
+  sync?: boolean;
+  showLoading?: boolean;
+}
+
 function buildCmdkMessageText(text: string, context: PanelContext | null) {
   const parts: string[] = [];
   const quotedText = context?.selectedText;
@@ -206,6 +228,7 @@ export default function CmdKApp() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [members, setMembers] = useState<Subscriber[] | undefined>(undefined);
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
   const [composerKey, setComposerKey] = useState(0);
@@ -213,6 +236,9 @@ export default function CmdKApp() {
   const inputContextRef = useRef<OctoComposerContext | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const dragFileCallbackRef = useRef<((file: File) => void) | null>(null);
+  const loadDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{
@@ -363,12 +389,17 @@ export default function CmdKApp() {
     selected?.type,
   ]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (options: FetchDataOptions = {}) => {
+    const { sync = true, showLoading = true } = options;
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       setError("");
 
-      await WKSDK.shared().conversationManager.sync({});
+      if (sync) {
+        await WKSDK.shared().conversationManager.sync({});
+      }
       const conversations = WKSDK.shared().conversationManager.conversations;
       const spaceId = WKApp.shared.currentSpaceId;
 
@@ -376,6 +407,7 @@ export default function CmdKApp() {
         category_id: string | null;
         name: string;
         sort: number;
+        is_default?: boolean;
         groups: Array<{ group_no: string }>;
       }> = [];
 
@@ -392,6 +424,7 @@ export default function CmdKApp() {
           id: category.category_id || `default-${index}`,
           name: category.name === "未分类" ? "默认分组" : category.name,
           order: category.sort ?? index,
+          isDefault: Boolean(category.is_default) || category.name === "未分类",
         })
       );
 
@@ -435,6 +468,11 @@ export default function CmdKApp() {
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
           conversation.channel
         );
+        if (!channelInfo?.orgData?.displayName && !channelInfo?.title) {
+          void WKSDK.shared()
+            .channelManager.fetchChannelInfo(conversation.channel)
+            .catch(() => null);
+        }
         const name =
           channelInfo?.orgData?.displayName ||
           channelInfo?.title ||
@@ -508,6 +546,7 @@ export default function CmdKApp() {
         console.warn("[CmdKApp] Failed to load friends:", friendsError);
       }
 
+      const sidepanelSession = await getExtensionSidepanelSession();
       const nextThreads = [...channelList, ...privateChatList];
       setThreads(nextThreads);
       setCategories(pickerCategories);
@@ -521,13 +560,21 @@ export default function CmdKApp() {
         ) {
           return prev;
         }
-        // 优先选名字包含"四皇"的群组，没有则选第一个
-        const preferred = nextThreads.find((item) =>
-          item.name?.includes("四皇")
+
+        if (!sidepanelSession.active || !sidepanelSession.selectedTarget) {
+          return null;
+        }
+
+        const matched = nextThreads.find(
+          (item) =>
+            item.channelId === sidepanelSession.selectedTarget?.channelId &&
+            item.channelType === sidepanelSession.selectedTarget?.channelType
         );
-        const fallback = preferred || nextThreads[0];
-        return fallback
-          ? { id: fallback.channelId, type: fallback.channelType }
+        return matched
+          ? {
+              id: matched.channelId,
+              type: matched.channelType,
+            }
           : null;
       });
     } catch (fetchError: any) {
@@ -536,7 +583,9 @@ export default function CmdKApp() {
       setCategories([]);
       setSelected(null);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -544,6 +593,50 @@ export default function CmdKApp() {
     if (context) {
       void fetchData();
     }
+  }, [context, fetchData]);
+
+  useEffect(() => {
+    if (!context) {
+      if (loadDebounceTimerRef.current) {
+        clearTimeout(loadDebounceTimerRef.current);
+        loadDebounceTimerRef.current = null;
+      }
+      return;
+    }
+
+    const scheduleReload = () => {
+      if (loadDebounceTimerRef.current) {
+        clearTimeout(loadDebounceTimerRef.current);
+      }
+      loadDebounceTimerRef.current = setTimeout(() => {
+        loadDebounceTimerRef.current = null;
+        void fetchData({ sync: false, showLoading: false });
+      }, 300);
+    };
+
+    const handleConversationChange = () => {
+      scheduleReload();
+    };
+
+    const handleChannelInfoChange = (_channelInfo: ChannelInfo) => {
+      scheduleReload();
+    };
+
+    WKSDK.shared().conversationManager.addConversationListener(
+      handleConversationChange
+    );
+    WKSDK.shared().channelManager.addListener(handleChannelInfoChange);
+
+    return () => {
+      WKSDK.shared().conversationManager.removeConversationListener(
+        handleConversationChange
+      );
+      WKSDK.shared().channelManager.removeListener(handleChannelInfoChange);
+      if (loadDebounceTimerRef.current) {
+        clearTimeout(loadDebounceTimerRef.current);
+        loadDebounceTimerRef.current = null;
+      }
+    };
   }, [context, fetchData]);
 
   useEffect(() => {
@@ -745,6 +838,18 @@ export default function CmdKApp() {
       setSending(true);
       setError("");
 
+      // 必须在所有 await 之前同步发出，保持用户手势上下文，
+      // 否则 background 无法调用 chrome.sidePanel.open()
+      browser.runtime
+        .sendMessage({
+          type: EXTENSION_MESSAGE_TYPE.requestOpenConversation,
+          target: {
+            channelId: selected.id,
+            channelType: selected.type,
+          },
+        } satisfies ExtensionRuntimeMessage)
+        .catch(() => {});
+
       try {
         const channel = new Channel(selected.id, selected.type);
         await ensureSdkConnected();
@@ -758,12 +863,6 @@ export default function CmdKApp() {
             buildCmdkMessageText(trimmedText, context);
           const messageContent = new MessageText(finalText);
 
-          // When sent via Enter key, MessageInput pre-formats the text to
-          // "@name" (not "@[uid:name]") and passes the mention data as the
-          // second argument.  buildCmdkMessageText cannot re-parse mentions
-          // from the already-formatted text, so parsedMention will be
-          // undefined.  Fall back to the incoming mention and adjust entity
-          // offsets for any quote/link prefix that was prepended.
           let finalMention = parsedMention;
           if (!finalMention && incomingMention) {
             const prefixLength = finalText.length - trimmedText.length;
@@ -862,6 +961,72 @@ export default function CmdKApp() {
     setSelected({ id: item.channelId, type: item.channelType });
     setPickerOpen(false);
   }, []);
+
+  const handlePickerConversationClosed = useCallback((item: ChannelPickerItem) => {
+    setSelected((prev) => {
+      if (
+        prev &&
+        prev.id === item.channelId &&
+        prev.type === item.channelType
+      ) {
+        return null;
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleCreateGroupInCategory = useCallback(
+    (categoryId: string) => {
+      try {
+        WKApp.endpoints.organizationalLayer(null, {
+          defaultCategoryId: categoryId,
+          onSuccess: () => {
+            void fetchData();
+          },
+        });
+      } catch {
+        setError("创建群聊 · 环境未就绪，请稍后重试");
+      }
+    },
+    [fetchData]
+  );
+
+  const pickerItemContextMenus = useMemo(
+    () =>
+      buildChannelPickerItemContextMenus({
+        categories,
+        refresh: () => {
+          void fetchData();
+        },
+        confirm: (content, onOk) => {
+          if (window.confirm(content)) {
+            void onOk();
+          }
+        },
+        onOpenCreateCategory: () => setCreateCategoryOpen(true),
+        onConversationClosed: handlePickerConversationClosed,
+      }),
+    [categories, fetchData, handlePickerConversationClosed]
+  );
+
+  const pickerCategoryContextMenus = useMemo(
+    () =>
+      buildChannelPickerCategoryContextMenus({
+        categories,
+        refresh: () => {
+          void fetchData();
+        },
+        confirm: (content, onOk) => {
+          if (window.confirm(content)) {
+            void onOk();
+          }
+        },
+        onOpenCreateCategory: () => setCreateCategoryOpen(true),
+        onCreateGroupInCategory: handleCreateGroupInCategory,
+        onShowMessage: setError,
+      }),
+    [categories, fetchData, handleCreateGroupInCategory]
+  );
 
   const handleOverlayMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -969,6 +1134,7 @@ export default function CmdKApp() {
       id: category.id,
       name: category.name,
       order: category.order,
+      isDefault: category.isDefault,
     })
   );
 
@@ -1158,6 +1324,8 @@ export default function CmdKApp() {
                     selectedId={selected?.id}
                     layoutMode="single-panel"
                     onSelect={handlePickerSelect}
+                    getItemContextMenus={pickerItemContextMenus}
+                    getCategoryContextMenus={pickerCategoryContextMenus}
                     onClose={() => setPickerOpen(false)}
                     onRefresh={() => {
                       void fetchData();
@@ -1170,6 +1338,22 @@ export default function CmdKApp() {
           )}
         </div>
       </div>
+
+      <CreateCategoryModalComponent
+        visible={createCategoryOpen}
+        existingNames={categories.map((category) => category.name)}
+        onConfirm={async (name: string) => {
+          const spaceId = WKApp.shared.currentSpaceId;
+          if (!spaceId) {
+            setError("未选中 Space，无法创建分组");
+            return;
+          }
+          await CategoryService.create(spaceId, { name });
+          setCreateCategoryOpen(false);
+          await fetchData();
+        }}
+        onCancel={() => setCreateCategoryOpen(false)}
+      />
     </div>
   );
 }

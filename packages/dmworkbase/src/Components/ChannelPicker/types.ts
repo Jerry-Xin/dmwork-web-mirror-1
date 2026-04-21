@@ -1,4 +1,5 @@
 /** ChannelPicker shared types */
+import type { ContextMenusData } from "../ContextMenus";
 
 export interface ChannelPickerItem {
   channelId: string;
@@ -17,6 +18,7 @@ export interface ChannelPickerCategory {
   id: string;
   name: string;
   order: number;
+  isDefault?: boolean;
 }
 
 export type ChannelPickerLayoutMode = "tabbed" | "single-panel";
@@ -32,6 +34,12 @@ export interface ChannelPickerProps {
   selectedId?: string;
   /** 选中回调 */
   onSelect: (item: ChannelPickerItem) => void;
+  /** 右键菜单构建（频道/私聊项） */
+  getItemContextMenus?: (item: ChannelPickerItem) => ContextMenusData[];
+  /** 右键菜单构建（分组标题） */
+  getCategoryContextMenus?: (
+    category: ChannelPickerCategory
+  ) => ContextMenusData[];
   /** 关闭回调 */
   onClose?: () => void;
   /** 刷新回调 */

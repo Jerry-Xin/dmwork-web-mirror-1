@@ -2119,6 +2119,24 @@ body[data-layout="cli"] .octo-attach-grid .octo-attach-file-row {
   background: #2196f3;
 }
 
+body.octo-sidepanel-v3 .wk-rail-action-logout {
+  color: var(--wk-text-danger);
+}
+
+body.octo-sidepanel-v3 .wk-rail-action-logout svg {
+  width: 13px;
+  height: 13px;
+}
+
+body.octo-sidepanel-v3 .wk-rail-action-logout:hover {
+  color: var(--wk-text-danger);
+}
+
+body.octo-sidepanel-v3 .wk-rail-action-logout.is-armed {
+  background: color-mix(in srgb, var(--wk-text-danger) 14%, transparent);
+  color: var(--wk-text-danger);
+}
+
 /* ── Bug fix: Emoji picker clipped by overflow:hidden ancestors ────────── */
 /* In the sidepanel the emoji panel is rendered inside several containers
    that all have overflow:hidden (wk-sidepanel-content, wk-conversation,

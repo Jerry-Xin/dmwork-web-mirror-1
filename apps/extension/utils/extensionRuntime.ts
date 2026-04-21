@@ -4,6 +4,7 @@ export const DEFAULT_API_URL =
 export const EXTENSION_STORAGE_KEYS = {
   authState: "dmwork:extension:auth-state",
   pendingConversation: "dmwork:extension:pending-conversation",
+  sidepanelSession: "dmwork:extension:sidepanel-session",
   preferences: "dmwork:extension:preferences",
   theme: "octo_v3_theme",
 } as const;
@@ -25,6 +26,7 @@ export const EXTENSION_MESSAGE_TYPE = {
   offscreenSyncResult: "OFFSCREEN_SYNC_RESULT",
   offscreenNewMessage: "OFFSCREEN_NEW_MESSAGE",
   openConversation: "OPEN_CONVERSATION",
+  requestOpenConversation: "REQUEST_OPEN_CONVERSATION",
   sidepanelBadgeSync: "SIDEPANEL_BADGE_SYNC",
   sidepanelState: "SIDEPANEL_STATE",
 } as const;
@@ -40,6 +42,11 @@ export interface ExtensionAuthState {
 export interface ConversationTarget {
   channelId: string;
   channelType: number;
+}
+
+export interface SidepanelSessionState {
+  active: boolean;
+  selectedTarget: ConversationTarget | null;
 }
 
 export interface OffscreenSyncResult {
@@ -76,6 +83,11 @@ export interface OpenConversationMessage {
   target: ConversationTarget;
 }
 
+export interface RequestOpenConversationMessage {
+  type: typeof EXTENSION_MESSAGE_TYPE.requestOpenConversation;
+  target: ConversationTarget;
+}
+
 export interface SidepanelBadgeSyncMessage {
   type: typeof EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync;
   hasUnread: boolean;
@@ -93,6 +105,7 @@ export type ExtensionRuntimeMessage =
   | OffscreenSyncResult
   | OffscreenNewMessageEvent
   | OpenConversationMessage
+  | RequestOpenConversationMessage
   | SidepanelBadgeSyncMessage
   | SidepanelStateMessage;
 

@@ -1,6 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type { ChannelPickerProps, ChannelPickerItem } from "./types";
 import ChannelItem from "./ChannelItem";
+import ContextMenus, {
+  type ContextMenusContext,
+  type ContextMenusData,
+} from "../ContextMenus";
 import "./index.css";
 
 /** 搜索图标 SVG */
@@ -64,12 +69,16 @@ export default function ChannelPicker({
   showSearch = true,
   layoutMode = "tabbed",
   loading = false,
+  getItemContextMenus,
+  getCategoryContextMenus,
 }: ChannelPickerProps) {
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"group" | "private">("group");
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
     new Set()
   );
+  const [contextMenus, setContextMenus] = useState<ContextMenusData[]>([]);
+  const contextMenusRef = useRef<ContextMenusContext | null>(null);
   const [expandedThreadParents, setExpandedThreadParents] = useState<
     Set<string>
   >(new Set());
@@ -134,8 +143,8 @@ export default function ChannelPicker({
     }
 
     // 找到默认分类（如果有），未分类频道归入其中
-    const defaultCategory = sortedCategories.find((c) =>
-      c.id.startsWith("default-")
+    const defaultCategory = sortedCategories.find(
+      (c) => c.isDefault || c.id.startsWith("default-")
     );
 
     // 按分类分组
@@ -189,6 +198,40 @@ export default function ChannelPicker({
     });
   };
 
+  const openContextMenu = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    menus: ContextMenusData[]
+  ) => {
+    if (menus.length === 0) {
+      return;
+    }
+
+    flushSync(() => {
+      setContextMenus(menus);
+    });
+    contextMenusRef.current?.show(event);
+  };
+
+  const handleItemContextMenu =
+    (item: ChannelPickerItem) =>
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const menus = getItemContextMenus?.(item) ?? [];
+      if (menus.length === 0) {
+        return;
+      }
+      openContextMenu(event, menus);
+    };
+
+  const handleCategoryContextMenu =
+    (category: NonNullable<ChannelPickerProps["categories"]>[number]) =>
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const menus = getCategoryContextMenus?.(category) ?? [];
+      if (menus.length === 0) {
+        return;
+      }
+      openContextMenu(event, menus);
+    };
+
   const renderChannelWithThreads = (ch: ChannelPickerItem) => {
     const threads = categoryTree.threadsByParent.get(ch.channelId) || [];
     const isExpanded = expandedThreadParents.has(ch.channelId);
@@ -208,6 +251,7 @@ export default function ChannelPicker({
           isSelected={ch.channelId === selectedId}
           level={0}
           onClick={() => onSelect(ch)}
+          onContextMenu={handleItemContextMenu(ch)}
         />
         {visibleThreads.map((t) => (
           <ChannelItem
@@ -216,6 +260,7 @@ export default function ChannelPicker({
             isSelected={t.channelId === selectedId}
             level={1}
             onClick={() => onSelect(t)}
+            onContextMenu={handleItemContextMenu(t)}
           />
         ))}
         {hiddenCount > 0 && (
@@ -268,6 +313,7 @@ export default function ChannelPicker({
               <button
                 className="wk-channel-picker-cat"
                 onClick={() => toggleCategory(cat.id)}
+                onContextMenu={handleCategoryContextMenu(cat)}
               >
                 <span className="wk-channel-picker-cat-arrow">
                   {isCollapsed ? "▸" : "▾"}
@@ -307,6 +353,7 @@ export default function ChannelPicker({
         isSelected={item.channelId === selectedId}
         isPrivate
         onClick={() => onSelect(item)}
+        onContextMenu={handleItemContextMenu(item)}
       />
     ));
   };
@@ -324,6 +371,7 @@ export default function ChannelPicker({
           isSelected={item.channelId === selectedId}
           isPrivate={item.channelType === 1}
           onClick={() => onSelect(item)}
+          onContextMenu={handleItemContextMenu(item)}
         />
       ));
     }
@@ -432,6 +480,13 @@ export default function ChannelPicker({
           renderPrivateList(true)
         )}
       </div>
+
+      <ContextMenus
+        onContext={(ctx) => {
+          contextMenusRef.current = ctx;
+        }}
+        menus={contextMenus}
+      />
     </div>
   );
 }

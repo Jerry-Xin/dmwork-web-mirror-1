@@ -42,12 +42,20 @@ import {
   type Space,
 } from "@dmwork/base/src/Service/SpaceService";
 import CreateCategoryModal from "@dmwork/base/src/Components/CreateCategoryModal";
-import { setExtensionTheme } from "../../utils/extensionStorage";
+import {
+  setExtensionSidepanelSelectedConversation,
+  setExtensionTheme,
+} from "../../utils/extensionStorage";
+import {
+  buildChannelPickerCategoryContextMenus,
+  buildChannelPickerItemContextMenus,
+} from "../../utils/channelPickerContextMenus";
 
 const HashIconComponent = HashIcon as any;
 const ThreadIconComponent = ThreadIcon as any;
 const ConversationComponent = Conversation as any;
 const ErrorBoundaryComponent = ErrorBoundary as any;
+const CreateCategoryModalComponent = CreateCategoryModal as any;
 
 interface DrawerMember {
   uid: string;
@@ -104,6 +112,7 @@ interface OctoSidepanelLayoutState {
   spaces: Space[];
   currentSpaceId: string;
   showSpaceSwitcher: boolean;
+  logoutArmed: boolean;
 }
 
 interface OctoComposerInputContext extends MessageInputContext {
@@ -119,22 +128,72 @@ function getFirstChar(name: string): string {
   return ch;
 }
 
-const RAIL_COLOR_FOR_LETTER: Record<string, string> = {
-  D: "c-orange",
-  F: "c-purple",
-  T: "c-emerald",
-  P: "c-blue",
-  E: "c-blue",
-  A: "c-emerald",
-  S: "c-orange",
-  M: "c-purple",
-  B: "c-blue",
-  L: "c-emerald",
-  O: "c-purple",
-};
+const TITLE_COLORS = [
+  "#8C8DFF",
+  "#7983C2",
+  "#6D8DDE",
+  "#5979F0",
+  "#6695DF",
+  "#8F7AC5",
+  "#9D77A5",
+  "#8A64D0",
+  "#AA66C3",
+  "#A75C96",
+  "#C8697D",
+  "#B74D62",
+  "#BD637C",
+  "#B3798E",
+  "#9B6D77",
+  "#B87F7F",
+  "#C5595A",
+  "#AA4848",
+  "#B0665E",
+  "#B76753",
+  "#BB5334",
+  "#C97B46",
+  "#BE6C2C",
+  "#CB7F40",
+  "#A47758",
+  "#B69370",
+  "#A49373",
+  "#AA8A46",
+  "#AA8220",
+  "#76A048",
+  "#9CAD23",
+  "#A19431",
+  "#AA9100",
+  "#A09555",
+  "#C49B4B",
+  "#5FB05F",
+  "#6AB48F",
+  "#71B15C",
+  "#B3B357",
+  "#A3B561",
+  "#909F45",
+  "#93B289",
+  "#3D98D0",
+  "#429AB6",
+  "#4EABAA",
+  "#6BC0CE",
+  "#64B5D9",
+  "#3E9CCB",
+  "#2887C4",
+  "#52A98B",
+];
 
-function railColorClass(letter: string): string {
-  return RAIL_COLOR_FOR_LETTER[letter.toUpperCase()] || "c-purple";
+function hascode(str: string): number {
+  let hash = 0;
+  if (hash === 0 && str.length > 0) {
+    for (let i = 0; i < str.length; i += 1) {
+      hash = hash * 31 + str.charCodeAt(i);
+    }
+  }
+  return hash;
+}
+
+function getTitleColor(title: string = ""): string {
+  const v = hascode(title);
+  return TITLE_COLORS[v % TITLE_COLORS.length];
 }
 
 const RAIL_PIN_LIMIT = 7;
@@ -291,6 +350,7 @@ export default class OctoSidepanelLayout extends Component<
   private channelInfoListenerRemover?: () => void;
   private loadDebounceTimer?: ReturnType<typeof setTimeout>;
   private spinnerTimer?: ReturnType<typeof setInterval>;
+  private logoutConfirmTimer?: ReturnType<typeof setTimeout>;
   private spinnerVerbIndex = 0;
 
   private SPINNER_VERBS = [
@@ -379,6 +439,7 @@ export default class OctoSidepanelLayout extends Component<
       spaces: [],
       currentSpaceId: "",
       showSpaceSwitcher: false,
+      logoutArmed: false,
     };
   }
 
@@ -441,6 +502,25 @@ export default class OctoSidepanelLayout extends Component<
     document.addEventListener("keydown", this.handleEscKey);
     document.addEventListener("click", this.handleClickOutsideSettings);
     document.addEventListener("click", this.handleImageClick);
+    this.syncSelectedConversationState();
+  }
+
+  componentDidUpdate(
+    _prevProps: {},
+    prevState: OctoSidepanelLayoutState
+  ) {
+    const prevChannel = prevState.selectedChannel;
+    const nextChannel = this.state.selectedChannel;
+    const prevKey = prevChannel
+      ? `${prevChannel.channelID}:${prevChannel.channelType}`
+      : "";
+    const nextKey = nextChannel
+      ? `${nextChannel.channelID}:${nextChannel.channelType}`
+      : "";
+
+    if (prevKey !== nextKey) {
+      this.syncSelectedConversationState();
+    }
   }
 
   componentWillUnmount() {
@@ -448,13 +528,40 @@ export default class OctoSidepanelLayout extends Component<
     this.channelInfoListenerRemover?.();
     if (this.loadDebounceTimer) clearTimeout(this.loadDebounceTimer);
     if (this.spinnerTimer) clearInterval(this.spinnerTimer);
+    if (this.logoutConfirmTimer) clearTimeout(this.logoutConfirmTimer);
     document.removeEventListener("keydown", this.handleEscKey);
     document.removeEventListener("click", this.handleClickOutsideSettings);
     document.removeEventListener("click", this.handleImageClick);
   }
 
+  private syncSelectedConversationState() {
+    const { selectedChannel } = this.state;
+    void setExtensionSidepanelSelectedConversation(
+      selectedChannel
+        ? {
+            channelId: selectedChannel.channelID,
+            channelType: selectedChannel.channelType,
+          }
+        : null
+    );
+  }
+
+  private resetLogoutArmed = () => {
+    if (this.logoutConfirmTimer) {
+      clearTimeout(this.logoutConfirmTimer);
+      this.logoutConfirmTimer = undefined;
+    }
+    if (this.state.logoutArmed) {
+      this.setState({ logoutArmed: false });
+    }
+  };
+
   private handleEscKey = (e: KeyboardEvent) => {
     if (e.key !== "Escape") return;
+    if (this.state.logoutArmed) {
+      this.resetLogoutArmed();
+      return;
+    }
     // Close overlays in z-index priority order (highest first)
     if (this.state.lightboxSrc) {
       this.setState({ lightboxSrc: null });
@@ -554,6 +661,12 @@ export default class OctoSidepanelLayout extends Component<
 
   private handleClickOutsideSettings = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
+    if (
+      this.state.logoutArmed &&
+      !target.closest(".wk-rail-action-logout")
+    ) {
+      this.resetLogoutArmed();
+    }
     // Close settings popover
     if (this.state.showSettings) {
       if (
@@ -811,6 +924,7 @@ export default class OctoSidepanelLayout extends Component<
           id: cat.category_id || `default-${idx}`,
           name: cat.name === "未分类" ? "默认分组" : cat.name,
           order: cat.sort,
+          isDefault: Boolean(cat.is_default) || cat.name === "未分类",
         })
       );
 
@@ -954,9 +1068,38 @@ export default class OctoSidepanelLayout extends Component<
     this.setState({ showPicker: false });
   };
 
+  private handlePickerConversationClosed = (item: ChannelPickerItem) => {
+    const { selectedChannel } = this.state;
+    if (
+      selectedChannel &&
+      selectedChannel.channelID === item.channelId &&
+      selectedChannel.channelType === item.channelType
+    ) {
+      this.setState({
+        selectedChannel: null,
+        selectedChannelName: "",
+        showInfoDrawer: false,
+        members: [],
+      });
+    }
+  };
+
   private handleChannelSelect = (item: ChannelPickerItem) => {
     const channel = new Channel(item.channelId, item.channelType);
     this.selectChannel(channel);
+  };
+
+  private handlePickerCreateGroupInCategory = (categoryId: string) => {
+    try {
+      WKApp.endpoints.organizationalLayer(null, {
+        defaultCategoryId: categoryId,
+        onSuccess: () => {
+          void this.loadChannelPickerData();
+        },
+      });
+    } catch {
+      showToast("创建群聊 · 环境未就绪，请稍后重试");
+    }
   };
 
   private handleRefresh = async () => {
@@ -1009,6 +1152,21 @@ export default class OctoSidepanelLayout extends Component<
       void onOk();
     }
   }
+
+  private handleAccountLogout = () => {
+    if (this.state.logoutArmed) {
+      this.resetLogoutArmed();
+      WKApp.shared.logout();
+      return;
+    }
+
+    this.setState({ showSettings: false, logoutArmed: true });
+    showToast("再次点击退出登录");
+    this.logoutConfirmTimer = setTimeout(() => {
+      this.logoutConfirmTimer = undefined;
+      this.setState({ logoutArmed: false });
+    }, 2000);
+  };
 
   private isAiMember(member: DrawerMember) {
     const text = `${member.name || ""} ${member.uid || ""}`.toLowerCase();
@@ -2101,6 +2259,7 @@ export default class OctoSidepanelLayout extends Component<
           const isPrivate = item.channelType === ChannelTypePerson;
           const hasMention = item.mentionCount > 0;
           const hasUnread = item.unread > 0 && !hasMention;
+          const railItemBackground = getTitleColor(item.name);
 
           const cls = [
             "wk-sidepanel-rail-item",
@@ -2129,14 +2288,16 @@ export default class OctoSidepanelLayout extends Component<
                   @
                 </span>
               ) : isPrivate ? (
-                <span className="wk-sidepanel-rail-icon wk-sidepanel-rail-icon-pm">
+                <span
+                  className="wk-sidepanel-rail-icon wk-sidepanel-rail-icon-pm"
+                  style={{ background: railItemBackground }}
+                >
                   {getFirstChar(item.name)}
                 </span>
               ) : (
                 <span
-                  className={`wk-sidepanel-rail-icon wk-sidepanel-rail-icon-ch ${railColorClass(
-                    getFirstChar(item.name)
-                  )}`}
+                  className="wk-sidepanel-rail-icon wk-sidepanel-rail-icon-ch"
+                  style={{ background: railItemBackground }}
                 >
                   {getFirstChar(item.name)}
                 </span>
@@ -2343,6 +2504,16 @@ export default class OctoSidepanelLayout extends Component<
             </div>
           )}
         </div>
+        <button
+          className={`wk-rail-action wk-rail-action-logout${
+            this.state.logoutArmed ? " is-armed" : ""
+          }`}
+          title={this.state.logoutArmed ? "再次点击退出登录" : "退出登录"}
+          onClick={this.handleAccountLogout}
+          type="button"
+        >
+          {renderDrawerIcon("logout")}
+        </button>
       </nav>
     );
   }
@@ -2548,6 +2719,23 @@ export default class OctoSidepanelLayout extends Component<
       members,
       memberLoading,
     } = this.state;
+    const pickerItemContextMenus = buildChannelPickerItemContextMenus({
+      categories: this.state.categories,
+      refresh: () => this.loadChannelPickerData(true),
+      confirm: (content, onOk) => this.confirmAction(content, onOk),
+      onOpenCreateCategory: () =>
+        this.setState({ showCreateCategoryModal: true }),
+      onConversationClosed: this.handlePickerConversationClosed,
+    });
+    const pickerCategoryContextMenus = buildChannelPickerCategoryContextMenus({
+      categories: this.state.categories,
+      refresh: () => this.loadChannelPickerData(true),
+      confirm: (content, onOk) => this.confirmAction(content, onOk),
+      onOpenCreateCategory: () =>
+        this.setState({ showCreateCategoryModal: true }),
+      onCreateGroupInCategory: this.handlePickerCreateGroupInCategory,
+      onShowMessage: showToast,
+    });
     const isPrivate = selectedChannel?.channelType === ChannelTypePerson;
     const memberCountText = memberLoading
       ? "..."
@@ -2738,6 +2926,8 @@ export default class OctoSidepanelLayout extends Component<
                   privateChats={this.state.privateChats}
                   selectedId={selectedChannel?.channelID}
                   onSelect={this.handleChannelSelect}
+                  getItemContextMenus={pickerItemContextMenus}
+                  getCategoryContextMenus={pickerCategoryContextMenus}
                   onClose={this.handlePickerClose}
                   showSearch={false}
                   loading={this.state.pickerLoading}
@@ -2762,7 +2952,7 @@ export default class OctoSidepanelLayout extends Component<
         {this.renderLightbox()}
 
         {/* Create Category Modal */}
-        <CreateCategoryModal
+        <CreateCategoryModalComponent
           visible={this.state.showCreateCategoryModal}
           existingNames={this.state.categories.map((c) => c.name)}
           onConfirm={async (name: string) => {

@@ -733,7 +733,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
   }, [onPlainTextChange, plainText]);
 
   useEffect(() => {
-    if (!editor || membersProp) return;
+    if (!editor) return;
     const node = editor.view.dom as HTMLElement;
 
     const handlePaste = (event: ClipboardEvent) => {
@@ -754,7 +754,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
     return () => {
       node.removeEventListener("paste", handlePaste);
     };
-  }, [conversationContext, editor, membersProp, syncPendingAttachments]);
+  }, [conversationContext, editor, syncPendingAttachments]);
 
   useEffect(() => {
     if (!emojiOpen) return;

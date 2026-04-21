@@ -171,15 +171,24 @@ html, body {
 }
 
 .octo-cmdk-target-glyph {
-  width: 6px;
-  height: 6px;
-  border-radius: 1px;
-  background: var(--wk-ink-100);
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--wk-ink-08);
+  color: var(--wk-ink-80);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .octo-cmdk-target-glyph.is-private {
-  background: var(--wk-ink-100);
+  border-radius: 999px;
+  background: var(--wk-brand-soft);
+  color: var(--wk-brand, var(--wk-brand-primary));
 }
 
 .octo-cmdk-target-copy {
@@ -194,6 +203,8 @@ html, body {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 500;
+  font-size: 12px;
+  line-height: 1.2;
   color: var(--wk-ink-80);
 }
 
@@ -292,17 +303,9 @@ html, body {
   line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-.octo-cmdk-quote-expand {
-  margin-top: 8px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--wk-brand-primary);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
+  max-height: 180px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .octo-cmdk-imgs,

@@ -88,7 +88,6 @@ const TITLE_DISPLAY_LIMIT = 60;
 const MAX_ATTACHMENTS = 20;
 const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
 const SEND_ACK_TIMEOUT = 12000;
-const COLLAPSED_QUOTE_LENGTH = 180;
 const BLOCKED_EXTENSIONS = [
   "exe",
   "bat",
@@ -232,7 +231,6 @@ export default function CmdKApp() {
   const [members, setMembers] = useState<Subscriber[] | undefined>(undefined);
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
   const [composerKey, setComposerKey] = useState(0);
-  const [quoteExpanded, setQuoteExpanded] = useState(false);
   const inputContextRef = useRef<OctoComposerContext | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const dragFileCallbackRef = useRef<((file: File) => void) | null>(null);
@@ -261,10 +259,6 @@ export default function CmdKApp() {
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, []);
-
-  useEffect(() => {
-    setQuoteExpanded(false);
-  }, [context?.selectedText, context?.pageUrl]);
 
   useEffect(() => {
     const nextUrls: Record<string, string> = {};
@@ -1075,12 +1069,6 @@ export default function CmdKApp() {
       : context.pageTitle;
   const appLabel = app.cli ? `${app.name} · ${app.cli}` : app.name;
   const quotedText = context.selectedText;
-  const collapsedPreview =
-    quotedText.length > COLLAPSED_QUOTE_LENGTH
-      ? `${quotedText.slice(0, COLLAPSED_QUOTE_LENGTH)}…`
-      : quotedText;
-  const preview = quoteExpanded ? quotedText : collapsedPreview;
-  const isTruncated = quotedText.length > COLLAPSED_QUOTE_LENGTH;
   const selectionCount = quotedText.length;
 
   const selectedThread = threads.find(
@@ -1192,11 +1180,7 @@ export default function CmdKApp() {
 
         <div className="octo-cmdk-body">
           {quotedText && (
-            <div
-              className={`octo-cmdk-quote${
-                quoteExpanded ? " is-expanded" : ""
-              }`}
-            >
+            <div className="octo-cmdk-quote">
               <div className="octo-cmdk-quote-meta">
                 <span className="octo-cmdk-quote-favicon">{app.icon}</span>
                 <span className="octo-cmdk-quote-source">{appLabel}</span>
@@ -1205,16 +1189,7 @@ export default function CmdKApp() {
                   选中 {selectionCount} 字
                 </span>
               </div>
-              <div className="octo-cmdk-quote-body">{preview}</div>
-              {isTruncated && (
-                <button
-                  className="octo-cmdk-quote-expand"
-                  onClick={() => setQuoteExpanded((prev) => !prev)}
-                  type="button"
-                >
-                  {quoteExpanded ? "收起" : "展开"}
-                </button>
-              )}
+              <div className="octo-cmdk-quote-body">{quotedText}</div>
             </div>
           )}
 

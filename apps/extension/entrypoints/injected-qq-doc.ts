@@ -19,8 +19,8 @@ function getDomSelectedText(): string {
   }
 }
 
-function sendToContentScript(text: string) {
-  window.postMessage({ type: 'QQ_DOC_TEXT_SELECTED', text }, '*');
+function sendToContentScript(text: string, x: number, y: number) {
+  window.postMessage({ type: 'QQ_DOC_TEXT_SELECTED', text, x, y }, '*');
 }
 
 function installListeners(editor: QQDocEditor) {
@@ -30,6 +30,8 @@ function installListeners(editor: QQDocEditor) {
   let pointerActive = false;
   let pointerX = 0;
   let pointerY = 0;
+  let lastPointerX = 0;
+  let lastPointerY = 0;
 
   function captureSelection(allowWithoutDom: boolean) {
     const domText = getDomSelectedText();
@@ -52,7 +54,7 @@ function installListeners(editor: QQDocEditor) {
 
     lastText = text;
     lastTime = now;
-    sendToContentScript(text);
+    sendToContentScript(text, lastPointerX, lastPointerY);
   }
 
   function scheduleCapture(allowWithoutDom: boolean) {
@@ -73,6 +75,8 @@ function installListeners(editor: QQDocEditor) {
     const moved = pointerActive
       && Math.hypot(e.clientX - pointerX, e.clientY - pointerY) >= POINTER_THRESHOLD;
     pointerActive = false;
+    lastPointerX = e.clientX;
+    lastPointerY = e.clientY;
     scheduleCapture(moved || e.detail > 1);
   }, true);
 

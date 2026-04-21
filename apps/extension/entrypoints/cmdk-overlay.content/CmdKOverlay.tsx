@@ -40,6 +40,34 @@ export default function CmdKOverlay() {
     return () => document.removeEventListener('mouseup', onMouseUp, true);
   }, []);
 
+  // QQ 文档走 canvas 渲染，window.getSelection() 拿不到；
+  // 由 injected-qq-doc.ts 通过 postMessage 把文本 + 光标位置传过来。
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== window) return;
+      if (e.data?.type !== 'QQ_DOC_TEXT_SELECTED') return;
+      const text = (e.data.text as string | undefined)?.trim();
+      if (!text) return;
+      const x = typeof e.data.x === 'number' ? e.data.x : 0;
+      const y = typeof e.data.y === 'number' ? e.data.y : 0;
+      const rect = {
+        top: y,
+        bottom: y,
+        left: x,
+        right: x,
+        width: 0,
+        height: 0,
+        x,
+        y,
+        toJSON: () => ({}),
+      } as DOMRect;
+      setSelectionText(text);
+      setSelectionRect(rect);
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
   const openPanel = useCallback(() => {
     if (panelOpen) return;
     const sel = window.getSelection();

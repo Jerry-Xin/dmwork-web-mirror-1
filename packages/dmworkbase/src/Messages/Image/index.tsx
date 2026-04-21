@@ -156,11 +156,13 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
         let scaleSize = this.imageScale(content.width, content.height);
         const imageURL = this.getImageSrc(content) || ""
 
+        const hasRemoteUrl = !!(content.url || (content as any).remoteUrl)
         const isUploading =
             uploadStatus !== null &&
             uploadStatus !== TaskStatus.success &&
             uploadStatus !== TaskStatus.fail &&
-            uploadStatus !== TaskStatus.cancel
+            uploadStatus !== TaskStatus.cancel &&
+            !hasRemoteUrl
 
         const pct = Math.round(uploadProgress)
 

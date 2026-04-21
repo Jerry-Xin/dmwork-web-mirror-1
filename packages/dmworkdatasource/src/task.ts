@@ -80,6 +80,7 @@ export class MediaMessageUploadTask extends MessageTask {
         })
         if(resp && resp.status >= 200 && resp.status < 300) {
             const mediaContent = this.message.content as MediaMessageContent
+            mediaContent.url = credentials.downloadUrl
             mediaContent.remoteUrl = credentials.downloadUrl
             this.status = TaskStatus.success
             this.update()

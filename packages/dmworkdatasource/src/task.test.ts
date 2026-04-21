@@ -95,6 +95,18 @@ describe('MediaMessageUploadTask', () => {
       expect(task.status).toBe(TaskStatus.success)
       expect((task.message.content as any).remoteUrl).toBe(creds.downloadUrl)
     })
+
+    it('sets both content.url and content.remoteUrl on success', async () => {
+      const creds = makeCredentials()
+      mockApiGet.mockResolvedValue(creds)
+      vi.mocked(axios.put).mockResolvedValue({ status: 200, data: {} })
+
+      const task = createTask()
+      await task.start()
+
+      expect((task.message.content as any).url).toBe(creds.downloadUrl)
+      expect((task.message.content as any).remoteUrl).toBe(creds.downloadUrl)
+    })
   })
 
   describe('start() — getUploadCredentials returns undefined', () => {

@@ -62,6 +62,7 @@ interface OctoSidepanelLayoutState {
   selectedChannel: Channel | null;
   selectedChannelName: string;
   showPicker: boolean;
+  pickerHydrated: boolean;
   showInfoDrawer: boolean;
   channels: ChannelPickerItem[];
   categories: ChannelPickerCategory[];
@@ -75,7 +76,7 @@ interface OctoSidepanelLayoutState {
   drawerMuted: boolean | null;
   theme: string;
   layout: string;
-  readingMode: 'message' | 'cli';
+  readingMode: "message" | "cli";
   showSettings: boolean;
   // Full Composer
   showFullComposer: boolean;
@@ -119,10 +120,17 @@ function getFirstChar(name: string): string {
 }
 
 const RAIL_COLOR_FOR_LETTER: Record<string, string> = {
-  D: "c-orange", F: "c-purple", T: "c-emerald",
-  P: "c-blue",   E: "c-blue",   A: "c-emerald",
-  S: "c-orange", M: "c-purple", B: "c-blue",
-  L: "c-emerald", O: "c-purple",
+  D: "c-orange",
+  F: "c-purple",
+  T: "c-emerald",
+  P: "c-blue",
+  E: "c-blue",
+  A: "c-emerald",
+  S: "c-orange",
+  M: "c-purple",
+  B: "c-blue",
+  L: "c-emerald",
+  O: "c-purple",
 };
 
 function railColorClass(letter: string): string {
@@ -333,6 +341,7 @@ export default class OctoSidepanelLayout extends Component<
       selectedChannel: null,
       selectedChannelName: "",
       showPicker: false,
+      pickerHydrated: false,
       showInfoDrawer: false,
       channels: [],
       categories: [],
@@ -671,6 +680,7 @@ export default class OctoSidepanelLayout extends Component<
       channels: [],
       privateChats: [],
       categories: [],
+      pickerHydrated: false,
       pickerLoading: true,
     });
 
@@ -678,7 +688,10 @@ export default class OctoSidepanelLayout extends Component<
       await WKSDK.shared().conversationManager.sync({});
       await this.loadChannelPickerData();
     } catch (e) {
-      console.warn("[OctoSidepanelLayout] Failed to reload after space switch:", e);
+      console.warn(
+        "[OctoSidepanelLayout] Failed to reload after space switch:",
+        e
+      );
       this.setState({ pickerLoading: false });
     }
   };
@@ -775,8 +788,10 @@ export default class OctoSidepanelLayout extends Component<
     }
   }
 
-  private async loadChannelPickerData() {
-    this.setState({ pickerLoading: true });
+  private async loadChannelPickerData(showLoading = true) {
+    if (showLoading) {
+      this.setState({ pickerLoading: true });
+    }
 
     try {
       const conversations = WKSDK.shared().conversationManager.conversations;
@@ -875,6 +890,7 @@ export default class OctoSidepanelLayout extends Component<
         channels: channelList,
         categories,
         privateChats: privateChatList,
+        pickerHydrated: true,
         pickerLoading: false,
       });
 
@@ -908,22 +924,30 @@ export default class OctoSidepanelLayout extends Component<
       }
     } catch (e) {
       console.warn("[OctoSidepanelLayout] Failed to load picker data:", e);
-      this.setState({ pickerLoading: false });
+      this.setState({ pickerHydrated: true, pickerLoading: false });
     }
   }
 
-  private handlePickerToggle = async () => {
+  private refreshPickerData = async (showLoading: boolean) => {
+    if (showLoading) {
+      this.setState({ pickerLoading: true });
+    }
+    await WKSDK.shared().conversationManager.sync({});
+    await this.loadChannelPickerData(showLoading);
+  };
+
+  private handlePickerToggle = () => {
     if (this.state.showPicker) {
       this.setState({ showPicker: false });
       return;
     }
+    const shouldShowLoading = !this.state.pickerHydrated;
     this.setState({
       showPicker: true,
-      pickerLoading: true,
+      pickerLoading: shouldShowLoading,
       showInfoDrawer: false,
     });
-    await WKSDK.shared().conversationManager.sync({});
-    this.loadChannelPickerData();
+    void this.refreshPickerData(shouldShowLoading);
   };
 
   private handlePickerClose = () => {
@@ -941,7 +965,7 @@ export default class OctoSidepanelLayout extends Component<
     if (selectedChannel && selectedChannel.channelType !== ChannelTypePerson) {
       await this.fetchMembers(selectedChannel);
     }
-    this.loadChannelPickerData();
+    this.loadChannelPickerData(true);
   };
 
   private togglePin = (channelId: string) => {
@@ -1360,9 +1384,8 @@ export default class OctoSidepanelLayout extends Component<
         if (v.payload) {
           try {
             const contentType = v.payload.type;
-            const mc = MessageContentManager.shared().getMessageContent(
-              contentType
-            );
+            const mc =
+              MessageContentManager.shared().getMessageContent(contentType);
             if (mc) {
               mc.decode(jsonToUint8Array(v.payload));
               if (mc instanceof SystemContent) {
@@ -1480,9 +1503,7 @@ export default class OctoSidepanelLayout extends Component<
             >
               <span>{tab.label}</span>
               {counts[tab.key] > 0 && (
-                <span className="octo-search-tab-count">
-                  {counts[tab.key]}
-                </span>
+                <span className="octo-search-tab-count">{counts[tab.key]}</span>
               )}
             </button>
           ))}
@@ -1587,9 +1608,7 @@ export default class OctoSidepanelLayout extends Component<
     // 搜索过滤
     if (keyword && keyword.trim()) {
       const kw = keyword.toLowerCase();
-      aiPartners = aiPartners.filter((m) =>
-        m.name.toLowerCase().includes(kw)
-      );
+      aiPartners = aiPartners.filter((m) => m.name.toLowerCase().includes(kw));
       friends = friends.filter((m) => m.name.toLowerCase().includes(kw));
     }
 
@@ -1603,20 +1622,17 @@ export default class OctoSidepanelLayout extends Component<
 
   private handleContactClick = (uid: string) => {
     this.setState({ showContacts: false });
-    WKApp.endpoints.showConversation(
-      new Channel(uid, ChannelTypePerson)
-    );
+    WKApp.endpoints.showConversation(new Channel(uid, ChannelTypePerson));
   };
 
   private renderContactsDrawer() {
     const { showContacts } = this.state;
-    const { aiPartners, friends } =
-      this.getProcessedContacts(this.contactsKeyword);
+    const { aiPartners, friends } = this.getProcessedContacts(
+      this.contactsKeyword
+    );
 
     return (
-      <div
-        className={`octo-contacts-drawer${showContacts ? " is-open" : ""}`}
-      >
+      <div className={`octo-contacts-drawer${showContacts ? " is-open" : ""}`}>
         {/* 头部 */}
         <div className="cd-head">
           <button
@@ -1625,7 +1641,14 @@ export default class OctoSidepanelLayout extends Component<
             type="button"
             title="返回"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
@@ -1642,7 +1665,14 @@ export default class OctoSidepanelLayout extends Component<
         {/* 搜索栏 */}
         <div className="cd-search">
           <div className="cd-input">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -1657,29 +1687,22 @@ export default class OctoSidepanelLayout extends Component<
 
         {/* 内容 */}
         <div className="cd-body">
-          {!this.contactsLoaded && (
-            <div className="cd-section">加载中…</div>
-          )}
+          {!this.contactsLoaded && <div className="cd-section">加载中…</div>}
 
           {/* AI 伙伴 */}
           {aiPartners.length > 0 && (
             <>
-              <div className="cd-section">
-                AI 伙伴 · {aiPartners.length}
-              </div>
+              <div className="cd-section">AI 伙伴 · {aiPartners.length}</div>
               {aiPartners.map((m) => (
                 <div
                   key={m.uid}
                   className="cd-row"
                   onClick={() => this.handleContactClick(m.uid)}
                 >
-                  <div className="cd-av ai">
-                    {getFirstChar(m.name)}
-                  </div>
+                  <div className="cd-av ai">{getFirstChar(m.name)}</div>
                   <div className="cd-txt">
                     <span className="cd-nm">
-                      {m.name}{" "}
-                      <span className="cd-badge-ai">Agent</span>
+                      {m.name} <span className="cd-badge-ai">Agent</span>
                     </span>
                   </div>
                 </div>
@@ -1690,9 +1713,7 @@ export default class OctoSidepanelLayout extends Component<
           {/* 我的朋友 */}
           {friends.length > 0 && (
             <>
-              <div className="cd-section">
-                我的朋友 · {friends.length}
-              </div>
+              <div className="cd-section">我的朋友 · {friends.length}</div>
               {friends.map((m) => (
                 <div
                   key={m.uid}
@@ -1709,7 +1730,14 @@ export default class OctoSidepanelLayout extends Component<
                     <span className="cd-nm">{m.name}</span>
                   </div>
                   <span className="cd-chev">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                   </span>
@@ -1897,7 +1925,9 @@ export default class OctoSidepanelLayout extends Component<
                   <button
                     key={space.space_id}
                     type="button"
-                    className={`octo-space-item${isCurrent ? " is-current" : ""}`}
+                    className={`octo-space-item${
+                      isCurrent ? " is-current" : ""
+                    }`}
                     onClick={() => {
                       void this.handleSpaceSelect(space.space_id);
                     }}
@@ -1911,7 +1941,11 @@ export default class OctoSidepanelLayout extends Component<
                     ) : (
                       <span
                         className="octo-space-item-avatar"
-                        style={{ background: avatarGradient(space.name || space.space_id) }}
+                        style={{
+                          background: avatarGradient(
+                            space.name || space.space_id
+                          ),
+                        }}
                       >
                         {getFirstChar(space.name || "?")}
                       </span>
@@ -1952,7 +1986,16 @@ export default class OctoSidepanelLayout extends Component<
               onClick={() => this.togglePin(selectedChannel.channelID)}
               type="button"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="12" y1="17" x2="12" y2="22" />
                 <path d="M5 17h14l-2-7V4H7v6z" />
               </svg>
@@ -2009,8 +2052,18 @@ export default class OctoSidepanelLayout extends Component<
                 <div className="octo-settings-section">主题</div>
                 <div className="octo-settings-seg">
                   {[
-                    { id: "paper", label: "Paper", isDark: false, dotTheme: "paper" },
-                    { id: "moon", label: "Moon", isDark: true, dotTheme: "moon" },
+                    {
+                      id: "paper",
+                      label: "Paper",
+                      isDark: false,
+                      dotTheme: "paper",
+                    },
+                    {
+                      id: "moon",
+                      label: "Moon",
+                      isDark: true,
+                      dotTheme: "moon",
+                    },
                   ].map((t) => (
                     <button
                       key={t.id}
@@ -2645,7 +2698,6 @@ export default class OctoSidepanelLayout extends Component<
                       </button>
                     </div>
                   )}
-
                 </div>
 
                 {/* Search Popover — positioned inside main, below header */}
@@ -2675,7 +2727,11 @@ export default class OctoSidepanelLayout extends Component<
               )}
 
               {/* Channel Picker Drawer — covers main area but not Rail */}
-              <div className={`wk-sidepanel-picker-drawer${showPicker ? ' is-open' : ''}`}>
+              <div
+                className={`wk-sidepanel-picker-drawer${
+                  showPicker ? " is-open" : ""
+                }`}
+              >
                 <ChannelPicker
                   channels={this.state.channels}
                   categories={this.state.categories}

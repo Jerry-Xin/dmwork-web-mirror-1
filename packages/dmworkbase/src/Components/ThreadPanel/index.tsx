@@ -103,7 +103,11 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
         const parsed = parseInt(cssValue, 10)
         if (!isNaN(parsed)) return parsed
       }
-    } catch (_) {}
+    } catch (_) {
+      // Best-effort CSS variable read: silently fall through to default.
+      // This is intentional — DOM access may fail in edge cases (SSR, tests).
+      // Falls back to SPLITTER_DEFAULT_WIDTH; does not affect core functionality.
+    }
     return SPLITTER_DEFAULT_WIDTH
   }
 

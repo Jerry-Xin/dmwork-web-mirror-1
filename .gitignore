@@ -49,3 +49,4 @@ debug-storybook.log
 .gstack/
 AGENTS.config.local.json
 _reference-v3/
+package-lock.json

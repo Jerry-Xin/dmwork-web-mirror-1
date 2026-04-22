@@ -1561,11 +1561,18 @@ body[data-layout="cli"] .octo-attach-grid .octo-attach-file-row {
    Lightbox 图片放大
    ================================================================ */
 
+.yarl__container {
+  background-color: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
 .octo-lightbox {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: var(--wk-backdrop);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -146,7 +146,7 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
         const { message } = this.props
         const content = message.content as ImageContent
         let scaleSize = this.imageScale(content.width, content.height);
-        return <img alt="" src={this.getImageSrc(content)} style={{ borderRadius: '5px', width: scaleSize.width, height: scaleSize.height }} />
+        return <img alt="" src={this.getImageSrc(content)} data-has-lightbox style={{ borderRadius: '5px', width: scaleSize.width, height: scaleSize.height }} />
     }
 
     render() {

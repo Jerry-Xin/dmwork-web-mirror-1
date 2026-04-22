@@ -72,7 +72,7 @@ const FoldImage: React.FC<{ src: string }> = ({ src }) => {
   const [open, setOpen] = React.useState(false);
   return (
     <div className="wk-fold-img" onClick={() => setOpen(true)}>
-      <img src={src} alt="" />
+      <img src={src} alt="" data-has-lightbox />
       <Lightbox
         open={open}
         close={() => setOpen(false)}

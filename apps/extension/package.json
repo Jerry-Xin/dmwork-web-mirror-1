@@ -1,8 +1,8 @@
 {
-  "name": "Octo 插件端",
-  "description": "Octo 插件端",
+  "name": "Octo插件版",
+  "description": "Octo插件版",
   "private": true,
-  "version": "0.0.3",
+  "version": "0.0.3.1",
   "type": "module",
   "scripts": {
     "dev": "wxt --port 5678",

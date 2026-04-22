@@ -648,7 +648,8 @@ export default class OctoSidepanelLayout extends Component<
       target.tagName === "IMG" &&
       target.closest(".wk-sidepanel-content") &&
       !target.closest(".wk-sidepanel-header-avatar") &&
-      !target.closest(".octo-lightbox")
+      !target.closest(".octo-lightbox") &&
+      !(target as HTMLImageElement).hasAttribute("data-has-lightbox")
     ) {
       const src = (target as HTMLImageElement).src;
       if (src) {

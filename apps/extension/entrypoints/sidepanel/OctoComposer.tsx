@@ -1060,7 +1060,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
         })()}
 
         <input
-          accept="image/*,*/*"
+          accept="*/*"
           multiple
           onChange={handleFileChange}
           ref={fileInputRef}

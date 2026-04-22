@@ -34,7 +34,10 @@ export class ThreadListVM {
   async load() {
     this.setState({ loading: true, error: null })
     try {
-      const threads = await WKApp.dataSource.channelDataSource.threadList(this.groupNo)
+      const threads = await WKApp.dataSource.channelDataSource.threadList(this.groupNo, {
+        page_index: 1,
+        page_size: 100
+      })
       this.setState({ loading: false, threads })
     } catch (err: any) {
       this.setState({ loading: false, error: err?.msg || "加载失败" })

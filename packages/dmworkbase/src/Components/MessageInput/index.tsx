@@ -12,6 +12,8 @@ import "./index.css";
 import { Notification } from "@douyinfe/semi-ui";
 import SlashCommandMenu, { BotCommand } from "../SlashCommandMenu";
 import VoiceInputIndicator from "./VoiceInputIndicator";
+import { ChatContextResult } from "../Conversation/chatContext";
+import { Maximize2, Minimize2 } from "lucide-react";
 import IconClick from "../IconClick";
 import mentionAllIcon from "./mention.png";
 
@@ -39,7 +41,7 @@ interface MessageInputProps {
   onContext?: (ctx: MessageInputContext) => void;
   topView?: JSX.Element;
   botCommands?: BotCommand[];
-  getChatContext?: () => string | undefined;
+  getChatContext?: () => ChatContextResult;
   hasPendingAttachments?: boolean;
   onExpandChange?: (expanded: boolean) => void;
 }
@@ -56,9 +58,10 @@ export class MentionModel {
   entities?: MentionEntity[];
 }
 
-export function formatMentionTextV2(text: string): {
+// 解析 @[uid:name] 格式的 mention
+function formatMentionTextV2(text: string): {
   content: string;
-  mention: MentionModel | undefined;
+  mention?: MentionModel;
 } {
   const entities: MentionEntity[] = [];
   const uids: string[] = [];
@@ -66,54 +69,128 @@ export function formatMentionTextV2(text: string): {
   let cursor = 0;
   let all = false;
 
-  const placeholderPattern = /@\[([^:\]]+):([^\]]+)\]/g;
+  const placeholderPattern = /@\[([^:]+):([^\]]+)\]/g;
   let match;
 
   while ((match = placeholderPattern.exec(text)) !== null) {
     const uid = match[1];
     const name = match[2];
 
-    result += text.substring(cursor, match.index);
+    // 添加 match 之前的普通文本
+    result += text.slice(cursor, match.index);
+
+    // 计算当前 @ 符号的实际位置
+    const atName =
+      uid === "-1"
+        ? "@所有人"
+        : membersRef.current?.find((m) => m.uid === uid)?.name
+        ? `@${membersRef.current.find((m) => m.uid === uid)!.name}`
+        : `@${name}`;
+    const offset = result.length;
 
     if (uid === "-1") {
       all = true;
-      const atName = `@${name}`;
-      result += atName;
+      result += "@所有人";
     } else {
-      const atName = `@${name}`;
-      const offset = result.length;
-      result += atName;
-
-      entities.push({ uid, offset, length: atName.length });
       uids.push(uid);
+      entities.push({
+        uid,
+        offset,
+        length: atName.length,
+      });
+      result += atName;
     }
 
     cursor = match.index + match[0].length;
   }
 
-  result += text.substring(cursor);
+  // 添加剩余文本
+  result += text.slice(cursor);
 
-  if (all) {
+  if (all || entities.length > 0) {
     const mention = new MentionModel();
-    mention.all = true;
+    mention.all = all;
+    mention.uids = uids.length > 0 ? uids : undefined;
+    mention.entities = entities.length > 0 ? entities : undefined;
     return { content: result, mention };
   }
 
-  if (entities.length === 0) {
-    return { content: result, mention: undefined };
-  }
-
-  const mention = new MentionModel();
-  mention.uids = uids;
-  mention.entities = entities;
-  return { content: result, mention };
+  return { content: result };
 }
 
 export interface MessageInputContext {
-  insertText(text: string): void;
-  addMention(uid: string, name: string): void;
-  text(): string | undefined;
+  insertText: (text: string) => void;
+  addMention: (uid: string, name: string) => void;
+  text: () => string | undefined;
 }
+
+interface MemberInfo {
+  uid: string;
+  name: string;
+}
+
+// 解析语音输入中的 @提及，转换为 Tiptap content
+function parseMentionMarkers(
+  text: string,
+  members: MemberInfo[]
+): Array<{
+  type: string;
+  text?: string;
+  attrs?: { id: string; label: string };
+}> {
+  const result: Array<{
+    type: string;
+    text?: string;
+    attrs?: { id: string; label: string };
+  }> = [];
+  const regex = /@(\S+?)(?=\s|$)/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    const name = match[1];
+    const matchStart = match.index;
+
+    // 添加 @ 之前的普通文本
+    if (matchStart > lastIndex) {
+      result.push({ type: "text", text: text.slice(lastIndex, matchStart) });
+    }
+
+    const isAll = name === "所有人" || name.toLowerCase() === "all";
+    const member = members.find(
+      (m) => m.name === name || m.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (isAll) {
+      result.push({
+        type: "mention",
+        attrs: { id: "-1", label: "所有人" },
+      });
+      result.push({ type: "text", text: " " });
+    } else if (member) {
+      result.push({
+        type: "mention",
+        attrs: { id: member.uid, label: member.name },
+      });
+      result.push({ type: "text", text: " " });
+    } else {
+      // 未识别的 @，保留原文
+      result.push({ type: "text", text: match[0] });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // 添加剩余文本
+  if (lastIndex < text.length) {
+    result.push({ type: "text", text: text.slice(lastIndex) });
+  }
+
+  return result;
+}
+
+// 保持 membersRef 在模块级别供 formatMentionTextV2 使用
+let membersRef: React.MutableRefObject<Array<Subscriber> | undefined>;
 
 // 从 Tiptap JSON 提取 mentions
 function extractMentionsFromEditor(editor: any): string {
@@ -149,8 +226,9 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
   const [slashFilter, setSlashFilter] = useState("");
   const [slashActiveIndex, setSlashActiveIndex] = useState(0);
   const [isMultiLine, setIsMultiLine] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const previousScopeRef = useRef("all");
-  const membersRef = useRef(props.members);
+  const localMembersRef = useRef(props.members);
   const sendRef = useRef<(() => void) | null>(null);
   const mentionActiveRef = useRef(false);
   const botCommandsRef = useRef(props.botCommands);
@@ -159,9 +237,12 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     ((view: any, event: KeyboardEvent) => boolean) | null
   >(null);
 
+  // 更新模块级别的 membersRef
+  membersRef = localMembersRef;
+
   // 更新 membersRef
   useEffect(() => {
-    membersRef.current = props.members;
+    localMembersRef.current = props.members;
   }, [props.members]);
 
   // 更新 botCommandsRef
@@ -189,7 +270,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
         },
         suggestion: createMentionSuggestion(
           ({ query }) => {
-            if (!membersRef.current)
+            if (!localMembersRef.current)
               return [
                 {
                   uid: "-1",
@@ -199,7 +280,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
                 },
               ];
 
-            const items = membersRef.current.map((member) => ({
+            const items = localMembersRef.current.map((member) => ({
               uid: member.uid,
               name: member.name,
               icon: WKApp.shared.avatarChannel(
@@ -348,7 +429,18 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     }
 
     editor.commands.clearContent();
-  }, [editor, props.onSend, props.hasPendingAttachments]);
+
+    if (expanded) {
+      setExpanded(false);
+      props.onExpandChange?.(false);
+    }
+  }, [
+    editor,
+    expanded,
+    props.onSend,
+    props.hasPendingAttachments,
+    props.onExpandChange,
+  ]);
 
   // 更新 sendRef
   useEffect(() => {
@@ -440,6 +532,15 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     handleSlashSelect,
   ]);
 
+  const toggleExpand = useCallback(() => {
+    const next = !expanded;
+    props.onExpandChange?.(next);
+    setExpanded(next);
+    if (next && editor) {
+      setTimeout(() => editor.commands.focus(), 100);
+    }
+  }, [expanded, editor, props.onExpandChange]);
+
   const { onInputRef, topView, toolbar, botCommands, hasPendingAttachments } =
     props;
   const hasValue = (editor?.getText().length || 0) > 0 || hasPendingAttachments;
@@ -452,7 +553,12 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
   }, [editor, onInputRef]);
 
   return (
-    <div className="wk-messageinput-box">
+    <div
+      className={clazz("wk-messageinput-box", {
+        "wk-messageinput-box--expanded": expanded,
+      })}
+      style={expanded ? { flex: 1 } : undefined}
+    >
       {/* 悬浮卡片容器 */}
       <div
         className={clazz("wk-messageinput-card", {
@@ -502,16 +608,54 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
               onTranscribed={(text: string, shouldReplace: boolean) => {
                 if (!editor) return;
 
-                if (shouldReplace) {
-                  editor.commands.setContent(text);
+                const hasMention = /@\S+?(?=\s|$)/.test(text);
+
+                if (hasMention && props.members && props.members.length > 0) {
+                  const memberInfos: MemberInfo[] = props.members.map((s) => ({
+                    uid: s.uid,
+                    name: s.remark || s.name || s.uid,
+                  }));
+                  for (const s of props.members) {
+                    if (s.name && s.remark && s.remark !== s.name) {
+                      memberInfos.push({ uid: s.uid, name: s.name });
+                    }
+                  }
+
+                  const content = parseMentionMarkers(text, memberInfos);
+
+                  if (shouldReplace) {
+                    editor.commands.setContent({
+                      type: "doc",
+                      content: [{ type: "paragraph", content }],
+                    });
+                  } else {
+                    editor.commands.insertContent(content);
+                  }
                 } else {
-                  editor.commands.insertContent(text);
+                  if (shouldReplace) {
+                    editor.commands.setContent(text);
+                  } else {
+                    editor.commands.insertContent(text);
+                  }
                 }
+
                 editor.commands.focus();
               }}
               getCurrentText={() => editor?.getText() || ""}
               getChatContext={props.getChatContext}
             />
+
+            {/* 展开/收起按钮 */}
+            <div className="wk-messageinput-actionitem">
+              <IconClick
+                size="sm"
+                title={expanded ? "收起" : "展开输入框"}
+                onClick={toggleExpand}
+                icon={
+                  expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />
+                }
+              />
+            </div>
           </div>
         </div>
       </div>

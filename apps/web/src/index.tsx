@@ -10,18 +10,28 @@ import  { DataSourceModule } from '@dmwork/datasource';
 import {ContactsModule} from '@dmwork/contacts';
 import { version as pkgVersion } from '../package.json';
 
-const apiURL = import.meta.env.VITE_API_URL || "https://api.botgate.cn/v1/"
+// VITE_API_URL 只填 origin（协议+域名+端口），不要带路径
+// 例如: https://im.deepminer.com.cn (而非 https://im.deepminer.com.cn/v1/)
 
-if((window as any).__TAURI_IPC__) { // tauri环境
-  WKApp.apiClient.config.apiURL = apiURL
-}else if((window as any)?.__POWERED_ELECTRON__){
-  WKApp.apiClient.config.apiURL = apiURL
-}else{
-  if(import.meta.env.DEV) {
-    WKApp.apiClient.config.apiURL = apiURL
-  }else {
-    WKApp.apiClient.config.apiURL = "/api/v1/" // 正式环境地址 (通用打包镜像，用此相对地址),打包出来的镜像可以通过API_URL环境变量来修改API地址
+if((window as any).__TAURI_IPC__ || (window as any)?.__POWERED_ELECTRON__) {
+  // Tauri/Electron 需要完整 API URL
+  const rawApiURL = import.meta.env.VITE_API_URL
+  if (!rawApiURL) {
+    throw new Error('VITE_API_URL is required for Tauri/Electron. Please set it in .env.local (e.g., VITE_API_URL=https://im.deepminer.com.cn)')
   }
+  // 提取 origin，防止旧格式导致双拼路径
+  let apiURL: string
+  try {
+    apiURL = new URL(rawApiURL).origin
+  } catch {
+    throw new Error(`VITE_API_URL format is invalid: "${rawApiURL}". Please use full URL, e.g. https://im.deepminer.com.cn`)
+  }
+  WKApp.apiClient.config.apiURL = apiURL + "/v1/"
+} else {
+  // Web 环境（DEV/PROD）统一走相对路径 /api/v1/
+  // DEV: 由 Vite proxy 转发到 VITE_API_URL（保留 /api 前缀，后端直连）
+  // PROD: 由 Nginx 反代到实际后端（Nginx 剥离 /api 前缀）
+  WKApp.apiClient.config.apiURL = "/api/v1/"
 }
 
 WKApp.apiClient.config.tokenCallback = ()=> {

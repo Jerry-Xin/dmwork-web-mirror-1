@@ -48,3 +48,4 @@ debug-storybook.log
 .mcp.json
 .gstack/
 AGENTS.config.local.json
+package-lock.json

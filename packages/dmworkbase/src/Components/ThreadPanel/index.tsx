@@ -173,7 +173,10 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
 
     this.setState({ threadsLoading: true })
     try {
-      const threads = await WKApp.dataSource.channelDataSource.threadList(groupNo)
+      const threads = await WKApp.dataSource.channelDataSource.threadList(groupNo, {
+        page_index: 1,
+        page_size: 100
+      })
       // 按活跃时间倒序排序
       threads.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       this.setState({ threads, threadsLoading: false })

@@ -16,6 +16,9 @@ export default defineConfig(({ mode }) => {
   } else {
     try {
       apiOrigin = new URL(apiUrl).origin
+      if (mode === 'development') {
+        console.log(`[vite] ✅ API proxy configured: /api/* -> ${apiOrigin}/*`)
+      }
     } catch {
       throw new Error(`[vite] VITE_API_URL format is invalid: "${apiUrl}". Please use full URL, e.g. https://im.deepminer.com.cn`)
     }
@@ -27,6 +30,50 @@ export default defineConfig(({ mode }) => {
       commonjs(),
       react(),
       tsconfigPaths({ root: '../../' }),
+      {
+        name: 'exclude-test-files',
+        resolveId(id, importer) {
+          // 测试文件正则：匹配 .test.* / .spec.* 或 __tests__/ 目录
+          const TEST_FILE_RE = /[/\\](?:__tests__[/\\]|.*\.(?:test|spec)\.[jt]sx?$)/
+          // 测试相关包：精确前缀匹配
+          const TEST_PACKAGES = [
+            'vitest',
+            'expect-type',
+            '@vitest/',
+            '@storybook/addon-vitest',
+            '@storybook/test',
+          ]
+          
+          const isTestFile = TEST_FILE_RE.test(id)
+          const isTestPackage = TEST_PACKAGES.some(pkg => 
+            id === pkg || id.startsWith(pkg) || id.includes(`/node_modules/${pkg}`)
+          )
+          
+          if (isTestFile || isTestPackage) {
+            return '\0vitest-stub'
+          }
+        },
+        load(id) {
+          if (id === '\0vitest-stub') {
+            return 'export default {}'
+          }
+        },
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            const url = req.url || ''
+            const TEST_URL_RE = /\/(vitest|expect-type|@vitest\/|@storybook\/(addon-vitest|test))\//
+            const TEST_FILE_URL_RE = /\.(test|spec)\.[jt]sx?|__tests__\//
+            
+            if (TEST_URL_RE.test(url) || TEST_FILE_URL_RE.test(url)) {
+              res.statusCode = 200
+              res.setHeader('Content-Type', 'application/javascript')
+              res.end('export default {}')
+              return
+            }
+            next()
+          })
+        },
+      },
     ],
     resolve: {
       extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
@@ -44,9 +91,29 @@ export default defineConfig(({ mode }) => {
           target: apiOrigin,
           changeOrigin: true,
           secure: false, // 开发环境允许自签名证书
-          rewrite: (path: string) => path.replace(/^\/api\//, '/'), // 剥离 /api/ 前缀，与 Nginx 行为一致
         },
       },
+    },
+    optimizeDeps: {
+      exclude: [
+        'vitest',
+        'expect-type',
+        '@vitest/runner',
+        '@vitest/expect',
+        '@vitest/spy',
+        '@vitest/utils',
+        '@vitest/snapshot',
+        '@storybook/addon-vitest',
+        '@storybook/test',
+      ],
+      entries: [
+        'src/**/*.{ts,tsx}',
+        // Negation patterns: Vite passes these to fast-glob, which supports "!" prefix
+        // Verified working in Vite 6.x (run `npx vite optimize --force` to check)
+        '!src/**/*.{test,spec}.{ts,tsx}',
+        '!src/__tests__/**',
+        '!vitest*.config.ts',
+      ],
     },
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),

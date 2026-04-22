@@ -198,11 +198,16 @@ export class ChannelDataSource implements IChannelDataSource {
 
     // Thread (子区) API
     async threadList(groupNo: string): Promise<Thread[]> {
-        const resp = await WKApp.apiClient.get(`groups/${groupNo}/threads`)
-        if (!resp || !Array.isArray(resp)) {
+        const resp = await WKApp.apiClient.get(`groups/${groupNo}/threads`, {
+            param: {
+                page_index: 1,
+                page_size: 100
+            }
+        })
+        if (!resp || !resp.list || !Array.isArray(resp.list)) {
             return []
         }
-        return resp.map((item: any) => this.toThread(item, groupNo))
+        return resp.list.map((item: any) => this.toThread(item, groupNo))
     }
 
     async threadCreate(groupNo: string, name: string, sourceMessageId?: number): Promise<Thread> {

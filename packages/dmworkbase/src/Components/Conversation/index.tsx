@@ -63,8 +63,10 @@ import AttachmentPreview from "../AttachmentPreview";
 import { buildChatContext, ChatContextChannelInfo } from "./chatContext";
 import FoldSessionExpandedList from "./FoldSessionExpandedList";
 
-const foldSessionAvatarIcon = new URL("./fold-session-avatar.svg", import.meta.url)
-  .href;
+const foldSessionAvatarIcon = new URL(
+  "./fold-session-avatar.svg",
+  import.meta.url
+).href;
 
 const FoldImage: React.FC<{ src: string }> = ({ src }) => {
   const [open, setOpen] = React.useState(false);
@@ -131,7 +133,10 @@ export class Conversation
   private _cachedSelectedText: string | null = null;
   private _beforeUnloadHandler: () => void;
   private _guardId: symbol = Symbol("pendingAttachmentGuard");
-  private onOpenThreadPanel?: (threadChannelId: string, threadName: string) => void;
+  private onOpenThreadPanel?: (
+    threadChannelId: string,
+    threadName: string
+  ) => void;
 
   constructor(props: any) {
     super(props);
@@ -861,7 +866,10 @@ export class Conversation
         )}
       >
         <div className="wk-message-item-fold-session-shell">
-          <div className="wk-message-item-fold-session-avatar" aria-hidden="true">
+          <div
+            className="wk-message-item-fold-session-avatar"
+            aria-hidden="true"
+          >
             <img
               className="wk-message-item-fold-session-avatar-icon"
               src={foldSessionAvatarIcon}
@@ -1372,17 +1380,8 @@ export class Conversation
                     ) : undefined}
                   </div>
                 </div>
-                <div className="wk-conversation-topview">
-                  {vm.currentReplyMessage ? (
-                    <ReplyView
-                      message={vm.currentReplyMessage}
-                      vm={vm}
-                      onClose={() => {
-                        vm.currentReplyMessage = undefined;
-                      }}
-                    ></ReplyView>
-                  ) : undefined}
-                </div>
+                {/* ReplyView 已移到 MessageInput 内部的 topView prop */}
+                <div className="wk-conversation-topview"></div>
                 <div
                   className={classNames(
                     "wk-conversation-multiplepanel",
@@ -1472,6 +1471,17 @@ export class Conversation
                       members={this.vm.subscribers.filter(
                         (s) => s.uid !== WKApp.loginInfo.uid
                       )}
+                      topView={
+                        vm.currentReplyMessage ? (
+                          <ReplyView
+                            message={vm.currentReplyMessage}
+                            vm={vm}
+                            onClose={() => {
+                              vm.currentReplyMessage = undefined;
+                            }}
+                          />
+                        ) : undefined
+                      }
                       onExpandChange={(expanded) => {
                         this.setState({ inputExpanded: expanded });
                       }}
@@ -1857,49 +1867,40 @@ class ReplyView extends Component<ReplyViewProps> {
     const fromChannelInfo = WKSDK.shared().channelManager.getChannelInfo(
       new Channel(message.fromUID, ChannelTypePerson)
     );
+    const isEdit = vm.currentHandlerType === 2;
+    const label = isEdit ? "编辑" : "回复";
+    const userName = fromChannelInfo?.title || "";
+    const messageText = message.remoteExtra?.isEdit
+      ? message.remoteExtra?.contentEdit?.conversationDigest
+      : message.content.conversationDigest;
+
     return (
-      <div className="wk-replyview">
-        <div className="wk-replyview-close">
-          {vm.currentHandlerType === 1 ? (
-            <IconReply className="wk-replyview-close-icon" />
-          ) : (
-            <IconEdit className="wk-replyview-close-icon" />
-          )}
-        </div>
-        <div className="wk-replyview-content">
-          <div className="wk-replyview-content-first">
-            <div className="wk-replyview-content-userinfo">
-              <div className="wk-replyview-content-userinfo-avatar">
-                <WKAvatar
-                  style={{ width: "24px", height: "24px", borderRadius: "50%" }}
-                  channel={new Channel(message.fromUID, ChannelTypePerson)}
-                ></WKAvatar>
-              </div>
-              <div className="wk-replyview-content-userinfo-name">
-                {fromChannelInfo?.title}
-                {fromChannelInfo?.orgData?.robot === 1 && (
-                  <AiBadge size="small" />
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="wk-replyview-content-second">
-            <div className="wk-replyview-content-msg">
-              {message.remoteExtra?.isEdit
-                ? message.remoteExtra?.contentEdit?.conversationDigest
-                : message.content.conversationDigest}
-            </div>
-          </div>
-        </div>
-        <div
-          className="wk-replyview-close"
+      <div className="wk-replyview-new">
+        <button
+          className="wk-replyview-new-close"
           onClick={() => {
             if (onClose) {
               onClose();
             }
           }}
         >
-          <IconClose className="wk-replyview-close-icon" />
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div className="wk-replyview-new-divider"></div>
+        <div className="wk-replyview-new-content">
+          <span className="wk-replyview-new-label">{label}</span>
+          <span className="wk-replyview-new-name">{userName}：</span>
+          <span className="wk-replyview-new-text">{messageText}</span>
         </div>
       </div>
     );

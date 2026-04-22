@@ -29,6 +29,21 @@ const config: StorybookConfig = {
         entries: [
           path.resolve(__dirname, '../../../packages/*/src/**/*.{ts,tsx}'),
           path.resolve(__dirname, '../src/**/*.{ts,tsx}'),
+          // 排除测试文件
+          `!${path.resolve(__dirname, '../src/**/*.{test,spec}.{ts,tsx}')}`,
+          `!${path.resolve(__dirname, '../src/__tests__/**')}`,
+          `!${path.resolve(__dirname, '../../../packages/*/src/**/*.{test,spec}.{ts,tsx}')}`,
+        ],
+        exclude: [
+          'vitest',
+          'expect-type',
+          '@vitest/runner',
+          '@vitest/expect',
+          '@vitest/spy',
+          '@vitest/utils',
+          '@vitest/snapshot',
+          '@storybook/addon-vitest',
+          '@storybook/test',
         ],
       },
       css: {

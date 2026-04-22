@@ -29,8 +29,8 @@ if((window as any).__TAURI_IPC__ || (window as any)?.__POWERED_ELECTRON__) {
   WKApp.apiClient.config.apiURL = apiURL + "/v1/"
 } else {
   // Web 环境（DEV/PROD）统一走相对路径 /api/v1/
-  // DEV: 由 Vite proxy 转发到 VITE_API_URL（剥离 /api 前缀后）
-  // PROD: 由 Nginx 反代到实际后端
+  // DEV: 由 Vite proxy 转发到 VITE_API_URL（保留 /api 前缀，后端直连）
+  // PROD: 由 Nginx 反代到实际后端（Nginx 剥离 /api 前缀）
   WKApp.apiClient.config.apiURL = "/api/v1/"
 }
 

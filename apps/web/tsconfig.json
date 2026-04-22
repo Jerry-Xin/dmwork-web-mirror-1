@@ -7,7 +7,13 @@
   ],
   "exclude": [
     "node_modules",
-    "src-election"
+    "src-election",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "vitest*.config.ts"
   ],
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,

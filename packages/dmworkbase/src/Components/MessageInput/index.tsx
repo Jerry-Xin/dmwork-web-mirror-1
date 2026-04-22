@@ -12,6 +12,7 @@ import "./index.css"
 import { Notification } from '@douyinfe/semi-ui';
 import SlashCommandMenu, { BotCommand } from "../SlashCommandMenu";
 import VoiceInputIndicator from "./VoiceInputIndicator";
+import { ChatContextResult } from "../Conversation/chatContext";
 import { Maximize2, Minimize2 } from 'lucide-react';
 import IconClick from '../IconClick';
 import mentionAllIcon from './mention.png';
@@ -39,7 +40,7 @@ interface MessageInputProps {
     onContext?: (ctx: MessageInputContext) => void
     topView?: JSX.Element
     botCommands?: BotCommand[]
-    getChatContext?: () => string | undefined
+    getChatContext?: () => ChatContextResult
     hasPendingAttachments?: boolean
     onExpandChange?: (expanded: boolean) => void
 }
@@ -113,6 +114,65 @@ export interface MessageInputContext {
     insertText(text: string): void
     addMention(uid: string, name: string): void
     text(): string | undefined
+}
+
+export interface MemberInfo {
+    uid: string
+    name: string
+}
+
+/**
+ * 解析 ASR 转写文本中的 @name 标记，转为 Tiptap 节点数组。
+ */
+export function parseMentionMarkers(
+    text: string,
+    members: MemberInfo[]
+): Array<{ type: string; text?: string; attrs?: { id: string; label: string } }> {
+    const result: Array<{ type: string; text?: string; attrs?: { id: string; label: string } }> = []
+    const regex = /@(\S+?)(?=\s|$)/g
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+
+    while ((match = regex.exec(text)) !== null) {
+        const name = match[1]
+        const matchStart = match.index
+
+        if (matchStart > lastIndex) {
+            result.push({ type: 'text', text: text.slice(lastIndex, matchStart) })
+        }
+
+        const isAll = name === '所有人' || name.toLowerCase() === 'all' || name.toLowerCase() === 'everyone'
+        const member = !isAll ? members.find(m => m.name === name) : undefined
+
+        if (member) {
+            result.push({
+                type: 'mention',
+                attrs: { id: member.uid, label: member.name },
+            })
+            result.push({ type: 'text', text: ' ' })
+        } else if (isAll) {
+            result.push({
+                type: 'mention',
+                attrs: { id: '-1', label: '所有人' },
+            })
+            result.push({ type: 'text', text: ' ' })
+        } else {
+            result.push({ type: 'text', text: match[0] })
+        }
+
+        lastIndex = match.index + match[0].length
+        if (member || isAll) {
+            if (lastIndex < text.length && /\s/.test(text[lastIndex])) {
+                lastIndex++
+            }
+        }
+    }
+
+    if (lastIndex < text.length) {
+        result.push({ type: 'text', text: text.slice(lastIndex) })
+    }
+
+    return result
 }
 
 // 从 Tiptap JSON 提取 mentions
@@ -432,11 +492,37 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
                             onTranscribed={(text: string, shouldReplace: boolean) => {
                                 if (!editor) return
 
-                                if (shouldReplace) {
-                                    editor.commands.setContent(text)
+                                const hasMention = /@\S+?(?=\s|$)/.test(text)
+
+                                if (hasMention && props.members && props.members.length > 0) {
+                                    const memberInfos: MemberInfo[] = props.members.map(s => ({
+                                        uid: s.uid,
+                                        name: s.remark || s.name || s.uid,
+                                    }))
+                                    for (const s of props.members) {
+                                        if (s.name && s.remark && s.remark !== s.name) {
+                                            memberInfos.push({ uid: s.uid, name: s.name })
+                                        }
+                                    }
+
+                                    const content = parseMentionMarkers(text, memberInfos)
+
+                                    if (shouldReplace) {
+                                        editor.commands.setContent({
+                                            type: 'doc',
+                                            content: [{ type: 'paragraph', content }],
+                                        })
+                                    } else {
+                                        editor.commands.insertContent(content)
+                                    }
                                 } else {
-                                    editor.commands.insertContent(text)
+                                    if (shouldReplace) {
+                                        editor.commands.setContent(text)
+                                    } else {
+                                        editor.commands.insertContent(text)
+                                    }
                                 }
+
                                 editor.commands.focus()
                             }}
                             getCurrentText={() => editor?.getText() || ''}

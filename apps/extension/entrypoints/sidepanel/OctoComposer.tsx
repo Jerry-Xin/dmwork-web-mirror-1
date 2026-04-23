@@ -691,31 +691,42 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
   }, [syncMembers, syncPendingAttachments]);
 
   useEffect(() => {
-    const originalAdd =
-      conversationContext.addPendingAttachments.bind(conversationContext);
-    const originalRemove =
-      conversationContext.removePendingAttachment.bind(conversationContext);
-    const originalClear =
-      conversationContext.clearPendingAttachments.bind(conversationContext);
+    // 优先走订阅：不再覆写 context 的方法，避免多次 re-render / cleanup 顺序错位时
+    // 把陌生实例上的 originalAdd 写回别的 instance（reviewer 第二轮非阻塞条）。
+    // 旧 context（或 mock）没实现订阅时，退回到原来的 monkey-patch 方案，
+    // 并把被覆写的 context 快照到本地，保证 cleanup 只还原自己的那个实例。
+    const ctx = conversationContext;
+    if (typeof ctx.subscribePendingAttachmentsChange === "function") {
+      const unsubscribe = ctx.subscribePendingAttachmentsChange(() => {
+        syncPendingAttachments();
+      });
+      return unsubscribe;
+    }
 
-    conversationContext.addPendingAttachments = (files: File[]) => {
+    const originalAdd = ctx.addPendingAttachments.bind(ctx);
+    const originalRemove = ctx.removePendingAttachment.bind(ctx);
+    const originalClear = ctx.clearPendingAttachments.bind(ctx);
+
+    ctx.addPendingAttachments = (files: File[]) => {
       const result = originalAdd(files);
       syncPendingAttachments();
       return result;
     };
-    conversationContext.removePendingAttachment = (index: number) => {
+    ctx.removePendingAttachment = (index: number) => {
       originalRemove(index);
       syncPendingAttachments();
     };
-    conversationContext.clearPendingAttachments = () => {
+    ctx.clearPendingAttachments = () => {
       originalClear();
       syncPendingAttachments();
     };
 
     return () => {
-      conversationContext.addPendingAttachments = originalAdd;
-      conversationContext.removePendingAttachment = originalRemove;
-      conversationContext.clearPendingAttachments = originalClear;
+      // 用本地 ctx 快照而不是闭包外的 conversationContext，杜绝 prop 换实例后
+      // 还原到错的实例上；即便 React 的 cleanup 顺序按预期执行，也更清晰
+      ctx.addPendingAttachments = originalAdd;
+      ctx.removePendingAttachment = originalRemove;
+      ctx.clearPendingAttachments = originalClear;
     };
   }, [conversationContext, syncPendingAttachments]);
 

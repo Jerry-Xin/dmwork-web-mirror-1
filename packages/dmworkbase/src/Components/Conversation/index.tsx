@@ -147,6 +147,9 @@ export class Conversation
   private _beforeUnloadHandler: () => void;
   private _guardId: symbol = Symbol("pendingAttachmentGuard");
   private _addAttachmentFn?: (files: File[]) => void;
+  // 附件队列变更订阅者：addPendingAttachments / removePendingAttachment /
+  // clearPendingAttachments 变更时通知，避免上游消费方再去 monkey-patch 这些方法
+  private pendingAttachmentsListeners = new Set<() => void>();
   private onOpenThreadPanel?: (
     threadChannelId: string,
     threadName: string
@@ -444,17 +447,40 @@ export class Conversation
     if (this._addAttachmentFn) {
       this._addAttachmentFn(incoming);
     }
+    this.notifyPendingAttachmentsChange();
     return null;
   }
 
   removePendingAttachment(_index: number): void {
     // 附件现在由编辑器管理，通过编辑器节点删除
     // 此方法保留以兼容接口，但不再需要手动调用
+    this.notifyPendingAttachmentsChange();
   }
 
   clearPendingAttachments(): void {
     // 附件现在由编辑器管理，清空编辑器内容时会自动清除
     // 此方法保留以兼容接口
+    this.notifyPendingAttachmentsChange();
+  }
+
+  subscribePendingAttachmentsChange(listener: () => void): () => void {
+    this.pendingAttachmentsListeners.add(listener);
+    return () => {
+      this.pendingAttachmentsListeners.delete(listener);
+    };
+  }
+
+  private notifyPendingAttachmentsChange(): void {
+    for (const listener of this.pendingAttachmentsListeners) {
+      try {
+        listener();
+      } catch (err) {
+        console.debug(
+          "[Conversation] pendingAttachments listener threw:",
+          err,
+        );
+      }
+    }
   }
 
   channel(): Channel {

@@ -113,6 +113,22 @@ export default interface ConversationContext {
     clearPendingAttachments(): void
 
     /**
+     * 订阅待发送附件队列的变更通知。
+     *
+     * 上游消费方（比如 OctoComposer）之前靠 monkey-patch
+     * add/remove/clearPendingAttachments 来感知外部调用（FileToolbar、
+     * ImageToolbar 等）造成的队列变化，实现很脆弱：
+     *   - 依赖 React effect cleanup 的顺序恰好能恢复正确实例
+     *   - 多个消费者同时覆写会互相踩
+     *
+     * 实现方应在队列任一变更处调用监听器；消费方只读订阅，不再覆写方法。
+     * 旧 context（或 mock）可不实现，消费方需自行兜底。
+     *
+     * @returns 取消订阅函数
+     */
+    subscribePendingAttachmentsChange?(listener: () => void): () => void
+
+    /**
      * 转发消息给指定的最近会话
      * @param message 
      */

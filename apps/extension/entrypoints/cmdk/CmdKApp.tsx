@@ -216,6 +216,11 @@ export default function CmdKApp() {
     ox: number;
     oy: number;
   } | null>(null);
+  // 承载拖拽期间挂在 window 上的 mousemove/mouseup，卸载时统一回收
+  const dragListenersRef = useRef<{
+    onMove: (e: MouseEvent) => void;
+    onUp: () => void;
+  } | null>(null);
   const sendingRef = useRef(false);
   const parentOriginRef = useRef<string | null>(null);
   // 用 ref 承载 pendingAttachments，避免把它放进 mockContext 的 deps 里导致每次附件变更都重建 context
@@ -920,6 +925,12 @@ export default function CmdKApp() {
     (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).tagName === "BUTTON") return;
       e.preventDefault();
+      // 新一轮拖拽前先把上一轮残留的监听器摘掉（理论上不会有，属于防御）
+      if (dragListenersRef.current) {
+        window.removeEventListener("mousemove", dragListenersRef.current.onMove);
+        window.removeEventListener("mouseup", dragListenersRef.current.onUp);
+        dragListenersRef.current = null;
+      }
       dragRef.current = {
         startX: e.clientX,
         startY: e.clientY,
@@ -941,13 +952,26 @@ export default function CmdKApp() {
         setIsDragging(false);
         window.removeEventListener("mousemove", onMove);
         window.removeEventListener("mouseup", onUp);
+        dragListenersRef.current = null;
       };
 
+      dragListenersRef.current = { onMove, onUp };
       window.addEventListener("mousemove", onMove);
       window.addEventListener("mouseup", onUp);
     },
     [offset.x, offset.y]
   );
+
+  // 拖拽中卸载（例如 Escape 关面板）时兜底移除 window 上的监听器，避免泄漏
+  useEffect(() => {
+    return () => {
+      if (dragListenersRef.current) {
+        window.removeEventListener("mousemove", dragListenersRef.current.onMove);
+        window.removeEventListener("mouseup", dragListenersRef.current.onUp);
+        dragListenersRef.current = null;
+      }
+    };
+  }, []);
 
   const handlePickerSelect = useCallback((item: ChannelPickerItem) => {
     setSelected({ id: item.channelId, type: item.channelType });

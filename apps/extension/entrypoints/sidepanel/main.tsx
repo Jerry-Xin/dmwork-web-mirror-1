@@ -65,14 +65,26 @@ async function openConversation(target: ConversationTarget): Promise<boolean> {
 }
 
 let pendingConversationRetryId: number | undefined;
+// 轮询截止时间：解决 background 的 setPendingConversation 与 sidepanel 启动读 storage 的竞态。
+// 每次 ensurePendingConversationRetry 会把截止时间往后推，避免 retry 刚起来就被空读自杀。
+let pendingConversationRetryDeadline = 0;
+const PENDING_CONVERSATION_RETRY_WINDOW_MS = 30000;
 let lastSyncedSpaceId = localStorage.getItem('currentSpaceId') || '';
+
+function stopPendingConversationRetry(): void {
+  if (pendingConversationRetryId !== undefined) {
+    window.clearInterval(pendingConversationRetryId);
+    pendingConversationRetryId = undefined;
+  }
+  pendingConversationRetryDeadline = 0;
+}
 
 async function consumePendingConversation(): Promise<void> {
   const target = await getPendingConversation();
   if (!target) {
-    if (pendingConversationRetryId) {
-      window.clearInterval(pendingConversationRetryId);
-      pendingConversationRetryId = undefined;
+    // 空读可能只是 background 的 storage 写还没落；仅在截止时间到了才终止轮询
+    if (Date.now() >= pendingConversationRetryDeadline) {
+      stopPendingConversationRetry();
     }
     return;
   }
@@ -80,15 +92,14 @@ async function consumePendingConversation(): Promise<void> {
   const opened = await openConversation(target);
   if (opened) {
     await clearPendingConversation();
-    if (pendingConversationRetryId) {
-      window.clearInterval(pendingConversationRetryId);
-      pendingConversationRetryId = undefined;
-    }
+    stopPendingConversationRetry();
   }
 }
 
 function ensurePendingConversationRetry(): void {
-  if (!pendingConversationRetryId) {
+  pendingConversationRetryDeadline =
+    Date.now() + PENDING_CONVERSATION_RETRY_WINDOW_MS;
+  if (pendingConversationRetryId === undefined) {
     pendingConversationRetryId = window.setInterval(() => {
       void consumePendingConversation();
     }, 1000);
@@ -211,13 +222,13 @@ root.render(
 browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
   if (message.type === EXTENSION_MESSAGE_TYPE.openConversation) {
     void setPendingConversation(message.target).then(() => {
-      void consumePendingConversation();
       ensurePendingConversationRetry();
+      void consumePendingConversation();
     });
   }
 });
 
-void consumePendingConversation();
 ensurePendingConversationRetry();
+void consumePendingConversation();
 syncSidepanelState(true);
 syncSidepanelBadge();

@@ -872,6 +872,12 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
                 editor.commands.focus();
               }}
               getCurrentText={() => editor?.getText() || ""}
+              getSelectedText={() => {
+                if (!editor) return undefined;
+                const { from, to } = editor.state.selection;
+                if (from === to) return undefined;
+                return editor.state.doc.textBetween(from, to);
+              }}
               getChatContext={props.getChatContext}
             />
 

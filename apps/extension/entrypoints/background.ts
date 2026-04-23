@@ -183,7 +183,7 @@ function startBreathing(): void {
   }, BREATHING_INTERVAL_MS);
 }
 
-async function updateBadge(hasUnread: boolean): Promise<void> {
+async function doUpdateBadge(hasUnread: boolean): Promise<void> {
   await browser.action.setBadgeText({ text: "" });
 
   if (hasUnread) {
@@ -194,6 +194,19 @@ async function updateBadge(hasUnread: boolean): Promise<void> {
     const base = await getDefaultIconImageData();
     await browser.action.setIcon({ imageData: { 128: base } });
   }
+}
+
+// 串行化 badge 更新：多个调用用 Promise 链顺序执行，
+// 避免 hasUnread=true 的 await buildBreathingFrames() 与
+// hasUnread=false 的 stopBreathing() 穿插导致定时器泄漏（badge 永久闪）
+let badgeChain: Promise<void> = Promise.resolve();
+
+function updateBadge(hasUnread: boolean): Promise<void> {
+  const next = badgeChain.then(() => doUpdateBadge(hasUnread));
+  badgeChain = next.catch((err) => {
+    console.debug("[Extension] updateBadge failed:", err);
+  });
+  return next;
 }
 
 async function clearAllNotifications(): Promise<void> {

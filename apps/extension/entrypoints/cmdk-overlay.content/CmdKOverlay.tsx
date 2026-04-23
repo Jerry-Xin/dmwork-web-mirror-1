@@ -13,7 +13,13 @@ interface InjectedPanelFrame {
   iframe: HTMLIFrameElement;
 }
 
-export default function CmdKOverlay() {
+interface CmdKOverlayProps {
+  // 懒挂载场景：若首次挂载是由 Cmd+K 触发的，bootstrap listener 已吞掉事件，
+  // 需要在 React 起来后自动 openPanel 一次
+  autoOpen?: boolean;
+}
+
+export default function CmdKOverlay({ autoOpen = false }: CmdKOverlayProps) {
   const [selectionText, setSelectionText] = useState('');
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -24,9 +30,6 @@ export default function CmdKOverlay() {
   const pendingContextRef = useRef<PanelContext | null>(null);
 
   useEffect(() => {
-    const onMouseUp = () => {
-      setTimeout(checkSelection, 10);
-    };
     const checkSelection = () => {
       const sel = window.getSelection();
       const text = sel?.toString().trim() || '';
@@ -39,6 +42,12 @@ export default function CmdKOverlay() {
         setSelectionRect(null);
       }
     };
+    const onMouseUp = () => {
+      setTimeout(checkSelection, 10);
+    };
+    // 懒挂载首次 mount 时，bootstrap 的那次 mouseup 已经过去了，
+    // 立即读当前选区把 hint 补上，用户无感
+    checkSelection();
     document.addEventListener('mouseup', onMouseUp, true);
     return () => document.removeEventListener('mouseup', onMouseUp, true);
   }, []);
@@ -137,6 +146,15 @@ export default function CmdKOverlay() {
     iframeUiRef.current = { host, iframe };
     setPanelOpen(true);
   }, [panelOpen, selectionText]);
+
+  // 懒挂载由 Cmd+K 首次按键触发时，bootstrap listener 已经 preventDefault 吞掉事件，
+  // 这里 mount 后自动补一次 openPanel；只跑一次
+  useEffect(() => {
+    if (autoOpen) {
+      openPanel();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const closePanel = useCallback(() => {
     if (iframeUiRef.current) {

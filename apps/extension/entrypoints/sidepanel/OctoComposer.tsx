@@ -247,6 +247,19 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
     () => persistentPlainTextByContext.get(persistentKey) ?? ""
   );
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
+  // sidepanel 下 MessageInput 并未挂载，Conversation._addAttachmentFn 始终为 undefined，
+  // 因此附件由 OctoComposer 自己存；ref 供 composerContext.getAttachmentFiles 与 send 读取当前值
+  const pendingAttachmentsRef = useRef<File[]>([]);
+  const updatePendingAttachments = useCallback(
+    (updater: File[] | ((prev: File[]) => File[])) => {
+      setPendingAttachments((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        pendingAttachmentsRef.current = next;
+        return next;
+      });
+    },
+    []
+  );
   const [members, setMembers] = useState<Subscriber[]>([]);
   const membersRef = useRef<Subscriber[]>([]);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -468,7 +481,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
       }
 
       const hasText = currentPlainText.trim().length > 0;
-      const attachments = [...conversationContext.getPendingAttachments()];
+      const attachments = [...pendingAttachmentsRef.current];
       if (!hasText && attachments.length === 0) {
         return;
       }
@@ -487,7 +500,6 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
 
         if (onSendText) {
           await onSendText(textToSend, mentionModel);
-          syncPendingAttachments();
           if (editor) {
             editor.commands.clearContent();
           }
@@ -546,8 +558,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
         }
 
         if (attachments.length > 0) {
-          conversationContext.clearPendingAttachments();
-          syncPendingAttachments();
+          updatePendingAttachments([]);
 
           for (const file of attachments) {
             try {
@@ -609,7 +620,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
       plainText,
       sending,
       sendMediaAndWait,
-      syncPendingAttachments,
+      updatePendingAttachments,
     ]
   );
 
@@ -800,15 +811,16 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
       const error = conversationContext.addPendingAttachments(images);
       if (error) {
         showToast(error);
+      } else {
+        updatePendingAttachments((prev) => [...prev, ...images]);
       }
-      syncPendingAttachments();
     };
 
     node.addEventListener("paste", handlePaste);
     return () => {
       node.removeEventListener("paste", handlePaste);
     };
-  }, [conversationContext, editor, syncPendingAttachments]);
+  }, [conversationContext, editor, updatePendingAttachments]);
 
   useEffect(() => {
     if (!emojiOpen) return;
@@ -882,8 +894,14 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
         content.format = sticker.format;
         await conversationContext.sendMessage(content);
       },
+      addAttachment(files: File[]) {
+        updatePendingAttachments((prev) => [...prev, ...files]);
+      },
+      getAttachmentFiles() {
+        return pendingAttachmentsRef.current;
+      },
     }),
-    [applyPlainText, conversationContext, editor, onExpand, plainText, send]
+    [applyPlainText, conversationContext, editor, onExpand, plainText, send, updatePendingAttachments]
   );
 
   useEffect(() => {
@@ -914,11 +932,12 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
       const error = conversationContext.addPendingAttachments(files);
       if (error) {
         showToast(error);
+      } else {
+        updatePendingAttachments((prev) => [...prev, ...files]);
       }
-      syncPendingAttachments();
       event.target.value = "";
     },
-    [conversationContext, syncPendingAttachments]
+    [conversationContext, updatePendingAttachments]
   );
 
   const handleMentionClick = useCallback(() => {
@@ -986,7 +1005,9 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
                 <button
                   className="octo-composer-chip-remove"
                   onClick={() =>
-                    conversationContext.removePendingAttachment(index)
+                    updatePendingAttachments((prev) =>
+                      prev.filter((_, i) => i !== index)
+                    )
                   }
                   title="移除"
                   type="button"

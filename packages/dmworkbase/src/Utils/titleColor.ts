@@ -61,5 +61,6 @@ export function hashCode(str: string): number {
 
 export function getTitleColor(title: string = ''): string {
   const v = hashCode(title);
-  return TITLE_COLORS[v % TITLE_COLORS.length];
+  const n = TITLE_COLORS.length;
+  return TITLE_COLORS[((v % n) + n) % n];
 }

@@ -1309,9 +1309,18 @@ export default function CmdKApp() {
             setError("未选中 Space，无法创建分组");
             return;
           }
-          await CategoryService.create(spaceId, { name });
+          try {
+            await CategoryService.create(spaceId, { name });
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "创建分组失败");
+            return;
+          }
           setCreateCategoryOpen(false);
-          await fetchData();
+          try {
+            await fetchData();
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "刷新分组失败");
+          }
         }}
         onCancel={() => setCreateCategoryOpen(false)}
       />

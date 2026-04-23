@@ -41,11 +41,7 @@ interface OctoInfoDrawerProps {
 }
 
 function isAiMember(member: DrawerMember): boolean {
-  const text = `${member.name || ""} ${member.uid || ""}`.toLowerCase();
-  return (
-    member.orgData?.robot === 1 ||
-    /ai|agent|bot|thomas|claude|龙虾/.test(text)
-  );
+  return member.orgData?.robot === 1;
 }
 
 function getDisplayName(member: DrawerMember): string {

@@ -479,7 +479,7 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
 
   render() {
     const { selectedChannel, selectedChannelName, showPicker } = this.state;
-    const arrowPath = showPicker ? 'M6 9l6 6 6-6' : 'M6 9l6 6 6-6';
+    const arrowPath = showPicker ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6';
 
     return (
       <div className="wk-sidepanel-layout">

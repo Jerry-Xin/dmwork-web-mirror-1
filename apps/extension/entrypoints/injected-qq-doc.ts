@@ -20,7 +20,8 @@ function getDomSelectedText(): string {
 }
 
 function sendToContentScript(text: string, x: number, y: number) {
-  window.postMessage({ type: 'QQ_DOC_TEXT_SELECTED', text, x, y }, '*');
+  // 收窄到同源：注入脚本与内容脚本同在 QQ 文档页面，无需跨源，避免对外广播用户选区
+  window.postMessage({ type: 'QQ_DOC_TEXT_SELECTED', text, x, y }, window.location.origin);
 }
 
 function installListeners(editor: QQDocEditor) {

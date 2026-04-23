@@ -87,6 +87,12 @@ export default function CmdKOverlay() {
 
     const host = document.createElement('div');
     host.setAttribute('data-octo-cmdk-iframe-host', 'true');
+    // tokens.css 里的 dark/light/cc-dark 变量都靠 :host([data-theme=...]) 选中；
+    // shadow host 不随页面 <html> 走，必须自己根据系统偏好打标，否则 dark 变量永不激活
+    host.setAttribute(
+      'data-theme',
+      window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+    );
     host.style.position = 'fixed';
     host.style.inset = '0';
     host.style.zIndex = '2147483647';

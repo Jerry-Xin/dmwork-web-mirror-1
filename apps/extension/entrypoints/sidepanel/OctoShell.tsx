@@ -1,13 +1,10 @@
 /**
  * OctoShell — root shell component for the sidepanel
  *
- * Owns the demo-bar, settings popover, toast, and theme/layout state.
- * Wraps the main <App /> component.
+ * 目前仅承载 children + 全局 Toast；theme / settings 已交由其他组件处理。
  */
 
-import React, { useState, useCallback } from 'react'
-import { useOctoTheme } from './useOctoTheme'
-import OctoSettingsPopover from './OctoSettingsPopover'
+import React from 'react'
 import OctoToast from './OctoToast'
 
 interface OctoShellProps {
@@ -15,34 +12,10 @@ interface OctoShellProps {
   onClose?: () => void
 }
 
-const OctoShell: React.FC<OctoShellProps> = ({ children, onClose }) => {
-  const { theme, layout, setTheme, setLayout } = useOctoTheme()
-  const [settingsOpen, setSettingsOpen] = useState(false)
-
-  const toggleSettings = useCallback(() => {
-    setSettingsOpen((prev) => !prev)
-  }, [])
-
-  const closeSettings = useCallback(() => {
-    setSettingsOpen(false)
-  }, [])
-
-  const handleClose = useCallback(() => {
-    if (onClose) {
-      onClose()
-    } else {
-      try { window.close() } catch { /* noop */ }
-    }
-  }, [onClose])
-
+const OctoShell: React.FC<OctoShellProps> = ({ children }) => {
   return (
     <div className="octo-sidepanel-shell">
-      {/* Main app area */}
-      <div className="octo-sidepanel-app">
-        {children}
-      </div>
-
-      {/* Global toast */}
+      <div className="octo-sidepanel-app">{children}</div>
       <OctoToast />
     </div>
   )

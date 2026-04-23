@@ -143,8 +143,16 @@ export function parseNotificationId(
     return undefined;
   }
 
+  let channelId: string;
+  try {
+    channelId = decodeURIComponent(parts[2]);
+  } catch {
+    // 畸形通知 ID（%xx 序列无效）直接丢弃，避免未捕获的 URIError
+    return undefined;
+  }
+
   return {
     channelType,
-    channelId: decodeURIComponent(parts[2]),
+    channelId,
   };
 }

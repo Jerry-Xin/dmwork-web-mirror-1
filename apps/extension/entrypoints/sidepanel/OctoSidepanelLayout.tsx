@@ -687,6 +687,16 @@ export default class OctoSidepanelLayout extends Component<
     }
 
     this.setState({ memberLoading: true });
+    // 快速切换频道时多个 subscribers 请求并发，靠请求时的 channel 身份比对当前 state，
+    // 只有仍选中的频道才允许写回 members / memberLoading，其余请求默默丢弃
+    const isStale = () => {
+      const current = this.state.selectedChannel;
+      return (
+        !current ||
+        current.channelID !== channel.channelID ||
+        current.channelType !== channel.channelType
+      );
+    };
     try {
       const data = await WKApp.dataSource.channelDataSource.subscribers(
         channel,
@@ -695,6 +705,7 @@ export default class OctoSidepanelLayout extends Component<
           limit: 1000,
         }
       );
+      if (isStale()) return;
       const members = (data || []).map((member: any) => ({
         uid: member.uid,
         name: member.name,
@@ -706,6 +717,7 @@ export default class OctoSidepanelLayout extends Component<
       this.setState({ members, memberLoading: false });
     } catch (e) {
       console.warn("[OctoSidepanelLayout] Failed to load members:", e);
+      if (isStale()) return;
       this.setState({ members: [], memberLoading: false });
     }
   }

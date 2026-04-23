@@ -11,12 +11,28 @@ import gifIcon from "../../assets/files/gif.svg";
 import pdfIcon from "../../assets/files/pdf.svg";
 import videoIcon from "../../assets/files/video.svg";
 import zipIcon from "../../assets/files/zip.svg";
+import videoPlayIcon from "../../assets/files/video2.svg";
 
 export interface AttachmentAttributes {
   id: string;
   name: string;
   size: number;
   type: string;
+  previewUrl?: string; // 图片预览 URL
+}
+
+function isImageType(type: string, name: string): boolean {
+  if (type.startsWith("image/")) return true;
+  const dotIdx = name.lastIndexOf(".");
+  const ext = dotIdx > 0 ? name.substring(dotIdx + 1).toLowerCase() : "";
+  return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(ext);
+}
+
+function isVideoType(type: string, name: string): boolean {
+  if (type.startsWith("video/")) return true;
+  const dotIdx = name.lastIndexOf(".");
+  const ext = dotIdx > 0 ? name.substring(dotIdx + 1).toLowerCase() : "";
+  return ["mp4", "avi", "mov", "mkv", "webm"].includes(ext);
 }
 
 function getFileIcon(name: string, type: string): string {
@@ -67,7 +83,30 @@ const AttachmentNodeView = ({
   deleteNode,
   selected,
 }: AttachmentNodeViewProps) => {
-  const { name, size, type } = node.attrs;
+  const { name, size, type, previewUrl } = node.attrs;
+  const isImage = isImageType(type, name) && previewUrl;
+
+  // 图片类型：直接渲染图片预览
+  if (isImage) {
+    return (
+      <NodeViewWrapper
+        className={`wk-attachment-node wk-attachment-node--image ${
+          selected ? "wk-attachment-node--selected" : ""
+        }`}
+        data-type="attachment"
+      >
+        <img
+          src={previewUrl}
+          alt={name}
+          className="wk-attachment-node-image"
+          draggable={false}
+        />
+      </NodeViewWrapper>
+    );
+  }
+
+  // 非图片类型：渲染文件卡片
+  const isVideo = isVideoType(type, name);
   const icon = getFileIcon(name, type);
 
   return (
@@ -79,7 +118,24 @@ const AttachmentNodeView = ({
     >
       <div className="wk-attachment-node-card">
         <div className="wk-attachment-node-icon">
-          <img src={icon} alt="file" draggable={false} />
+          {isVideo && previewUrl ? (
+            <div className="wk-attachment-node-video-cover-wrapper">
+              <img
+                src={previewUrl}
+                alt="video cover"
+                draggable={false}
+                className="wk-attachment-node-video-cover"
+              />
+              <img
+                src={videoPlayIcon}
+                alt="play"
+                className="wk-attachment-node-video-play-icon"
+                draggable={false}
+              />
+            </div>
+          ) : (
+            <img src={icon} alt="file" draggable={false} />
+          )}
         </div>
         <div className="wk-attachment-node-info">
           <div className="wk-attachment-node-name-row">
@@ -131,6 +187,9 @@ export const AttachmentNode = Node.create({
       },
       type: {
         default: "application/octet-stream",
+      },
+      previewUrl: {
+        default: null,
       },
     };
   },

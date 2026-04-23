@@ -424,17 +424,78 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     };
   }, []);
 
+  // 判断是否为图片类型
+  const isImageFile = (file: File): boolean => {
+    if (file.type.startsWith("image/")) return true;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(ext);
+  };
+
+  // 判断是否为视频类型
+  const isVideoFile = (file: File): boolean => {
+    if (file.type.startsWith("video/")) return true;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    return ["mp4", "avi", "mov", "mkv", "webm"].includes(ext);
+  };
+
+  // 为视频生成封面（截取第一帧）
+  const generateVideoCover = (file: File): Promise<string | undefined> => {
+    return new Promise((resolve) => {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.muted = true;
+      video.playsInline = true;
+
+      const url = URL.createObjectURL(file);
+      video.src = url;
+
+      video.onloadeddata = () => {
+        // 跳转到第一帧
+        video.currentTime = 0;
+      };
+
+      video.onseeked = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const coverUrl = canvas.toDataURL("image/jpeg", 0.8);
+          URL.revokeObjectURL(url);
+          resolve(coverUrl);
+        } else {
+          URL.revokeObjectURL(url);
+          resolve(undefined);
+        }
+      };
+
+      video.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(undefined);
+      };
+    });
+  };
+
   // 插入附件到编辑器
   const addAttachment = useCallback(
-    (files: File[]) => {
+    async (files: File[]) => {
       if (!editor) return;
 
-      files.forEach((file) => {
+      for (const file of files) {
         const id = `${file.name}-${file.size}-${
           file.lastModified
         }-${Date.now()}`;
         // 存储文件引用
         attachmentFilesRef.current.set(id, file);
+
+        // 为图片生成预览 URL，为视频生成封面
+        let previewUrl: string | undefined;
+        if (isImageFile(file)) {
+          previewUrl = URL.createObjectURL(file);
+        } else if (isVideoFile(file)) {
+          previewUrl = await generateVideoCover(file);
+        }
 
         // 插入附件节点到编辑器
         editor
@@ -447,10 +508,11 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
               name: file.name,
               size: file.size,
               type: file.type,
+              previewUrl,
             },
           })
           .run();
-      });
+      }
 
       // 插入附件后切换到多行模式
       setIsMultiLine(true);
@@ -575,9 +637,13 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
       );
     }
 
-    // 清理附件文件引用
+    // 清理附件文件引用和图片预览 URL
     attachmentAttrs.forEach((attr) => {
       attachmentFilesRef.current.delete(attr.id);
+      // 释放图片预览 URL，避免内存泄漏
+      if (attr.previewUrl) {
+        URL.revokeObjectURL(attr.previewUrl);
+      }
     });
 
     editor.commands.clearContent();

@@ -22,7 +22,7 @@ import {
   shouldSkipChannelForSpace,
   shouldSkipPersonConversationForSpace,
 } from "@dmwork/base";
-import HashIcon from "@dmwork/base/src/Components/Icons/HashIcon";
+import HashIcon from "@dmwork/base/src/Components/Icons/GroupIcon";
 import ThreadIcon from "@dmwork/base/src/Components/Icons/ThreadIcon";
 import { showToast } from "./OctoToast";
 import OctoComposer from "./OctoComposer";
@@ -133,6 +133,9 @@ export default class OctoSidepanelLayout extends Component<
   private spinnerTimer?: ReturnType<typeof setInterval>;
   private logoutConfirmTimer?: ReturnType<typeof setTimeout>;
   private spinnerVerbIndex = 0;
+  // Space 切换序列号：快速点击不同 Space 时，只有最后一次的异步回调被允许写状态，
+  // 旧 seq 的回调会被丢弃，避免 Space A 的数据覆盖进 Space B 的 UI
+  private spaceSelectSeq = 0;
 
   private SPINNER_VERBS = [
     "思考",
@@ -533,12 +536,16 @@ export default class OctoSidepanelLayout extends Component<
       return;
     }
 
+    const seq = ++this.spaceSelectSeq;
+    const isStale = () => seq !== this.spaceSelectSeq;
+
     let spaces = this.state.spaces;
     try {
       spaces = await SpaceService.shared.getMySpaces();
     } catch (e) {
       console.warn("[OctoSidepanelLayout] Failed to refresh spaces:", e);
     }
+    if (isStale()) return;
 
     const target = spaces.find((s) => s.space_id === spaceId);
     if (!target) {
@@ -556,7 +563,7 @@ export default class OctoSidepanelLayout extends Component<
     }
     WKApp.shared.notifyListener();
 
-    WKApp.shared.openChannel = undefined as any;
+    WKApp.shared.openChannel = undefined;
     WKSDK.shared().conversationManager.conversations = [];
 
     this.setState({
@@ -572,6 +579,7 @@ export default class OctoSidepanelLayout extends Component<
 
     try {
       await WKSDK.shared().conversationManager.sync({});
+      if (isStale()) return;
       this.bumpConversationsVersion();
       void this.loadCategoryNames();
     } catch (e) {

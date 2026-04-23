@@ -265,7 +265,10 @@ export default function CmdKApp() {
 
   const addPendingAttachments = useCallback(
     (files: File[]): string | null => {
-      const current = pendingAttachments;
+      // 走 ref 而非闭包捕获 pendingAttachments：同一 React 批次里连续调用
+      // 两次 addPendingAttachments 时，第二次仍能看到第一次写入的值，不会丢文件；
+      // 同时 deps 保持空数组，callback identity 稳定 → mockContext 不会因附件变更而重建
+      const current = pendingAttachmentsRef.current;
       const incoming = Array.from(files);
 
       if (current.length + incoming.length > MAX_ATTACHMENTS) {
@@ -289,10 +292,12 @@ export default function CmdKApp() {
         return "所有文件总大小不能超过 100MB";
       }
 
-      setPendingAttachments([...current, ...incoming]);
+      const next = [...current, ...incoming];
+      pendingAttachmentsRef.current = next;
+      setPendingAttachments(next);
       return null;
     },
-    [pendingAttachments]
+    []
   );
 
   const removePendingAttachment = useCallback((index: number) => {

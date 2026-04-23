@@ -71,6 +71,7 @@ const FoldImage: React.FC<{ src: string }> = ({ src }) => {
   const [open, setOpen] = React.useState(false);
   return (
     <div className="wk-fold-img" onClick={() => setOpen(true)}>
+      {/* data-has-lightbox: 扩展 sidepanel 的 image click 拦截器（OctoSidepanelLayout.handleImageClick）见到此属性会跳过 */}
       <img src={src} alt="" data-has-lightbox />
       <Lightbox
         open={open}

@@ -17,6 +17,7 @@ import {
   type ExtensionAuthState,
   type ExtensionRuntimeMessage,
 } from "../../utils/extensionRuntime";
+import type { Browser } from "wxt/browser";
 
 type EntityInfo = {
   uid?: string;
@@ -551,7 +552,7 @@ async function clearAuth(): Promise<void> {
   await sendSyncResult(false, false);
 }
 
-browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage, sender: any) => {
+browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage, sender: Browser.runtime.MessageSender) => {
   // 忽略来自 content script 的直接广播（有 sender.tab），只处理 background 转发的消息，避免重复处理
   if (sender?.tab) return;
   if (message.type === EXTENSION_MESSAGE_TYPE.authChanged) {

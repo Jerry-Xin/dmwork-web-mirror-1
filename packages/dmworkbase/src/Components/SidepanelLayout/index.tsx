@@ -18,6 +18,7 @@ import ThreadIcon from '../Icons/ThreadIcon';
 import ConversationContext from '../Conversation/context';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { SpaceService } from '../../Service/SpaceService';
+import { avatarGradient, getFirstChar } from '../../Utils/avatar';
 import './index.css';
 
 interface SidepanelLayoutState {
@@ -30,33 +31,6 @@ interface SidepanelLayoutState {
   privateChats: ChannelPickerItem[];
   pickerLoading: boolean;
   pinnedIds: Set<string>;
-}
-
-function getFirstChar(name: string): string {
-  if (!name) return '?';
-  let ch: string;
-  if (typeof (Intl as any)?.Segmenter === 'function') {
-    const segmenter = new (Intl as any).Segmenter(undefined, {
-      granularity: 'grapheme',
-    });
-    const first = segmenter.segment(name)[Symbol.iterator]().next();
-    ch = first.done ? '' : first.value.segment;
-  } else {
-    ch = Array.from(name)[0] ?? '';
-  }
-  if (!ch) return '?';
-  if (/^[a-zA-Z0-9]$/.test(ch)) return ch.toUpperCase();
-  return ch;
-}
-
-function avatarGradient(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const h1 = Math.abs(hash) % 360;
-  const h2 = (h1 + 40) % 360;
-  return `linear-gradient(135deg, hsl(${h1},65%,55%), hsl(${h2},65%,45%))`;
 }
 
 export default class SidepanelLayout extends Component<{}, SidepanelLayoutState> {
@@ -73,7 +47,9 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
     const savedPins = localStorage.getItem('octo_sidepanel_pinned');
     let pinnedIds = new Set<string>();
     if (savedPins) {
-      try { pinnedIds = new Set(JSON.parse(savedPins)); } catch {}
+      try { pinnedIds = new Set(JSON.parse(savedPins)); } catch (err) {
+        console.debug('[SidepanelLayout] Failed to parse pinned ids:', err);
+      }
     }
 
     this.state = {
@@ -488,7 +464,9 @@ export default class SidepanelLayout extends Component<{}, SidepanelLayoutState>
         <button
           className="wk-sidepanel-more-item"
           onClick={() => {
-            try { (globalThis as any).chrome?.runtime?.openOptionsPage?.(); } catch {}
+            try { (globalThis as any).chrome?.runtime?.openOptionsPage?.(); } catch (err) {
+              console.debug('[SidepanelLayout] openOptionsPage failed:', err);
+            }
             this.setState({ showMoreMenu: false });
           }}
         >

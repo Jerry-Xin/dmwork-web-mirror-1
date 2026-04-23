@@ -13,6 +13,7 @@ import {
   setExtensionSidepanelActive,
   setPendingConversation,
 } from "../utils/extensionStorage";
+import type { Browser } from "wxt/browser";
 
 const BADGE_BG_COLOR = "#d24747";
 const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
@@ -371,109 +372,106 @@ async function requestConversationOpen(target: {
 
 async function handleRuntimeMessage(
   message: ExtensionRuntimeMessage,
-  sender?: any,
+  sender?: Browser.runtime.MessageSender,
 ): Promise<ExtensionAuthResponse | void> {
-  if (message.type === EXTENSION_MESSAGE_TYPE.offscreenReady) {
-    return getStoredAuthResponse();
-  }
+  switch (message.type) {
+    case EXTENSION_MESSAGE_TYPE.offscreenReady:
+      return getStoredAuthResponse();
 
-  if (message.type === EXTENSION_MESSAGE_TYPE.authChanged) {
-    void ensureOffscreenDocument().then(() => {
+    case EXTENSION_MESSAGE_TYPE.authChanged:
+      void ensureOffscreenDocument().then(() => {
+        void syncAuthStateToOffscreen();
+      });
+      return;
+
+    case EXTENSION_MESSAGE_TYPE.authCleared:
+      void clearPendingConversation();
+      void updateBadge(false);
+      void clearAllNotifications();
       void syncAuthStateToOffscreen();
-    });
-    return;
-  }
+      return;
 
-  if (message.type === EXTENSION_MESSAGE_TYPE.authCleared) {
-    void clearPendingConversation();
-    void updateBadge(false);
-    void clearAllNotifications();
-    void syncAuthStateToOffscreen();
-    return;
-  }
+    case EXTENSION_MESSAGE_TYPE.offscreenSyncResult: {
+      if (isSidepanelActive()) {
+        return;
+      }
+      void getExtensionPreferences().then((preferences) => {
+        const shouldShowBadge = preferences.notificationsEnabled && message.hasAuth;
+        const wantBadge = shouldShowBadge && message.hasUnread;
 
-  if (message.type === EXTENSION_MESSAGE_TYPE.offscreenSyncResult) {
-    if (isSidepanelActive()) {
+        if (wantBadge) {
+          lastOffscreenBadgeOnAt = Date.now();
+        } else if (Date.now() - lastOffscreenBadgeOnAt < OFFSCREEN_BADGE_GRACE_MS) {
+          // 刚通过 offscreen 设了红点，忽略紧随其后的 stale false
+          return;
+        }
+
+        void updateBadge(wantBadge);
+      });
       return;
     }
 
-    void getExtensionPreferences().then((preferences) => {
-      const shouldShowBadge = preferences.notificationsEnabled && message.hasAuth;
-      const wantBadge = shouldShowBadge && message.hasUnread;
-
-      if (wantBadge) {
-        lastOffscreenBadgeOnAt = Date.now();
-      } else if (Date.now() - lastOffscreenBadgeOnAt < OFFSCREEN_BADGE_GRACE_MS) {
-        // 刚通过 offscreen 设了红点，忽略紧随其后的 stale false
-        return;
-      }
-
-      void updateBadge(wantBadge);
-    });
-    return;
-  }
-
-  if (message.type === EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync) {
-    markSidepanelActive();
-    void getExtensionPreferences().then((preferences) => {
-      void updateBadge(preferences.notificationsEnabled && message.hasUnread);
-    });
-    return;
-  }
-
-  if (message.type === EXTENSION_MESSAGE_TYPE.sidepanelState) {
-    if (message.active) {
+    case EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync:
       markSidepanelActive();
-    } else {
-      clearSidepanelActive();
-    }
-    return;
-  }
-
-  if (message.type === EXTENSION_MESSAGE_TYPE.requestOpenConversation) {
-    // 必须同步调用 sidePanel.open()，不能有 await，否则用户手势上下文丢失
-    const windowId = sender?.tab?.windowId;
-    if (windowId && chromeApi?.sidePanel?.open) {
-      chromeApi.sidePanel
-        .open({ windowId })
-        .catch((err: any) =>
-          console.debug("[Extension] sidePanel.open failed:", err)
-        );
-    }
-    // 异步设置 pending + 通知侧栏
-    void setPendingConversation(message.target).then(() => {
-      browser.runtime
-        .sendMessage({
-          type: EXTENSION_MESSAGE_TYPE.openConversation,
-          target: message.target,
-        } satisfies ExtensionRuntimeMessage)
-        .catch(() => {});
-    });
-    return;
-  }
-
-  if (message.type === EXTENSION_MESSAGE_TYPE.offscreenNewMessage) {
-    void getExtensionPreferences().then((preferences) => {
-      if (!preferences.notificationsEnabled || !preferences.notificationsVisible) {
-        return;
-      }
-
-      void browser.notifications.create(message.notificationId, {
-        type: "basic",
-        title: message.title,
-        message: message.body,
-        iconUrl: browser.runtime.getURL("/icons/128.png"),
+      void getExtensionPreferences().then((preferences) => {
+        void updateBadge(preferences.notificationsEnabled && message.hasUnread);
       });
-    });
-    return;
-  }
+      return;
 
+    case EXTENSION_MESSAGE_TYPE.sidepanelState:
+      if (message.active) {
+        markSidepanelActive();
+      } else {
+        clearSidepanelActive();
+      }
+      return;
+
+    case EXTENSION_MESSAGE_TYPE.requestOpenConversation: {
+      // 必须同步调用 sidePanel.open()，不能有 await，否则用户手势上下文丢失
+      const windowId = sender?.tab?.windowId;
+      if (windowId && chromeApi?.sidePanel?.open) {
+        chromeApi.sidePanel
+          .open({ windowId })
+          .catch((err: any) =>
+            console.debug("[Extension] sidePanel.open failed:", err)
+          );
+      }
+      // 异步设置 pending + 通知侧栏
+      void setPendingConversation(message.target).then(() => {
+        browser.runtime
+          .sendMessage({
+            type: EXTENSION_MESSAGE_TYPE.openConversation,
+            target: message.target,
+          } satisfies ExtensionRuntimeMessage)
+          .catch(() => {});
+      });
+      return;
+    }
+
+    case EXTENSION_MESSAGE_TYPE.offscreenNewMessage:
+      void getExtensionPreferences().then((preferences) => {
+        if (!preferences.notificationsEnabled || !preferences.notificationsVisible) {
+          return;
+        }
+
+        void browser.notifications.create(message.notificationId, {
+          type: "basic",
+          title: message.title,
+          message: message.body,
+          iconUrl: browser.runtime.getURL("/icons/128.png"),
+        });
+      });
+      return;
+
+    default:
+      return;
+  }
 }
 
 export default defineBackground(async () => {
   console.log("Hello background!", { id: browser.runtime.id });
 
-  browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage, sender: any) => {
+  browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage, sender: Browser.runtime.MessageSender) => {
     return handleRuntimeMessage(message, sender);
   });
 

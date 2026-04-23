@@ -716,16 +716,24 @@ body[theme-mode="dark"] .wk-conversationpositionview-item {
  * CLI 阅读模式：头像缩成 7px 圆点 + 1px 竖线时间轴 + 扁平气泡
  * 触发：.wk-conversation.wk-conversation--cli
  * 纯 CSS 覆盖，不改 DOM / MessageCell
+ *
+ * 维护注记：
+ * 下方规则刻意用 `.wk-conversation.wk-conversation--cli` 双 class 形式
+ * 将特异度从 (0,1,0) 提升到 (0,2,0)，这样能稳定压过内部组件（MessageCell /
+ * WKAvatar / Bubble 等）大部分单 class 规则，从而避免用 !important。
+ * 如果碰到被覆盖的内部规则特异度更高，再考虑把这里的前缀重复到 3 次
+ * (.wk-conversation.wk-conversation.wk-conversation--cli) 以叠到 (0,3,0)，
+ * 或在内层组件暴露 CSS custom properties（如 --wk-avatar-size）由此处覆写。
  * ──────────────────────────────────────────────────────────── */
 
-.wk-conversation--cli .wk-conversation-messages {
+.wk-conversation.wk-conversation--cli .wk-conversation-messages {
     padding: 4px 12px 12px;
 }
 
 /* 时间轴列：.senderAvatar（含 placeholder）变成 16px 的竖槽 */
-.wk-conversation--cli .senderAvatar,
-.wk-conversation--cli .senderAvatar-placeholder {
-    width: 16px !important;
+.wk-conversation.wk-conversation--cli .senderAvatar,
+.wk-conversation.wk-conversation--cli .senderAvatar-placeholder {
+    width: 16px;
     min-width: 16px;
     height: auto;
     align-self: stretch;
@@ -735,13 +743,13 @@ body[theme-mode="dark"] .wk-conversationpositionview-item {
 }
 
 /* 隐藏 WKAvatar 本体（图像/首字母） */
-.wk-conversation--cli .senderAvatar > * {
-    display: none !important;
+.wk-conversation.wk-conversation--cli .senderAvatar > * {
+    display: none;
 }
 
 /* 7×7 圆点（默认灰） */
-.wk-conversation--cli .senderAvatar::before,
-.wk-conversation--cli .senderAvatar-placeholder::before {
+.wk-conversation.wk-conversation--cli .senderAvatar::before,
+.wk-conversation.wk-conversation--cli .senderAvatar-placeholder::before {
     content: "";
     position: absolute;
     top: 7px;
@@ -754,8 +762,8 @@ body[theme-mode="dark"] .wk-conversationpositionview-item {
 }
 
 /* 1px 竖线：圆点下方延伸到行底，与下一行线视觉衔接 */
-.wk-conversation--cli .senderAvatar::after,
-.wk-conversation--cli .senderAvatar-placeholder::after {
+.wk-conversation.wk-conversation--cli .senderAvatar::after,
+.wk-conversation.wk-conversation--cli .senderAvatar-placeholder::after {
     content: "";
     position: absolute;
     top: 17px;
@@ -768,124 +776,124 @@ body[theme-mode="dark"] .wk-conversationpositionview-item {
 }
 
 /* 自己发送：绿点 + 2px halo */
-.wk-conversation--cli .wk-message-base-send .senderAvatar::before,
-.wk-conversation--cli .wk-message-base-send .senderAvatar-placeholder::before {
+.wk-conversation.wk-conversation--cli .wk-message-base-send .senderAvatar::before,
+.wk-conversation.wk-conversation--cli .wk-message-base-send .senderAvatar-placeholder::before {
     background: var(--wk-success, #22c55e);
     box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
 }
 
 /* dark 主题下的竖线颜色 */
-body[theme-mode="dark"] .wk-conversation--cli .senderAvatar::after,
-body[theme-mode="dark"] .wk-conversation--cli .senderAvatar-placeholder::after {
+body[theme-mode="dark"] .wk-conversation.wk-conversation--cli .senderAvatar::after,
+body[theme-mode="dark"] .wk-conversation.wk-conversation--cli .senderAvatar-placeholder::after {
     background: rgba(255, 255, 255, 0.1);
 }
 
 /* 气泡扁平化：透明底、零内边距、无边框 */
-.wk-conversation--cli .wk-message-base-bubble,
-.wk-conversation--cli .wk-message-base-bubble-box.send .wk-message-base-bubble,
-.wk-conversation--cli .wk-message-base-bubble-box.recv .wk-message-base-bubble,
-.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-message-base-bubble {
-    background: transparent !important;
-    padding: 0 !important;
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble,
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble-box.send .wk-message-base-bubble,
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble-box.recv .wk-message-base-bubble,
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-message-base-bubble {
+    background: transparent;
+    padding: 0;
     max-width: none;
     font-size: 13px;
     line-height: 1.6;
     box-shadow: none;
-    border: none !important;
-    border-radius: 0 !important;
+    border: none;
+    border-radius: 0;
 }
-.wk-conversation--cli .wk-message-base-bubble-box {
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble-box {
     background: transparent;
 }
 /* AI 气泡顶部品牌渐变线移除 */
-.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-message-base-bubble::before {
-    display: none !important;
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-message-base-bubble::before {
+    display: none;
 }
 
 /* 对齐：清掉 recv 的 15px 左缩进，所有消息以时间轴列为基准左对齐 */
-.wk-conversation--cli .wk-message-base-recv,
-.wk-conversation--cli .wk-message-base-send {
+.wk-conversation.wk-conversation--cli .wk-message-base-recv,
+.wk-conversation.wk-conversation--cli .wk-message-base-send {
     margin-left: 0;
     margin-right: 0;
 }
 /* 行内容区间距 */
-.wk-conversation--cli .wk-message-base-box {
+.wk-conversation.wk-conversation--cli .wk-message-base-box {
     gap: 8px;
 }
 
 /* 自己发的整行也左对齐（不再靠右；翻转 row-reverse、解除 wk-msg-body flex-end） */
-.wk-conversation--cli .wk-message-base-send {
+.wk-conversation.wk-conversation--cli .wk-message-base-send {
     align-items: flex-start;
 }
-.wk-conversation--cli .wk-message-base-send .wk-message-base-box {
+.wk-conversation.wk-conversation--cli .wk-message-base-send .wk-message-base-box {
     flex-direction: row;
     margin-right: 0;
 }
-.wk-conversation--cli .wk-message-base-send .wk-msg-body {
+.wk-conversation.wk-conversation--cli .wk-message-base-send .wk-msg-body {
     align-items: flex-start;
 }
-.wk-conversation--cli .wk-msg-head-right {
+.wk-conversation.wk-conversation--cli .wk-msg-head-right {
     justify-content: flex-start;
 }
 
 /* 名字/时间小号 */
-.wk-conversation--cli .wk-msg-head {
+.wk-conversation.wk-conversation--cli .wk-msg-head {
     margin-bottom: 2px;
     gap: 6px;
     align-items: center;
 }
-.wk-conversation--cli .wk-msg-head-name {
+.wk-conversation.wk-conversation--cli .wk-msg-head-name {
     font-size: 12.5px;
     font-weight: 600;
 }
-.wk-conversation--cli .wk-msg-head-time {
+.wk-conversation.wk-conversation--cli .wk-msg-head-time {
     font-size: 11px;
 }
 
 /* AI 面板内部的 head（name + AGENT 徽章）：拍平成普通一行 */
-.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-ai-panel-head {
-    padding: 0 !important;
-    border-bottom: none !important;
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-ai-panel-head {
+    padding: 0;
+    border-bottom: none;
     margin-bottom: 2px;
     gap: 6px;
 }
-.wk-conversation--cli .wk-ai-panel-agent-name {
-    font-size: 12.5px !important;
-    font-weight: 600 !important;
-    color: var(--wk-brand-primary, #7c5cfc) !important;
+.wk-conversation.wk-conversation--cli .wk-ai-panel-agent-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--wk-brand-primary, #7c5cfc);
 }
-.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-message-base-content {
-    padding: 0 !important;
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-message-base-content {
+    padding: 0;
     font-size: 13px;
     line-height: 1.6;
 }
 /* AI 底栏（时间）瘦身到小字、无边框背景 */
-.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-ai-panel-foot {
-    padding: 0 !important;
-    border-top: none !important;
-    background: transparent !important;
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-ai-panel-foot {
+    padding: 0;
+    border-top: none;
+    background: transparent;
     margin-top: 2px;
 }
-.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-ai-panel-foot .messageTime {
+.wk-conversation.wk-conversation--cli .wk-message-base-bubble-box.ai-panel .wk-ai-panel-foot .messageTime {
     font-size: 11px;
     color: var(--wk-text-tertiary);
 }
 
 /* AiBadge 文案替换为 AGENT（仅 CLI 模式视觉） */
-.wk-conversation--cli .ai-badge {
-    font-size: 0 !important;
+.wk-conversation.wk-conversation--cli .ai-badge {
+    font-size: 0;
     line-height: 1;
     height: 14px;
-    padding: 0 5px !important;
-    border-radius: 3px !important;
+    padding: 0 5px;
+    border-radius: 3px;
     letter-spacing: 0;
     /* 原型青紫渐变（#4EEAFF → #9C5AFF） */
-    background: linear-gradient(135deg, #4eeaff 0%, #9c5aff 100%) !important;
-    box-shadow: 0 1px 2px rgba(156, 90, 255, 0.25) !important;
+    background: linear-gradient(135deg, #4eeaff 0%, #9c5aff 100%);
+    box-shadow: 0 1px 2px rgba(156, 90, 255, 0.25);
     display: inline-flex;
     align-items: center;
 }
-.wk-conversation--cli .ai-badge::after {
+.wk-conversation.wk-conversation--cli .ai-badge::after {
     content: "AGENT";
     font-size: 9px;
     font-weight: 700;
@@ -895,58 +903,58 @@ body[theme-mode="dark"] .wk-conversation--cli .senderAvatar-placeholder::after {
 }
 
 /* AI 消息圆点：紫色 + halo（用 :has 识别 ai-panel 气泡） */
-.wk-conversation--cli
+.wk-conversation.wk-conversation--cli
     .wk-message-item:has(.wk-message-base-bubble-box.ai-panel)
     .senderAvatar::before,
-.wk-conversation--cli
+.wk-conversation.wk-conversation--cli
     .wk-message-item:has(.wk-message-base-bubble-box.ai-panel)
     .senderAvatar-placeholder::before {
-    background: #7c5cfc !important;
-    box-shadow: 0 0 0 2px rgba(124, 92, 252, 0.15) !important;
+    background: #7c5cfc;
+    box-shadow: 0 0 0 2px rgba(124, 92, 252, 0.15);
 }
 
 /* AI 名字：蓝紫渐变文本（clip） */
-.wk-conversation--cli .wk-ai-panel-agent-name {
-    font-size: 12.5px !important;
-    font-weight: 700 !important;
+.wk-conversation.wk-conversation--cli .wk-ai-panel-agent-name {
+    font-size: 12.5px;
+    font-weight: 700;
     background: linear-gradient(90deg, #3250eb 0%, #7f3bf5 100%);
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent !important;
+    color: transparent;
 }
 
 /* 消息行紧凑化 */
-.wk-conversation--cli .wk-message-item {
+.wk-conversation.wk-conversation--cli .wk-message-item {
     padding: 2px 0;
 }
 
 /* 系统消息不显示圆点与竖线 */
-.wk-conversation--cli .wk-message-item-system .senderAvatar::before,
-.wk-conversation--cli .wk-message-item-system .senderAvatar::after,
-.wk-conversation--cli .wk-message-item-system .senderAvatar-placeholder::before,
-.wk-conversation--cli .wk-message-item-system .senderAvatar-placeholder::after {
+.wk-conversation.wk-conversation--cli .wk-message-item-system .senderAvatar::before,
+.wk-conversation.wk-conversation--cli .wk-message-item-system .senderAvatar::after,
+.wk-conversation.wk-conversation--cli .wk-message-item-system .senderAvatar-placeholder::before,
+.wk-conversation.wk-conversation--cli .wk-message-item-system .senderAvatar-placeholder::after {
     display: none;
 }
 
 /* ── AI 协作折叠卡片：拍平成常规消息流 ── */
-.wk-conversation--cli .wk-message-item-fold-session-shell {
+.wk-conversation.wk-conversation--cli .wk-message-item-fold-session-shell {
     margin-left: 0;
     gap: 8px;
 }
 /* 32px 渐变 AI 图标：CLI 下收缩为 16px 时间轴列（与 .senderAvatar 同宽） */
-.wk-conversation--cli .wk-message-item-fold-session-avatar {
-    width: 16px !important;
+.wk-conversation.wk-conversation--cli .wk-message-item-fold-session-avatar {
+    width: 16px;
     height: auto;
     min-width: 16px;
     align-self: stretch;
     position: relative;
     margin-top: 0;
 }
-.wk-conversation--cli .wk-message-item-fold-session-avatar > * {
-    display: none !important;
+.wk-conversation.wk-conversation--cli .wk-message-item-fold-session-avatar > * {
+    display: none;
 }
 /* 折叠组组长圆点：紫色（AI 协作） */
-.wk-conversation--cli .wk-message-item-fold-session-avatar::before {
+.wk-conversation.wk-conversation--cli .wk-message-item-fold-session-avatar::before {
     content: "";
     position: absolute;
     top: 7px;
@@ -958,7 +966,7 @@ body[theme-mode="dark"] .wk-conversation--cli .senderAvatar-placeholder::after {
     background: #7c5cfc;
     box-shadow: 0 0 0 2px rgba(124, 92, 252, 0.15);
 }
-.wk-conversation--cli .wk-message-item-fold-session-avatar::after {
+.wk-conversation.wk-conversation--cli .wk-message-item-fold-session-avatar::after {
     content: "";
     position: absolute;
     top: 17px;
@@ -970,18 +978,18 @@ body[theme-mode="dark"] .wk-conversation--cli .senderAvatar-placeholder::after {
     opacity: 0.7;
 }
 /* 折叠卡片外框：CLI 下保留一层"轻量版"容器感（浅紫背景 + 细边框 + 2px 渐变左条） */
-.wk-conversation--cli .wk-fold-session-card {
-    background: rgba(124, 92, 252, 0.035) !important;
-    border: 1px solid rgba(124, 92, 252, 0.1) !important;
-    border-radius: 6px !important;
-    padding: 6px 8px !important;
-    max-width: none !important;
-    overflow: visible !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card {
+    background: rgba(124, 92, 252, 0.035);
+    border: 1px solid rgba(124, 92, 252, 0.1);
+    border-radius: 6px;
+    padding: 6px 8px;
+    max-width: none;
+    overflow: visible;
     transition: background-color 160ms ease, border-color 160ms ease;
 }
-.wk-conversation--cli .wk-fold-session-card::before {
-    content: "" !important;
-    display: block !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card::before {
+    content: "";
+    display: block;
     position: absolute;
     left: 0;
     top: 0;
@@ -991,56 +999,56 @@ body[theme-mode="dark"] .wk-conversation--cli .senderAvatar-placeholder::after {
     opacity: 0.6;
     border-radius: 2px 0 0 2px;
 }
-.wk-conversation--cli .wk-fold-session-card:hover {
-    background: rgba(124, 92, 252, 0.06) !important;
-    border-color: rgba(124, 92, 252, 0.18) !important;
-    box-shadow: none !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card:hover {
+    background: rgba(124, 92, 252, 0.06);
+    border-color: rgba(124, 92, 252, 0.18);
+    box-shadow: none;
 }
-.wk-conversation--cli .wk-fold-session-card-active {
-    border-color: rgba(124, 92, 252, 0.22) !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-active {
+    border-color: rgba(124, 92, 252, 0.22);
 }
 
-body[theme-mode="dark"] .wk-conversation--cli .wk-fold-session-card {
-    background: rgba(156, 90, 255, 0.06) !important;
-    border-color: rgba(156, 90, 255, 0.14) !important;
+body[theme-mode="dark"] .wk-conversation.wk-conversation--cli .wk-fold-session-card {
+    background: rgba(156, 90, 255, 0.06);
+    border-color: rgba(156, 90, 255, 0.14);
 }
-body[theme-mode="dark"] .wk-conversation--cli .wk-fold-session-card:hover {
-    background: rgba(156, 90, 255, 0.1) !important;
-    border-color: rgba(156, 90, 255, 0.22) !important;
+body[theme-mode="dark"] .wk-conversation.wk-conversation--cli .wk-fold-session-card:hover {
+    background: rgba(156, 90, 255, 0.1);
+    border-color: rgba(156, 90, 255, 0.22);
 }
 
 /* 折叠卡片头：变成一行紧凑 header（与普通消息同高度） */
-.wk-conversation--cli .wk-fold-session-card-head {
-    padding: 0 !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-head {
+    padding: 0;
     gap: 6px;
     min-height: 20px;
 }
 /* 堆叠参与者头像：CLI 下隐藏 */
-.wk-conversation--cli .wk-fold-session-card-avatars {
-    display: none !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-avatars {
+    display: none;
 }
-.wk-conversation--cli .wk-fold-session-card-title-wrap {
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-title-wrap {
     gap: 6px;
 }
-.wk-conversation--cli .wk-fold-session-card-title {
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-title {
     font-size: 12.5px;
     font-weight: 600;
     color: var(--wk-text-primary);
 }
 /* "AI 协作" 标签 → 用 AGENT 徽章同款青紫渐变 */
-.wk-conversation--cli .wk-fold-session-card-tag {
-    font-size: 0 !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-tag {
+    font-size: 0;
     height: 14px;
-    padding: 0 5px !important;
-    border-radius: 3px !important;
-    background: linear-gradient(135deg, #4eeaff 0%, #9c5aff 100%) !important;
+    padding: 0 5px;
+    border-radius: 3px;
+    background: linear-gradient(135deg, #4eeaff 0%, #9c5aff 100%);
     box-shadow: 0 1px 2px rgba(156, 90, 255, 0.25);
     display: inline-flex;
     align-items: center;
-    color: transparent !important;
+    color: transparent;
     letter-spacing: 0;
 }
-.wk-conversation--cli .wk-fold-session-card-tag::after {
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-tag::after {
     content: "Agent协作";
     font-size: 9px;
     font-weight: 700;
@@ -1048,78 +1056,78 @@ body[theme-mode="dark"] .wk-conversation--cli .wk-fold-session-card:hover {
     color: #fff;
     text-transform: none;
 }
-.wk-conversation--cli .wk-fold-session-card-meta {
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-meta {
     gap: 8px;
 }
-.wk-conversation--cli .wk-fold-session-card-live-dot {
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-live-dot {
     width: 5px;
     height: 5px;
 }
-.wk-conversation--cli .wk-fold-session-card-status {
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-status {
     font-size: 10px;
     color: var(--wk-text-tertiary);
 }
 /* 数量 "N 条"：去气泡，改小号淡色 */
-.wk-conversation--cli .wk-fold-session-card-count {
-    background: transparent !important;
-    padding: 0 !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-count {
+    background: transparent;
+    padding: 0;
     font-size: 10px;
     color: var(--wk-text-tertiary);
-    border-radius: 0 !important;
+    border-radius: 0;
 }
 /* 折叠按钮：去边框/背景，只剩 chevron */
-.wk-conversation--cli .wk-fold-session-card-toggle {
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-toggle {
     width: 16px;
     height: 16px;
-    border: none !important;
-    background: transparent !important;
+    border: none;
+    background: transparent;
     color: var(--wk-text-tertiary);
     padding: 0;
 }
-.wk-conversation--cli .wk-fold-session-card-toggle:hover {
-    background: transparent !important;
-    border: none !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-toggle:hover {
+    background: transparent;
+    border: none;
     color: var(--wk-text-primary);
 }
-.wk-conversation--cli .wk-fold-session-card-toggle svg {
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-toggle svg {
     width: 12px;
     height: 12px;
 }
 /* 展开区内边距：贴近普通消息缩进 */
-.wk-conversation--cli .wk-fold-session-card-expanded-inner {
-    padding: 0 !important;
-    border: none !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-expanded-inner {
+    padding: 0;
+    border: none;
 }
-.wk-conversation--cli
+.wk-conversation.wk-conversation--cli
     .wk-fold-session-card-expanded-show
     .wk-fold-session-card-expanded-inner {
-    padding: 4px 0 2px !important;
-    border: none !important;
+    padding: 4px 0 2px;
+    border: none;
 }
 /* Summary 区去框 */
-.wk-conversation--cli .wk-fold-session-card-summary,
-.wk-conversation--cli .wk-fold-session-card-summary-show {
-    padding: 2px 0 !important;
-    border: none !important;
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-summary,
+.wk-conversation.wk-conversation--cli .wk-fold-session-card-summary-show {
+    padding: 2px 0;
+    border: none;
 }
 
 /* 折叠展开的内层消息行：与常规消息一样的紧凑对齐 */
-.wk-conversation--cli .wk-fold-msg {
+.wk-conversation.wk-conversation--cli .wk-fold-msg {
     padding: 2px 0;
     gap: 8px;
 }
-.wk-conversation--cli .wk-fold-msg + .wk-fold-msg {
+.wk-conversation.wk-conversation--cli .wk-fold-msg + .wk-fold-msg {
     border-top: none;
 }
 /* 隐藏内层 22px 小头像 */
-.wk-conversation--cli .wk-fold-msg-ava {
-    display: none !important;
+.wk-conversation.wk-conversation--cli .wk-fold-msg-ava {
+    display: none;
 }
-.wk-conversation--cli .wk-fold-msg-head {
+.wk-conversation.wk-conversation--cli .wk-fold-msg-head {
     gap: 6px;
     margin-bottom: 2px;
 }
-.wk-conversation--cli .wk-fold-msg-text {
+.wk-conversation.wk-conversation--cli .wk-fold-msg-text {
     font-size: 13px;
     line-height: 1.6;
 }

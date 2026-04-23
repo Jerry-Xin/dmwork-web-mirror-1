@@ -119,7 +119,9 @@ export default function CmdKOverlay() {
     iframe.allow = 'clipboard-read; clipboard-write';
 
     iframe.addEventListener('load', () => {
-      iframe.contentWindow?.postMessage({ type: 'CMDK_OPEN', context: panelContext }, '*');
+      // 目标 origin 收紧为扩展自身 origin，避免伪造 iframe 劫持 context 数据
+      const extensionOrigin = new URL(browser.runtime.getURL('cmdk.html')).origin;
+      iframe.contentWindow?.postMessage({ type: 'CMDK_OPEN', context: panelContext }, extensionOrigin);
     }, { once: true });
 
     wrapper.append(iframe);
@@ -148,7 +150,11 @@ export default function CmdKOverlay() {
 
   // Listen for close from iframe
   useEffect(() => {
+    const extensionOrigin = new URL(browser.runtime.getURL('cmdk.html')).origin;
     const onMessage = (e: MessageEvent) => {
+      // 只信任来自扩展 origin 且源自我们 iframe 的 CMDK_CLOSE 消息
+      if (e.origin !== extensionOrigin) return;
+      if (e.source !== iframeUiRef.current?.iframe.contentWindow) return;
       if (e.data?.type === 'CMDK_CLOSE') {
         closePanel();
       }

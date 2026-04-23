@@ -6,8 +6,6 @@ import {
   ChannelTypePerson,
   WKSDK,
   ChannelInfo,
-  MessageContentManager,
-  SystemContent,
 } from "wukongimjssdk";
 import {
   ChannelTypeCommunityTopic,
@@ -28,6 +26,12 @@ import HashIcon from "@dmwork/base/src/Components/Icons/HashIcon";
 import ThreadIcon from "@dmwork/base/src/Components/Icons/ThreadIcon";
 import { showToast } from "./OctoToast";
 import OctoComposer from "./OctoComposer";
+import OctoLightbox from "./OctoLightbox";
+import OctoSpaceSwitcherPopover from "./OctoSpaceSwitcherPopover";
+import OctoSearchPopover from "./OctoSearchPopover";
+import OctoContactsDrawer from "./OctoContactsDrawer";
+import OctoInfoDrawer from "./OctoInfoDrawer";
+import { renderDrawerIcon } from "./OctoDrawerIcons";
 import type ConversationContext from "@dmwork/base/src/Components/Conversation/context";
 import type { MessageInputContext } from "@dmwork/base/src/Components/MessageInput";
 import { ErrorBoundary } from "@dmwork/base/src/Components/ErrorBoundary";
@@ -42,6 +46,11 @@ import {
   setExtensionSidepanelSelectedConversation,
   setExtensionTheme,
 } from "../../utils/extensionStorage";
+import { getTitleColor } from "@dmwork/base/src/Utils/titleColor";
+import {
+  avatarGradient,
+  getFirstChar,
+} from "@dmwork/base/src/Utils/avatar";
 
 const HashIconComponent = HashIcon as any;
 const ThreadIconComponent = ThreadIcon as any;
@@ -79,9 +88,6 @@ interface OctoSidepanelLayoutState {
   pinnedIds: Set<string>;
   memberLoading: boolean;
   members: DrawerMember[];
-  showAiMembers: boolean;
-  showHumanMembers: boolean;
-  drawerMuted: boolean | null;
   theme: string;
   layout: string;
   readingMode: "message" | "cli";
@@ -93,13 +99,6 @@ interface OctoSidepanelLayoutState {
   lightboxSrc: string | null;
   // Search Popover
   showSearch: boolean;
-  searchQuery: string;
-  searchTab: "contacts" | "groups" | "files";
-  searchResult: {
-    friends?: any[];
-    groups?: any[];
-    messages?: any[];
-  } | null;
   // Contacts Drawer
   showContacts: boolean;
   // Create Menu (rail)
@@ -121,234 +120,7 @@ interface OctoComposerInputContext extends MessageInputContext {
   send(overrideText?: string): Promise<void>;
 }
 
-function getFirstChar(name: string): string {
-  if (!name) return "?";
-  let ch: string;
-  if (typeof (Intl as any)?.Segmenter === "function") {
-    const segmenter = new (Intl as any).Segmenter(undefined, {
-      granularity: "grapheme",
-    });
-    const first = segmenter.segment(name)[Symbol.iterator]().next();
-    ch = first.done ? "" : first.value.segment;
-  } else {
-    ch = Array.from(name)[0] ?? "";
-  }
-  if (!ch) return "?";
-  if (/^[a-zA-Z0-9]$/.test(ch)) return ch.toUpperCase();
-  return ch;
-}
-
-const TITLE_COLORS = [
-  "#8C8DFF",
-  "#7983C2",
-  "#6D8DDE",
-  "#5979F0",
-  "#6695DF",
-  "#8F7AC5",
-  "#9D77A5",
-  "#8A64D0",
-  "#AA66C3",
-  "#A75C96",
-  "#C8697D",
-  "#B74D62",
-  "#BD637C",
-  "#B3798E",
-  "#9B6D77",
-  "#B87F7F",
-  "#C5595A",
-  "#AA4848",
-  "#B0665E",
-  "#B76753",
-  "#BB5334",
-  "#C97B46",
-  "#BE6C2C",
-  "#CB7F40",
-  "#A47758",
-  "#B69370",
-  "#A49373",
-  "#AA8A46",
-  "#AA8220",
-  "#76A048",
-  "#9CAD23",
-  "#A19431",
-  "#AA9100",
-  "#A09555",
-  "#C49B4B",
-  "#5FB05F",
-  "#6AB48F",
-  "#71B15C",
-  "#B3B357",
-  "#A3B561",
-  "#909F45",
-  "#93B289",
-  "#3D98D0",
-  "#429AB6",
-  "#4EABAA",
-  "#6BC0CE",
-  "#64B5D9",
-  "#3E9CCB",
-  "#2887C4",
-  "#52A98B",
-];
-
-function hascode(str: string): number {
-  let hash = 0;
-  if (hash === 0 && str.length > 0) {
-    for (let i = 0; i < str.length; i += 1) {
-      hash = hash * 31 + str.charCodeAt(i);
-    }
-  }
-  return hash;
-}
-
-function getTitleColor(title: string = ""): string {
-  const v = hascode(title);
-  return TITLE_COLORS[v % TITLE_COLORS.length];
-}
-
 const RAIL_PIN_LIMIT = 7;
-
-function stripMark(html: string): string {
-  if (!html) return "";
-  return html.replace(/<\/?mark>/gi, "");
-}
-
-function sanitizeHighlight(html: string): string {
-  if (!html) return "";
-  const OPEN = "\x00MARK_OPEN\x00";
-  const CLOSE = "\x00MARK_CLOSE\x00";
-  let out = html.replace(/<mark>/gi, OPEN).replace(/<\/mark>/gi, CLOSE);
-  out = out
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-  out = out
-    .replace(new RegExp(OPEN, "g"), "<mark>")
-    .replace(new RegExp(CLOSE, "g"), "</mark>");
-  return out;
-}
-
-function jsonToUint8Array(json: any): Uint8Array {
-  return new TextEncoder().encode(JSON.stringify(json));
-}
-
-function avatarGradient(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i += 1) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const h1 = Math.abs(hash) % 360;
-  const h2 = (h1 + 40) % 360;
-  return `linear-gradient(135deg, hsl(${h1},65%,55%), hsl(${h2},65%,45%))`;
-}
-
-function renderDrawerIcon(
-  name: "close" | "star" | "bellOff" | "edit" | "trash" | "logout" | "caret"
-): React.ReactNode {
-  switch (name) {
-    case "close":
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        >
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      );
-    case "star":
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12 3.5l2.7 5.47 6.03.88-4.36 4.25 1.03 6-5.4-2.84-5.4 2.84 1.03-6L3.27 9.85l6.03-.88L12 3.5z" />
-        </svg>
-      );
-    case "bellOff":
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M9.35 5.41A2 2 0 0 1 12 4a2 2 0 0 1 2 2v.29a7 7 0 0 1 4 6.3V16l1.5 2H6.12" />
-          <path d="M9 18a3 3 0 0 0 5.12 1.96" />
-          <path d="M3 3l18 18" />
-        </svg>
-      );
-    case "edit":
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12 20h9" />
-          <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-        </svg>
-      );
-    case "trash":
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M3 6h18" />
-          <path d="M8 6V4h8v2" />
-          <path d="M19 6l-1 14H6L5 6" />
-        </svg>
-      );
-    case "logout":
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <path d="M16 17l5-5-5-5" />
-          <path d="M21 12H9" />
-        </svg>
-      );
-    case "caret":
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
 
 export default class OctoSidepanelLayout extends Component<
   {},
@@ -403,7 +175,9 @@ export default class OctoSidepanelLayout extends Component<
     if (savedPins) {
       try {
         pinnedIds = new Set(JSON.parse(savedPins));
-      } catch {}
+      } catch (err) {
+        console.debug("[Extension] Failed to parse pinned ids:", err);
+      }
     }
 
     this.state = {
@@ -417,9 +191,6 @@ export default class OctoSidepanelLayout extends Component<
       pinnedIds,
       memberLoading: false,
       members: [],
-      showAiMembers: true,
-      showHumanMembers: true,
-      drawerMuted: null,
       theme: "light",
       layout: "message",
       readingMode: "cli",
@@ -431,9 +202,6 @@ export default class OctoSidepanelLayout extends Component<
       lightboxSrc: null,
       // Search Popover
       showSearch: false,
-      searchQuery: "",
-      searchTab: "contacts",
-      searchResult: null,
       // Contacts Drawer
       showContacts: false,
       // Create Menu (rail)
@@ -783,7 +551,9 @@ export default class OctoSidepanelLayout extends Component<
     localStorage.setItem("currentSpaceId", spaceId);
     try {
       WKApp.mittBus.emit("space-changed", target);
-    } catch {}
+    } catch (err) {
+      console.debug("[Extension] space-changed emit failed:", err);
+    }
     WKApp.shared.notifyListener();
 
     WKApp.shared.openChannel = undefined as any;
@@ -798,7 +568,6 @@ export default class OctoSidepanelLayout extends Component<
       selectedChannelName: "",
       showInfoDrawer: false,
       members: [],
-      drawerMuted: null,
     });
 
     try {
@@ -952,7 +721,6 @@ export default class OctoSidepanelLayout extends Component<
       showPicker: false,
       showInfoDrawer: false,
       members: [],
-      drawerMuted: null,
       showFullComposer: false,
       fullComposerText: "",
     });
@@ -1079,99 +847,6 @@ export default class OctoSidepanelLayout extends Component<
       this.logoutConfirmTimer = undefined;
       this.setState({ logoutArmed: false });
     }, 2000);
-  };
-
-  private isAiMember(member: DrawerMember) {
-    const text = `${member.name || ""} ${member.uid || ""}`.toLowerCase();
-    return (
-      member.orgData?.robot === 1 ||
-      /ai|agent|bot|thomas|claude|龙虾/.test(text)
-    );
-  }
-
-  private getDisplayName(member: DrawerMember) {
-    return member.remark || member.name || member.uid;
-  }
-
-  private getMemberSubtitle(member: DrawerMember) {
-    if (this.isAiMember(member)) {
-      const scope =
-        member.orgData?.scope ||
-        member.orgData?.bot_scope ||
-        member.orgData?.robot_name ||
-        member.orgData?.bot_name;
-      return scope ? `${scope} · 已接入` : "AI 伙伴 · 已接入";
-    }
-    const title =
-      member.orgData?.title || member.orgData?.position || member.orgData?.dept;
-    if (member.role === GroupRole.owner) {
-      return title ? `${title} · 群主` : "群主";
-    }
-    if (member.role === GroupRole.manager) {
-      return title ? `${title} · 管理员` : "管理员";
-    }
-    return title || "成员";
-  }
-
-  private getMemberToneClass(member: DrawerMember) {
-    if (this.isAiMember(member)) return "is-ai";
-    const seed = this.getDisplayName(member) || member.uid;
-    let hash = 0;
-    for (let i = 0; i < seed.length; i += 1) {
-      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const tones = ["is-teal", "is-amber", "is-coral", ""];
-    return tones[Math.abs(hash) % tones.length];
-  }
-
-  private getDrawerMemberGroups() {
-    const aiMembers = this.state.members.filter((member) =>
-      this.isAiMember(member)
-    );
-    const humanMembers = this.state.members
-      .filter((member) => !this.isAiMember(member))
-      .sort((a, b) => {
-        const orderA =
-          a.role === GroupRole.owner ? 0 : a.role === GroupRole.manager ? 1 : 2;
-        const orderB =
-          b.role === GroupRole.owner ? 0 : b.role === GroupRole.manager ? 1 : 2;
-        if (orderA !== orderB) return orderA - orderB;
-        return this.getDisplayName(a).localeCompare(
-          this.getDisplayName(b),
-          "zh-Hans-CN"
-        );
-      });
-
-    return { aiMembers, humanMembers };
-  }
-
-  private toggleDrawerGroup = (key: "showAiMembers" | "showHumanMembers") => {
-    this.setState(
-      (prev) =>
-        ({ [key]: !prev[key] } as Pick<OctoSidepanelLayoutState, typeof key>)
-    );
-  };
-
-  private handleMuteToggle = async () => {
-    const { selectedChannel, drawerMuted } = this.state;
-    if (!selectedChannel) return;
-    const currentMuted =
-      drawerMuted ??
-      Boolean(
-        WKSDK.shared().channelManager.getChannelInfo(selectedChannel)?.mute
-      );
-    const nextMuted = !currentMuted;
-    this.setState({ drawerMuted: nextMuted });
-    try {
-      await ChannelSettingManager.shared.mute(nextMuted, selectedChannel);
-      await WKSDK.shared()
-        .channelManager.fetchChannelInfo(selectedChannel)
-        .catch(() => null);
-      this.bumpConversationsVersion();
-    } catch (e) {
-      console.warn("[OctoSidepanelLayout] Failed to update mute:", e);
-      this.setState({ drawerMuted: currentMuted });
-    }
   };
 
   private handleRenameGroup = async () => {
@@ -1340,558 +1015,29 @@ export default class OctoSidepanelLayout extends Component<
     this.setState({ lightboxSrc: null });
   };
 
-  private handleLightboxClick = (e: React.MouseEvent) => {
-    // Close when clicking the backdrop (not the image)
-    if ((e.target as HTMLElement).classList.contains("octo-lightbox")) {
-      this.closeLightbox();
-    }
-  };
-
-  private renderLightbox() {
-    const { lightboxSrc } = this.state;
-    if (!lightboxSrc) return null;
-    return (
-      <div className="octo-lightbox" onClick={this.handleLightboxClick}>
-        <img src={lightboxSrc} alt="" />
-        <button
-          className="octo-lightbox-close"
-          onClick={this.closeLightbox}
-          type="button"
-        >
-          ×
-        </button>
-      </div>
-    );
-  }
-
   // ================================================================
   // Search Popover
   // ================================================================
 
-  private searchDebounceTimer?: ReturnType<typeof setTimeout>;
-  private searchRequestId = 0;
-  private searchComposing = false;
-
   private handleSearchToggle = () => {
-    this.setState(
-      (prev) => ({
-        showSearch: !prev.showSearch,
-        searchQuery: "",
-        searchTab: "contacts" as const,
-        searchResult: null,
-      }),
-      () => {
-        if (this.state.showSearch) {
-          void this.doSearch("", "contacts");
-        }
-      }
-    );
+    this.setState((prev) => ({ showSearch: !prev.showSearch }));
   };
-
-  private handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    this.setState({ searchQuery: query });
-    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
-    if (this.searchComposing) return; // IME mid-composition, wait for compositionend
-    this.searchDebounceTimer = setTimeout(() => {
-      void this.doSearch(query.trim(), this.state.searchTab);
-    }, 300);
-  };
-
-  private handleSearchCompositionStart = () => {
-    this.searchComposing = true;
-  };
-
-  private handleSearchCompositionEnd = (
-    e: React.CompositionEvent<HTMLInputElement>
-  ) => {
-    this.searchComposing = false;
-    const query = (e.target as HTMLInputElement).value;
-    this.setState({ searchQuery: query });
-    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
-    this.searchDebounceTimer = setTimeout(() => {
-      void this.doSearch(query.trim(), this.state.searchTab);
-    }, 300);
-  };
-
-  private handleSearchTabChange = (tab: "contacts" | "groups" | "files") => {
-    this.setState({ searchTab: tab });
-    void this.doSearch(this.state.searchQuery.trim(), tab);
-  };
-
-  private async doSearch(
-    keyword: string,
-    tab: "contacts" | "groups" | "files"
-  ) {
-    // Match web vm.ts: content_type = [8] on files tab, [] otherwise
-    const contentTypes: number[] = tab === "files" ? [8] : [];
-    const spaceId = WKApp.shared.currentSpaceId;
-    const searchUrl = spaceId
-      ? `/search/global?space_id=${encodeURIComponent(spaceId)}`
-      : "/search/global";
-    // Race guard — ignore stale responses
-    this.searchRequestId += 1;
-    const reqId = this.searchRequestId;
-    try {
-      const res = await WKApp.apiClient.post(searchUrl, {
-        keyword,
-        content_type: contentTypes,
-        page: 1,
-        limit: 20,
-      });
-      if (reqId !== this.searchRequestId) return;
-      // Prefer channel_remark over channel_name when present (mirrors web vm)
-      res?.friends?.forEach((v: any) => {
-        if (v.channel_remark) v.channel_name = v.channel_remark;
-      });
-      res?.groups?.forEach((v: any) => {
-        if (v.channel_remark) v.channel_name = v.channel_remark;
-      });
-      res?.messages?.forEach((v: any) => {
-        if (v.channel?.channel_remark) {
-          v.channel.channel_name = v.channel.channel_remark;
-        }
-        // Decode file/message payloads via MessageContentManager
-        if (v.payload) {
-          try {
-            const contentType = v.payload.type;
-            const mc =
-              MessageContentManager.shared().getMessageContent(contentType);
-            if (mc) {
-              mc.decode(jsonToUint8Array(v.payload));
-              if (mc instanceof SystemContent) {
-                (mc as any).content.content = "[系统消息]";
-              }
-              v.content = mc;
-            }
-          } catch {
-            // Ignore decode errors — fall back to raw payload fields
-          }
-        }
-      });
-      this.setState({
-        searchResult: {
-          friends: res?.friends || [],
-          groups: res?.groups || [],
-          messages: res?.messages || [],
-        },
-      });
-    } catch (e) {
-      if (reqId !== this.searchRequestId) return;
-      console.warn("[OctoSidepanelLayout] Search failed:", e);
-      this.setState({ searchResult: null });
-    }
-  }
-
-  private renderSearchPopover() {
-    if (!this.state.showSearch) return null;
-    const { searchQuery, searchTab, searchResult } = this.state;
-    const friends = searchResult?.friends ?? [];
-    const groups = searchResult?.groups ?? [];
-    const messages = searchResult?.messages ?? [];
-    const counts: Record<"contacts" | "groups" | "files", number> = {
-      contacts: friends.length,
-      groups: groups.length,
-      files: messages.length,
-    };
-    const tabs: { key: "contacts" | "groups" | "files"; label: string }[] = [
-      { key: "contacts", label: "联系人" },
-      { key: "groups", label: "群组" },
-      { key: "files", label: "文件" },
-    ];
-
-    type Item = { id: string; name: string; sub: string };
-    const items: Item[] = [];
-    if (searchTab === "contacts") {
-      for (const c of friends) {
-        items.push({
-          id: String(c.channel_id || c.uid || c.id),
-          name: c.channel_name || c.uid || "",
-          sub: "",
-        });
-      }
-    } else if (searchTab === "groups") {
-      for (const g of groups) {
-        items.push({
-          id: String(g.channel_id || g.group_no || g.id),
-          name: g.channel_name || "",
-          sub: g.member_count ? `${g.member_count} 人` : "",
-        });
-      }
-    } else {
-      for (const m of messages) {
-        const fileName =
-          (m.content as any)?.content?.name ||
-          (m.content as any)?.name ||
-          m.payload?.name ||
-          m.payload?.content ||
-          "文件";
-        const fromChannel = m.channel?.channel_name || "";
-        items.push({
-          id: String(m.message_id || m.id),
-          name: fileName,
-          sub: fromChannel,
-        });
-      }
-    }
-
-    return (
-      <div className="octo-search-pop">
-        <div className="octo-search-input-wrap">
-          <svg
-            className="octo-search-input-icon"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            className="octo-search-input"
-            placeholder="搜索联系人、群组、文件…"
-            value={searchQuery}
-            onChange={this.handleSearchInput}
-            onCompositionStart={this.handleSearchCompositionStart}
-            onCompositionEnd={this.handleSearchCompositionEnd}
-            autoFocus
-          />
-        </div>
-        <div className="octo-search-tabs">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              className={`octo-search-tab${
-                searchTab === tab.key ? " is-active" : ""
-              }`}
-              onClick={() => this.handleSearchTabChange(tab.key)}
-              type="button"
-            >
-              <span>{tab.label}</span>
-              {counts[tab.key] > 0 && (
-                <span className="octo-search-tab-count">{counts[tab.key]}</span>
-              )}
-            </button>
-          ))}
-        </div>
-        <div className="octo-search-results">
-          {items.length === 0 ? (
-            <div className="octo-search-empty">
-              {searchResult === null
-                ? "加载中…"
-                : searchQuery.trim() === ""
-                ? "暂无数据"
-                : "无匹配结果"}
-            </div>
-          ) : (
-            items.map((item) => {
-              const plain = stripMark(item.name) || "?";
-              return (
-                <div key={item.id} className="octo-search-result-item">
-                  <span
-                    className="octo-search-result-avatar"
-                    style={{ background: avatarGradient(plain) }}
-                  >
-                    {getFirstChar(plain)}
-                  </span>
-                  <span className="octo-search-result-text">
-                    <div
-                      className="octo-search-result-name"
-                      dangerouslySetInnerHTML={{
-                        __html: sanitizeHighlight(item.name),
-                      }}
-                    />
-                    {item.sub && (
-                      <div className="octo-search-result-sub">{item.sub}</div>
-                    )}
-                  </span>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-    );
-  }
 
   // ================================================================
   // Contacts Drawer
   // ================================================================
 
-  private contactsMembers: SpaceMember[] = [];
-  private contactsMyBots: any[] = [];
-  private contactsLoaded = false;
-  private contactsKeyword = "";
+  // ================================================================
+  // Contacts Drawer
+  // ================================================================
 
   private toggleContacts = () => {
-    const nextShow = !this.state.showContacts;
-    this.setState({ showContacts: nextShow });
-    if (nextShow && !this.contactsLoaded) {
-      void this.loadContacts();
-    }
+    this.setState((prev) => ({ showContacts: !prev.showContacts }));
   };
 
-  private async loadContacts() {
-    const spaceId = WKApp.shared.currentSpaceId;
-    if (!spaceId) {
-      console.warn("[OctoSidepanelLayout] No currentSpaceId for contacts");
-      return;
-    }
-    try {
-      const [members, myBots] = await Promise.all([
-        SpaceService.shared.getMembers(spaceId, 1, 10000),
-        WKApp.apiClient
-          .get("/robot/my_bots", { param: { space_id: spaceId } })
-          .catch(() => []),
-      ]);
-      this.contactsMembers = members || [];
-      this.contactsMyBots = myBots || [];
-      this.contactsLoaded = true;
-      this.forceUpdate();
-    } catch (e) {
-      console.warn("[OctoSidepanelLayout] Failed to load contacts:", e);
-    }
-  }
-
-  private getProcessedContacts(keyword?: string) {
-    const myUID = WKApp.loginInfo.uid || "";
-
-    // AI 伙伴：my_bots 接口返回的已添加 AI
-    let aiPartners = (this.contactsMyBots || []).map((b: any) => ({
-      uid: b.uid,
-      name: b.name || b.uid,
-      avatar: b.avatar || "",
-      role: 3,
-      robot: 1,
-      created_at: "",
-    })) as SpaceMember[];
-
-    // 我的朋友：空间内所有人类成员，排除自己
-    let friends = this.contactsMembers.filter(
-      (m) => m.uid !== myUID && m.robot !== 1
-    );
-
-    // 搜索过滤
-    if (keyword && keyword.trim()) {
-      const kw = keyword.toLowerCase();
-      aiPartners = aiPartners.filter((m) => m.name.toLowerCase().includes(kw));
-      friends = friends.filter((m) => m.name.toLowerCase().includes(kw));
-    }
-
-    return { aiPartners, friends };
-  }
-
-  private handleContactsSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    this.contactsKeyword = e.target.value;
-    this.forceUpdate();
-  };
-
-  private handleContactClick = (uid: string) => {
+  private closeContacts = () => {
     this.setState({ showContacts: false });
-    WKApp.endpoints.showConversation(new Channel(uid, ChannelTypePerson));
   };
-
-  private renderContactsDrawer() {
-    const { showContacts } = this.state;
-    const { aiPartners, friends } = this.getProcessedContacts(
-      this.contactsKeyword
-    );
-
-    return (
-      <div className={`octo-contacts-drawer${showContacts ? " is-open" : ""}`}>
-        {/* 头部 */}
-        <div className="cd-head">
-          <button
-            className="cd-back"
-            onClick={this.toggleContacts}
-            type="button"
-            title="返回"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <div className="cd-title">通讯录</div>
-          <button
-            className="cd-textbtn"
-            onClick={this.toggleContacts}
-            type="button"
-          >
-            关闭
-          </button>
-        </div>
-
-        {/* 搜索栏 */}
-        <div className="cd-search">
-          <div className="cd-input">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="搜索朋友、AI 伙伴…"
-              value={this.contactsKeyword}
-              onChange={this.handleContactsSearch}
-            />
-          </div>
-        </div>
-
-        {/* 内容 */}
-        <div className="cd-body">
-          {!this.contactsLoaded && <div className="cd-section">加载中…</div>}
-
-          {/* AI 伙伴 */}
-          {aiPartners.length > 0 && (
-            <>
-              <div className="cd-section">AI 伙伴 · {aiPartners.length}</div>
-              {aiPartners.map((m) => (
-                <div
-                  key={m.uid}
-                  className="cd-row"
-                  onClick={() => this.handleContactClick(m.uid)}
-                >
-                  <div className="cd-av ai">{getFirstChar(m.name)}</div>
-                  <div className="cd-txt">
-                    <span className="cd-nm">
-                      {m.name} <span className="cd-badge-ai">Agent</span>
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-
-          {/* 我的朋友 */}
-          {friends.length > 0 && (
-            <>
-              <div className="cd-section">我的朋友 · {friends.length}</div>
-              {friends.map((m) => (
-                <div
-                  key={m.uid}
-                  className="cd-row"
-                  onClick={() => this.handleContactClick(m.uid)}
-                >
-                  <div
-                    className="cd-av"
-                    style={{ background: avatarGradient(m.name) }}
-                  >
-                    {getFirstChar(m.name)}
-                  </div>
-                  <div className="cd-txt">
-                    <span className="cd-nm">{m.name}</span>
-                  </div>
-                  <span className="cd-chev">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </span>
-                </div>
-              ))}
-            </>
-          )}
-
-          {this.contactsLoaded &&
-            aiPartners.length === 0 &&
-            friends.length === 0 && (
-              <div className="cd-empty">
-                <span className="cd-empty-icon">👤</span>
-                <span>暂无联系人</span>
-              </div>
-            )}
-        </div>
-      </div>
-    );
-  }
-
-  private renderMemberGroup(
-    title: string,
-    members: DrawerMember[],
-    expanded: boolean,
-    onToggle: () => void
-  ) {
-    return (
-      <div className={`octo-sidepanel-mem-group${expanded ? " is-open" : ""}`}>
-        <button
-          className="octo-sidepanel-mem-head"
-          onClick={onToggle}
-          type="button"
-        >
-          <span className="octo-sidepanel-mem-caret">
-            {renderDrawerIcon("caret")}
-          </span>
-          <span className="octo-sidepanel-mem-label">{title}</span>
-          <span className="octo-sidepanel-mem-count">{members.length}</span>
-        </button>
-        {expanded && (
-          <div className="octo-sidepanel-mem-body">
-            {members.map((member, index) => {
-              const isAi = this.isAiMember(member);
-              const isOwner = member.role === GroupRole.owner;
-              return (
-                <div
-                  key={`${member.uid}-${index}`}
-                  className="octo-sidepanel-mem-row"
-                >
-                  <span
-                    className={`octo-sidepanel-mem-avatar ${this.getMemberToneClass(
-                      member
-                    )}`}
-                  >
-                    {getFirstChar(this.getDisplayName(member) || member.uid)}
-                  </span>
-                  <span className="octo-sidepanel-mem-text">
-                    <span className="octo-sidepanel-mem-name">
-                      {this.getDisplayName(member)}
-                      {isAi && (
-                        <span className="octo-sidepanel-mem-badge octo-sidepanel-mem-badge-ai">
-                          AGENT
-                        </span>
-                      )}
-                      {isOwner && (
-                        <span className="octo-sidepanel-mem-badge octo-sidepanel-mem-badge-owner">
-                          OWNER
-                        </span>
-                      )}
-                    </span>
-                    <span className="octo-sidepanel-mem-role">
-                      {this.getMemberSubtitle(member)}
-                    </span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   private getChannelIcon(channel: Channel) {
     if (channel.channelType === ChannelTypeGroup) {
@@ -2020,68 +1166,14 @@ export default class OctoSidepanelLayout extends Component<
           )}
         </button>
         {showSpaceSwitcher && hasMultipleSpaces && (
-          <div className="octo-space-switcher-pop is-open">
-            <div className="octo-space-switcher-title">切换空间</div>
-            <div className="octo-space-switcher-list">
-              {spaces.map((space) => {
-                const isCurrent = space.space_id === currentSpaceId;
-                const meta =
-                  space.max_users > 0
-                    ? `${space.member_count}/${space.max_users} 人`
-                    : `${space.member_count} 人`;
-                return (
-                  <button
-                    key={space.space_id}
-                    type="button"
-                    className={`octo-space-item${
-                      isCurrent ? " is-current" : ""
-                    }`}
-                    onClick={() => {
-                      void this.handleSpaceSelect(space.space_id);
-                    }}
-                  >
-                    {space.logo ? (
-                      <img
-                        className="octo-space-item-avatar"
-                        src={space.logo}
-                        alt=""
-                      />
-                    ) : (
-                      <span
-                        className="octo-space-item-avatar"
-                        style={{
-                          background: avatarGradient(
-                            space.name || space.space_id
-                          ),
-                        }}
-                      >
-                        {getFirstChar(space.name || "?")}
-                      </span>
-                    )}
-                    <span className="octo-space-item-text">
-                      <span className="octo-space-item-name">{space.name}</span>
-                      <span className="octo-space-item-meta">{meta}</span>
-                    </span>
-                    {isCurrent && (
-                      <svg
-                        className="octo-space-item-check"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <OctoSpaceSwitcherPopover
+            isOpen
+            spaces={spaces}
+            currentSpaceId={currentSpaceId}
+            onSelect={(spaceId) => {
+              void this.handleSpaceSelect(spaceId);
+            }}
+          />
         )}
         <div className="wk-sidepanel-topbar-actions">
           {/* 固定/取消固定当前频道 */}
@@ -2476,188 +1568,25 @@ export default class OctoSidepanelLayout extends Component<
       showInfoDrawer,
       members,
       memberLoading,
-      showAiMembers,
-      showHumanMembers,
-      drawerMuted,
     } = this.state;
     if (!selectedChannel) return null;
-
-    const isPrivate = selectedChannel.channelType === ChannelTypePerson;
-    const channelInfo =
-      WKSDK.shared().channelManager.getChannelInfo(selectedChannel);
     const pinned = pinnedIds.has(selectedChannel.channelID);
-    const muted = drawerMuted ?? Boolean(channelInfo?.mute);
-    const { aiMembers, humanMembers } = this.getDrawerMemberGroups();
-    const metaText = isPrivate
-      ? "私聊会话"
-      : [
-          `${members.length || "—"} 人`,
-          aiMembers.length > 0 ? `${aiMembers.length} AI` : "",
-          selectedChannel.channelType === ChannelTypeCommunityTopic
-            ? "Thread"
-            : "群聊",
-        ]
-          .filter(Boolean)
-          .join(" · ");
 
     return (
-      <div
-        className={`octo-sidepanel-drawer${showInfoDrawer ? " is-open" : ""}`}
-      >
-        <div className="octo-sidepanel-drawer-head">
-          <div className="octo-sidepanel-drawer-title">
-            {isPrivate ? "会话信息" : "群信息"}
-          </div>
-          <button
-            className="octo-sidepanel-drawer-close"
-            onClick={() => this.setState({ showInfoDrawer: false })}
-            type="button"
-          >
-            {renderDrawerIcon("close")}
-          </button>
-        </div>
-
-        <div className="octo-sidepanel-drawer-body">
-          <div className="octo-sidepanel-gi-hero">
-            <div className="octo-sidepanel-gi-avatar">
-              {getFirstChar(selectedChannelName || selectedChannel.channelID)}
-            </div>
-            <div className="octo-sidepanel-gi-body">
-              <div className="octo-sidepanel-gi-name">
-                {selectedChannelName}
-                {!isPrivate && (
-                  <span className="octo-sidepanel-gi-channel">
-                    {selectedChannel.channelType === ChannelTypeCommunityTopic
-                      ? "Thread"
-                      : "# 讨论"}
-                  </span>
-                )}
-              </div>
-              <div className="octo-sidepanel-gi-meta">
-                {channelInfo?.orgData?.category || metaText}
-              </div>
-            </div>
-          </div>
-
-          <div className="octo-sidepanel-gi-section">会话设置</div>
-
-          <button
-            className={`octo-sidepanel-gi-toggle${pinned ? " is-on" : ""}`}
-            onClick={() => this.togglePin(selectedChannel.channelID)}
-            type="button"
-          >
-            <span className="octo-sidepanel-gi-toggle-icon">
-              {renderDrawerIcon("star")}
-            </span>
-            <span className="octo-sidepanel-gi-toggle-label">置顶在 Rail</span>
-            <span className="octo-sidepanel-gi-switch" />
-          </button>
-
-          <button
-            className={`octo-sidepanel-gi-toggle${muted ? " is-on" : ""}`}
-            onClick={() => {
-              void this.handleMuteToggle();
-            }}
-            type="button"
-          >
-            <span className="octo-sidepanel-gi-toggle-icon">
-              {renderDrawerIcon("bellOff")}
-            </span>
-            <span className="octo-sidepanel-gi-toggle-label">消息免打扰</span>
-            <span className="octo-sidepanel-gi-switch" />
-          </button>
-
-          {!isPrivate && (
-            <>
-              {memberLoading && (
-                <div className="octo-sidepanel-mem-empty">加载成员中…</div>
-              )}
-              {!memberLoading &&
-                aiMembers.length > 0 &&
-                this.renderMemberGroup(
-                  "AI 伙伴",
-                  aiMembers,
-                  showAiMembers,
-                  () => this.toggleDrawerGroup("showAiMembers")
-                )}
-              {!memberLoading &&
-                this.renderMemberGroup(
-                  "成员",
-                  humanMembers,
-                  showHumanMembers,
-                  () => this.toggleDrawerGroup("showHumanMembers")
-                )}
-              {!memberLoading && members.length === 0 && (
-                <div className="octo-sidepanel-mem-empty">暂无成员数据</div>
-              )}
-
-              <div className="octo-sidepanel-gi-section">操作</div>
-              <button
-                className="octo-sidepanel-gi-action"
-                onClick={() => {
-                  void this.handleRenameGroup();
-                }}
-                type="button"
-              >
-                <span className="octo-sidepanel-gi-toggle-icon">
-                  {renderDrawerIcon("edit")}
-                </span>
-                <span className="octo-sidepanel-gi-toggle-label">
-                  重命名群聊
-                </span>
-              </button>
-              <button
-                className="octo-sidepanel-gi-action"
-                onClick={() => {
-                  void this.handleClearMessages();
-                }}
-                type="button"
-              >
-                <span className="octo-sidepanel-gi-toggle-icon">
-                  {renderDrawerIcon("trash")}
-                </span>
-                <span className="octo-sidepanel-gi-toggle-label">
-                  清空聊天记录
-                </span>
-              </button>
-              <button
-                className="octo-sidepanel-gi-action is-danger"
-                onClick={() => {
-                  void this.handleLeaveChannel();
-                }}
-                type="button"
-              >
-                <span className="octo-sidepanel-gi-toggle-icon">
-                  {renderDrawerIcon("logout")}
-                </span>
-                <span className="octo-sidepanel-gi-toggle-label">
-                  退出该群聊
-                </span>
-              </button>
-            </>
-          )}
-
-          {isPrivate && (
-            <>
-              <div className="octo-sidepanel-gi-section">操作</div>
-              <button
-                className="octo-sidepanel-gi-action"
-                onClick={() => {
-                  void this.handleClearMessages();
-                }}
-                type="button"
-              >
-                <span className="octo-sidepanel-gi-toggle-icon">
-                  {renderDrawerIcon("trash")}
-                </span>
-                <span className="octo-sidepanel-gi-toggle-label">
-                  清空聊天记录
-                </span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+      <OctoInfoDrawer
+        isOpen={showInfoDrawer}
+        onClose={() => this.setState({ showInfoDrawer: false })}
+        selectedChannel={selectedChannel}
+        selectedChannelName={selectedChannelName}
+        members={members}
+        memberLoading={memberLoading}
+        pinned={pinned}
+        onTogglePin={this.togglePin}
+        onRename={this.handleRenameGroup}
+        onClear={this.handleClearMessages}
+        onLeave={this.handleLeaveChannel}
+        onMuteChanged={this.bumpConversationsVersion}
+      />
     );
   }
 
@@ -2823,7 +1752,7 @@ export default class OctoSidepanelLayout extends Component<
                 </div>
 
                 {/* Search Popover — positioned inside main, below header */}
-                {this.renderSearchPopover()}
+                <OctoSearchPopover isOpen={this.state.showSearch} />
 
                 {/* Full Composer — covers entire main area */}
                 {this.renderFullComposer()}
@@ -2899,13 +1828,16 @@ export default class OctoSidepanelLayout extends Component<
               )}
 
               {/* Contacts Drawer — covers main area but not Rail */}
-              {this.renderContactsDrawer()}
+              <OctoContactsDrawer
+                isOpen={this.state.showContacts}
+                onClose={this.closeContacts}
+              />
             </div>
           </div>
         </div>
 
         {/* Lightbox — fixed, top-level overlay */}
-        {this.renderLightbox()}
+        <OctoLightbox src={this.state.lightboxSrc} onClose={this.closeLightbox} />
 
         {/* Create Category Modal */}
         <CreateCategoryModalComponent

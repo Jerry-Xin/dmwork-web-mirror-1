@@ -148,6 +148,7 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
            return <img
                style={{"width":`${size.width}px`,"height":`${size.height}px`,borderRadius:"var(--wk-r-xs, 4px)",cursor:"pointer"}}
                src={src}
+               // data-has-lightbox: 扩展 sidepanel 的 image click 拦截器（OctoSidepanelLayout.handleImageClick）见到此属性会跳过
                data-has-lightbox
                onClick={() => this.setState({ previewImgSrc: src, previewImageContent: imageContent })}
            />

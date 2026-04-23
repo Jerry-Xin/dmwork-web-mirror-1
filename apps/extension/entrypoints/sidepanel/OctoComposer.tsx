@@ -38,6 +38,7 @@ import { FileContent } from "@dmwork/base/src/Messages/File";
 import { ImageContent } from "@dmwork/base/src/Messages/Image";
 import { LottieSticker } from "@dmwork/base/src/Messages/LottieSticker";
 import { showToast } from "./OctoToast";
+import { formatFileSize, getImageDimensions } from "../../utils/attachment";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const INVISIBLE_CHARS_RE =
@@ -47,8 +48,13 @@ function stripInvisibleChars(text: string): string {
   return text.replace(INVISIBLE_CHARS_RE, "");
 }
 
-let persistentEditorJSON: any = null;
-let persistentPlainText: string = "";
+// 按 contextClassName 隔离的草稿快照：sidepanel 与 cmdk 同时存在时各自保留，不会串味
+const persistentEditorJSONByContext = new Map<string, any>();
+const persistentPlainTextByContext = new Map<string, string>();
+
+function getPersistentKey(contextClassName?: string): string {
+  return contextClassName ?? "default";
+}
 
 function extractMentionsFromEditor(editor: any): string {
   const json = editor.getJSON();
@@ -80,12 +86,6 @@ function extractMentionsFromEditor(editor: any): string {
   }
 
   return stripInvisibleChars(result);
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function getAttachmentBadge(file: File): string {
@@ -121,24 +121,6 @@ function parseBotCommands(channel: Channel): BotCommand[] | undefined {
   } catch {
     return undefined;
   }
-}
-
-function getImageDimensions(
-  file: File
-): Promise<{ width: number; height: number }> {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: 0, height: 0 });
-    };
-    img.src = url;
-  });
 }
 
 async function readAsDataUrl(file: File): Promise<string> {
@@ -260,7 +242,10 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
   const editorHandleKeyDownRef = useRef<
     ((view: any, event: KeyboardEvent) => boolean) | null
   >(null);
-  const [plainText, setPlainText] = useState(persistentPlainText);
+  const persistentKey = getPersistentKey(contextClassName);
+  const [plainText, setPlainText] = useState(
+    () => persistentPlainTextByContext.get(persistentKey) ?? ""
+  );
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
   const [members, setMembers] = useState<Subscriber[]>([]);
   const membersRef = useRef<Subscriber[]>([]);
@@ -419,7 +404,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
         },
       }),
     ],
-    content: persistentEditorJSON ?? "",
+    content: persistentEditorJSONByContext.get(persistentKey) ?? "",
     editorProps: {
       attributes: {
         "data-placeholder": "输入消息…",
@@ -430,8 +415,8 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
     onUpdate: ({ editor: nextEditor }) => {
       const nextText = stripInvisibleChars(nextEditor.getText());
       setPlainText(nextText);
-      persistentPlainText = nextText;
-      persistentEditorJSON = nextEditor.getJSON();
+      persistentPlainTextByContext.set(persistentKey, nextText);
+      persistentEditorJSONByContext.set(persistentKey, nextEditor.getJSON());
 
       if (
         botCommands &&
@@ -507,8 +492,8 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
             editor.commands.clearContent();
           }
           setPlainText("");
-          persistentPlainText = "";
-          persistentEditorJSON = null;
+          persistentPlainTextByContext.delete(persistentKey);
+          persistentEditorJSONByContext.delete(persistentKey);
           setEmojiOpen(false);
           return;
         }
@@ -540,8 +525,8 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
               editor.commands.clearContent();
             }
             setPlainText("");
-            persistentPlainText = "";
-            persistentEditorJSON = null;
+            persistentPlainTextByContext.delete(persistentKey);
+            persistentEditorJSONByContext.delete(persistentKey);
             return;
           }
 
@@ -610,8 +595,8 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
           editor.commands.clearContent();
         }
         setPlainText("");
-        persistentPlainText = "";
-        persistentEditorJSON = null;
+        persistentPlainTextByContext.delete(persistentKey);
+        persistentEditorJSONByContext.delete(persistentKey);
         setEmojiOpen(false);
       } finally {
         setSending(false);

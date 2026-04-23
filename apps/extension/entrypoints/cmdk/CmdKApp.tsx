@@ -53,6 +53,7 @@ import {
   EXTENSION_MESSAGE_TYPE,
   type ExtensionRuntimeMessage,
 } from "../../utils/extensionRuntime";
+import { formatFileSize, getImageDimensions } from "../../utils/attachment";
 
 interface PanelContext {
   selectedText: string;
@@ -133,24 +134,6 @@ function buildCmdkMessageText(text: string, context: PanelContext | null) {
   return formatMentionTextV2(parts.join("\n\n"));
 }
 
-function getImageDimensions(
-  file: File
-): Promise<{ width: number; height: number }> {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: 0, height: 0 });
-    };
-    img.src = url;
-  });
-}
-
 function applySpaceIdToContent(content: any, channel: Channel) {
   const spaceId = WKApp.shared.currentSpaceId;
   if (!spaceId || channel.channelType !== ChannelTypePerson) {
@@ -204,18 +187,6 @@ function getFileKey(file: File) {
   return `${file.name}-${file.size}-${file.lastModified}`;
 }
 
-function formatFileSize(size: number) {
-  if (size >= 1024 * 1024) {
-    return `${(size / (1024 * 1024)).toFixed(
-      size >= 10 * 1024 * 1024 ? 0 : 1
-    )} MB`;
-  }
-  if (size >= 1024) {
-    return `${Math.round(size / 1024)} KB`;
-  }
-  return `${size} B`;
-}
-
 export default function CmdKApp() {
   const [context, setContext] = useState<PanelContext | null>(null);
   const [threads, setThreads] = useState<ThreadItem[]>([]);
@@ -246,13 +217,23 @@ export default function CmdKApp() {
     oy: number;
   } | null>(null);
   const sendingRef = useRef(false);
+  const parentOriginRef = useRef<string | null>(null);
+  // 用 ref 承载 pendingAttachments，避免把它放进 mockContext 的 deps 里导致每次附件变更都重建 context
+  const pendingAttachmentsRef = useRef<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<
     Record<string, string>
   >({});
 
   useEffect(() => {
+    pendingAttachmentsRef.current = pendingAttachments;
+  }, [pendingAttachments]);
+
+  useEffect(() => {
     const onMessage = (e: MessageEvent) => {
+      // 只接受来自 parent 窗口的消息，避免任意窗口注入伪造 CMDK_OPEN
+      if (e.source !== window.parent) return;
       if (e.data?.type === "CMDK_OPEN") {
+        parentOriginRef.current = e.origin;
         setContext(e.data.context);
       }
     };
@@ -364,7 +345,7 @@ export default function CmdKApp() {
       setDragFileCallback: (callback: (file: File) => void) => {
         dragFileCallbackRef.current = callback;
       },
-      getPendingAttachments: () => pendingAttachments,
+      getPendingAttachments: () => pendingAttachmentsRef.current,
       addPendingAttachments,
       removePendingAttachment,
       clearPendingAttachments,
@@ -377,7 +358,6 @@ export default function CmdKApp() {
   }, [
     addPendingAttachments,
     clearPendingAttachments,
-    pendingAttachments,
     removePendingAttachment,
     selected?.id,
     selected?.type,
@@ -671,7 +651,10 @@ export default function CmdKApp() {
   }, [selected?.id, selected?.type]);
 
   const notifyClose = useCallback((reason: string) => {
-    window.parent.postMessage({ type: "CMDK_CLOSE", reason }, "*");
+    // 回发 parent 的原始 origin（由 CMDK_OPEN 握手捕获），避免向任意窗口泄漏消息
+    const target = parentOriginRef.current;
+    if (!target) return;
+    window.parent.postMessage({ type: "CMDK_CLOSE", reason }, target);
   }, []);
 
   const ensureSdkConnected = useCallback(async () => {
@@ -819,10 +802,12 @@ export default function CmdKApp() {
 
   const handleSend = useCallback(
     async (text: string, incomingMention?: MentionModel) => {
+      // 用 ref 而非 state 做重入保护：sendingRef 在所有 await 之前同步置位，
+      // 双击 Cmd+Enter 时第二次调用会读到 true 早退
       if (!selected || sendingRef.current) return;
 
       const trimmedText = text.trim();
-      const attachments = [...pendingAttachments];
+      const attachments = [...pendingAttachmentsRef.current];
       const hasText = trimmedText !== "";
       const hasAttachments = attachments.length > 0;
 
@@ -842,7 +827,9 @@ export default function CmdKApp() {
             channelType: selected.type,
           },
         } satisfies ExtensionRuntimeMessage)
-        .catch(() => {});
+        .catch((err: unknown) =>
+          console.debug("[Extension] requestOpenConversation failed:", err)
+        );
 
       try {
         const channel = new Channel(selected.id, selected.type);
@@ -899,7 +886,6 @@ export default function CmdKApp() {
       clearPendingAttachments,
       context,
       notifyClose,
-      pendingAttachments,
       selected,
       sendContent,
       sendQueuedAttachments,

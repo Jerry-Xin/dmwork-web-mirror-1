@@ -25,40 +25,57 @@ const OctoContactsDrawer: React.FC<OctoContactsDrawerProps> = ({
 }) => {
   const [members, setMembers] = useState<SpaceMember[]>([]);
   const [myBots, setMyBots] = useState<any[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  // 记住当前缓存数据属于哪个 spaceId，切换 Space / 关闭再开时自动重拉
+  const [loadedSpaceId, setLoadedSpaceId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState("");
   const loadingRef = useRef(false);
 
+  // 第一页上限：避免一次拉万人导致接口超时 / 前端卡死。
+  // TODO: 空间成员超过 CONTACTS_PAGE_SIZE 时需要真正的滚动分页 UI
+  const CONTACTS_PAGE_SIZE = 500;
+
   const loadContacts = useCallback(async () => {
-    if (loadingRef.current || loaded) return;
     const spaceId = WKApp.shared.currentSpaceId;
     if (!spaceId) {
       console.warn("[OctoContactsDrawer] No currentSpaceId for contacts");
       return;
     }
+    if (loadingRef.current) return;
+    if (loadedSpaceId === spaceId) return;
     loadingRef.current = true;
     try {
       const [nextMembers, nextBots] = await Promise.all([
-        SpaceService.shared.getMembers(spaceId, 1, 10000),
+        SpaceService.shared.getMembers(spaceId, 1, CONTACTS_PAGE_SIZE),
         WKApp.apiClient
           .get("/robot/my_bots", { param: { space_id: spaceId } })
           .catch(() => []),
       ]);
+      // 请求返回期间若已切换到其他 Space，丢弃本次结果
+      if (WKApp.shared.currentSpaceId !== spaceId) return;
       setMembers(nextMembers || []);
       setMyBots(nextBots || []);
-      setLoaded(true);
+      setLoadedSpaceId(spaceId);
     } catch (e) {
       console.warn("[OctoContactsDrawer] Failed to load contacts:", e);
     } finally {
       loadingRef.current = false;
     }
-  }, [loaded]);
+  }, [loadedSpaceId]);
 
   useEffect(() => {
     if (isOpen) {
       void loadContacts();
     }
   }, [isOpen, loadContacts]);
+
+  // 抽屉关闭后重置 loadedSpaceId，下次打开强制重拉最新成员
+  useEffect(() => {
+    if (!isOpen) {
+      setLoadedSpaceId(null);
+    }
+  }, [isOpen]);
+
+  const loaded = loadedSpaceId !== null;
 
   const myUID = WKApp.loginInfo.uid || "";
 

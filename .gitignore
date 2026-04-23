@@ -49,5 +49,7 @@ debug-storybook.log
 .gstack/
 AGENTS.config.local.json
 .claude/settings.local.json
+**/.claude/settings.local.json
+.wxt/
 _reference-v3/
 package-lock.json

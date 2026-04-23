@@ -19,7 +19,6 @@
   border: 1px solid #1c1c231a;
   padding: 8px 16px;
   box-sizing: border-box;
-  transition: border-color 0.2s;
   cursor: text;
 }
 
@@ -33,6 +32,7 @@
   display: flex;
   flex-direction: column;
   margin-top: 80px;
+  overflow: hidden;
 }
 
 .wk-messageinput-box--expanded .wk-messageinput-card {
@@ -40,32 +40,46 @@
   display: flex;
   flex-direction: column;
   border-radius: 12px;
+  overflow: hidden;
 }
 
 .wk-messageinput-box--expanded .wk-messageinput-row {
   flex: 1;
   flex-direction: column;
   align-items: stretch;
+  overflow: hidden;
 }
 
 .wk-messageinput-box--expanded .wk-messageinput-inputbox {
   flex: 1;
   margin-right: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .wk-messageinput-box--expanded .wk-messageinput-editor {
-  height: 100%;
+  min-height: 100%;
 }
 
-.wk-messageinput-box--expanded .wk-messageinput-editor .ProseMirror {
+.wk-messageinput-box--expanded .wk-messageinput-editor .ProseMirror,
+.wk-messageinput-box--expanded
+  .wk-messageinput-editor
+  .tiptap.ProseMirror-focused {
   min-height: 100%;
   max-height: none;
-  height: 100%;
+  height: auto;
 }
 
 .wk-messageinput-box--expanded .wk-messageinput-actionbox {
-  margin-top: 8px;
+  flex-shrink: 0;
+  margin-top: var(--wk-sp-2);
   margin-left: auto;
+}
+
+/* 附件预览区域 */
+.wk-messageinput-attachments {
+  width: 100%;
+  margin-bottom: var(--wk-sp-2);
 }
 
 /* 输入行：输入框 + 按钮横向排列 */
@@ -194,7 +208,6 @@
   font-weight: 600;
   color: var(--text-secondary);
   margin-right: 8px;
-  margin-top: 2px;
   user-select: none;
   transition: background-color 0.2s, border-color 0.2s;
 }
@@ -268,18 +281,24 @@
 }
 
 /* 覆盖工具栏中所有按钮的尺寸，统一 24px */
-.wk-messageinput-actionbox .wk-iconclick,
-.wk-messageinput-actionbox .wk-conversation-chattoolbars-item {
-  width: 24px !important;
-  height: 24px !important;
-  padding: 0 !important;
-  margin: 0 !important;
+.wk-messageinput-card .wk-messageinput-actionbox .wk-iconclick,
+.wk-messageinput-card .wk-messageinput-actionbox .wk-iconclick.wk-iconclick--sm,
+.wk-messageinput-card .wk-messageinput-actionbox .wk-iconclick.wk-iconclick--md,
+.wk-messageinput-card
+  .wk-messageinput-actionbox
+  .wk-conversation-chattoolbars-item {
+  width: var(--wk-sp-6);
+  height: var(--wk-sp-6);
+  padding: 0;
+  margin: 0;
   flex-shrink: 0;
   color: var(--wk-icon-muted);
 }
 
-.wk-messageinput-actionbox .wk-iconclick:hover,
-.wk-messageinput-actionbox .wk-conversation-chattoolbars-item:hover {
+.wk-messageinput-card .wk-messageinput-actionbox .wk-iconclick:hover,
+.wk-messageinput-card
+  .wk-messageinput-actionbox
+  .wk-conversation-chattoolbars-item:hover {
   color: var(--wk-text-primary);
 }
 
@@ -454,4 +473,108 @@
   color: var(--text-tertiary, #999);
   pointer-events: none;
   height: 0;
+}
+
+/* ============================================
+   Attachment Node 样式（编辑器内附件卡片）
+   ============================================ */
+
+.wk-attachment-node {
+  display: inline-flex;
+  vertical-align: middle;
+  margin: var(--wk-sp-1) var(--wk-sp-1) var(--wk-sp-1) 0;
+  user-select: none;
+}
+
+.wk-attachment-node--selected .wk-attachment-node-card {
+  outline: 1px solid #d2d2d3;
+}
+
+.wk-attachment-node-card {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--wk-sp-2);
+  background: var(--wk-bg-elevated);
+  border-radius: var(--wk-r-md);
+  padding: var(--wk-sp-1) var(--wk-sp-3) var(--wk-sp-2) var(--wk-sp-1);
+  width: 224px;
+  height: 56px;
+  box-sizing: border-box;
+}
+
+.wk-attachment-node-icon {
+  width: var(--wk-sp-12);
+  height: var(--wk-sp-12);
+  min-width: var(--wk-sp-12);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wk-attachment-node-icon img {
+  width: var(--wk-sp-12);
+  height: var(--wk-sp-12);
+  object-fit: contain;
+}
+
+.wk-attachment-node-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wk-sp-0-5);
+  margin-top: var(--wk-sp-2);
+  overflow: hidden;
+}
+
+.wk-attachment-node-name-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--wk-sp-2);
+}
+
+.wk-attachment-node-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--wk-text-size-md);
+  color: var(--wk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  font-weight: var(--wk-font-regular);
+}
+
+.wk-attachment-node-size {
+  font-size: var(--wk-text-size-md);
+  color: var(--wk-text-tertiary);
+  line-height: 1.3;
+}
+
+.wk-attachment-node-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wk-icon-muted);
+  transition: color var(--wk-dur-fast);
+  flex-shrink: 0;
+  width: var(--wk-sp-4);
+  height: var(--wk-sp-4);
+}
+
+.wk-attachment-node-remove:hover {
+  color: var(--wk-text-strong);
+}
+
+.wk-attachment-node-remove svg {
+  width: var(--wk-sp-4);
+  height: var(--wk-sp-4);
 }

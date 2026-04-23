@@ -23,8 +23,30 @@ import { ChatContextResult } from "../Conversation/chatContext";
 import { Maximize2, Minimize2 } from "lucide-react";
 import IconClick from "../IconClick";
 import mentionAllIcon from "./mention.png";
+import { AttachmentNode, AttachmentAttributes } from "./AttachmentNode";
 
 const MAX_MESSAGE_LENGTH = 5000;
+
+// 从编辑器中提取附件节点（纯函数，避免闭包问题）
+function extractAttachmentsFromEditor(
+  editorInstance: any
+): AttachmentAttributes[] {
+  if (!editorInstance) return [];
+  const json = editorInstance.getJSON();
+  const attachments: AttachmentAttributes[] = [];
+
+  function traverse(node: any) {
+    if (node.type === "attachment" && node.attrs) {
+      attachments.push(node.attrs as AttachmentAttributes);
+    }
+    if (node.content) {
+      node.content.forEach(traverse);
+    }
+  }
+
+  traverse(json);
+  return attachments;
+}
 
 // Strip zero-width and invisible Unicode characters
 const INVISIBLE_CHARS_RE =
@@ -36,20 +58,30 @@ function stripInvisibleChars(text: string): string {
 export type OnInsertFnc = (text: string) => void;
 export type OnAddMentionFnc = (uid: string, name: string) => void;
 
+// 附件数据（用于发送）
+export interface AttachmentFile {
+  id: string;
+  file: File;
+}
+
 interface MessageInputProps {
   context: ConversationContext;
-  onSend?: (text: string, mention?: MentionModel) => void;
+  onSend?: (
+    text: string,
+    mention?: MentionModel,
+    attachments?: AttachmentFile[]
+  ) => void;
   members?: Array<Subscriber>;
   onInputRef?: any;
   onInsertText?: (fnc: OnInsertFnc) => void;
   onAddMention?: (fnc: OnAddMentionFnc) => void;
+  onAddAttachment?: (fnc: (files: File[]) => void) => void;
   hideMention?: boolean;
   toolbar?: JSX.Element;
   onContext?: (ctx: MessageInputContext) => void;
   topView?: JSX.Element;
   botCommands?: BotCommand[];
   getChatContext?: () => ChatContextResult;
-  hasPendingAttachments?: boolean;
   onExpandChange?: (expanded: boolean) => void;
 }
 
@@ -128,6 +160,8 @@ function formatMentionTextV2(text: string): {
 export interface MessageInputContext {
   insertText: (text: string) => void;
   addMention: (uid: string, name: string) => void;
+  addAttachment: (files: File[]) => void;
+  getAttachmentFiles: () => File[];
   text: () => string | undefined;
 }
 
@@ -234,7 +268,9 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
   const [slashActiveIndex, setSlashActiveIndex] = useState(0);
   const [isMultiLine, setIsMultiLine] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const previousScopeRef = useRef("all");
+  const previousScopeRef = useRef<string>("all");
+  // 附件文件映射：id -> File
+  const attachmentFilesRef = useRef<Map<string, File>>(new Map());
 
   // 动态生成 placeholder
   const placeholder = useMemo(() => {
@@ -287,6 +323,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
       Placeholder.configure({
         placeholder,
       }),
+      AttachmentNode,
       TiptapMention.configure({
         HTMLAttributes: {
           class: "mention",
@@ -362,12 +399,14 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
         setSlashActiveIndex(0);
       }
 
-      // 检测是否多行（检查是否有换行符或多个段落）
+      // 检测是否多行（检查是否有换行符或多个段落，或有附件节点）
       const json = editor.getJSON();
       const paragraphs = json.content || [];
       const hasMultipleParagraphs = paragraphs.length > 1;
       const hasNewline = text.includes("\n");
-      setIsMultiLine(hasMultipleParagraphs || hasNewline);
+      // 检查编辑器内是否有附件节点
+      const hasAttachments = extractAttachmentsFromEditor(editor).length > 0;
+      setIsMultiLine(hasMultipleParagraphs || hasNewline || hasAttachments);
     },
   });
 
@@ -385,6 +424,40 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     };
   }, []);
 
+  // 插入附件到编辑器
+  const addAttachment = useCallback(
+    (files: File[]) => {
+      if (!editor) return;
+
+      files.forEach((file) => {
+        const id = `${file.name}-${file.size}-${
+          file.lastModified
+        }-${Date.now()}`;
+        // 存储文件引用
+        attachmentFilesRef.current.set(id, file);
+
+        // 插入附件节点到编辑器
+        editor
+          .chain()
+          .focus()
+          .insertContent({
+            type: "attachment",
+            attrs: {
+              id,
+              name: file.name,
+              size: file.size,
+              type: file.type,
+            },
+          })
+          .run();
+      });
+
+      // 插入附件后切换到多行模式
+      setIsMultiLine(true);
+    },
+    [editor]
+  );
+
   // 动态更新 placeholder
   useEffect(() => {
     if (editor) {
@@ -397,6 +470,22 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     }
   }, [editor, placeholder]);
 
+  // 导出 addAttachment 方法
+  useEffect(() => {
+    if (props.onAddAttachment) {
+      props.onAddAttachment(addAttachment);
+    }
+  }, [addAttachment, props.onAddAttachment]);
+
+  // 获取编辑器中的附件文件
+  const getAttachmentFiles = useCallback((): File[] => {
+    if (!editor) return [];
+    const attachmentAttrs = extractAttachmentsFromEditor(editor);
+    return attachmentAttrs
+      .map((attr) => attachmentFilesRef.current.get(attr.id))
+      .filter((f): f is File => f !== undefined);
+  }, [editor]);
+
   // 导出 context 方法
   useEffect(() => {
     if (props.onInsertText) {
@@ -406,10 +495,18 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
       props.onContext({
         insertText,
         addMention,
+        addAttachment,
+        getAttachmentFiles,
         text: () => (editor ? extractMentionsFromEditor(editor) : undefined),
       });
     }
-  }, [editor, props.onInsertText, props.onContext]);
+  }, [
+    editor,
+    props.onInsertText,
+    props.onContext,
+    addAttachment,
+    getAttachmentFiles,
+  ]);
 
   // 导出 addMention 方法
   useEffect(() => {
@@ -452,13 +549,36 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
       return;
     }
 
+    // 从编辑器提取附件
+    const attachmentAttrs = extractAttachmentsFromEditor(editor);
+    const attachments: AttachmentFile[] = attachmentAttrs
+      .map((attr) => {
+        const file = attachmentFilesRef.current.get(attr.id);
+        if (file) {
+          return { id: attr.id, file };
+        }
+        return null;
+      })
+      .filter((a): a is AttachmentFile => a !== null);
+
     const hasText = text.trim() !== "";
-    if (props.onSend && (hasText || props.hasPendingAttachments)) {
+    const hasAttachments = attachments.length > 0;
+
+    if (props.onSend && (hasText || hasAttachments)) {
       // 从编辑器提取带格式的文本（包含 @[uid:name] 格式的 mention）
       const formattedText = extractMentionsFromEditor(editor);
       const { content, mention } = formatMentionTextV2(formattedText);
-      props.onSend(content, mention);
+      props.onSend(
+        content,
+        mention,
+        attachments.length > 0 ? attachments : undefined
+      );
     }
+
+    // 清理附件文件引用
+    attachmentAttrs.forEach((attr) => {
+      attachmentFilesRef.current.delete(attr.id);
+    });
 
     editor.commands.clearContent();
 
@@ -466,13 +586,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
       setExpanded(false);
       props.onExpandChange?.(false);
     }
-  }, [
-    editor,
-    expanded,
-    props.onSend,
-    props.hasPendingAttachments,
-    props.onExpandChange,
-  ]);
+  }, [editor, expanded, props.onSend, props.onExpandChange]);
 
   // 更新 sendRef
   useEffect(() => {
@@ -573,9 +687,12 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     }
   }, [expanded, editor, props.onExpandChange]);
 
-  const { onInputRef, topView, toolbar, botCommands, hasPendingAttachments } =
-    props;
-  const hasValue = (editor?.getText().length || 0) > 0 || hasPendingAttachments;
+  const { onInputRef, topView, toolbar, botCommands } = props;
+
+  // 检查编辑器内是否有内容或附件
+  const editorAttachments = editor ? extractAttachmentsFromEditor(editor) : [];
+  const hasValue =
+    (editor?.getText().length || 0) > 0 || editorAttachments.length > 0;
 
   // 设置 inputRef
   useEffect(() => {
@@ -597,28 +714,31 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
           "wk-messageinput-card--multiline": isMultiLine,
           "wk-messageinput-card--has-topview": !!topView,
         })}
-        onClick={(e) => {
-          // 点击卡片空白区域时聚焦编辑器
-          if (editor && e.target === e.currentTarget) {
-            editor.commands.focus();
-          }
-        }}
       >
         {/* 引用/编辑条在卡片内部 */}
         {topView && <div className="wk-messageinput-topview">{topView}</div>}
 
         {/* 输入行：输入框 + 按钮 */}
-        <div className="wk-messageinput-row">
+        <div
+          className="wk-messageinput-row"
+          onMouseDown={(e) => {
+            // 点击 row 空白区域时聚焦编辑器（排除 actionbox）
+            const target = e.target as HTMLElement;
+            if (
+              editor &&
+              !target.closest(".wk-messageinput-actionbox") &&
+              !target.closest(".wk-messageinput-editor")
+            ) {
+              e.preventDefault();
+              editor.commands.focus();
+            }
+          }}
+          style={{ cursor: "text" }}
+        >
           {/* 输入框区域 */}
           <div
             className="wk-messageinput-inputbox"
             style={{ position: "relative", cursor: "text" }}
-            onClick={(e) => {
-              // 点击输入框区域时聚焦编辑器
-              if (editor) {
-                editor.commands.focus();
-              }
-            }}
           >
             {botCommands && botCommands.length > 0 && (
               <SlashCommandMenu
@@ -638,15 +758,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
                 /
               </div>
             )}
-            <div
-              className="wk-messageinput-editor"
-              onClick={(e) => {
-                // 点击编辑器区域时聚焦
-                if (editor) {
-                  editor.commands.focus();
-                }
-              }}
-            >
+            <div className="wk-messageinput-editor">
               <EditorContent editor={editor} />
             </div>
           </div>

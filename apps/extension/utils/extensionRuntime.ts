@@ -4,7 +4,10 @@ export const DEFAULT_API_URL =
 export const EXTENSION_STORAGE_KEYS = {
   authState: "dmwork:extension:auth-state",
   pendingConversation: "dmwork:extension:pending-conversation",
+  // 历史遗留：{ active, selectedTarget } 合并对象；下面两个独立 key 上线后仅用于读时回填
   sidepanelSession: "dmwork:extension:sidepanel-session",
+  sidepanelActive: "dmwork:extension:sidepanel-active",
+  sidepanelSelectedTarget: "dmwork:extension:sidepanel-selected-target",
   preferences: "dmwork:extension:preferences",
   theme: "octo_v3_theme",
 } as const;

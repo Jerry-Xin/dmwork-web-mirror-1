@@ -52,42 +52,45 @@ export async function clearPendingConversation(): Promise<void> {
 }
 
 export async function getExtensionSidepanelSession(): Promise<SidepanelSessionState> {
-  const result = await browser.storage.local.get(
+  // 读两个独立 key，互不耦合
+  const result = await browser.storage.local.get([
+    EXTENSION_STORAGE_KEYS.sidepanelActive,
+    EXTENSION_STORAGE_KEYS.sidepanelSelectedTarget,
     EXTENSION_STORAGE_KEYS.sidepanelSession,
-  );
-  const stored = result[EXTENSION_STORAGE_KEYS.sidepanelSession] as
+  ]);
+  const activeRaw = result[EXTENSION_STORAGE_KEYS.sidepanelActive] as
+    | boolean
+    | undefined;
+  const targetRaw = result[EXTENSION_STORAGE_KEYS.sidepanelSelectedTarget] as
+    | ConversationTarget
+    | null
+    | undefined;
+
+  // 历史遗留合并对象：只在新 key 均缺失时才回填，写入后不再读这个字段
+  const legacy = result[EXTENSION_STORAGE_KEYS.sidepanelSession] as
     | SidepanelSessionState
     | undefined;
 
   return {
-    ...DEFAULT_SIDEPANEL_SESSION,
-    ...(stored ?? {}),
+    active:
+      activeRaw ?? legacy?.active ?? DEFAULT_SIDEPANEL_SESSION.active,
+    selectedTarget:
+      targetRaw ?? legacy?.selectedTarget ?? DEFAULT_SIDEPANEL_SESSION.selectedTarget,
   };
 }
 
-export async function setExtensionSidepanelSession(
-  session: SidepanelSessionState,
-): Promise<void> {
-  await browser.storage.local.set({
-    [EXTENSION_STORAGE_KEYS.sidepanelSession]: session,
-  });
-}
-
 export async function setExtensionSidepanelActive(active: boolean): Promise<void> {
-  const current = await getExtensionSidepanelSession();
-  await setExtensionSidepanelSession({
-    ...current,
-    active,
+  // 独立 key 原子写，避免 read-modify-write 被另一 setter 并发覆盖
+  await browser.storage.local.set({
+    [EXTENSION_STORAGE_KEYS.sidepanelActive]: active,
   });
 }
 
 export async function setExtensionSidepanelSelectedConversation(
   target: ConversationTarget | null,
 ): Promise<void> {
-  const current = await getExtensionSidepanelSession();
-  await setExtensionSidepanelSession({
-    ...current,
-    selectedTarget: target,
+  await browser.storage.local.set({
+    [EXTENSION_STORAGE_KEYS.sidepanelSelectedTarget]: target,
   });
 }
 

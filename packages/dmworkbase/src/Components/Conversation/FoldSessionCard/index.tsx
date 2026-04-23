@@ -23,7 +23,10 @@ export interface FoldSessionCardProps extends HTMLProps<HTMLDivElement> {
   highlightSummary?: boolean;
   summaryId?: string;
   summarySender?: string;
+  summaryTime?: string;
   summaryContent?: ReactNode;
+  summaryIcon?: ReactNode;
+
   expandedContent?: ReactNode;
   onToggle?: () => void;
   summaryChecked?: boolean;
@@ -48,7 +51,9 @@ const FoldSessionCard: React.FC<FoldSessionCardProps> = ({
   highlightSummary,
   summaryId,
   summarySender,
+  summaryTime,
   summaryContent,
+  summaryIcon,
   expandedContent,
   onToggle,
   summaryChecked = false,
@@ -58,6 +63,7 @@ const FoldSessionCard: React.FC<FoldSessionCardProps> = ({
   onSummaryContextMenu,
   ...rest
 }) => {
+  // participantLabel 保留计算,供外层 Conversation 使用
   const participantLabel = participants
     .map((participant) => participant.name)
     .join(" × ");
@@ -73,7 +79,9 @@ const FoldSessionCard: React.FC<FoldSessionCardProps> = ({
       )}
       {...rest}
     >
+      {/* 卡片头部:已移除,保留隐藏的 meta 区 */}
       <div className="wk-fold-session-card-head" onClick={onToggle}>
+        {/* 注释掉原头像堆叠和名字行,保留代码结构便于回滚
         <div className="wk-fold-session-card-head-left">
           <div className="wk-fold-session-card-avatars" aria-hidden="true">
             {participants.map((participant) => (
@@ -92,6 +100,7 @@ const FoldSessionCard: React.FC<FoldSessionCardProps> = ({
             <span className="wk-fold-session-card-tag">{tagLabel}</span>
           </div>
         </div>
+        */}
         <div className="wk-fold-session-card-meta">
           {isActive ? (
             <span
@@ -197,13 +206,13 @@ const FoldSessionCard: React.FC<FoldSessionCardProps> = ({
                   selectionMode && summarySelectable ? "none" : undefined,
               }}
             >
-              {summarySender ? (
-                <div className="wk-fold-session-card-summary-sender">
-                  {summarySender}
-                </div>
-              ) : null}
+              {/* 折叠状态显示完整消息:姓名tag + 时间 + 内容 */}
+              <div className="wk-fold-msg-head">
+                <span className="wk-fold-msg-name">{summarySender}</span>
+                <span className="wk-fold-msg-time">{summaryTime}</span>
+              </div>
               {summaryContent ? (
-                <div className="wk-fold-session-card-summary-content">
+                <div className="wk-fold-msg-text">
                   {summaryContent}
                 </div>
               ) : null}

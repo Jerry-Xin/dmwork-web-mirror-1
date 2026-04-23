@@ -119,10 +119,107 @@ export const CompletedCollapsed: Story = {
         count={6}
         summarySender="JOJO"
         showSummary
+        summaryIcon="💡"
         summaryContent="结论：主库 PostgreSQL + 缓存 Redis + 搜索 Elasticsearch，三层架构。"
       />
     </div>
   ),
+};
+
+export const WithExternalLayout: Story = {
+  name: "完整布局 / 含外层头像和名字行",
+  render: () => {
+    const [isExpanded, setIsExpanded] = React.useState(false);
+    const participantLabel = participants.map(p => p.name).join(" × ");
+    
+    return (
+      <div style={{ padding: "var(--wk-sp-6)", background: "var(--wk-bg-base)" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginLeft: "15px" }}>
+          {/* 左侧头像 */}
+          <div style={{ width: "32px", height: "32px", flexShrink: 0, marginTop: "2px" }}>
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #41DFFF 0%, #7F3BF5 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontSize: "12px",
+                fontWeight: "600",
+              }}
+            >
+              AI
+            </div>
+          </div>
+
+          {/* 右侧内容 */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* 名字行 */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "8px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#3370FF",
+                }}
+              >
+                {participantLabel}
+              </span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: "600",
+                  color: "#FFFFFF",
+                  background: "#3370FF",
+                  padding: "2px 6px",
+                  borderRadius: "2px",
+                }}
+              >
+                AI 协作
+              </span>
+              <button
+                style={{
+                  marginLeft: "12px",
+                  fontSize: "12px",
+                  color: "#7C5CFC",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? "收起6条讨论" : "展开6条讨论"}
+              </button>
+            </div>
+
+            {/* 卡片 */}
+            <FoldSessionCard
+              participants={participants}
+              count={6}
+              isExpanded={isExpanded}
+              showSummary
+              summarySender="JOJO"
+              summaryIcon="💡"
+              summaryContent="结论：主库 PostgreSQL + 缓存 Redis + 搜索 Elasticsearch，三层架构。"
+              expandedContent={expandedContent}
+              onToggle={() => setIsExpanded(!isExpanded)}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  },
 };
 
 export const ActiveExpanded: Story = {

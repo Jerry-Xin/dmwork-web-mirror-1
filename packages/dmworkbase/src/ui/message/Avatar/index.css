@@ -1,0 +1,33 @@
+/**
+ * Avatar 组件样式
+ */
+
+.wk-msg-avatar {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.wk-msg-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/**
+ * 在线状态点
+ * 位置：右下角
+ * 尺寸：6×6
+ * 颜色：成功色（绿色）
+ */
+.wk-msg-avatar-online-dot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--wk-status-success);
+  border: 1px solid var(--wk-bg-surface);
+}

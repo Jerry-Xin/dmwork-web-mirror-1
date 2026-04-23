@@ -15,7 +15,7 @@ import "./index.css"
 
 import WKApp from "../../App";
 import { EndpointID } from "../../Service/Const";
-import { Hash } from "lucide-react";
+import GroupIcon from "../Icons/GroupIcon";
 import ThreadIcon from "../Icons/ThreadIcon";
 import ContextMenus, { ContextMenusContext, ContextMenusData } from "../ContextMenus";
 import { ChannelSettingManager } from "../../Service/ChannelSetting";
@@ -110,7 +110,7 @@ const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
             <span className={`wk-conv-compact-icon${conversationWrap.unread > 0 ? ' wk-conv-compact-icon--reddot' : ''}`}>
                 {isThread
                     ? <ThreadIcon size={13} />
-                    : <Hash size={14} strokeWidth={2} />
+                    : <GroupIcon size={14} />
                 }
             </span>
             {conversationWrap.isMentionMe && conversationWrap.unread > 0 && (
@@ -329,7 +329,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                             <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
                             {hasThreads && (
                               <div className="wk-conv-group-hash-badge">
-                                <Hash size={10} strokeWidth={2.5} />
+                                <GroupIcon size={10} />
                               </div>
                             )}
                             {channelInfo && this.needShowOnlineStatus(channelInfo) ? <OnlineStatusBadge tip={this.getOnlineTip(channelInfo)}></OnlineStatusBadge> : undefined}

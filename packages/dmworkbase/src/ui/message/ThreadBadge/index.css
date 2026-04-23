@@ -1,0 +1,95 @@
+/**
+ * ThreadBadge 组件样式
+ */
+
+.wk-msg-thread-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wk-sp-2);
+  padding: var(--wk-sp-1) 0;
+  font-size: var(--wk-text-size-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.wk-msg-thread-badge:hover .wk-msg-thread-badge-count {
+  text-decoration: underline;
+}
+
+/**
+ * 左侧：🧵 + 回复数
+ */
+.wk-msg-thread-badge-left {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-1);
+}
+
+.wk-msg-thread-badge-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.wk-msg-thread-badge-count {
+  color: var(--wk-brand-primary);
+  font-weight: 500;
+}
+
+/**
+ * 右侧：头像堆叠 + 时间
+ */
+.wk-msg-thread-badge-right {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-1);
+}
+
+/**
+ * 头像堆叠容器
+ */
+.wk-msg-thread-badge-avatars {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/**
+ * 单个头像（16×16，堆叠显示）
+ */
+.wk-msg-thread-badge-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--wk-bg-surface);
+  object-fit: cover;
+  margin-left: -4px;
+}
+
+.wk-msg-thread-badge-avatar:first-child {
+  margin-left: 0;
+}
+
+/**
+ * 更多参与者提示
+ */
+.wk-msg-thread-badge-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background-color: var(--wk-bg-surface-secondary);
+  border: 1px solid var(--wk-bg-surface);
+  font-size: 10px;
+  color: var(--wk-text-secondary);
+}
+
+/**
+ * 最后回复时间
+ */
+.wk-msg-thread-badge-time {
+  color: var(--wk-text-tertiary);
+}

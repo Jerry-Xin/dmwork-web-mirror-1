@@ -203,9 +203,9 @@ export default class WKBase
         </WKModal>
 
         <WKModal
-          className="wk-base-modal"
+          className="wk-base-modal wk-base-modal-forward"
           visible={showConversationSelect}
-          options={{ mask: false }}
+          options={{ mask: false, width: 625 }}
           onCancel={() => {
             this.setState({
               showConversationSelect: false,
@@ -220,6 +220,11 @@ export default class WKBase
               if (conversationSelectFinished) {
                 conversationSelectFinished(channels);
               }
+            }}
+            onCancel={() => {
+              this.setState({
+                showConversationSelect: false,
+              });
             }}
             title={conversationSelectTitle}
           ></ConversationSelect>

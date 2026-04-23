@@ -33,7 +33,8 @@ export function getFoldSessionExpandedMessages(session: FoldSessionExpandedMessa
     if (session.messages.length === 0) {
         return []
     }
-    return session.typing ? [...session.messages] : session.messages.slice(0, session.messages.length - 1)
+    // 展开时显示所有消息(包括最后一条)
+    return [...session.messages]
 }
 
 export function isFoldSessionSummaryMessage(session: FoldSessionSummarySource, messageSeq: number): boolean {

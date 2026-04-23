@@ -8,6 +8,10 @@ import MessageHead from "../Base/head";
 import MessageTrail from "../Base/tail";
 import { MessageCell } from "../MessageCell";
 import MarkdownContent, { type MentionInfo, type EmojiInfo } from "./MarkdownContent";
+import MessageRow from "../../ui/message/MessageRow"
+import ReplyBlock from "../../ui/message/ReplyBlock";
+import TextContent from "../../ui/message/TextContent";
+import { getTextMessageUI } from "../../bridge/message/useTextMessageUI";
 import "./index.css"
 
 
@@ -134,6 +138,43 @@ export class TextCell extends MessageCell {
 
     render() {
         const { message, context } = this.props
+
+        // TODO: 后续改成 feature flag
+        const useNewUI = true
+
+        // 新 UI 实现
+        if (useNewUI) {
+            const uiProps = getTextMessageUI(message, {
+                showCheckbox: context.editOn(),
+                isSelected: !!message.checked,
+                onSelect: (selected) => context.checkeMessage(message.message, selected),
+            })
+
+            return (
+                <MessageRow 
+                    {...uiProps.row}
+                    onContextMenu={(event) => context.showContextMenus(message, event)}
+                    isActive={context.isContextMenuOpen(message.message)}
+                    onClick={context.editOn() ? () => context.checkeMessage(message.message, !message.checked) : undefined}
+                >
+                    <div>
+                        {message?.content?.reply && (
+                            <ReplyBlock
+                                fromName={message.content.reply.fromName || ''}
+                                digest={message.content.reply.content?.conversationDigest || ''}
+                                onClick={() => context.locateMessage(message.content.reply.messageSeq)}
+                            />
+                        )}
+                        <TextContent
+                            {...uiProps.content}
+                            onMentionClick={(uid) => context.showUser(uid)}
+                        />
+                    </div>
+                </MessageRow>
+            )
+        }
+
+        // 旧 UI 实现（保持向后兼容）
         const largeEmoji = this.isLargeCustomEmoji()
         const bubbleStyle = largeEmoji ? { background: "transparent", boxShadow: "none", padding: 0 } : undefined
         return <MessageBase message={message} context={context} bubbleStyle={bubbleStyle} onBubble={() => {
@@ -148,7 +189,7 @@ export class TextCell extends MessageCell {
                             <img alt="" src={WKApp.shared.avatarUser(message.content.reply.fromUID)} style={{ width: "12px", height: "12px",borderRadius:"50%" }} />
                         </div>
                         <div className="wk-message-text-reply-authorname">
-                            {message.content.reply.fromName} 
+                            {message.content.reply.fromName}
                         </div>
                     </div>
                     <div className="wk-message-text-reply-content">

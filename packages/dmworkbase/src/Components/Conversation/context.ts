@@ -82,6 +82,11 @@ export default interface ConversationContext {
      */
     hideContextMenus(): void
 
+    /**
+     * 当前消息的右键菜单是否打开（用于保持 hover 高亮）
+     */
+    isContextMenuOpen(message: Message): boolean
+
     channel(): Channel
 
     // 消息输入框上下文

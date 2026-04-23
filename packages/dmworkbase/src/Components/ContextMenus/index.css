@@ -3,12 +3,13 @@
     position: fixed;
     top: 100px;
     left: 0;
-    background: var(--wk-bg-surface);
+    background: #FFFFFF;
+    border: 1px solid #E5E6EB;
     z-index: 99;
-    width: 200px;
-    border-radius: var(--wk-r-md, 10px);
-    box-shadow: var(--wk-shadow-lg), var(--wk-shadow-sm);
-    padding: 4px 0;
+    min-width: 160px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 0;
     transform: scale(0.92);
     opacity: 0;
     transition: opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1),
@@ -39,20 +40,19 @@ body[theme-mode=dark] .wk-contextmenus {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 12px;
-    height: auto;
-    min-height: 32px;
+    padding: 0 16px;
+    height: 40px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
     font-family: var(--wk-font-sans, -apple-system, sans-serif);
-    color: var(--wk-text-primary);
-    transition: background 0.1s ease;
+    color: #1D2129;
+    transition: background 0.15s ease;
     position: relative;
     user-select: none;
 }
 
 .wk-contextmenus li:hover {
-    background: var(--wk-bg-hover);
+    background: #F2F3F5;
 }
 
 body[theme-mode=dark] .wk-contextmenus li {
@@ -65,10 +65,10 @@ body[theme-mode=dark] .wk-contextmenus li:hover {
 
 /* ── 图标 ── */
 .wk-contextmenus li .ctx-icon {
-    width: 15px;
-    height: 15px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
-    stroke: var(--wk-text-tertiary);
+    stroke: #4E5969;
     stroke-width: 1.7;
     fill: none;
     stroke-linecap: round;
@@ -89,7 +89,7 @@ body[theme-mode=dark] .wk-contextmenus li:hover {
     margin-left: auto;
     width: 12px;
     height: 12px;
-    stroke: var(--wk-text-tertiary);
+    stroke: #4E5969;
     stroke-width: 2;
     fill: none;
     stroke-linecap: round;
@@ -101,12 +101,13 @@ body[theme-mode=dark] .wk-contextmenus li:hover {
 .wk-ctx-submenu {
     position: absolute;
     left: calc(100% + 4px);
-    top: -4px;
-    background: var(--wk-bg-surface);
-    width: 180px;
-    border-radius: var(--wk-r-md, 10px);
-    box-shadow: var(--wk-shadow-lg), var(--wk-shadow-sm);
-    padding: 4px 0;
+    top: 0;
+    background: #FFFFFF;
+    border: 1px solid #E5E6EB;
+    min-width: 160px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 0;
     z-index: 100;
     display: none;
 }
@@ -121,19 +122,19 @@ body[theme-mode=dark] .wk-ctx-submenu {
 }
 
 .wk-ctx-submenu li {
-    padding: 7px 12px;
-    min-height: 32px;
-    font-size: 13px;
+    padding: 0 16px;
+    height: 40px;
+    font-size: 14px;
     display: flex;
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    color: var(--wk-text-primary);
-    transition: background 0.1s ease;
+    color: #1D2129;
+    transition: background 0.15s ease;
 }
 
 .wk-ctx-submenu li:hover {
-    background: var(--wk-bg-hover);
+    background: #F2F3F5;
 }
 
 body[theme-mode=dark] .wk-ctx-submenu li {
@@ -147,7 +148,7 @@ body[theme-mode=dark] .wk-ctx-submenu li:hover {
 /* ── 分隔线 ── */
 .wk-ctx-sep {
     height: 1px;
-    background: var(--wk-border-default);
+    background: #F2F3F5;
     margin: 4px 0;
 }
 

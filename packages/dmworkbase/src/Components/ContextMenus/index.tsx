@@ -7,6 +7,7 @@ import "./index.css"
 export interface ContextMenusProps {
     onContext: (context: ContextMenusContext) => void
     menus?: ContextMenusData[]
+    onHide?: () => void
 }
 
 export interface ContextMenusState {
@@ -84,6 +85,7 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
 
     hide(): void {
         this.setState({ showContextMenus: false })
+        this.props.onHide?.()
     }
 
     show(event: React.MouseEvent<Element, MouseEvent>): void {

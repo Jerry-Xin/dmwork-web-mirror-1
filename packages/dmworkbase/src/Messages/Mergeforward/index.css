@@ -1,57 +1,127 @@
-
+/**
+ * 聊天记录卡片（合并转发）
+ * Figma: 421:63872 · padding T16B16L16R16 · 圆角 12px
+ */
 
 .wk-mergeforwards {
-    width: 300px;
-    background-color: var(--wk-message-item);
-    border-radius: 8px;
-    cursor: pointer;
+  /* 卡片外层 */
 }
-
-
 
 .wk-mergeforwards-content {
-    padding: 10px 10px 0px 10px;
-    color: black;
-
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid rgba(46, 50, 56, 0.09);
+  padding: 16px;
+  cursor: pointer;
+  /* 宽度自适应（由最长内容决定），不设固定宽度 */
+  min-width: 200px;
+  max-width: 400px;
+  transition: background 0.15s;
 }
 
+.wk-mergeforwards-content:hover {
+  background: rgba(28, 28, 35, 0.02);
+}
+
+/* 标题行 */
 .wk-mergeforwards-content-title {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--wk-message-color);
+  font-size: 14px;
+  font-weight: 500;
+  color: #1C1C23;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* 记录列表 */
 .wk-mergeforwards-content-items {
-    padding-bottom: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
 }
 
-.wk-mergeforwards-content-items .wk-mergeforwards-content-item {
-    white-space: nowrap;
-    width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 13px;
-    color: #999 !important;
+.wk-mergeforwards-content-item {
+  font-size: 13px;
+  color: rgba(28, 28, 35, 0.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* 分割线 */
+.wk-mergeforwards-content-line {
+  height: 1px;
+  background: rgba(46, 50, 56, 0.09);
+  margin-bottom: 10px;
+}
+
+/* 底部标签区 */
 .wk-mergeforwards-content-tip {
-    display: flex;
-    justify-content: space-between;
-    color: #999 !important;
-    font-size: 13px;
-    padding: 2px 0px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(28, 28, 35, 0.35);
 }
 
 .wk-mergeforwards-content-tip p {
-    margin-bottom: 0px;
+  margin: 0;
 }
 
-.wk-mergeforwards-content-tip p:last-child {
-    margin-top: -4px;
+/* 聊天记录详情弹窗：Figma 480px 宽，最大高度 100vh-160px */
+.wk-mergeforward-modal .semi-modal-content {
+    width: 480px !important;
+    max-height: calc(100vh - 160px) !important;
+    overflow: hidden !important;
 }
 
-.wk-mergeforwards-content-line {
-    width: 100%;
-    background-color: var(--wk-line-color);
-    height: 1px;
+/* ── 聊天记录详情弹窗 Semi Modal 样式覆盖 ──
+ * Figma 421:64397: 480px 宽，max-height=100vh-160px
+ * Header: 56px，pad L/R 16，标题左+关闭右
+ */
+
+/* 恢复 Semi 关闭按钮（wk-base-modal 默认隐藏） */
+.wk-mergeforward-modal .semi-modal-close {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: rgba(28, 28, 35, 0.6);
 }
+
+/* Semi Modal header 对齐 Figma */
+.wk-mergeforward-modal .semi-modal-header {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px !important;
+    border-bottom: 1px solid rgba(46, 50, 56, 0.09);
+    margin: 0 !important;
+}
+
+.wk-mergeforward-modal .semi-modal-title {
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    color: #1c1c23 !important;
+}
+
+/* Semi Modal body 内容区 */
+.wk-mergeforward-modal .semi-modal-body {
+    padding: 0 !important;
+    max-height: calc(100vh - 160px - 56px) !important;
+    overflow-y: auto;
+}
+
+.wk-mergeforward-modal .semi-modal-body-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.wk-mergeforward-modal .semi-modal-content > * + * {
+    margin-top: 0 !important;
+}
+
+

@@ -21,6 +21,7 @@ import "./index.css"
 
 export interface MergeforwardMessageListProps {
     mergeforwardContent: MergeforwardContent
+    onClose?: () => void
 }
 
 interface MergeforwardMessageListState {
@@ -185,54 +186,44 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
         const { mergeforwardContent } = this.props
         const { previewImgSrc, previewImageContent } = this.state
         return <><div className="wk-mergeforwardmessagelist">
-            <div className="wk-mergeforwardmessagelist-header">
-                <WKViewQueueHeader hideBack={true} title={this.getTitle(mergeforwardContent)}></WKViewQueueHeader>
-            </div>
+            {/* Content：消息列表，pad T10 B10 L16 R16，gap=16 */}
             <div className="wk-mergeforwardmessagelist-content">
-                <div className="wk-mergeforwardmessagelist-content-timeline">
-                    {this.getTimeline(mergeforwardContent)}
-                </div>
-                <div className="wk-mergeforwardmessagelist-content-msgs">
-                    {
-                        mergeforwardContent.msgs.map((m,i) => {
-                            const fromChannel = new Channel(m.fromUID, ChannelTypePerson)
-                            let fromChannelInfo = WKSDK.shared().channelManager.getChannelInfo(fromChannel)
-                            if(!fromChannelInfo) {
-                                WKSDK.shared().channelManager.fetchChannelInfo(fromChannel)
-                            }
-                            let showAvatar = true
-                            if(i > 0) {
-                                showAvatar = mergeforwardContent.msgs[i-1].fromUID !== m.fromUID
-                            }
-                            return <div className="wk-mergeforwardmessagelist-content-msg" key={m.messageID}>
-                                <div className="wk-mergeforwardmessagelist-content-msg-avatar">
-                                    {
-                                        showAvatar?<WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)}></WKAvatar>:undefined
-                                    }
-                                </div>
-                                <div className="wk-mergeforwardmessagelist-content-msg-info">
+                {mergeforwardContent.msgs.map((m, i) => {
+                    const fromChannel = new Channel(m.fromUID, ChannelTypePerson)
+                    let fromChannelInfo = WKSDK.shared().channelManager.getChannelInfo(fromChannel)
+                    if (!fromChannelInfo) {
+                        WKSDK.shared().channelManager.fetchChannelInfo(fromChannel)
+                    }
+                    const showAvatar = i === 0 || mergeforwardContent.msgs[i - 1].fromUID !== m.fromUID
+                    return (
+                        <div className="wk-mergeforwardmessagelist-content-msg" key={m.messageID}>
+                            {/* 头像 32x32 圆形，连续消息占位 */}
+                            <div className={showAvatar ? "wk-mergeforwardmessagelist-content-msg-avatar" : "wk-mergeforwardmessagelist-content-msg-avatar--placeholder"}>
+                                {showAvatar && <WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)} />}
+                            </div>
+
+                            <div className="wk-mergeforwardmessagelist-content-msg-info">
+                                {/* 名字 + 时间（仅首条或换人时显示） */}
+                                {showAvatar && (
                                     <div className="wk-mergeforwardmessagelist-content-msg-info-first">
-                                        <div className="wk-mergeforwardmessagelist-content-msg-info-first-name">
+                                        <span className="wk-mergeforwardmessagelist-content-msg-info-first-name">
                                             {fromChannelInfo?.title}
                                             {isBot(m.fromUID) && <AiBadge size="small" />}
-                                        </div>
-                                        <div className="wk-mergeforwardmessagelist-content-msg-info-first-time">
-                                                {getTimeStringAutoShort2(m.timestamp*1000,true)}
-                                        </div>
+                                        </span>
+                                        <span className="wk-mergeforwardmessagelist-content-msg-info-first-time">
+                                            {getTimeStringAutoShort2(m.timestamp * 1000, true)}
+                                        </span>
                                     </div>
-                                    <div className="wk-mergeforwardmessagelist-content-msg-info-second">
-                                           <div className="wk-mergeforwardmessagelist-content-msg-info-second-msgcontent">
-                                           {
-                                               this.getMsgContent(m)
-                                            }
-                                           </div>
-                                    </div>
+                                )}
+
+                                {/* 消息内容 */}
+                                <div className="wk-mergeforwardmessagelist-content-msg-info-second-msgcontent">
+                                    {this.getMsgContent(m)}
                                 </div>
                             </div>
-                        })
-                    }
-
-                </div>
+                        </div>
+                    )
+                })}
             </div>
         </div>
         <Lightbox

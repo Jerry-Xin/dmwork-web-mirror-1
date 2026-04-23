@@ -1,0 +1,69 @@
+/**
+ * TextContent 组件样式
+ */
+
+.wk-msg-text-content {
+  font-size: 14px;
+  color: rgba(28, 28, 35, 0.8);
+  line-height: 22px;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+/**
+ * 大表情（160×160）
+ */
+.wk-msg-text-large-emoji {
+  display: block;
+  width: 160px;
+  height: 160px;
+}
+
+.wk-msg-text-large-emoji img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/**
+ * @ 提及样式（三等级，Figma 318:12716）
+ * 
+ * 注意：这些样式需要在 MarkdownContent 组件里应用
+ * 或者重写 @ 渲染逻辑
+ */
+
+/* 最高优先级：@所有人/@频道 — 紫色文字 + 浅紫背景胶囊 */
+.wk-msg-text-content .mention-highlight {
+  color: #6B3DD8;
+  background-color: rgba(107, 61, 216, 0.08);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.wk-msg-text-content .mention-highlight:hover {
+  background-color: rgba(107, 61, 216, 0.12);
+}
+
+/* 普通用户：紫色文字 + 浅紫背景（次优先级） */
+.wk-msg-text-content .mention-entity {
+  color: #6B3DD8;
+  background-color: rgba(107, 61, 216, 0.08);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.wk-msg-text-content .mention-entity:hover {
+  background-color: rgba(107, 61, 216, 0.12);
+}
+
+/* 降级：未解析 @ — 纯紫色文字，无背景 */
+.wk-msg-text-content .mention-fallback {
+  color: #6B3DD8;
+  font-weight: 400;
+}

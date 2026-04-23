@@ -363,6 +363,7 @@
 
 .wk-chat-conversation-header-channel {
     display: flex;
+    align-items: center;
 }
 
 .wk-chat-conversation-header-channel-avatar img {

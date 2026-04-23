@@ -411,7 +411,9 @@ export class Conversation
 
   getPendingAttachments(): File[] {
     // 从编辑器中获取附件文件
-    return this._messageInputContext?.getAttachmentFiles() || [];
+    // 注：sidepanel 下 _messageInputContext 会被 OctoComposer 赋成 composerContext，
+    // 而 composerContext 目前未实现 getAttachmentFiles；用 ?. 兜底避免 TypeError
+    return this._messageInputContext?.getAttachmentFiles?.() || [];
   }
 
   addPendingAttachments(files: File[]): string | null {

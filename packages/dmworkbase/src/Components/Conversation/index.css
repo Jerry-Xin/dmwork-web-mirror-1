@@ -975,7 +975,18 @@ body[theme-mode="dark"] .wk-conversation.wk-conversation--cli .wk-msg-row-avatar
 
 /* 行级紧凑：padding 跟老 UI 保持一致 */
 .wk-conversation.wk-conversation--cli .wk-msg-row {
-    padding: 2px 0;
+    padding: 2px 16px;
+    /* MessageRow 自身用 margin-top: 24px !important (非连续) / 12px !important (连续)，
+       CLI 模式需要覆盖到紧凑的 4px / 2px */
+    margin-top: 4px !important;
+}
+.wk-conversation.wk-conversation--cli .wk-msg-row.wk-msg-row--continue {
+    margin-top: 2px !important;
+}
+/* hover 背景范围也收窄，否则上下各 2px 扩展在紧凑排版下视觉上重叠 */
+.wk-conversation.wk-conversation--cli .wk-msg-row::before {
+    top: 0;
+    bottom: 0;
 }
 
 /* 名字 + 时间行缩小 */

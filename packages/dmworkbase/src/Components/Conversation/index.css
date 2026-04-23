@@ -918,6 +918,79 @@ body[theme-mode="dark"] .wk-conversation.wk-conversation--cli .senderAvatar-plac
     background: rgba(255, 255, 255, 0.1);
 }
 
+/* ──────────────────────────────────────────────────────────────
+ * 新 UI (ui/message/MessageRow) 用 .wk-msg-row / .wk-msg-row-avatar，
+ * 不走 .senderAvatar。下面这组规则和上面老规则镜像，让 CLI 模式
+ * 在两套 UI 下都把头像收成 7px 圆点 + 1px 时间轴。
+ * ────────────────────────────────────────────────────────────── */
+
+.wk-conversation.wk-conversation--cli .wk-msg-row-avatar {
+    width: 16px;
+    min-width: 16px;
+    height: auto;
+    align-self: stretch;
+    position: relative;
+    cursor: default;
+    flex-shrink: 0;
+}
+
+/* 隐藏头像本体（Avatar 组件 / placeholder 内容） */
+.wk-conversation.wk-conversation--cli .wk-msg-row-avatar > * {
+    display: none;
+}
+
+.wk-conversation.wk-conversation--cli .wk-msg-row-avatar::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    background: var(--wk-ink-35, rgba(0, 0, 0, 0.35));
+}
+
+.wk-conversation.wk-conversation--cli .wk-msg-row-avatar::after {
+    content: "";
+    position: absolute;
+    top: 17px;
+    bottom: -2px;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: var(--wk-ink-08, rgba(0, 0, 0, 0.08));
+    opacity: 0.7;
+}
+
+/* 自己发的：绿点 + halo */
+.wk-conversation.wk-conversation--cli .wk-msg-row--send .wk-msg-row-avatar::before {
+    background: var(--wk-success, #22c55e);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
+}
+
+body[theme-mode="dark"] .wk-conversation.wk-conversation--cli .wk-msg-row-avatar::after {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* 行级紧凑：padding 跟老 UI 保持一致 */
+.wk-conversation.wk-conversation--cli .wk-msg-row {
+    padding: 2px 0;
+}
+
+/* 名字 + 时间行缩小 */
+.wk-conversation.wk-conversation--cli .wk-msg-row-header {
+    gap: 6px;
+    margin-bottom: 2px;
+}
+.wk-conversation.wk-conversation--cli .wk-msg-row-sender {
+    font-size: 12.5px;
+    font-weight: 600;
+}
+.wk-conversation.wk-conversation--cli .wk-msg-row-timestamp {
+    font-size: 11px;
+}
+
 /* 气泡扁平化：透明底、零内边距、无边框 */
 .wk-conversation.wk-conversation--cli .wk-message-base-bubble,
 .wk-conversation.wk-conversation--cli .wk-message-base-bubble-box.send .wk-message-base-bubble,

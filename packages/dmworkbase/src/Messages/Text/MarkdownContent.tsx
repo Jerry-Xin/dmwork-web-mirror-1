@@ -166,10 +166,17 @@ function processTextChildren(
             if (segments.length === 1 && segments[0].type === "text") return child;
             return segments.map((seg, i) => {
                 if (seg.type === "mention") {
+                    // 根据 uid 判断 mention 等级
+                    let mentionClass = "mention-fallback"; // 默认降级态
+                    if (seg.uid === "all" || seg.uid === "channel") {
+                        mentionClass = "mention-highlight"; // @所有人/@频道
+                    } else if (seg.uid && seg.uid !== "") {
+                        mentionClass = "mention-entity"; // 普通用户
+                    }
                     return (
                         <span
                             key={i}
-                            className={`wk-message-mention ${isSend ? "wk-message-mention-send" : "wk-message-mention-recv"}`}
+                            className={mentionClass}
                             onClick={() => seg.uid && onMentionClick?.(seg.uid)}
                         >
                             {seg.name}

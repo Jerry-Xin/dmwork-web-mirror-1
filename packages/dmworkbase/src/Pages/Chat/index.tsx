@@ -12,7 +12,7 @@ import WKButton from "../../Components/WKButton";
 import WKModal from "../../Components/WKModal";
 import { Columns2 } from "lucide-react";
 import ThreadIcon from "../../Components/Icons/ThreadIcon";
-import HashIcon from "../../Components/Icons/HashIcon";
+import GroupIcon from "../../Components/Icons/GroupIcon";
 import { ChatVM, handleGlobalSearchClick } from "./vm";
 import "./index.css";
 import { ConversationWrap } from "../../Service/Model";
@@ -222,7 +222,7 @@ export class ChatContentPage extends Component<
                         {channel.channelType === ChannelTypeGroup ? (
                           // 群聊：# icon
                           <div className="wk-chat-conversation-header-channel-hash-icon">
-                            <HashIcon size={18} />
+                            <GroupIcon size={18} />
                           </div>
                         ) : channel.channelType === ChannelTypeCommunityTopic ? (
                           // 子区：🧵 icon，圆角背景（对齐群聊 hash-icon 样式）

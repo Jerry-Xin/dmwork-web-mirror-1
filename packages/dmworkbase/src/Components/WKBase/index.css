@@ -35,6 +35,17 @@
   height: 420px;
 }
 
+/* 转发弹窗宽度 */
+.wk-base-modal-forward .semi-modal-content {
+  width: 625px !important;
+}
+
+.wk-base-modal-forward .semi-modal-body {
+  padding: 0 !important;
+  height: 560px;
+  overflow: hidden;
+}
+
 .semi-button.semi-button-primary:focus-visible, .semi-button.semi-button-secondary:focus-visible, .semi-button.semi-button-tertiary:focus-visible, .semi-button.semi-button-warning:focus-visible, .semi-button.semi-button-danger:focus-visible {
   outline: none;
 }

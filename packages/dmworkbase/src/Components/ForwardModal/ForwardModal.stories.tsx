@@ -289,40 +289,7 @@ export const TreeViewWithLines: Story = {
   },
 }
 
-/** 已选区头像角标：群聊显示 Hash，子区显示 ThreadIcon */
-export const SelectedAreaBadges: Story = {
-  render: () => <Interactive initialItems={mockTreeItems} selectedIDs={["group-001", "thread-001"]} />,
-  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    const canvas = within(canvasElement)
-
-    // 已选区存在，且有 2 个已选头像 wrap
-    const selectedList = canvasElement.querySelector(".wk-forward-modal-selected-list")
-    await expect(selectedList).not.toBeNull()
-    const avatarWraps = canvasElement.querySelectorAll(
-      ".wk-forward-modal-selected-list .wk-forward-modal-avatar-wrap"
-    )
-    await expect(avatarWraps.length).toBe(2)
-
-    // group-001 是群聊（hasThreads=true）→ 应渲染 Hash badge
-    const hashBadges = canvasElement.querySelectorAll(
-      ".wk-forward-modal-selected-list .wk-forward-modal-badge--hash"
-    )
-    await expect(hashBadges.length).toBeGreaterThanOrEqual(1)
-
-    // thread-001 是子区（isThread=true）→ 应渲染 ThreadIcon badge
-    const threadBadges = canvasElement.querySelectorAll(
-      ".wk-forward-modal-selected-list .wk-forward-modal-badge--thread"
-    )
-    await expect(threadBadges.length).toBeGreaterThanOrEqual(1)
-
-    // 取消选中子区，thread badge 消失
-    await userEvent.click(canvas.getByText("需求讨论"))
-    const threadBadgesAfter = canvasElement.querySelectorAll(
-      ".wk-forward-modal-selected-list .wk-forward-modal-badge--thread"
-    )
-    await expect(threadBadgesAfter.length).toBe(0)
-  },
-}
+// SelectedAreaBadges story removed — badge 角标已按设计稿去掉，不再区分群聊/子区
 
 /** 搜索方案 A：命中子区时带出父群 */
 export const SearchTreeViewA: Story = {

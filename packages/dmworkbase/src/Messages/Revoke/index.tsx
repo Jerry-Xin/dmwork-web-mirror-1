@@ -11,7 +11,9 @@ export class RevokeCell extends MessageCell {
     channelInfoListener!:ChannelInfoListener
 
     componentDidMount() {
+        super.componentDidMount()
         const { message } = this.props
+        // 额外监听 revoker 的 channelInfo（撤回者可能与发送者不同）
         this.channelInfoListener = (channelInfo:ChannelInfo) => {
             if(channelInfo.channel.channelType === ChannelTypePerson && channelInfo.channel.channelID === message.revoker) {
                 this.setState({})
@@ -21,6 +23,7 @@ export class RevokeCell extends MessageCell {
     }
 
     componentWillUnmount() {
+        super.componentWillUnmount()
         WKSDK.shared().channelManager.removeListener(this.channelInfoListener)
     }
 

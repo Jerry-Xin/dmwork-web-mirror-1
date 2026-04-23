@@ -277,8 +277,8 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
 
                         {/* 消息体列 */}
                         <div className="wk-msg-body">
-                            {/* Head 行：name + time，在气泡外面 */}
-                            {showHead && !message.send && !isAi && (
+                            {/* Head 行：name + time (发送和接收都显示,布局一致) */}
+                            {showHead && !isAi && (
                                 <div className="wk-msg-head">
                                     <span className="wk-msg-head-name" style={{ color: getTitleColor(displayName) }}>
                                         {displayName}

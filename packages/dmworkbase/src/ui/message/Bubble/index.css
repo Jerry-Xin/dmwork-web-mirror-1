@@ -1,0 +1,49 @@
+/**
+ * Bubble 组件样式
+ */
+
+.wk-msg-bubble {
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+/**
+ * 发送方气泡
+ */
+.wk-msg-bubble--send {
+  background-color: var(--wk-msg-bubble-bg-send, var(--wk-brand-primary));
+  color: var(--wk-msg-bubble-text-send, var(--wk-text-inverse));
+}
+
+/**
+ * 接收方气泡
+ */
+.wk-msg-bubble--recv {
+  background-color: var(--wk-msg-bubble-bg-recv, var(--wk-bg-surface-secondary));
+  color: var(--wk-msg-bubble-text-recv, var(--wk-text-primary));
+}
+
+/**
+ * 圆角规则
+ */
+
+/* single: 全圆角 */
+.wk-msg-bubble--single {
+  border-radius: var(--wk-r-lg);
+}
+
+/* first: 上圆下直（左上圆，左下直） */
+.wk-msg-bubble--first {
+  border-radius: var(--wk-r-lg) var(--wk-r-lg) var(--wk-r-lg) var(--wk-r-xs);
+}
+
+/* middle: 全直（左侧直） */
+.wk-msg-bubble--middle {
+  border-radius: var(--wk-r-xs) var(--wk-r-lg) var(--wk-r-lg) var(--wk-r-xs);
+}
+
+/* last: 上直下圆（左上直，左下圆） */
+.wk-msg-bubble--last {
+  border-radius: var(--wk-r-xs) var(--wk-r-lg) var(--wk-r-lg) var(--wk-r-lg);
+}

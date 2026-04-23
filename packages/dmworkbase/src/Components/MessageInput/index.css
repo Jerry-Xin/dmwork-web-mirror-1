@@ -487,7 +487,7 @@
 }
 
 .wk-attachment-node--selected .wk-attachment-node-card {
-  outline: 1px solid #d2d2d3;
+  outline: 2px solid var(--wk-border-strong);
 }
 
 .wk-attachment-node-card {
@@ -519,12 +519,41 @@
   object-fit: contain;
 }
 
+.wk-attachment-node-video-cover-wrapper {
+  position: relative;
+  width: var(--wk-sp-12);
+  height: var(--wk-sp-12);
+  overflow: hidden;
+  border-radius: var(--wk-r-sm);
+}
+
+.wk-attachment-node-icon .wk-attachment-node-video-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wk-attachment-node-video-play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--wk-sp-5);
+  height: var(--wk-sp-5);
+  min-width: var(--wk-sp-5);
+  min-height: var(--wk-sp-5);
+  max-width: var(--wk-sp-5);
+  max-height: var(--wk-sp-5);
+  display: block;
+  pointer-events: none;
+}
+
 .wk-attachment-node-info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--wk-sp-0-5);
+  gap: 0;
   margin-top: var(--wk-sp-2);
   overflow: hidden;
 }
@@ -544,14 +573,14 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.4;
+  line-height: var(--wk-sp-5);
   font-weight: var(--wk-font-regular);
 }
 
 .wk-attachment-node-size {
   font-size: var(--wk-text-size-md);
   color: var(--wk-text-tertiary);
-  line-height: 1.3;
+  line-height: var(--wk-sp-5);
 }
 
 .wk-attachment-node-remove {
@@ -577,4 +606,21 @@
 .wk-attachment-node-remove svg {
   width: var(--wk-sp-4);
   height: var(--wk-sp-4);
+}
+
+/* ============================================
+   Attachment Node 图片预览样式
+   ============================================ */
+
+.wk-attachment-node--selected .wk-attachment-node-image {
+  outline: 2px solid var(--wk-border-strong);
+}
+
+.wk-attachment-node-image {
+  display: block;
+  max-width: 76px;
+  max-height: 76px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }

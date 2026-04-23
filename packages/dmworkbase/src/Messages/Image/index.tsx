@@ -9,6 +9,10 @@ import Download from "yet-another-react-lightbox/plugins/download"
 import "yet-another-react-lightbox/styles.css"
 import { Toast } from "@douyinfe/semi-ui"
 import { downloadFile } from "../../Utils/download"
+import MessageRow from "../../ui/message/MessageRow"
+import SingleImage from "../../ui/message/ImageContent/SingleImage"
+import MultiImage from "../../ui/message/ImageContent/MultiImage"
+import { getImageMessageUI } from "../../bridge/message/useImageMessageUI"
 
 const SMALL_FILE_THRESHOLD = 1024 * 1024 // 1MB 以下不显示进度覆盖层
 
@@ -94,6 +98,7 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
     }
 
     componentDidMount() {
+        super.componentDidMount()
         const { message } = this.props
         // 小文件（<1MB）不显示进度，跳过订阅
         const fileSize = (message.content as any).file?.size ?? 0
@@ -108,10 +113,11 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
     }
 
     componentWillUnmount() {
+        super.componentWillUnmount()
         WKSDK.shared().taskManager.removeListener(this._taskListener)
     }
 
-    imageScale(orgWidth: number, orgHeight: number, maxWidth = 250, maxHeight = 250) {
+    imageScale(orgWidth: number, orgHeight: number, maxWidth = 660, maxHeight = 372) {
         let actSize = { width: orgWidth, height: orgHeight };
         if (orgWidth > orgHeight) {//横图
             if (orgWidth > maxWidth) { // 横图超过最大宽度
@@ -148,13 +154,68 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
         let scaleSize = this.imageScale(content.width, content.height);
         // data-has-lightbox: 告知扩展 sidepanel 的全局 image click 拦截器（OctoSidepanelLayout.handleImageClick）
         // 该图片已有自己的 lightbox 逻辑，不要再叠一层
-        return <img alt="" src={this.getImageSrc(content)} data-has-lightbox style={{ borderRadius: '5px', width: scaleSize.width, height: scaleSize.height }} />
+        return <img alt="" src={this.getImageSrc(content)} data-has-lightbox style={{ borderRadius: '8px', width: scaleSize.width, height: scaleSize.height }} />
     }
 
     render() {
         const { message, context } = this.props
         const { showPreview, uploadProgress, uploadStatus } = this.state
         const content = message.content as ImageContent
+
+        // 新 UI 实现
+        const useNewUI = true
+        if (useNewUI) {
+            const uiProps = getImageMessageUI(message)
+            return (
+                <>
+                    <MessageRow
+                        {...uiProps.row}
+                        onContextMenu={(event) => context.showContextMenus(message, event)}
+                    isActive={context.isContextMenuOpen(message.message)}
+        showCheckbox={context.editOn()}
+        isSelected={!!message.checked}
+        onSelect={(selected) => context.checkeMessage(message.message, selected)}
+                    >
+                        {uiProps.isMulti
+                            ? <MultiImage
+                                images={uiProps.images}
+                                onImageClick={(index) => {
+                                    // TODO: 多图预览
+                                }}
+                              />
+                            : uiProps.singleImage
+                                ? <SingleImage
+                                    {...uiProps.singleImage}
+                                    onClick={() => this.setState({ showPreview: true })}
+                                  />
+                                : null
+                        }
+                    </MessageRow>
+                    <Lightbox
+                        open={showPreview}
+                        close={() => this.setState({ showPreview: false })}
+                        slides={uiProps.isMulti
+                            ? uiProps.images.map(img => ({ src: img.src, alt: '' }))
+                            : [{ src: uiProps.singleImage?.src || '', alt: '' }]
+                        }
+                        plugins={[Download]}
+                        download={{ download: ({ slide }) => {
+                            if (slide?.src) {
+                                downloadFile(slide.src, content.name || 'image.png')
+                            }
+                        }}}
+                        carousel={{ finite: true }}
+                        controller={{ closeOnBackdropClick: true }}
+                        render={{
+                            buttonPrev: uiProps.isMulti ? undefined : () => null,
+                            buttonNext: uiProps.isMulti ? undefined : () => null,
+                        }}
+                    />
+                </>
+            )
+        }
+
+        // 旧 UI 实现（保持向后兼容）
         let scaleSize = this.imageScale(content.width, content.height);
         const imageURL = this.getImageSrc(content) || ""
 
@@ -178,7 +239,7 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
                         <div style={{
                             position: "absolute", inset: 0,
                             background: "rgba(0,0,0,0.45)",
-                            borderRadius: 5,
+                            borderRadius: 8,
                             display: "flex", flexDirection: "column",
                             alignItems: "center", justifyContent: "center",
                             gap: 8,
@@ -194,7 +255,7 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
                         <div style={{
                             position: "absolute", inset: 0,
                             background: "rgba(0,0,0,0.5)",
-                            borderRadius: 5,
+                            borderRadius: 8,
                             display: "flex", flexDirection: "column",
                             alignItems: "center", justifyContent: "center",
                             gap: 6,

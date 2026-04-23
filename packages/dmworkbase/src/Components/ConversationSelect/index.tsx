@@ -11,11 +11,13 @@ import { useForwardModal } from "../ForwardModal/useForwardModal"
 
 interface ConversationSelectProps {
   onFinished?: (channels: Channel[]) => void
+  onCancel?: () => void
   title?: string
 }
 
 export default function ConversationSelect({
   onFinished,
+  onCancel,
   title,
 }: ConversationSelectProps) {
   const { items, allItems, selectedIDs, inputValue, loading, setInputValue, toggleSelect, confirm } =
@@ -32,6 +34,7 @@ export default function ConversationSelect({
       onInputChange={setInputValue}
       onToggleSelect={toggleSelect}
       onConfirm={confirm}
+      onCancel={onCancel}
     />
   )
 }

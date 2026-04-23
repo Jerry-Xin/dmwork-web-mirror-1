@@ -7,6 +7,7 @@ import { WKApp } from "@dmwork/base";
 import CategoryService from "@dmwork/base/src/Service/CategoryService";
 import { ChannelSettingManager } from "@dmwork/base/src/Service/ChannelSetting";
 import { Channel, ChannelTypeGroup, WKSDK } from "wukongimjssdk";
+import { ChannelTypeCommunityTopic } from "@dmwork/base/src/Service/Const";
 
 interface PickerContextMenuOptions {
   categories: ChannelPickerCategory[];
@@ -132,6 +133,21 @@ export function buildChannelPickerItemContextMenus({
       onClick: async () => {
         await ChannelSettingManager.shared.mute(!item.muted, channel);
         await WKSDK.shared().channelManager.fetchChannelInfo(channel).catch(() => null);
+        if (item.channelType === ChannelTypeGroup) {
+          const conversations = WKSDK.shared().conversationManager.conversations ?? [];
+          const subChannels = conversations
+            .map((conv) => conv.channel)
+            .filter((ch) => {
+              if (ch.channelType !== ChannelTypeCommunityTopic) return false;
+              const info = WKSDK.shared().channelManager.getChannelInfo(ch);
+              return info?.orgData?.parentGroupNo === item.channelId;
+            });
+          await Promise.all(
+            subChannels.map((ch) =>
+              WKSDK.shared().channelManager.fetchChannelInfo(ch).catch(() => null)
+            )
+          );
+        }
         await refresh();
       },
     });

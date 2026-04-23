@@ -706,6 +706,52 @@ body.octo-sidepanel-v3 .wk-sidepanel-picker-drawer {
     visibility 0s linear 180ms;
 }
 
+body.octo-sidepanel-v3 .octo-picker-filter-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 10px;
+  flex-shrink: 0;
+}
+
+body.octo-sidepanel-v3 .octo-picker-filter-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--wk-text-secondary, #666);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+body.octo-sidepanel-v3 .octo-picker-filter-tab:hover {
+  background: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+body.octo-sidepanel-v3 .octo-picker-filter-tab.is-active {
+  background: var(--wk-bg-elevated, rgba(0, 0, 0, 0.06));
+  color: var(--wk-text-primary, #111);
+  font-weight: 600;
+}
+
+body.octo-sidepanel-v3 .octo-picker-list-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* ConversationList 用 --wk-brand-primary 作为"主文字/选中态"色（web 端语义是纯黑）。
+     插件全局把这个变量定义成了紫色品牌色，会把群名/分组标题染紫，这里 scope 内重置。 */
+  --wk-brand-primary: #1C1C23;
+  --wk-brand-primary-hover: #2A2A33;
+}
+
+body.octo-sidepanel-v3[theme-mode="dark"] .octo-picker-list-wrap {
+  --wk-brand-primary: #E6E6EB;
+  --wk-brand-primary-hover: #F0F0F5;
+}
+
 body.octo-sidepanel-v3 .wk-sidepanel-picker-backdrop {
   position: absolute;
   top: 0;

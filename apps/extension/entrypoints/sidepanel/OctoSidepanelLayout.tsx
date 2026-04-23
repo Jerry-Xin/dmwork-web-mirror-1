@@ -15,14 +15,10 @@ import {
   GroupRole,
 } from "@dmwork/base/src/Service/Const";
 import { Conversation } from "@dmwork/base/src/Components/Conversation";
-import ChannelPicker from "@dmwork/base/src/Components/ChannelPicker";
-import type {
-  ChannelPickerItem,
-  ChannelPickerCategory,
-} from "@dmwork/base/src/Components/ChannelPicker";
-import CategoryService, {
-  type CategoryItem,
-} from "@dmwork/base/src/Service/CategoryService";
+import ChatConversationList from "@dmwork/base/src/Components/ChatConversationList";
+import type { ConvFilter } from "@dmwork/base/src/Components/ConversationList";
+import { ConversationWrap } from "@dmwork/base/src/Service/Model";
+import CategoryService from "@dmwork/base/src/Service/CategoryService";
 import {
   WKApp,
   shouldSkipChannelForSpace,
@@ -46,16 +42,13 @@ import {
   setExtensionSidepanelSelectedConversation,
   setExtensionTheme,
 } from "../../utils/extensionStorage";
-import {
-  buildChannelPickerCategoryContextMenus,
-  buildChannelPickerItemContextMenus,
-} from "../../utils/channelPickerContextMenus";
 
 const HashIconComponent = HashIcon as any;
 const ThreadIconComponent = ThreadIcon as any;
 const ConversationComponent = Conversation as any;
 const ErrorBoundaryComponent = ErrorBoundary as any;
 const CreateCategoryModalComponent = CreateCategoryModal as any;
+const ChatConversationListComponent = ChatConversationList as any;
 
 interface DrawerMember {
   uid: string;
@@ -66,16 +59,23 @@ interface DrawerMember {
   orgData?: Record<string, any>;
 }
 
+interface RailItem {
+  channelId: string;
+  channelType: number;
+  name: string;
+  unread: number;
+  mentionCount: number;
+  muted: boolean;
+}
+
 interface OctoSidepanelLayoutState {
   selectedChannel: Channel | null;
   selectedChannelName: string;
   showPicker: boolean;
-  pickerHydrated: boolean;
   showInfoDrawer: boolean;
-  channels: ChannelPickerItem[];
-  categories: ChannelPickerCategory[];
-  privateChats: ChannelPickerItem[];
-  pickerLoading: boolean;
+  pickerFilter: ConvFilter;
+  conversationsVersion: number;
+  categoryNames: string[];
   pinnedIds: Set<string>;
   memberLoading: boolean;
   members: DrawerMember[];
@@ -123,8 +123,18 @@ interface OctoComposerInputContext extends MessageInputContext {
 
 function getFirstChar(name: string): string {
   if (!name) return "?";
-  const ch = name.charAt(0);
-  if (/[a-zA-Z0-9]/.test(ch)) return ch.toUpperCase();
+  let ch: string;
+  if (typeof (Intl as any)?.Segmenter === "function") {
+    const segmenter = new (Intl as any).Segmenter(undefined, {
+      granularity: "grapheme",
+    });
+    const first = segmenter.segment(name)[Symbol.iterator]().next();
+    ch = first.done ? "" : first.value.segment;
+  } else {
+    ch = Array.from(name)[0] ?? "";
+  }
+  if (!ch) return "?";
+  if (/^[a-zA-Z0-9]$/.test(ch)) return ch.toUpperCase();
   return ch;
 }
 
@@ -348,7 +358,6 @@ export default class OctoSidepanelLayout extends Component<
   private composerInputContext?: OctoComposerInputContext;
   private conversationListenerRemover?: () => void;
   private channelInfoListenerRemover?: () => void;
-  private loadDebounceTimer?: ReturnType<typeof setTimeout>;
   private spinnerTimer?: ReturnType<typeof setInterval>;
   private logoutConfirmTimer?: ReturnType<typeof setTimeout>;
   private spinnerVerbIndex = 0;
@@ -401,12 +410,10 @@ export default class OctoSidepanelLayout extends Component<
       selectedChannel: null,
       selectedChannelName: "",
       showPicker: false,
-      pickerHydrated: false,
       showInfoDrawer: false,
-      channels: [],
-      categories: [],
-      privateChats: [],
-      pickerLoading: false,
+      pickerFilter: "group",
+      conversationsVersion: 0,
+      categoryNames: [],
       pinnedIds,
       memberLoading: false,
       members: [],
@@ -460,11 +467,11 @@ export default class OctoSidepanelLayout extends Component<
 
     this.initSpace().then(async () => {
       await WKSDK.shared().conversationManager.sync({});
-      this.loadChannelPickerData();
+      this.bumpConversationsVersion();
     });
 
     const conversationListener = () => {
-      this.scheduleLoad();
+      this.bumpConversationsVersion();
     };
     WKSDK.shared().conversationManager.addConversationListener(
       conversationListener
@@ -483,12 +490,14 @@ export default class OctoSidepanelLayout extends Component<
             channelInfo.orgData?.displayName || channelInfo.title || "",
         });
       }
-      this.scheduleLoad();
+      this.bumpConversationsVersion();
     };
     WKSDK.shared().channelManager.addListener(channelInfoListener);
     this.channelInfoListenerRemover = () => {
       WKSDK.shared().channelManager.removeListener(channelInfoListener);
     };
+
+    void this.loadCategoryNames();
 
     WKApp.endpointManager.setMethod(
       "showConversation",
@@ -526,7 +535,6 @@ export default class OctoSidepanelLayout extends Component<
   componentWillUnmount() {
     this.conversationListenerRemover?.();
     this.channelInfoListenerRemover?.();
-    if (this.loadDebounceTimer) clearTimeout(this.loadDebounceTimer);
     if (this.spinnerTimer) clearInterval(this.spinnerTimer);
     if (this.logoutConfirmTimer) clearTimeout(this.logoutConfirmTimer);
     document.removeEventListener("keydown", this.handleEscKey);
@@ -791,31 +799,84 @@ export default class OctoSidepanelLayout extends Component<
       showInfoDrawer: false,
       members: [],
       drawerMuted: null,
-      channels: [],
-      privateChats: [],
-      categories: [],
-      pickerHydrated: false,
-      pickerLoading: true,
     });
 
     try {
       await WKSDK.shared().conversationManager.sync({});
-      await this.loadChannelPickerData();
+      this.bumpConversationsVersion();
+      void this.loadCategoryNames();
     } catch (e) {
       console.warn(
         "[OctoSidepanelLayout] Failed to reload after space switch:",
         e
       );
-      this.setState({ pickerLoading: false });
     }
   };
 
-  private scheduleLoad() {
-    if (this.state.showPicker) return;
-    if (this.loadDebounceTimer) clearTimeout(this.loadDebounceTimer);
-    this.loadDebounceTimer = setTimeout(() => {
-      this.loadChannelPickerData();
-    }, 300);
+  private bumpConversationsVersion = () => {
+    this.setState((prev) => ({
+      conversationsVersion: prev.conversationsVersion + 1,
+    }));
+    this.syncPinsAndFirstSelect();
+  };
+
+  private syncPinsAndFirstSelect = () => {
+    const conversations = this.getConversations();
+
+    const validIds = new Set<string>();
+    for (const conv of conversations) {
+      validIds.add(conv.channel.channelID);
+    }
+    const currentPins = this.state.pinnedIds;
+    let pinsChanged = false;
+    const prunedPins = new Set<string>();
+    for (const id of currentPins) {
+      if (validIds.has(id)) prunedPins.add(id);
+      else pinsChanged = true;
+    }
+    if (pinsChanged) {
+      localStorage.setItem(
+        "octo_sidepanel_pinned",
+        JSON.stringify([...prunedPins])
+      );
+      this.setState({ pinnedIds: prunedPins });
+    }
+
+    // Auto-seed: if no pins yet, pin the first 3 so rail is not empty.
+    const effectivePins = pinsChanged ? prunedPins : currentPins;
+    if (effectivePins.size === 0 && conversations.length > 0) {
+      const seed = new Set<string>();
+      for (const conv of conversations.slice(0, 3)) {
+        seed.add(conv.channel.channelID);
+      }
+      if (seed.size > 0) {
+        localStorage.setItem(
+          "octo_sidepanel_pinned",
+          JSON.stringify([...seed])
+        );
+        this.setState({ pinnedIds: seed });
+      }
+    }
+
+    if (!this.state.selectedChannel && conversations.length > 0) {
+      this.selectChannel(conversations[0].channel);
+    }
+  };
+
+  private async loadCategoryNames() {
+    const spaceId = WKApp.shared.currentSpaceId;
+    if (!spaceId) {
+      this.setState({ categoryNames: [] });
+      return;
+    }
+    try {
+      const items = await CategoryService.list(spaceId);
+      this.setState({
+        categoryNames: items.map((c) => c.name),
+      });
+    } catch (e) {
+      console.warn("[OctoSidepanelLayout] Failed to load categories:", e);
+    }
   }
 
   private async initSpace() {
@@ -901,224 +962,56 @@ export default class OctoSidepanelLayout extends Component<
     }
   }
 
-  private async loadChannelPickerData(showLoading = true) {
-    if (showLoading) {
-      this.setState({ pickerLoading: true });
-    }
-
-    try {
-      const conversations = WKSDK.shared().conversationManager.conversations;
-
-      let categoryItems: CategoryItem[] = [];
-      const spaceId = WKApp.shared.currentSpaceId;
-      if (spaceId) {
-        try {
-          categoryItems = await CategoryService.list(spaceId);
-        } catch (e) {
-          console.warn("[OctoSidepanelLayout] Failed to load categories:", e);
-        }
-      }
-
-      const categories: ChannelPickerCategory[] = categoryItems.map(
-        (cat, idx) => ({
-          id: cat.category_id || `default-${idx}`,
-          name: cat.name === "未分类" ? "默认分组" : cat.name,
-          order: cat.sort,
-          isDefault: Boolean(cat.is_default) || cat.name === "未分类",
-        })
-      );
-
-      const groupCategoryMap = new Map<string, string>();
-      for (const cat of categoryItems) {
-        const catId =
-          cat.category_id || `default-${categoryItems.indexOf(cat)}`;
-        for (const group of cat.groups) {
-          groupCategoryMap.set(group.group_no, catId);
-        }
-      }
-
-      const uncachedChannels = conversations
-        .filter(
-          (conv) => !WKSDK.shared().channelManager.getChannelInfo(conv.channel)
-        )
-        .map((conv) => conv.channel);
-      if (uncachedChannels.length > 0) {
-        await Promise.all(
-          uncachedChannels.map((ch) =>
-            WKSDK.shared()
-              .channelManager.fetchChannelInfo(ch)
-              .catch(() => null)
-          )
-        );
-      }
-
-      const channelList: ChannelPickerItem[] = [];
-      const privateChatList: ChannelPickerItem[] = [];
-
-      for (const conv of conversations) {
-        if (shouldSkipChannelForSpace(conv.channel)) continue;
-        if (shouldSkipPersonConversationForSpace(conv)) continue;
-
-        const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
-          conv.channel
-        );
-        const name =
-          channelInfo?.orgData?.displayName ||
-          channelInfo?.title ||
-          conv.channel.channelID;
-        const muted = channelInfo?.mute ?? false;
-
-        let unread = 0;
-        if (
-          spaceId &&
-          conv.channel.channelType === ChannelTypePerson &&
-          conv.extra?.spaceUnread !== undefined
-        ) {
-          unread = Math.max(0, Number(conv.extra.spaceUnread || 0));
-        } else {
-          unread = Math.max(0, Number(conv.unread || 0));
-        }
-
-        const mentionCount = conv.reminders?.filter((r) => !r.done).length ?? 0;
-
-        const item: ChannelPickerItem = {
-          channelId: conv.channel.channelID,
-          channelType: conv.channel.channelType,
-          name,
-          unread,
-          mentionCount,
-          muted,
-          lastMessageTime: conv.lastMessage?.timestamp ?? 0,
-          categoryId: groupCategoryMap.get(conv.channel.channelID),
-          parentChannelId: channelInfo?.orgData?.parentGroupNo,
-        };
-
-        if (conv.channel.channelType === ChannelTypePerson) {
-          privateChatList.push(item);
-        } else {
-          channelList.push(item);
-        }
-      }
-
-      this.setState({
-        channels: channelList,
-        categories,
-        privateChats: privateChatList,
-        pickerHydrated: true,
-        pickerLoading: false,
-      });
-
-      // Prune stale pins: drop ids that no longer map to a visible channel/pm.
-      // Keeps pinnedIds.size aligned with what the user sees in the rail.
-      const validIds = new Set<string>();
-      for (const item of channelList) validIds.add(item.channelId);
-      for (const item of privateChatList) validIds.add(item.channelId);
-      const currentPins = this.state.pinnedIds;
-      let pinsChanged = false;
-      const prunedPins = new Set<string>();
-      for (const id of currentPins) {
-        if (validIds.has(id)) prunedPins.add(id);
-        else pinsChanged = true;
-      }
-      if (pinsChanged) {
-        localStorage.setItem(
-          "octo_sidepanel_pinned",
-          JSON.stringify([...prunedPins])
-        );
-        this.setState({ pinnedIds: prunedPins });
-      }
-
-      // Auto-seed: if no pins yet, pin the first 3 threads so rail is not empty.
-      if ((pinsChanged ? prunedPins : currentPins).size === 0) {
-        const allItems = [...channelList, ...privateChatList];
-        const seed = new Set<string>();
-        for (const t of allItems.slice(0, 3)) seed.add(t.channelId);
-        if (seed.size > 0) {
-          localStorage.setItem(
-            "octo_sidepanel_pinned",
-            JSON.stringify([...seed])
-          );
-          this.setState({ pinnedIds: seed });
-        }
-      }
-
-      if (
-        !this.state.selectedChannel &&
-        (channelList.length > 0 || privateChatList.length > 0)
-      ) {
-        const allItems = [...channelList, ...privateChatList];
-        const firstItem = allItems[0];
-        if (firstItem) {
-          const channel = new Channel(
-            firstItem.channelId,
-            firstItem.channelType
-          );
-          this.selectChannel(channel);
-        }
-      }
-    } catch (e) {
-      console.warn("[OctoSidepanelLayout] Failed to load picker data:", e);
-      this.setState({ pickerHydrated: true, pickerLoading: false });
-    }
+  private getConversations(): ConversationWrap[] {
+    const convs = WKSDK.shared().conversationManager.conversations || [];
+    return convs
+      .filter((c) => !shouldSkipChannelForSpace(c.channel))
+      .filter((c) => !shouldSkipPersonConversationForSpace(c))
+      .map((c) => new ConversationWrap(c));
   }
-
-  private refreshPickerData = async (showLoading: boolean) => {
-    if (showLoading) {
-      this.setState({ pickerLoading: true });
-    }
-    await WKSDK.shared().conversationManager.sync({});
-    await this.loadChannelPickerData(showLoading);
-  };
 
   private handlePickerToggle = () => {
     if (this.state.showPicker) {
       this.setState({ showPicker: false });
       return;
     }
-    const shouldShowLoading = !this.state.pickerHydrated;
     this.setState({
       showPicker: true,
-      pickerLoading: shouldShowLoading,
       showInfoDrawer: false,
     });
-    void this.refreshPickerData(shouldShowLoading);
+    void this.loadCategoryNames();
   };
 
   private handlePickerClose = () => {
     this.setState({ showPicker: false });
   };
 
-  private handlePickerConversationClosed = (item: ChannelPickerItem) => {
-    const { selectedChannel } = this.state;
-    if (
-      selectedChannel &&
-      selectedChannel.channelID === item.channelId &&
-      selectedChannel.channelType === item.channelType
-    ) {
-      this.setState({
-        selectedChannel: null,
-        selectedChannelName: "",
-        showInfoDrawer: false,
-        members: [],
-      });
+  private handleConversationClick = (conv: ConversationWrap) => {
+    WKApp.mittBus.emit("wk:close-thread-panel", undefined);
+    this.selectChannel(conv.channel);
+  };
+
+  private handleListClearMessages = async (channel: Channel) => {
+    const conversation = WKSDK.shared().conversationManager.findConversation(
+      channel
+    );
+    if (!conversation) return;
+    try {
+      await WKApp.conversationProvider.clearConversationMessages(conversation);
+      conversation.lastMessage = undefined;
+      conversation.unread = 0;
+      WKApp.endpointManager.invoke(EndpointID.clearChannelMessages, channel);
+      this.bumpConversationsVersion();
+    } catch (e) {
+      console.warn("[OctoSidepanelLayout] Failed to clear messages:", e);
     }
   };
 
-  private handleChannelSelect = (item: ChannelPickerItem) => {
-    const channel = new Channel(item.channelId, item.channelType);
-    this.selectChannel(channel);
-  };
-
-  private handlePickerCreateGroupInCategory = (categoryId: string) => {
-    try {
-      WKApp.endpoints.organizationalLayer(null, {
-        defaultCategoryId: categoryId,
-        onSuccess: () => {
-          void this.loadChannelPickerData();
-        },
-      });
-    } catch {
-      showToast("创建群聊 · 环境未就绪，请稍后重试");
+  private handleThreadOverflow = (groupNo: string) => {
+    WKApp.mittBus.emit("wk:pending-thread", { groupNo, thread: null });
+    const { selectedChannel } = this.state;
+    if (selectedChannel?.channelID !== groupNo) {
+      this.selectChannel(new Channel(groupNo, ChannelTypeGroup));
     }
   };
 
@@ -1128,7 +1021,7 @@ export default class OctoSidepanelLayout extends Component<
     if (selectedChannel && selectedChannel.channelType !== ChannelTypePerson) {
       await this.fetchMembers(selectedChannel);
     }
-    this.loadChannelPickerData(true);
+    this.bumpConversationsVersion();
   };
 
   private togglePin = (channelId: string) => {
@@ -1274,7 +1167,7 @@ export default class OctoSidepanelLayout extends Component<
       await WKSDK.shared()
         .channelManager.fetchChannelInfo(selectedChannel)
         .catch(() => null);
-      this.scheduleLoad();
+      this.bumpConversationsVersion();
     } catch (e) {
       console.warn("[OctoSidepanelLayout] Failed to update mute:", e);
       this.setState({ drawerMuted: currentMuted });
@@ -1301,7 +1194,7 @@ export default class OctoSidepanelLayout extends Component<
         .channelManager.fetchChannelInfo(selectedChannel)
         .catch(() => null);
       this.setState({ selectedChannelName: trimmed });
-      this.loadChannelPickerData();
+      this.bumpConversationsVersion();
     } catch (e) {
       console.warn("[OctoSidepanelLayout] Failed to rename group:", e);
     }
@@ -1345,7 +1238,7 @@ export default class OctoSidepanelLayout extends Component<
           members: [],
         });
         await WKSDK.shared().conversationManager.sync({});
-        await this.loadChannelPickerData();
+        this.bumpConversationsVersion();
       }
     );
   };
@@ -2025,14 +1918,51 @@ export default class OctoSidepanelLayout extends Component<
   }
 
   private getRailItems(): {
-    visible: ChannelPickerItem[];
+    visible: RailItem[];
     hiddenCount: number;
   } {
-    const { channels, privateChats, pinnedIds } = this.state;
-    const all = [...channels, ...privateChats];
+    const { pinnedIds } = this.state;
+    const conversations = this.getConversations();
 
-    const visible = all.filter((t) => pinnedIds.has(t.channelId));
-    const hiddenCount = all.length - visible.length;
+    const items: RailItem[] = conversations.map((conv) => {
+      const info = WKSDK.shared().channelManager.getChannelInfo(conv.channel);
+      const name =
+        info?.orgData?.displayName || info?.title || conv.channel.channelID;
+      const parentGroupNo = info?.orgData?.parentGroupNo as string | undefined;
+      const parentInfo = parentGroupNo
+        ? WKSDK.shared().channelManager.getChannelInfo(
+            new Channel(parentGroupNo, ChannelTypeGroup)
+          )
+        : undefined;
+      const muted = Boolean(info?.mute || parentInfo?.mute);
+      const mentionCount =
+        conv.conversation.reminders?.filter((r: any) => !r.done).length ?? 0;
+      const spaceId = WKApp.shared.currentSpaceId;
+      let unread = 0;
+      if (
+        spaceId &&
+        conv.channel.channelType === ChannelTypePerson &&
+        (conv.conversation as any).extra?.spaceUnread !== undefined
+      ) {
+        unread = Math.max(
+          0,
+          Number((conv.conversation as any).extra.spaceUnread || 0)
+        );
+      } else {
+        unread = Math.max(0, Number(conv.unread || 0));
+      }
+      return {
+        channelId: conv.channel.channelID,
+        channelType: conv.channel.channelType,
+        name,
+        unread,
+        mentionCount,
+        muted,
+      };
+    });
+
+    const visible = items.filter((t) => pinnedIds.has(t.channelId));
+    const hiddenCount = items.length - visible.length;
 
     return { visible, hiddenCount };
   }
@@ -2213,7 +2143,7 @@ export default class OctoSidepanelLayout extends Component<
                 <div className="octo-settings-seg">
                   {[
                     { id: "message" as const, label: "消息版" },
-                    { id: "cli" as const, label: "CLI" },
+                    { id: "cli" as const, label: "简化版" },
                   ].map((m) => (
                     <button
                       key={m.id}
@@ -2738,24 +2668,8 @@ export default class OctoSidepanelLayout extends Component<
       showPicker,
       members,
       memberLoading,
+      pickerFilter,
     } = this.state;
-    const pickerItemContextMenus = buildChannelPickerItemContextMenus({
-      categories: this.state.categories,
-      refresh: () => this.loadChannelPickerData(true),
-      confirm: (content, onOk) => this.confirmAction(content, onOk),
-      onOpenCreateCategory: () =>
-        this.setState({ showCreateCategoryModal: true }),
-      onConversationClosed: this.handlePickerConversationClosed,
-    });
-    const pickerCategoryContextMenus = buildChannelPickerCategoryContextMenus({
-      categories: this.state.categories,
-      refresh: () => this.loadChannelPickerData(true),
-      confirm: (content, onOk) => this.confirmAction(content, onOk),
-      onOpenCreateCategory: () =>
-        this.setState({ showCreateCategoryModal: true }),
-      onCreateGroupInCategory: this.handlePickerCreateGroupInCategory,
-      onShowMessage: showToast,
-    });
     const isPrivate = selectedChannel?.channelType === ChannelTypePerson;
     const memberCountText = memberLoading
       ? "..."
@@ -2934,24 +2848,46 @@ export default class OctoSidepanelLayout extends Component<
                 />
               )}
 
-              {/* Channel Picker Drawer — covers main area but not Rail */}
+              {/* Conversation List Drawer — covers main area but not Rail */}
               <div
                 className={`wk-sidepanel-picker-drawer${
                   showPicker ? " is-open" : ""
                 }`}
               >
-                <ChannelPicker
-                  channels={this.state.channels}
-                  categories={this.state.categories}
-                  privateChats={this.state.privateChats}
-                  selectedId={selectedChannel?.channelID}
-                  onSelect={this.handleChannelSelect}
-                  getItemContextMenus={pickerItemContextMenus}
-                  getCategoryContextMenus={pickerCategoryContextMenus}
-                  onClose={this.handlePickerClose}
-                  showSearch={false}
-                  loading={this.state.pickerLoading}
-                />
+                <div className="octo-picker-filter-tabs">
+                  {(
+                    [
+                      { id: "group", label: "群聊" },
+                      { id: "dm", label: "私聊" },
+                    ] as { id: ConvFilter; label: string }[]
+                  ).map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={`octo-picker-filter-tab${
+                        pickerFilter === t.id ? " is-active" : ""
+                      }`}
+                      onClick={() => this.setState({ pickerFilter: t.id })}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="octo-picker-list-wrap">
+                  <ChatConversationListComponent
+                    conversations={this.getConversations()}
+                    filter={pickerFilter}
+                    select={selectedChannel ?? undefined}
+                    onConversationClick={this.handleConversationClick}
+                    onClearMessages={this.handleListClearMessages}
+                    onThreadOverflowClick={this.handleThreadOverflow}
+                    onGroupCreated={() => {
+                      void WKSDK.shared().conversationManager.sync({});
+                      void this.loadCategoryNames();
+                      this.bumpConversationsVersion();
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Contacts Backdrop — dims the rail when contacts is open */}
@@ -2974,7 +2910,7 @@ export default class OctoSidepanelLayout extends Component<
         {/* Create Category Modal */}
         <CreateCategoryModalComponent
           visible={this.state.showCreateCategoryModal}
-          existingNames={this.state.categories.map((c) => c.name)}
+          existingNames={this.state.categoryNames}
           onConfirm={async (name: string) => {
             const spaceId = WKApp.shared.currentSpaceId;
             if (!spaceId) {
@@ -2983,8 +2919,8 @@ export default class OctoSidepanelLayout extends Component<
             }
             await CategoryService.create(spaceId, { name });
             this.setState({ showCreateCategoryModal: false });
-            // 刷新侧栏分组列表
-            this.loadChannelPickerData();
+            void this.loadCategoryNames();
+            this.bumpConversationsVersion();
           }}
           onCancel={() => this.setState({ showCreateCategoryModal: false })}
         />

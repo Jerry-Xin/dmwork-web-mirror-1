@@ -34,8 +34,18 @@ interface SidepanelLayoutState {
 
 function getFirstChar(name: string): string {
   if (!name) return '?';
-  const ch = name.charAt(0);
-  if (/[a-zA-Z0-9]/.test(ch)) return ch.toUpperCase();
+  let ch: string;
+  if (typeof (Intl as any)?.Segmenter === 'function') {
+    const segmenter = new (Intl as any).Segmenter(undefined, {
+      granularity: 'grapheme',
+    });
+    const first = segmenter.segment(name)[Symbol.iterator]().next();
+    ch = first.done ? '' : first.value.segment;
+  } else {
+    ch = Array.from(name)[0] ?? '';
+  }
+  if (!ch) return '?';
+  if (/^[a-zA-Z0-9]$/.test(ch)) return ch.toUpperCase();
   return ch;
 }
 

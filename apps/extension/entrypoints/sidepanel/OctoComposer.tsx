@@ -47,6 +47,9 @@ function stripInvisibleChars(text: string): string {
   return text.replace(INVISIBLE_CHARS_RE, "");
 }
 
+let persistentEditorJSON: any = null;
+let persistentPlainText: string = "";
+
 function extractMentionsFromEditor(editor: any): string {
   const json = editor.getJSON();
   let result = "";
@@ -55,7 +58,11 @@ function extractMentionsFromEditor(editor: any): string {
     if (node.type === "text") {
       result += node.text;
     } else if (node.type === "mention") {
-      result += `@[${node.attrs.id}:${node.attrs.label}]`;
+      if (node.attrs.invalid) {
+        result += `@${node.attrs.label}`;
+      } else {
+        result += `@[${node.attrs.id}:${node.attrs.label}]`;
+      }
     } else if (node.type === "hardBreak") {
       result += "\n";
     } else if (node.content) {
@@ -253,7 +260,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
   const editorHandleKeyDownRef = useRef<
     ((view: any, event: KeyboardEvent) => boolean) | null
   >(null);
-  const [plainText, setPlainText] = useState("");
+  const [plainText, setPlainText] = useState(persistentPlainText);
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
   const [members, setMembers] = useState<Subscriber[]>([]);
   const membersRef = useRef<Subscriber[]>([]);
@@ -347,7 +354,22 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
         codeBlock: false,
         strike: false,
       }),
-      TiptapMention.configure({
+      TiptapMention.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            invalid: {
+              default: false,
+              parseHTML: (el) =>
+                (el as HTMLElement).getAttribute("data-invalid") === "true",
+              renderHTML: (attrs: Record<string, any>) =>
+                attrs.invalid
+                  ? { class: "is-invalid", "data-invalid": "true" }
+                  : {},
+            },
+          };
+        },
+      }).configure({
         HTMLAttributes: {
           class: "mention",
         },
@@ -397,7 +419,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
         },
       }),
     ],
-    content: "",
+    content: persistentEditorJSON ?? "",
     editorProps: {
       attributes: {
         "data-placeholder": "输入消息…",
@@ -408,6 +430,8 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
     onUpdate: ({ editor: nextEditor }) => {
       const nextText = stripInvisibleChars(nextEditor.getText());
       setPlainText(nextText);
+      persistentPlainText = nextText;
+      persistentEditorJSON = nextEditor.getJSON();
 
       if (
         botCommands &&
@@ -483,6 +507,8 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
             editor.commands.clearContent();
           }
           setPlainText("");
+          persistentPlainText = "";
+          persistentEditorJSON = null;
           setEmojiOpen(false);
           return;
         }
@@ -514,6 +540,8 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
               editor.commands.clearContent();
             }
             setPlainText("");
+            persistentPlainText = "";
+            persistentEditorJSON = null;
             return;
           }
 
@@ -582,6 +610,8 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
           editor.commands.clearContent();
         }
         setPlainText("");
+        persistentPlainText = "";
+        persistentEditorJSON = null;
         setEmojiOpen(false);
       } finally {
         setSending(false);
@@ -714,6 +744,34 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
       WKSDK.shared().channelManager.removeSubscriberChangeListener(listener);
     };
   }, [syncMembers]);
+
+  useEffect(() => {
+    if (!editor) return;
+    const validUids = new Set<string>(members.map((m) => m.uid));
+    validUids.add("-1");
+    if (WKApp.loginInfo.uid) {
+      validUids.add(WKApp.loginInfo.uid);
+    }
+
+    const { doc } = editor.state;
+    const tr = editor.state.tr;
+    let mutated = false;
+    doc.descendants((node, pos) => {
+      if (node.type.name !== "mention") return;
+      const shouldBeInvalid = !validUids.has(node.attrs.id);
+      if (!!node.attrs.invalid !== shouldBeInvalid) {
+        tr.setNodeMarkup(pos, undefined, {
+          ...node.attrs,
+          invalid: shouldBeInvalid,
+        });
+        mutated = true;
+      }
+    });
+    if (mutated) {
+      tr.setMeta("addToHistory", false);
+      editor.view.dispatch(tr);
+    }
+  }, [editor, channel.channelID, channel.channelType, members]);
 
   useEffect(() => {
     if (!editor) return;

@@ -884,7 +884,6 @@ export default class OctoSidepanelLayout extends Component<
       WKSDK.shared().channelManager.fetchChannelInfo(channel);
     }
 
-    this.conversationContext = undefined;
     this.composerInputContext = undefined;
     this.setState({
       selectedChannel: channel,
@@ -2855,7 +2854,7 @@ export default class OctoSidepanelLayout extends Component<
                       </ErrorBoundaryComponent>
                       {this.conversationContext && (
                         <OctoComposer
-                          key={`composer-${selectedChannel.getChannelKey()}`}
+                          key="octo-composer"
                           channel={selectedChannel}
                           conversationContext={this.conversationContext}
                           contextClassName="sidepanel"

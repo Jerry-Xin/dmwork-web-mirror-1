@@ -417,6 +417,12 @@ body.octo-sidepanel-v3 .octo-composer-editor .mention {
   padding: 0 2px;
 }
 
+body.octo-sidepanel-v3 .octo-composer-editor .mention.is-invalid {
+  color: var(--wk-ink-50);
+  font-weight: normal;
+  text-decoration: line-through;
+}
+
 body.octo-sidepanel-v3
   .octo-composer-editor
   .ProseMirror

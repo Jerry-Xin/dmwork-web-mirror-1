@@ -120,10 +120,13 @@ export function formatMentionTextV2(text: string): {
     result += text.slice(cursor, match.index);
 
     // 计算当前 @ 符号的实际位置
+    // membersRef 在 MessageInput render 时才会被赋值。sidepanel 下 hideMessageInput=true
+    // 不渲染 MessageInput，OctoComposer 直接调本函数时 membersRef 仍是 undefined，
+    // 必须多加一层可选链，否则发消息时炸 "Cannot read properties of undefined (reading 'current')"
     const atName =
       uid === "-1"
         ? "@所有人"
-        : membersRef.current?.find((m) => m.uid === uid)?.name
+        : membersRef?.current?.find((m) => m.uid === uid)?.name
         ? `@${membersRef.current.find((m) => m.uid === uid)!.name}`
         : `@${name}`;
     const offset = result.length;

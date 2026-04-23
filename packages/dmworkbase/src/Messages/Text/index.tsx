@@ -16,7 +16,9 @@ import "./index.css"
 
 
 // 文本消息
+// channelInfo 订阅逻辑已上移至 MessageCell base class，此处无需重复处理
 export class TextCell extends MessageCell {
+
     constructor(props: any) {
         super(props)
     }

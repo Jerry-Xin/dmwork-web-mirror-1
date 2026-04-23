@@ -1,5 +1,4 @@
 import WKModal from "../../Components/WKModal"
-import { ChannelInfoListener } from "wukongimjssdk"
 import { Channel, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageContent } from "wukongimjssdk"
 import React from "react"
 import MergeforwardMessageList from "../../Components/MergeforwardMessageList"
@@ -101,7 +100,6 @@ export default class MergeforwardContent extends MessageContent {
 }
 
 export class MergeforwardCell extends MessageCell<any,MergeforwardCellState> {
-    channelInfoListener!:ChannelInfoListener
 
     constructor(props:any) {
         super(props)
@@ -147,13 +145,10 @@ export class MergeforwardCell extends MessageCell<any,MergeforwardCellState> {
     }
 
     componentDidMount() {
-        this.channelInfoListener = ()=>{
-            this.setState({})
-        }
-        WKSDK.shared().channelManager.addListener(this.channelInfoListener)
+        super.componentDidMount()
     }
     componentWillUnmount() {
-        WKSDK.shared().channelManager.removeListener(this.channelInfoListener)
+        super.componentWillUnmount()
     }
 
     render() {

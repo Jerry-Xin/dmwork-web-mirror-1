@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import WKSDK, { Channel, ChannelTypePerson } from 'wukongimjssdk'
+import { useCallback, useEffect, useState } from 'react'
+import WKSDK, { Channel, ChannelInfo, ChannelInfoListener, ChannelTypePerson } from 'wukongimjssdk'
 import WKApp from '../../App'
 import { MessageWrap } from '../../Service/Model'
 import { MessageContentTypeConst } from '../../Service/Const'
@@ -16,7 +16,15 @@ export interface MessageRowSelectionState {
 }
 
 /**
- * getMessageRow - 纯函数版本
+ * 从 channelInfo 取优先级最高的展示名
+ * 优先级：备注名(displayName) > title > uid
+ */
+function getSenderName(channelInfo: ChannelInfo | undefined, fromUID: string): string {
+  return channelInfo?.orgData?.displayName || channelInfo?.title || fromUID
+}
+
+/**
+ * getMessageRow - 纯函数版本（不含异步/监听逻辑）
  *
  * @description 从 MessageWrap 提取 MessageRow 组件需要的 UI 数据（不使用 hooks）
  *
@@ -51,7 +59,7 @@ export function getMessageRow(
     showCheckbox: selection?.showCheckbox ?? false,
     showAvatar: !isContinue,
     avatarUrl: WKApp.shared.avatarUser(message.fromUID),
-    senderName: channelInfo?.title || message.fromUID,
+    senderName: getSenderName(channelInfo, message.fromUID),
     timestamp,
     timeOnly,
     isOnline: channelInfo?.online,
@@ -62,13 +70,50 @@ export function getMessageRow(
 /**
  * useMessageRow Hook
  *
- * @description 从 MessageWrap 提取 MessageRow 组件需要的 UI 数据
+ * @description 从 MessageWrap 提取 MessageRow 组件需要的 UI 数据。
+ *
+ * 修复「发送者名称显示为 uid」问题：
+ * - channelInfo 未缓存时，触发 fetchChannelInfo 异步拉取
+ * - 注册 channelInfoListener，拉到结果后重新渲染（对齐 Base/index.tsx 的做法）
+ * - senderName 优先取 displayName（备注名），其次 title，最后降级为 uid
  *
  * @param message - 业务消息对象
  * @returns MessageRow 组件的 Props
  */
-export function useMessageRow(message: MessageWrap): Omit<MessageRowUIProps, 'children'> {
-  return useMemo(() => getMessageRow(message), [message])
+export function useMessageRow(
+  message: MessageWrap,
+  selection?: MessageRowSelectionState
+): Omit<MessageRowUIProps, 'children'> {
+  // 用 tick 来触发重渲染（channelInfo 更新后）
+  const [, setTick] = useState(0)
+  const forceUpdate = useCallback(() => setTick(t => t + 1), [])
+
+  useEffect(() => {
+    const fromUID = message.fromUID
+    if (!fromUID) return
+
+    const channel = new Channel(fromUID, ChannelTypePerson)
+
+    // 没有缓存时发起请求
+    const cached = WKSDK.shared().channelManager.getChannelInfo(channel)
+    if (!cached) {
+      WKSDK.shared().channelManager.fetchChannelInfo(channel)
+    }
+
+    // 监听 channelInfo 更新，当对应 sender 的信息到达时重渲染
+    const listener: ChannelInfoListener = (channelInfo: ChannelInfo) => {
+      if (channelInfo?.channel?.channelID === fromUID) {
+        forceUpdate()
+      }
+    }
+    WKSDK.shared().channelManager.addListener(listener)
+
+    return () => {
+      WKSDK.shared().channelManager.removeListener(listener)
+    }
+  }, [message.fromUID, forceUpdate])
+
+  return getMessageRow(message, selection)
 }
 
 /**

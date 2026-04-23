@@ -69,6 +69,7 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
     }
 
     componentDidMount() {
+        super.componentDidMount()
         const { message } = this.props
         // 小文件（<1MB）不显示进度，跳过订阅
         const fileSize = (message.content as any).file?.size ?? 0
@@ -83,6 +84,7 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
     }
 
     componentWillUnmount() {
+        super.componentWillUnmount()
         WKSDK.shared().taskManager.removeListener(this._taskListener)
     }
 

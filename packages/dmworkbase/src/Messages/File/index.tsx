@@ -207,6 +207,7 @@ export class FileCell extends MessageCell<any, FileCellState> {
     }
 
     componentDidMount() {
+        super.componentDidMount()
         const { message } = this.props
         const content = message.content as FileContent
         // 小文件不显示进度，跳过订阅
@@ -224,6 +225,7 @@ export class FileCell extends MessageCell<any, FileCellState> {
     }
 
     componentWillUnmount() {
+        super.componentWillUnmount()
         WKSDK.shared().taskManager.removeListener(this._taskListener)
     }
 

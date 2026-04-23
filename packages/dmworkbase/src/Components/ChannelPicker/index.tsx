@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { ChannelPickerProps, ChannelPickerItem } from "./types";
 import ChannelItem from "./ChannelItem";
@@ -83,6 +83,10 @@ export default function ChannelPicker({
     Set<string>
   >(new Set());
   const isSinglePanel = layoutMode === "single-panel";
+  // 键盘导航高亮索引（-1 表示无高亮，只走鼠标）
+  const [keyboardIndex, setKeyboardIndex] = useState(-1);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // 统计未读数
   const groupUnread = useMemo(
@@ -121,6 +125,77 @@ export default function ChannelPicker({
     if (!lowerQuery) return [];
     return [...filteredChannels, ...filteredPrivateChats];
   }, [filteredChannels, filteredPrivateChats, lowerQuery]);
+
+  // 键盘可聚焦的扁平列表：按当前 tab / 单面板 / 查询状态决定
+  // 分类折叠和子区折叠此版本暂不参与键盘导航，鼠标仍可用
+  const flatNavItems = useMemo<ChannelPickerItem[]>(() => {
+    if (loading) return [];
+    if (isSinglePanel) {
+      if (lowerQuery) return filteredAllItems;
+      return [...filteredChannels, ...filteredPrivateChats];
+    }
+    return activeTab === "group" ? filteredChannels : filteredPrivateChats;
+  }, [
+    loading,
+    isSinglePanel,
+    lowerQuery,
+    filteredAllItems,
+    filteredChannels,
+    filteredPrivateChats,
+    activeTab,
+  ]);
+
+  // 列表内容变化（搜索、切 tab）时重置键盘高亮
+  useEffect(() => {
+    setKeyboardIndex(-1);
+  }, [flatNavItems]);
+
+  // 高亮项滚动到可视区域
+  useEffect(() => {
+    if (keyboardIndex < 0) return;
+    const el = itemRefs.current[keyboardIndex];
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ block: "nearest" });
+    }
+  }, [keyboardIndex]);
+
+  const handleListKeyDown = (e: React.KeyboardEvent) => {
+    if (flatNavItems.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setKeyboardIndex((idx) =>
+        idx < 0 ? 0 : Math.min(idx + 1, flatNavItems.length - 1)
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setKeyboardIndex((idx) => (idx <= 0 ? 0 : idx - 1));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setKeyboardIndex(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setKeyboardIndex(flatNavItems.length - 1);
+    } else if (e.key === "Enter") {
+      if (keyboardIndex >= 0 && keyboardIndex < flatNavItems.length) {
+        e.preventDefault();
+        onSelect(flatNavItems[keyboardIndex]);
+      }
+    } else if (e.key === "Escape" && onClose) {
+      e.preventDefault();
+      onClose();
+    }
+  };
+
+  const getFlatNavIndex = (item: ChannelPickerItem): number => {
+    return flatNavItems.findIndex(
+      (candidate) =>
+        candidate.channelId === item.channelId &&
+        candidate.channelType === item.channelType
+    );
+  };
+
+  // 每次渲染把 refs 数组截断到 flat 长度，防止上一轮残留 ref 指到已卸载元素
+  itemRefs.current.length = flatNavItems.length;
 
   // 按分类组织频道 + 子区
   const categoryTree = useMemo(() => {
@@ -249,6 +324,15 @@ export default function ChannelPicker({
         <ChannelItem
           item={ch}
           isSelected={ch.channelId === selectedId}
+          isKeyboardActive={getFlatNavIndex(ch) === keyboardIndex}
+          optionId={(() => {
+            const idx = getFlatNavIndex(ch);
+            return idx >= 0 ? `wk-channel-picker-option-${idx}` : undefined;
+          })()}
+          itemRef={(el) => {
+            const idx = getFlatNavIndex(ch);
+            if (idx >= 0) itemRefs.current[idx] = el;
+          }}
           level={0}
           onClick={() => onSelect(ch)}
           onContextMenu={handleItemContextMenu(ch)}
@@ -258,6 +342,15 @@ export default function ChannelPicker({
             key={t.channelId}
             item={t}
             isSelected={t.channelId === selectedId}
+            isKeyboardActive={getFlatNavIndex(t) === keyboardIndex}
+            optionId={(() => {
+              const idx = getFlatNavIndex(t);
+              return idx >= 0 ? `wk-channel-picker-option-${idx}` : undefined;
+            })()}
+            itemRef={(el) => {
+              const idx = getFlatNavIndex(t);
+              if (idx >= 0) itemRefs.current[idx] = el;
+            }}
             level={1}
             onClick={() => onSelect(t)}
             onContextMenu={handleItemContextMenu(t)}
@@ -351,6 +444,15 @@ export default function ChannelPicker({
         key={item.channelId}
         item={item}
         isSelected={item.channelId === selectedId}
+        isKeyboardActive={getFlatNavIndex(item) === keyboardIndex}
+        optionId={(() => {
+          const idx = getFlatNavIndex(item);
+          return idx >= 0 ? `wk-channel-picker-option-${idx}` : undefined;
+        })()}
+        itemRef={(el) => {
+          const idx = getFlatNavIndex(item);
+          if (idx >= 0) itemRefs.current[idx] = el;
+        }}
         isPrivate
         onClick={() => onSelect(item)}
         onContextMenu={handleItemContextMenu(item)}
@@ -369,6 +471,15 @@ export default function ChannelPicker({
           key={`${item.channelType}:${item.channelId}`}
           item={item}
           isSelected={item.channelId === selectedId}
+          isKeyboardActive={getFlatNavIndex(item) === keyboardIndex}
+          optionId={(() => {
+            const idx = getFlatNavIndex(item);
+            return idx >= 0 ? `wk-channel-picker-option-${idx}` : undefined;
+          })()}
+          itemRef={(el) => {
+            const idx = getFlatNavIndex(item);
+            if (idx >= 0) itemRefs.current[idx] = el;
+          }}
           isPrivate={item.channelType === 1}
           onClick={() => onSelect(item)}
           onContextMenu={handleItemContextMenu(item)}
@@ -412,6 +523,14 @@ export default function ChannelPicker({
               placeholder="搜索 Channel / Thread / 联系人"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleListKeyDown}
+              aria-label="搜索频道、子区或联系人"
+              aria-controls="wk-channel-picker-listbox"
+              aria-activedescendant={
+                keyboardIndex >= 0
+                  ? `wk-channel-picker-option-${keyboardIndex}`
+                  : undefined
+              }
               autoFocus
             />
           </div>
@@ -469,7 +588,21 @@ export default function ChannelPicker({
       )}
 
       {/* 列表区 */}
-      <div className="wk-channel-picker-list">
+      <div
+        id="wk-channel-picker-listbox"
+        className="wk-channel-picker-list"
+        ref={listRef}
+        role="listbox"
+        aria-label={
+          isSinglePanel
+            ? "所有会话"
+            : activeTab === "group"
+            ? "群聊列表"
+            : "私聊列表"
+        }
+        tabIndex={-1}
+        onKeyDown={handleListKeyDown}
+      >
         {loading ? (
           <div className="wk-channel-picker-loading">加载中…</div>
         ) : isSinglePanel ? (

@@ -10,8 +10,14 @@ interface ChannelItemProps {
   level?: number;
   /** 是否为私聊模式 */
   isPrivate?: boolean;
+  /** 键盘导航当前高亮项（与已选中 isSelected 独立） */
+  isKeyboardActive?: boolean;
+  /** aria-activedescendant 指向的 DOM id */
+  optionId?: string;
   onClick: () => void;
   onContextMenu?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  /** 交给父级聚焦用 */
+  itemRef?: (el: HTMLButtonElement | null) => void;
 }
 
 /** 格式化时间为相对描述 */
@@ -34,22 +40,44 @@ export default function ChannelItem({
   isSelected,
   level = 0,
   isPrivate = false,
+  isKeyboardActive = false,
+  optionId,
   onClick,
   onContextMenu,
+  itemRef,
 }: ChannelItemProps) {
   const avatarBackground = getTitleColor(item.name);
   const cls = [
     'wk-channel-picker-item',
     `wk-channel-picker-level-${level}`,
     isSelected && 'is-current',
+    isKeyboardActive && 'is-keyboard-active',
     item.muted && 'is-muted',
     isPrivate && 'wk-channel-picker-pm',
   ]
     .filter(Boolean)
     .join(' ');
 
+  const ariaLabelParts = [
+    isPrivate ? '私聊' : item.channelType === 5 ? '子区' : '频道',
+    item.name,
+  ];
+  if (item.mentionCount > 0) ariaLabelParts.push(`${item.mentionCount} 条提及`);
+  else if (item.unread > 0) ariaLabelParts.push(`${item.unread} 条未读`);
+  if (item.muted) ariaLabelParts.push('已静音');
+
   return (
-    <button className={cls} onClick={onClick} onContextMenu={onContextMenu}>
+    <button
+      ref={itemRef}
+      id={optionId}
+      className={cls}
+      role="option"
+      aria-selected={isSelected}
+      aria-label={ariaLabelParts.join('，')}
+      tabIndex={isKeyboardActive ? 0 : -1}
+      onClick={onClick}
+      onContextMenu={onContextMenu}
+    >
       {/* 图标 / 头像 */}
       <span className="wk-channel-picker-icon">
         {isPrivate ? (

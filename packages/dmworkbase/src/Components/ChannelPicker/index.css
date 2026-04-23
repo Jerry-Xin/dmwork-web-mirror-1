@@ -235,6 +235,13 @@
   color: var(--wk-text-accent, #7c5cfc);
 }
 
+/* 键盘导航高亮（与鼠标 hover 区分，提供可见焦点环） */
+.wk-channel-picker-item.is-keyboard-active {
+  outline: 2px solid var(--wk-text-accent, #7c5cfc);
+  outline-offset: -2px;
+  background: var(--wk-bg-hover, #eaebf0);
+}
+
 .wk-channel-picker-item.is-muted {
   opacity: 0.55;
 }

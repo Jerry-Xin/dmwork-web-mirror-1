@@ -19,6 +19,9 @@ export default function CmdKOverlay() {
   const [panelOpen, setPanelOpen] = useState(false);
   const iframeUiRef = useRef<InjectedPanelFrame | null>(null);
   const prevOverflowRef = useRef('');
+  // 暂存 openPanel 时的 context，等 iframe 内 React 发来 CMDK_READY 再投递，
+  // 避免 iframe load 事件早于 CmdKApp useEffect 注册 listener 导致消息丢失
+  const pendingContextRef = useRef<PanelContext | null>(null);
 
   useEffect(() => {
     const onMouseUp = () => {
@@ -124,11 +127,9 @@ export default function CmdKOverlay() {
     iframe.style.opacity = '1';
     iframe.allow = 'clipboard-read; clipboard-write';
 
-    iframe.addEventListener('load', () => {
-      // 目标 origin 收紧为扩展自身 origin，避免伪造 iframe 劫持 context 数据
-      const extensionOrigin = new URL(browser.runtime.getURL('cmdk.html')).origin;
-      iframe.contentWindow?.postMessage({ type: 'CMDK_OPEN', context: panelContext }, extensionOrigin);
-    }, { once: true });
+    // 由 CMDK_READY 握手触发 CMDK_OPEN 投递（见 onMessage 中的处理），
+    // 不再用 iframe load 事件 — load 早于 iframe 内 React useEffect 注册 listener
+    pendingContextRef.current = panelContext;
 
     wrapper.append(iframe);
     shadowRoot.append(wrapper);
@@ -142,6 +143,7 @@ export default function CmdKOverlay() {
       iframeUiRef.current.host.remove();
       iframeUiRef.current = null;
     }
+    pendingContextRef.current = null;
     document.body.style.overflow = prevOverflowRef.current;
     setPanelOpen(false);
   }, []);
@@ -154,14 +156,23 @@ export default function CmdKOverlay() {
     document.body.style.overflow = prevOverflowRef.current;
   }, []);
 
-  // Listen for close from iframe
+  // Listen for messages from iframe (READY handshake + close)
   useEffect(() => {
     const extensionOrigin = new URL(browser.runtime.getURL('cmdk.html')).origin;
     const onMessage = (e: MessageEvent) => {
-      // 只信任来自扩展 origin 且源自我们 iframe 的 CMDK_CLOSE 消息
+      // 只信任来自扩展 origin 且源自我们 iframe 的消息
       if (e.origin !== extensionOrigin) return;
       if (e.source !== iframeUiRef.current?.iframe.contentWindow) return;
-      if (e.data?.type === 'CMDK_CLOSE') {
+      if (e.data?.type === 'CMDK_READY') {
+        const ctx = pendingContextRef.current;
+        if (ctx) {
+          iframeUiRef.current.iframe.contentWindow?.postMessage(
+            { type: 'CMDK_OPEN', context: ctx },
+            extensionOrigin,
+          );
+          pendingContextRef.current = null;
+        }
+      } else if (e.data?.type === 'CMDK_CLOSE') {
         closePanel();
       }
     };

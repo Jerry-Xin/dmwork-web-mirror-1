@@ -238,6 +238,13 @@ export default function CmdKApp() {
       }
     };
     window.addEventListener("message", onMessage);
+    // 先注册 listener 再告知 parent 已就绪，parent 收到 CMDK_READY 后才会发 CMDK_OPEN，
+    // 彻底避免 iframe load 事件早于本 useEffect 导致 OPEN 消息丢失
+    try {
+      window.parent.postMessage({ type: "CMDK_READY" }, "*");
+    } catch {
+      /* parent 不可达时忽略，Cmd+K 面板本就是 parent 注入的 */
+    }
     return () => window.removeEventListener("message", onMessage);
   }, []);
 

@@ -7,7 +7,7 @@ import ChatConversationList from "../../Components/ChatConversationList";
 import Provider from "../../Service/Provider";
 import { ErrorBoundary } from "../../Components/ErrorBoundary";
 
-import { Spin, Popover, Modal, Toast } from "@douyinfe/semi-ui";
+import { Spin, Popover } from "@douyinfe/semi-ui";
 import WKButton from "../../Components/WKButton";
 import WKModal from "../../Components/WKModal";
 import { Columns2 } from "lucide-react";
@@ -44,7 +44,6 @@ export interface ChatContentPageState {
   selectedCount: number;
   showThreadPanel: boolean;
   activeThread: Thread | null;
-  showThreadDropdown: boolean;
 }
 export class ChatContentPage extends Component<
   ChatContentPageProps,
@@ -62,7 +61,6 @@ export class ChatContentPage extends Component<
       selectedCount: 0,
       showThreadPanel: false,
       activeThread: null,
-      showThreadDropdown: false,
     };
   }
 
@@ -161,7 +159,7 @@ export class ChatContentPage extends Component<
 
   render(): React.ReactNode {
     const { channel, initLocateMessageSeq } = this.props;
-    const { showChannelSetting, selectionMode, selectedCount, showThreadPanel, activeThread, showThreadDropdown } = this.state;
+    const { showChannelSetting, selectionMode, selectedCount, showThreadPanel, activeThread } = this.state;
     // 子区页面不显示讨论串按钮
     const isThreadChannel = channel.channelType === ChannelTypeCommunityTopic;
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
@@ -191,6 +189,15 @@ export class ChatContentPage extends Component<
             )}
             onClick={() => {
               if (selectionMode) {
+                return;
+              }
+              // 群聊：点击 header 打开子区列表
+              if (!isThreadChannel && channel.channelType === ChannelTypeGroup && WKApp.remoteConfig.threadOn) {
+                this.setState({
+                  showThreadPanel: !this.state.showThreadPanel,
+                  activeThread: null,
+                  showChannelSetting: false,
+                });
                 return;
               }
               this.setState({
@@ -289,102 +296,36 @@ export class ChatContentPage extends Component<
                           <div
                             key={i}
                             className="wk-chat-conversation-header-right-item"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             {item}
                           </div>
                         );
                       })}
-                    {/* 子区按钮 - 下拉菜单（新建子区 / 查看全部子区） */}
+                    {/* 子区按钮 - 直接打开子区列表 */}
                     {!isThreadChannel && channel.channelType === ChannelTypeGroup && WKApp.remoteConfig.threadOn && (
-                      <Popover
-                        visible={showThreadDropdown}
-                        onVisibleChange={(v) => this.setState({ showThreadDropdown: v })}
-                        trigger="click"
-                        position="bottomRight"
-                        showArrow={false}
-                        content={
-                          <div className="wk-thread-dropdown">
-                            <div
-                              className="wk-thread-dropdown-item"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                this.setState({ showThreadDropdown: false })
-                                const groupNo = channel.channelID
-                                let threadName = ""
-                                Modal.confirm({
-                                  title: "新建子区",
-                                  icon: null,
-                                  okText: "创建",
-                                  cancelText: "取消",
-                                  content: (
-                                    <div>
-                                      <div style={{ marginBottom: "8px", fontSize: "14px", color: "var(--wk-text-secondary)" }}>
-                                        话题名称
-                                      </div>
-                                      <input
-                                        type="text"
-                                        placeholder="输入讨论话题..."
-                                        style={{
-                                          width: "100%",
-                                          padding: "10px 12px",
-                                          background: "var(--wk-bg-base)",
-                                          border: "1px solid var(--wk-border-default)",
-                                          borderRadius: "6px",
-                                          fontSize: "14px",
-                                          color: "var(--wk-text-primary)",
-                                          outline: "none",
-                                          boxSizing: "border-box" as const,
-                                        }}
-                                        onChange={(ev) => { threadName = ev.target.value }}
-                                        autoFocus
-                                      />
-                                    </div>
-                                  ),
-                                  onOk: async () => {
-                                    if (!threadName || threadName.trim() === "") {
-                                      Toast.error("话题名称不能为空")
-                                      return
-                                    }
-                                    try {
-                                      await WKApp.dataSource.channelDataSource.threadCreate(groupNo, threadName.trim())
-                                      Toast.success("子区创建成功")
-                                    } catch (err) {
-                                      const msg = err instanceof Error ? err.message : "创建失败"
-                                      Toast.error(msg)
-                                    }
-                                  },
-                                })
-                              }}
-                            >
-                              新建子区
-                            </div>
-                            <div
-                              className="wk-thread-dropdown-item"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                this.setState({
-                                  showThreadDropdown: false,
-                                  showThreadPanel: true,
-                                  activeThread: null,
-                                  showChannelSetting: false,
-                                });
-                              }}
-                            >
-                              查看全部子区
-                            </div>
-                          </div>
-                        }
+                      <div
+                        className="wk-chat-conversation-header-right-item"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          this.setState({
+                            showThreadPanel: true,
+                            activeThread: null,
+                            showChannelSetting: false,
+                          })
+                        }}
+                        title="子区"
                       >
-                        <div
-                          className="wk-chat-conversation-header-right-item"
-                          onClick={(e) => e.stopPropagation()}
-                          title="子区"
-                        >
-                          <ThreadIcon size={20} color="currentColor" />
-                        </div>
-                      </Popover>
+                        <ThreadIcon size={20} color="currentColor" />
+                      </div>
                     )}
-                    <div className="wk-chat-conversation-header-right-item">
+                    <div
+                      className="wk-chat-conversation-header-right-item"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        this.setState({ showChannelSetting: !this.state.showChannelSetting, showThreadPanel: false })
+                      }}
+                    >
                       <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                         <path d="M4.66658 7.99998C4.66658 8.92045 3.92039 9.66665 2.99992 9.66665C2.07945 9.66665 1.33325 8.92045 1.33325 7.99998C1.33325 7.07951 2.07945 6.33331 2.99992 6.33331C3.92039 6.33331 4.66658 7.07951 4.66658 7.99998Z" />
                         <path d="M9.66659 7.99998C9.66659 8.92045 8.92039 9.66665 7.99992 9.66665C7.07945 9.66665 6.33325 8.92045 6.33325 7.99998C6.33325 7.07951 7.07945 6.33331 7.99992 6.33331C8.92039 6.33331 9.66659 7.07951 9.66659 7.99998Z" />

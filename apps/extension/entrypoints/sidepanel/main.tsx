@@ -118,6 +118,7 @@ const spaceCheckIntervalId = window.setInterval(() => {
 
 window.addEventListener('pagehide', () => {
   window.clearInterval(spaceCheckIntervalId);
+  stopPendingConversationRetry();
 });
 
 const originalLoginSave = WKApp.loginInfo.save.bind(WKApp.loginInfo);

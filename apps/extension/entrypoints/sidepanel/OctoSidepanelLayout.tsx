@@ -275,6 +275,7 @@ export default class OctoSidepanelLayout extends Component<
     document.removeEventListener("keydown", this.handleEscKey);
     document.removeEventListener("click", this.handleClickOutsideSettings);
     document.removeEventListener("click", this.handleImageClick);
+    WKApp.endpointManager.setMethod("showConversation", () => {}, {});
   }
 
   private syncSelectedConversationState() {
@@ -1026,20 +1027,7 @@ export default class OctoSidepanelLayout extends Component<
       const muted = Boolean(info?.mute || parentInfo?.mute);
       const mentionCount =
         conv.conversation.reminders?.filter((r: any) => !r.done).length ?? 0;
-      const spaceId = WKApp.shared.currentSpaceId;
-      let unread = 0;
-      if (
-        spaceId &&
-        conv.channel.channelType === ChannelTypePerson &&
-        (conv.conversation as any).extra?.spaceUnread !== undefined
-      ) {
-        unread = Math.max(
-          0,
-          Number((conv.conversation as any).extra.spaceUnread || 0)
-        );
-      } else {
-        unread = Math.max(0, Number(conv.unread || 0));
-      }
+      const unread = Math.max(0, Number(conv.unread || 0));
       return {
         channelId: conv.channel.channelID,
         channelType: conv.channel.channelType,

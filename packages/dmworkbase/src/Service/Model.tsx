@@ -54,8 +54,6 @@ export class ConversationWrap {
 
     public get unread() {
         const rawUnread = this.conversation.unread
-        if (rawUnread === 0) return 0
-
         const currentSpaceId = WKApp.shared.currentSpaceId
 
         // 后端 per-Space 未读计数：Person 频道优先使用 space_unread
@@ -64,6 +62,8 @@ export class ConversationWrap {
             && this.conversation.extra?.spaceUnread !== undefined) {
             return this.conversation.extra.spaceUnread
         }
+
+        if (rawUnread === 0) return 0
 
         // 系统 Bot（如 BotFather）在 Space 模式下清零未读
         if (currentSpaceId
@@ -76,8 +76,6 @@ export class ConversationWrap {
             }
         }
 
-        // If unread is 1 and the last message is a system/event message,
-        // don't show unread badge (fixes #165)
         if (rawUnread === 1 && this.isSystemMessage(this.conversation.lastMessage)) {
             return 0
         }

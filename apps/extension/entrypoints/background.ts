@@ -366,26 +366,6 @@ async function dispatchConversationOpen(notificationId: string): Promise<void> {
   }
 }
 
-async function requestConversationOpen(target: {
-  channelId: string;
-  channelType: number;
-}, windowId?: number): Promise<void> {
-  await setPendingConversation(target);
-  const targetWindowId = windowId ?? (await focusChromeWindow());
-  if (targetWindowId) {
-    await browser.windows.update(targetWindowId, { focused: true });
-    await openSidePanel(targetWindowId);
-  }
-
-  try {
-    await browser.runtime.sendMessage({
-      type: EXTENSION_MESSAGE_TYPE.openConversation,
-      target,
-    } satisfies ExtensionRuntimeMessage);
-  } catch (error) {
-    console.debug("[Extension] Sidepanel is not ready yet, pending target kept.", error);
-  }
-}
 
 async function handleRuntimeMessage(
   message: ExtensionRuntimeMessage,

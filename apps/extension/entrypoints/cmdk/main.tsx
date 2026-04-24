@@ -110,8 +110,12 @@ function LoggedOutNotice() {
 }
 
 void ensureAuth().then((authed) => {
-  WKApp.shared.startup();
   const container = document.getElementById('root')!;
   const root = createRoot(container);
-  root.render(authed ? <CmdKApp /> : <LoggedOutNotice />);
+  if (authed) {
+    WKApp.shared.startup();
+    root.render(<CmdKApp />);
+  } else {
+    root.render(<LoggedOutNotice />);
+  }
 });

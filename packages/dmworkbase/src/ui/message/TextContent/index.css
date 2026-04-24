@@ -11,12 +11,12 @@
 }
 
 /**
- * 大表情（160×160）
+ * 大表情（230×230）
  */
 .wk-msg-text-large-emoji {
   display: block;
-  width: 160px;
-  height: 160px;
+  width: 230px;
+  height: 230px;
 }
 
 .wk-msg-text-large-emoji img {

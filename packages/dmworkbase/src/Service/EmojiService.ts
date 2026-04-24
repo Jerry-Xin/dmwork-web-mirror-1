@@ -20,6 +20,7 @@ export class DefaultEmojiService implements EmojiService {
     }
     public static shared = new DefaultEmojiService()
     emojiMap = new Map<string, string>([
+        ["[使命必达]", "custom_mission"],
         ["[崇尚行动]", "custom_action"],
         ["[有品位]", "custom_taste"],
         ["😀", "0_0"],

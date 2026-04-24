@@ -17,7 +17,7 @@ import ChatConversationList from "@dmwork/base/src/Components/ChatConversationLi
 import type { ConvFilter } from "@dmwork/base/src/Components/ConversationList";
 import { ConversationWrap } from "@dmwork/base/src/Service/Model";
 import CategoryService from "@dmwork/base/src/Service/CategoryService";
-import PinnedService from "@dmwork/base/src/Service/PinnedService";
+import PinnedService, { type PinnedItem } from "@dmwork/base/src/Service/PinnedService";
 import { extractErrorMsg } from "@dmwork/base/src/Service/APIClient";
 import {
   WKApp,
@@ -88,6 +88,7 @@ interface OctoSidepanelLayoutState {
   conversationsVersion: number;
   categoryNames: string[];
   pinnedIds: Set<string>;
+  pinnedItems: PinnedItem[];
   memberLoading: boolean;
   members: DrawerMember[];
   theme: string;
@@ -146,6 +147,7 @@ export default class OctoSidepanelLayout extends Component<
       conversationsVersion: 0,
       categoryNames: [],
       pinnedIds: new Set<string>(),
+      pinnedItems: [],
       memberLoading: false,
       members: [],
       theme: "light",
@@ -491,6 +493,7 @@ export default class OctoSidepanelLayout extends Component<
       showInfoDrawer: false,
       members: [],
       pinnedIds: new Set<string>(),
+      pinnedItems: [],
     });
 
     try {
@@ -696,10 +699,15 @@ export default class OctoSidepanelLayout extends Component<
   private async loadPinnedList() {
     try {
       const list = await PinnedService.shared.list();
-      const pinnedIds = new Set<string>(
-        list.sort((a, b) => a.sort_order - b.sort_order).map((item) => item.channel_id)
-      );
-      this.setState({ pinnedIds });
+      const sorted = list.sort((a, b) => a.sort_order - b.sort_order);
+      const pinnedIds = new Set<string>(sorted.map((item) => item.channel_id));
+      this.setState({ pinnedIds, pinnedItems: sorted });
+      for (const item of sorted) {
+        const ch = new Channel(item.channel_id, item.channel_type);
+        if (!WKSDK.shared().channelManager.getChannelInfo(ch)) {
+          WKSDK.shared().channelManager.fetchChannelInfo(ch);
+        }
+      }
     } catch (err) {
       console.warn("[Extension] Failed to load pinned list:", err);
     }
@@ -713,14 +721,29 @@ export default class OctoSidepanelLayout extends Component<
         this.setState((prev) => {
           const next = new Set(prev.pinnedIds);
           next.delete(channelId);
-          return { pinnedIds: next };
+          return {
+            pinnedIds: next,
+            pinnedItems: prev.pinnedItems.filter((p) => p.channel_id !== channelId),
+          };
         });
       } else {
         await PinnedService.shared.add(channelId, channelType);
+        const ch = new Channel(channelId, channelType);
+        if (!WKSDK.shared().channelManager.getChannelInfo(ch)) {
+          WKSDK.shared().channelManager.fetchChannelInfo(ch);
+        }
         this.setState((prev) => {
           const next = new Set(prev.pinnedIds);
           next.add(channelId);
-          return { pinnedIds: next };
+          const newItem: PinnedItem = {
+            channel_id: channelId,
+            channel_type: channelType,
+            sort_order: prev.pinnedItems.length,
+          };
+          return {
+            pinnedIds: next,
+            pinnedItems: [...prev.pinnedItems, newItem],
+          };
         });
       }
     } catch (err) {
@@ -987,10 +1010,11 @@ export default class OctoSidepanelLayout extends Component<
     visible: RailItem[];
     hiddenCount: number;
   } {
-    const { pinnedIds } = this.state;
+    const { pinnedIds, pinnedItems } = this.state;
     const conversations = this.getConversations();
 
-    const items: RailItem[] = conversations.map((conv) => {
+    const convMap = new Map<string, RailItem>();
+    for (const conv of conversations) {
       const info = WKSDK.shared().channelManager.getChannelInfo(conv.channel);
       const name =
         info?.orgData?.displayName || info?.title || conv.channel.channelID;
@@ -1004,18 +1028,36 @@ export default class OctoSidepanelLayout extends Component<
       const mentionCount =
         conv.conversation.reminders?.filter((r: any) => !r.done).length ?? 0;
       const unread = Math.max(0, Number(conv.unread || 0));
-      return {
+      convMap.set(conv.channel.channelID, {
         channelId: conv.channel.channelID,
         channelType: conv.channel.channelType,
         name,
         unread,
         mentionCount,
         muted,
-      };
-    });
+      });
+    }
 
-    const visible = items.filter((t) => pinnedIds.has(t.channelId));
-    const hiddenCount = items.length;
+    const visible: RailItem[] = [];
+    for (const pinned of pinnedItems) {
+      const existing = convMap.get(pinned.channel_id);
+      if (existing) {
+        visible.push(existing);
+      } else {
+        const ch = new Channel(pinned.channel_id, pinned.channel_type);
+        const info = WKSDK.shared().channelManager.getChannelInfo(ch);
+        visible.push({
+          channelId: pinned.channel_id,
+          channelType: pinned.channel_type,
+          name: info?.orgData?.displayName || info?.title || pinned.channel_id,
+          unread: 0,
+          mentionCount: 0,
+          muted: false,
+        });
+      }
+    }
+
+    const hiddenCount = conversations.length;
 
     return { visible, hiddenCount };
   }

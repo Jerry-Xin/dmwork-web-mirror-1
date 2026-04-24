@@ -11,7 +11,6 @@ export interface NavBottomProps {
     spaces: Space[];
     currentSpaceId?: string;
     onSpaceSelect: (spaceId: string) => void;
-    onCopyInviteLink?: (spaceId: string, e: React.MouseEvent) => void;
     onJoinSpace?: () => void;
 }
 
@@ -29,7 +28,6 @@ export default function NavBottom({
     spaces,
     currentSpaceId,
     onSpaceSelect,
-    onCopyInviteLink,
     onJoinSpace,
 }: NavBottomProps) {
     return (
@@ -58,7 +56,6 @@ export default function NavBottom({
                 spaces={spaces}
                 currentSpaceId={currentSpaceId}
                 onSpaceSelect={onSpaceSelect}
-                onCopyInviteLink={onCopyInviteLink}
                 onJoinSpace={onJoinSpace}
             />
         </div>

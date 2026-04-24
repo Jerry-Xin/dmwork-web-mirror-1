@@ -89,31 +89,6 @@ export class MainPage extends Component<{}, MainPageState> {
         });
     };
 
-    handleCopyInviteLink = async (spaceId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        try {
-            const detail = await WKApp.apiClient.get(`/space/${spaceId}`);
-            if (!detail.invite_code) { Toast.warning("该 Space 暂无邀请码"); return; }
-            const link = `${window.location.origin}${window.location.pathname}?invite=${detail.invite_code}`;
-            let copied = false;
-            try {
-                await navigator.clipboard.writeText(link);
-                copied = true;
-            } catch {
-                const textarea = document.createElement("textarea");
-                textarea.value = link;
-                textarea.style.cssText = "position:fixed;opacity:0";
-                document.body.appendChild(textarea);
-                textarea.select();
-                copied = document.execCommand("copy");
-                document.body.removeChild(textarea);
-            }
-            copied ? Toast.success("邀请链接已复制") : Toast.error("复制失败，请手动复制");
-        } catch {
-            Toast.error("获取邀请码失败");
-        }
-    };
-
     handleAvatarClick = () => {
         const uid = WKApp.loginInfo.uid;
         WKApp.apiClient
@@ -150,7 +125,6 @@ export class MainPage extends Component<{}, MainPageState> {
                                     spaces={allSpaces}
                                     currentSpaceId={currentSpaceId}
                                     onSpaceSelect={this.handleSpaceSelected}
-                                    onCopyInviteLink={this.handleCopyInviteLink}
                                     onJoinSpace={() => this.setState({ showJoinSpace: true })}
                                     canManageSpace={canManageSpace}
                                     // 菜单

@@ -35,7 +35,6 @@ export interface NavRailVMProps {
     spaces: Space[];
     currentSpaceId?: string;
     onSpaceSelect: (spaceId: string) => void;
-    onCopyInviteLink?: (spaceId: string, e: React.MouseEvent) => void;
     onJoinSpace?: () => void;
     /** 是否在设置菜单中显示「空间管理」入口（仅 owner/admin 可见） */
     canManageSpace?: boolean;
@@ -67,7 +66,6 @@ export default class NavRail extends Component<NavRailProps> {
             spaces,
             currentSpaceId,
             onSpaceSelect,
-            onCopyInviteLink,
             onJoinSpace,
             canManageSpace = false,
         } = this.props;
@@ -116,7 +114,6 @@ export default class NavRail extends Component<NavRailProps> {
                         spaces={spaces}
                         currentSpaceId={currentSpaceId}
                         onSpaceSelect={onSpaceSelect}
-                        onCopyInviteLink={onCopyInviteLink}
                         onJoinSpace={onJoinSpace}
                     />
                 </nav>

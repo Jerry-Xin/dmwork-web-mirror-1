@@ -33,7 +33,7 @@ interface OctoInfoDrawerProps {
   members: DrawerMember[];
   memberLoading: boolean;
   pinned: boolean;
-  onTogglePin: (channelId: string) => void;
+  onTogglePin: (channelId: string, channelType: number) => void;
   onRename: () => void | Promise<void>;
   onClear: () => void | Promise<void>;
   onLeave: () => void | Promise<void>;
@@ -255,7 +255,7 @@ const OctoInfoDrawer: React.FC<OctoInfoDrawerProps> = ({
 
         <button
           className={`octo-sidepanel-gi-toggle${pinned ? " is-on" : ""}`}
-          onClick={() => onTogglePin(selectedChannel.channelID)}
+          onClick={() => onTogglePin(selectedChannel.channelID, selectedChannel.channelType)}
           type="button"
         >
           <span className="octo-sidepanel-gi-toggle-icon">

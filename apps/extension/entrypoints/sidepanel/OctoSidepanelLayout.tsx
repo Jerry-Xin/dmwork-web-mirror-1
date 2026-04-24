@@ -17,6 +17,8 @@ import ChatConversationList from "@dmwork/base/src/Components/ChatConversationLi
 import type { ConvFilter } from "@dmwork/base/src/Components/ConversationList";
 import { ConversationWrap } from "@dmwork/base/src/Service/Model";
 import CategoryService from "@dmwork/base/src/Service/CategoryService";
+import PinnedService from "@dmwork/base/src/Service/PinnedService";
+import { extractErrorMsg } from "@dmwork/base/src/Service/APIClient";
 import {
   WKApp,
   shouldSkipChannelForSpace,
@@ -119,8 +121,6 @@ interface OctoComposerInputContext extends MessageInputContext {
   send(overrideText?: string): Promise<void>;
 }
 
-const RAIL_PIN_LIMIT = 7;
-
 export default class OctoSidepanelLayout extends Component<
   {},
   OctoSidepanelLayoutState
@@ -137,16 +137,6 @@ export default class OctoSidepanelLayout extends Component<
   constructor(props: {}) {
     super(props);
 
-    const savedPins = localStorage.getItem("octo_sidepanel_pinned");
-    let pinnedIds = new Set<string>();
-    if (savedPins) {
-      try {
-        pinnedIds = new Set(JSON.parse(savedPins));
-      } catch (err) {
-        console.debug("[Extension] Failed to parse pinned ids:", err);
-      }
-    }
-
     this.state = {
       selectedChannel: null,
       selectedChannelName: "",
@@ -155,7 +145,7 @@ export default class OctoSidepanelLayout extends Component<
       pickerFilter: "group",
       conversationsVersion: 0,
       categoryNames: [],
-      pinnedIds,
+      pinnedIds: new Set<string>(),
       memberLoading: false,
       members: [],
       theme: "light",
@@ -204,6 +194,7 @@ export default class OctoSidepanelLayout extends Component<
     this.initSpace().then(async () => {
       await WKSDK.shared().conversationManager.sync({});
       this.bumpConversationsVersion();
+      void this.loadPinnedList();
     });
 
     const conversationListener = () => {
@@ -499,6 +490,7 @@ export default class OctoSidepanelLayout extends Component<
       selectedChannelName: "",
       showInfoDrawer: false,
       members: [],
+      pinnedIds: new Set<string>(),
     });
 
     try {
@@ -506,6 +498,7 @@ export default class OctoSidepanelLayout extends Component<
       if (isStale()) return;
       this.bumpConversationsVersion();
       void this.loadCategoryNames();
+      void this.loadPinnedList();
     } catch (e) {
       console.warn(
         "[OctoSidepanelLayout] Failed to reload after space switch:",
@@ -523,42 +516,6 @@ export default class OctoSidepanelLayout extends Component<
 
   private syncPinsAndFirstSelect = () => {
     const conversations = this.getConversations();
-
-    const validIds = new Set<string>();
-    for (const conv of conversations) {
-      validIds.add(conv.channel.channelID);
-    }
-    const currentPins = this.state.pinnedIds;
-    let pinsChanged = false;
-    const prunedPins = new Set<string>();
-    for (const id of currentPins) {
-      if (validIds.has(id)) prunedPins.add(id);
-      else pinsChanged = true;
-    }
-    if (pinsChanged) {
-      localStorage.setItem(
-        "octo_sidepanel_pinned",
-        JSON.stringify([...prunedPins])
-      );
-      this.setState({ pinnedIds: prunedPins });
-    }
-
-    // Auto-seed: if no pins yet, pin the first 3 so rail is not empty.
-    const effectivePins = pinsChanged ? prunedPins : currentPins;
-    if (effectivePins.size === 0 && conversations.length > 0) {
-      const seed = new Set<string>();
-      for (const conv of conversations.slice(0, 3)) {
-        seed.add(conv.channel.channelID);
-      }
-      if (seed.size > 0) {
-        localStorage.setItem(
-          "octo_sidepanel_pinned",
-          JSON.stringify([...seed])
-        );
-        this.setState({ pinnedIds: seed });
-      }
-    }
-
     if (!this.state.selectedChannel && conversations.length > 0) {
       this.selectChannel(conversations[0].channel);
     }
@@ -736,21 +693,40 @@ export default class OctoSidepanelLayout extends Component<
     this.bumpConversationsVersion();
   };
 
-  private togglePin = (channelId: string) => {
-    this.setState((prev) => {
-      const next = new Set(prev.pinnedIds);
-      if (next.has(channelId)) {
-        next.delete(channelId);
+  private async loadPinnedList() {
+    try {
+      const list = await PinnedService.shared.list();
+      const pinnedIds = new Set<string>(
+        list.sort((a, b) => a.sort_order - b.sort_order).map((item) => item.channel_id)
+      );
+      this.setState({ pinnedIds });
+    } catch (err) {
+      console.warn("[Extension] Failed to load pinned list:", err);
+    }
+  }
+
+  private togglePin = async (channelId: string, channelType: number) => {
+    const isPinned = this.state.pinnedIds.has(channelId);
+    try {
+      if (isPinned) {
+        await PinnedService.shared.remove(channelId, channelType);
+        this.setState((prev) => {
+          const next = new Set(prev.pinnedIds);
+          next.delete(channelId);
+          return { pinnedIds: next };
+        });
       } else {
-        if (next.size >= RAIL_PIN_LIMIT) {
-          showToast(`最多固定 ${RAIL_PIN_LIMIT} 个`);
-          return null;
-        }
-        next.add(channelId);
+        await PinnedService.shared.add(channelId, channelType);
+        this.setState((prev) => {
+          const next = new Set(prev.pinnedIds);
+          next.add(channelId);
+          return { pinnedIds: next };
+        });
       }
-      localStorage.setItem("octo_sidepanel_pinned", JSON.stringify([...next]));
-      return { pinnedIds: next };
-    });
+    } catch (err) {
+      const msg = extractErrorMsg(err);
+      showToast(msg || (isPinned ? "取消固定失败" : "固定失败"));
+    }
   };
 
   private handleInfoDrawerToggle = async () => {
@@ -1114,7 +1090,7 @@ export default class OctoSidepanelLayout extends Component<
                 isPinned ? " is-active" : ""
               }`}
               title={isPinned ? "取消固定" : "固定到 Rail"}
-              onClick={() => this.togglePin(selectedChannel.channelID)}
+              onClick={() => this.togglePin(selectedChannel.channelID, selectedChannel.channelType)}
               type="button"
             >
               <svg

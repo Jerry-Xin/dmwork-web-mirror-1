@@ -62,9 +62,12 @@ export function getTextMessageUI(message: MessageWrap, selection?: MessageRowSel
     emojis.length === 1 &&
     emojis[0].url.includes('/emoji/custom_')
 
-  // 获取纯文本内容
+  // 获取纯文本内容（优先使用编辑后的内容）
   const rawContent = message.content as any
-  const plainText = rawContent?.text || parts.map((p: Part) => p.text).join('') || ''
+  const remoteExtra = (message.message as any)?.remoteExtra
+  const plainText = (remoteExtra?.isEdit && remoteExtra?.contentEdit)
+    ? remoteExtra.contentEdit
+    : (rawContent?.text || parts.map((p: Part) => p.text).join('') || '')
 
   return {
     row: rowProps,
@@ -120,9 +123,12 @@ export function useTextMessageUI(message: MessageWrap) {
       emojis.length === 1 &&
       emojis[0].url.includes('/emoji/custom_')
 
-    // 获取纯文本内容
+    // 获取纯文本内容（优先使用编辑后的内容）
     const rawContent = message.content as any
-    const plainText = rawContent?.text || parts.map((p: Part) => p.text).join('') || ''
+    const remoteExtra = (message.message as any)?.remoteExtra
+    const plainText = (remoteExtra?.isEdit && remoteExtra?.contentEdit)
+      ? remoteExtra.contentEdit
+      : (rawContent?.text || parts.map((p: Part) => p.text).join('') || '')
 
     return {
       content: plainText,

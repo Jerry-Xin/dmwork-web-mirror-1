@@ -18,8 +18,9 @@ export interface UseVoiceInputOptions {
 export interface UseVoiceInputReturn {
   isRecording: boolean;
   isTranscribing: boolean;
+  duration: number;
   startRecording: () => void;
-  stopRecordingAndTranscribe: () => void;
+  stopRecordingAndTranscribe: (contextText?: string) => void;
   cancelRecording: () => void;
   isVoiceEnabled: boolean;
 }
@@ -47,20 +48,19 @@ export default function useVoiceInput(
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [duration, setDuration] = useState(0);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
-
-  // Use ref for duration to avoid re-renders every second (duration is not displayed in UI)
-  const durationRef = useRef(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const startTimeRef = useRef<number>(0);
+  const contextTextRef = useRef<string | undefined>(undefined);
 
   const getChatContextRef = useRef(getChatContext);
   getChatContextRef.current = getChatContext;
-  const stopFnRef = useRef<() => void>(() => {});
+  const stopFnRef = useRef<(contextText?: string) => void>(() => {});
 
   const voiceContextRef = useRef<VoiceContextResponse | null>(null);
   const voiceContextPromiseRef =
@@ -109,7 +109,7 @@ export default function useVoiceInput(
     }
     mediaRecorderRef.current = null;
     chunksRef.current = [];
-    durationRef.current = 0;
+    setDuration(0);
   }, []);
 
   const startRecording = useCallback(async () => {
@@ -154,12 +154,12 @@ export default function useVoiceInput(
 
       recorder.start();
       setIsRecording(true);
-      durationRef.current = 0;
+      setDuration(0);
 
       startTimeRef.current = Date.now();
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-        durationRef.current = elapsed;
+        setDuration(elapsed);
         if (elapsed >= maxDuration) {
           stopFnRef.current();
         }
@@ -173,75 +173,84 @@ export default function useVoiceInput(
     }
   }, [isRecording, maxDuration, onError, onRecordingFailed, cleanup]);
 
-  const stopRecordingAndTranscribe = useCallback(() => {
-    const recorder = mediaRecorderRef.current;
-    if (!recorder || recorder.state === "inactive") {
-      cleanup();
-      setIsRecording(false);
-      return;
-    }
-
-    recorder.onstop = async () => {
-      const mimeType = getSupportedMimeType();
-      const blob = new Blob(chunksRef.current, { type: mimeType });
-      cleanup();
-      setIsRecording(false);
-
-      // PRD: 录音时长不足 1 秒，Toast「未检测到语音」
-      const recordingDurationMs = Date.now() - startTimeRef.current;
-      if (recordingDurationMs < 1000) {
-        Toast.warning("未检测到语音");
+  const stopRecordingAndTranscribe = useCallback(
+    (contextText?: string) => {
+      if (contextText !== undefined) {
+        contextTextRef.current = contextText;
+      }
+      const recorder = mediaRecorderRef.current;
+      if (!recorder || recorder.state === "inactive") {
+        cleanup();
+        setIsRecording(false);
         return;
       }
 
-      if (maxFileSizeRef.current > 0 && blob.size > maxFileSizeRef.current) {
-        Toast.error("录音文件过大");
-        if (onError) onError(new Error("Recording file size exceeds limit"));
-        return;
-      }
+      recorder.onstop = async () => {
+        const mimeType = getSupportedMimeType();
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        cleanup();
+        setIsRecording(false);
 
-      setIsTranscribing(true);
-      try {
-        if (voiceContextPromiseRef.current) {
-          await voiceContextPromiseRef.current;
-          voiceContextPromiseRef.current = null;
+        // PRD: 录音时长不足 1 秒，Toast「未检测到语音」
+        const recordingDurationMs = Date.now() - startTimeRef.current;
+        if (recordingDurationMs < 1000) {
+          Toast.warning("未检测到语音");
+          return;
         }
 
-        // 个人纠错上下文
-        let personalContext: string | undefined;
-        const voiceCtx = voiceContextRef.current;
-        if (voiceCtx && voiceCtx.has_context === true && voiceCtx.context) {
-          personalContext = voiceCtx.context;
+        if (maxFileSizeRef.current > 0 && blob.size > maxFileSizeRef.current) {
+          Toast.error("录音文件过大");
+          if (onError) onError(new Error("Recording file size exceeds limit"));
+          return;
         }
 
-        // 群成员名 + 聊天消息上下文
-        const chatCtxResult = getChatContextRef.current?.() ?? {};
-        const memberContext = chatCtxResult.memberContext;
-        const chatContext = chatCtxResult.chatContext;
+        setIsTranscribing(true);
+        try {
+          if (voiceContextPromiseRef.current) {
+            await voiceContextPromiseRef.current;
+            voiceContextPromiseRef.current = null;
+          }
 
-        const result = await VoiceService.shared.transcribe(
-          blob,
-          chatContext,
-          personalContext,
-          memberContext
-        );
-        if (result.text && onTranscribed) {
-          // Voice input only - always insert, never replace
-          onTranscribed(result.text, false);
+          // 个人纠错上下文
+          let personalContext: string | undefined;
+          const voiceCtx = voiceContextRef.current;
+          if (voiceCtx && voiceCtx.has_context === true && voiceCtx.context) {
+            personalContext = voiceCtx.context;
+          }
+
+          // 群成员名 + 聊天消息上下文
+          const chatCtxResult = getChatContextRef.current?.() ?? {};
+          const memberContext = chatCtxResult.memberContext;
+          const chatContext = chatCtxResult.chatContext;
+
+          const result = await VoiceService.shared.transcribe(
+            blob,
+            contextTextRef.current,
+            chatContext,
+            personalContext,
+            memberContext
+          );
+          if (result.text && onTranscribed) {
+            // If context_text was provided, LLM returns complete modified text - should replace
+            const shouldReplace = !!contextTextRef.current;
+            onTranscribed(result.text, shouldReplace);
+          }
+        } catch (err) {
+          // PRD: 转写失败时 Toast「转写失败，请重试」
+          Toast.error("转写失败，请重试");
+          const error =
+            err instanceof Error ? err : new Error("Transcription failed");
+          if (onError) onError(error);
+        } finally {
+          setIsTranscribing(false);
+          contextTextRef.current = undefined;
         }
-      } catch (err) {
-        // PRD: 转写失败时 Toast「转写失败，请重试」
-        Toast.error("转写失败，请重试");
-        const error =
-          err instanceof Error ? err : new Error("Transcription failed");
-        if (onError) onError(error);
-      } finally {
-        setIsTranscribing(false);
-      }
-    };
+      };
 
-    recorder.stop();
-  }, [cleanup, onTranscribed, onError]);
+      recorder.stop();
+    },
+    [cleanup, onTranscribed, onError]
+  );
 
   stopFnRef.current = stopRecordingAndTranscribe;
 
@@ -275,6 +284,7 @@ export default function useVoiceInput(
   return {
     isRecording,
     isTranscribing,
+    duration,
     startRecording,
     stopRecordingAndTranscribe,
     cancelRecording,

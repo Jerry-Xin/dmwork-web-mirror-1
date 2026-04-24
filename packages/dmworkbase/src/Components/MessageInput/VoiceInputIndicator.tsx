@@ -8,6 +8,7 @@ import { ChatContextResult } from "../Conversation/chatContext";
 
 interface VoiceInputIndicatorProps {
   onTranscribed: (text: string, shouldReplace: boolean) => void;
+  getCurrentText?: () => string | undefined;
   getChatContext?: () => ChatContextResult;
 }
 
@@ -17,6 +18,7 @@ const INDICATOR_HEIGHT = 48;
 
 export default function VoiceInputIndicator({
   onTranscribed,
+  getCurrentText,
   getChatContext,
 }: VoiceInputIndicatorProps) {
   // Long-press ShiftLeft state
@@ -254,7 +256,8 @@ export default function VoiceInputIndicator({
       ) {
         shiftRecordingRef.current = false;
         e.preventDefault();
-        stopRecordingRef.current();
+        const contextText = getCurrentText?.();
+        stopRecordingRef.current(contextText);
         return;
       }
 
@@ -264,7 +267,8 @@ export default function VoiceInputIndicator({
         // Don't stop if this was a long-press ShiftLeft release handled above
         if (shiftRecordingRef.current) return;
         e.preventDefault();
-        stopRecordingRef.current();
+        const contextText = getCurrentText?.();
+        stopRecordingRef.current(contextText);
       }
     };
 
@@ -282,17 +286,18 @@ export default function VoiceInputIndicator({
       window.removeEventListener("blur", handleBlurWhilePreparing);
       clearShiftTimer();
     };
-  }, [isVoiceEnabled, cancelRecording]);
+  }, [isVoiceEnabled, getCurrentText, cancelRecording]);
 
   // Window blur: auto-stop recording
   useEffect(() => {
     if (!isRecording) return;
     const handleBlur = () => {
-      stopRecordingAndTranscribe();
+      const contextText = getCurrentText?.();
+      stopRecordingAndTranscribe(contextText);
     };
     window.addEventListener("blur", handleBlur);
     return () => window.removeEventListener("blur", handleBlur);
-  }, [isRecording, stopRecordingAndTranscribe]);
+  }, [isRecording, stopRecordingAndTranscribe, getCurrentText]);
 
   if (!isVoiceEnabled) return null;
 
@@ -314,7 +319,8 @@ export default function VoiceInputIndicator({
 
   // Handle stop recording click/keyboard
   const handleStopClick = () => {
-    stopRecordingAndTranscribe();
+    const contextText = getCurrentText?.();
+    stopRecordingAndTranscribe(contextText);
   };
 
   const handleStopKeyDown = (e: React.KeyboardEvent) => {

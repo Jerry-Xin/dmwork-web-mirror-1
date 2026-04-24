@@ -44,6 +44,7 @@ export default class VoiceService {
 
   async transcribe(
     audio: Blob,
+    contextText?: string,
     chatContext?: string,
     personalContext?: string,
     memberContext?: string
@@ -51,6 +52,9 @@ export default class VoiceService {
     const formData = new FormData();
     const ext = audio.type.includes("mp4") ? "mp4" : "webm";
     formData.append("audio", audio, `recording.${ext}`);
+    if (contextText) {
+      formData.append("context_text", contextText);
+    }
     if (chatContext) {
       formData.append("chat_context", chatContext);
     }

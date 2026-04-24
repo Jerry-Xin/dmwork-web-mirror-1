@@ -18,7 +18,6 @@ export interface UseVoiceInputOptions {
 export interface UseVoiceInputReturn {
   isRecording: boolean;
   isTranscribing: boolean;
-  duration: number;
   startRecording: () => void;
   stopRecordingAndTranscribe: (contextText?: string) => void;
   cancelRecording: () => void;
@@ -48,12 +47,13 @@ export default function useVoiceInput(
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [duration, setDuration] = useState(0);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const maxDurationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const streamRef = useRef<MediaStream | null>(null);
   const startTimeRef = useRef<number>(0);
   const contextTextRef = useRef<string | undefined>(undefined);
@@ -99,9 +99,9 @@ export default function useVoiceInput(
   }, []);
 
   const cleanup = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
+    if (maxDurationTimeoutRef.current) {
+      clearTimeout(maxDurationTimeoutRef.current);
+      maxDurationTimeoutRef.current = null;
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -109,7 +109,6 @@ export default function useVoiceInput(
     }
     mediaRecorderRef.current = null;
     chunksRef.current = [];
-    setDuration(0);
   }, []);
 
   const startRecording = useCallback(async () => {
@@ -154,16 +153,14 @@ export default function useVoiceInput(
 
       recorder.start();
       setIsRecording(true);
-      setDuration(0);
 
+      // 记录开始时间
       startTimeRef.current = Date.now();
-      timerRef.current = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-        setDuration(elapsed);
-        if (elapsed >= maxDuration) {
-          stopFnRef.current();
-        }
-      }, 1000);
+
+      // 使用 setTimeout 替代 setInterval 处理 maxDuration 自动停止
+      maxDurationTimeoutRef.current = setTimeout(() => {
+        stopFnRef.current();
+      }, maxDuration * 1000);
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error("Microphone access denied");
@@ -185,6 +182,9 @@ export default function useVoiceInput(
         return;
       }
 
+      // 捕获开始时间到局部变量，避免竞态问题
+      const capturedStartTime = startTimeRef.current;
+
       recorder.onstop = async () => {
         const mimeType = getSupportedMimeType();
         const blob = new Blob(chunksRef.current, { type: mimeType });
@@ -192,7 +192,7 @@ export default function useVoiceInput(
         setIsRecording(false);
 
         // PRD: 录音时长不足 1 秒，Toast「未检测到语音」
-        const recordingDurationMs = Date.now() - startTimeRef.current;
+        const recordingDurationMs = Date.now() - capturedStartTime;
         if (recordingDurationMs < 1000) {
           Toast.warning("未检测到语音");
           return;
@@ -283,7 +283,6 @@ export default function useVoiceInput(
   return {
     isRecording,
     isTranscribing,
-    duration,
     startRecording,
     stopRecordingAndTranscribe,
     cancelRecording,

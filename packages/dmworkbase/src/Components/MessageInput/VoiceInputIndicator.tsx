@@ -135,7 +135,7 @@ export default function VoiceInputIndicator({
     });
   }, []);
 
-  // Update position when recording or transcribing, and on window resize
+  // Update position when recording or transcribing, and on window resize/scroll
   useEffect(() => {
     if (!isRecording && !isTranscribing) {
       setFloatingPosition(null);
@@ -145,8 +145,13 @@ export default function VoiceInputIndicator({
     updateFloatingPosition();
 
     const handleResize = () => updateFloatingPosition();
+    const handleScroll = () => updateFloatingPosition();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
   }, [isRecording, isTranscribing, updateFloatingPosition]);
 
   // Keyboard shortcut: Shift + Cmd/Ctrl + Space, and long-press ShiftLeft
@@ -411,22 +416,9 @@ export default function VoiceInputIndicator({
         </div>
         <span className="wk-voice-floating-divider" />
         <div className="wk-voice-wave-container">
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
-          <span className="wk-voice-wave-bar" />
+          {Array.from({ length: 16 }, (_, i) => (
+            <span key={i} className="wk-voice-wave-bar" />
+          ))}
         </div>
       </div>
     );

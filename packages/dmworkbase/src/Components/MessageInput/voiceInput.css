@@ -1,80 +1,3 @@
-.wk-voice-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  height: 28px;
-}
-
-.wk-voice-recording {
-  color: var(--wk-color-error);
-}
-
-.wk-voice-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--wk-color-error);
-  animation: wk-voice-blink 1s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-@keyframes wk-voice-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
-}
-
-.wk-voice-spinner {
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--border-color);
-  border-top-color: var(--text-secondary);
-  border-radius: 50%;
-  animation: wk-voice-spin 0.6s linear infinite;
-  flex-shrink: 0;
-}
-
-@keyframes wk-voice-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.wk-voice-label {
-  white-space: nowrap;
-}
-
-.wk-voice-cancel {
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  padding: 2px 8px;
-  margin-left: 4px;
-}
-
-.wk-voice-cancel:hover {
-  background-color: var(--bg-hover);
-}
-
-.wk-voice-transcribing {
-  color: var(--text-secondary);
-}
-
-.wk-voice-preparing {
-  color: var(--text-tertiary, #999);
-  opacity: 0.7;
-}
-
 /* 语音按钮组 */
 .wk-voice-button-group {
   position: relative;
@@ -104,18 +27,23 @@
 }
 
 .wk-voice-button--recording {
-  background-color: #f8f5fe;
-  color: #9760f6;
+  background-color: var(--wk-voice-recording-bg, #f8f5fe);
+  color: var(--wk-voice-recording-color, #9760f6);
+}
+
+[theme-mode="dark"] .wk-voice-button--recording {
+  background-color: var(--wk-voice-recording-bg-dark, rgba(151, 96, 246, 0.15));
+  color: var(--wk-voice-recording-color-dark, #b794f6);
 }
 
 .wk-voice-button--disabled {
-  color: var(--wk-icon-disabled, #c0c0c0);
+  color: var(--wk-icon-muted);
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .wk-voice-button--disabled:hover {
-  color: var(--wk-icon-disabled, #c0c0c0);
+  color: var(--wk-icon-muted);
 }
 
 .wk-voice-button--preparing {
@@ -134,12 +62,6 @@
   }
 }
 
-.wk-voice-button-recording-icon {
-  width: auto;
-  height: 24px;
-  cursor: pointer;
-}
-
 /* Floating voice indicator - based on Figma design */
 .wk-voice-floating-indicator {
   position: fixed;
@@ -155,6 +77,12 @@
   border-radius: 1000px;
   box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.08);
   box-sizing: border-box;
+}
+
+[theme-mode="dark"] .wk-voice-floating-indicator {
+  background-color: var(--wk-bg-surface, #2a2a33);
+  border-color: var(--wk-border-light, rgba(255, 255, 255, 0.1));
+  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.3);
 }
 
 .wk-voice-floating-content {
@@ -182,11 +110,6 @@
   flex-shrink: 0;
 }
 
-.wk-voice-floating-wave {
-  width: 80px;
-  height: 24px;
-}
-
 /* Transcribing spinner in floating indicator */
 .wk-voice-transcribing-spinner {
   width: 80px;
@@ -206,6 +129,12 @@
   animation: wk-voice-spin 0.6s linear infinite;
 }
 
+@keyframes wk-voice-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Wave animation - each bar animates with different delays */
 .wk-voice-wave-container {
   display: flex;
@@ -218,7 +147,7 @@
 
 .wk-voice-wave-bar {
   width: 3px;
-  background-color: #7f3bf5;
+  background-color: var(--wk-brand-primary, #7f3bf5);
   border-radius: 1.5px;
   animation: wk-voice-wave 0.8s ease-in-out infinite;
 }

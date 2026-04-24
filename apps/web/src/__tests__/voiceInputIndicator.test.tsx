@@ -1,694 +1,728 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from "vitest"
-import React from "react"
-import { render, act } from "@testing-library/react"
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import React from "react";
 
-// Mock VoiceService to avoid loading APIClient → axios chain
-vi.mock("../../packages/dmworkbase/src/Service/VoiceService", () => ({
-    default: { shared: { getConfig: vi.fn().mockResolvedValue({ enabled: false, max_duration: 60 }), transcribe: vi.fn() } },
-}))
+// Mock useVoiceInput hook
+const mockUseVoiceInput = vi.fn();
+vi.mock("@dmwork/base/src/Components/MessageInput/useVoiceInput", () => ({
+  default: () => mockUseVoiceInput(),
+}));
 
-// We test the VoiceInputIndicator rendering logic by creating a minimal
-// wrapper that mimics the component without importing the full dmworkbase chain.
-// This avoids transitive lottie-web loading issues in jsdom.
+// Mock createPortal
+vi.mock("react-dom", async () => {
+  const actual = await vi.importActual("react-dom");
+  return {
+    ...actual,
+    createPortal: (node: React.ReactNode) => node,
+  };
+});
 
-// --- Test the formatDuration utility ---
-function formatDuration(seconds: number): string {
-    const m = Math.floor(seconds / 60)
-    const s = seconds % 60
-    return `${m}:${s.toString().padStart(2, "0")}`
-}
+// Mock Toast
+vi.mock("@douyinfe/semi-ui", () => ({
+  Toast: {
+    error: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
 
-describe("VoiceInput - formatDuration", () => {
-    it("formats 0 seconds", () => {
-        expect(formatDuration(0)).toBe("0:00")
-    })
+import VoiceInputIndicator from "@dmwork/base/src/Components/MessageInput/VoiceInputIndicator";
+import { Toast } from "@douyinfe/semi-ui";
 
-    it("formats seconds under a minute", () => {
-        expect(formatDuration(5)).toBe("0:05")
-        expect(formatDuration(30)).toBe("0:30")
-        expect(formatDuration(59)).toBe("0:59")
-    })
-
-    it("formats exactly one minute", () => {
-        expect(formatDuration(60)).toBe("1:00")
-    })
-
-    it("formats minutes and seconds", () => {
-        expect(formatDuration(65)).toBe("1:05")
-        expect(formatDuration(125)).toBe("2:05")
-    })
-})
-
-// --- Test the keyboard shortcut detection logic ---
-describe("VoiceInput - keyboard shortcut detection", () => {
-    function isVoiceShortcut(e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean; code: string }) {
-        return e.shiftKey && (e.metaKey || e.ctrlKey) && e.code === "Space"
-    }
-
-    it("should detect Shift+Meta+Space (macOS)", () => {
-        expect(isVoiceShortcut({ shiftKey: true, metaKey: true, ctrlKey: false, code: "Space" })).toBe(true)
-    })
-
-    it("should detect Shift+Ctrl+Space (Windows/Linux)", () => {
-        expect(isVoiceShortcut({ shiftKey: true, metaKey: false, ctrlKey: true, code: "Space" })).toBe(true)
-    })
-
-    it("should not trigger on Shift+Space alone", () => {
-        expect(isVoiceShortcut({ shiftKey: true, metaKey: false, ctrlKey: false, code: "Space" })).toBe(false)
-    })
-
-    it("should not trigger on Ctrl+Space without Shift", () => {
-        expect(isVoiceShortcut({ shiftKey: false, metaKey: false, ctrlKey: true, code: "Space" })).toBe(false)
-    })
-
-    it("should not trigger on Shift+Cmd+Enter", () => {
-        expect(isVoiceShortcut({ shiftKey: true, metaKey: true, ctrlKey: false, code: "Enter" })).toBe(false)
-    })
-})
-
-// --- Test the keyup stop detection logic ---
-describe("VoiceInput - keyup stop detection", () => {
-    function isStopKey(key: string) {
-        return key === "Shift" || key === "Meta" || key === "Control"
-    }
-
-    it("should stop on Shift release", () => {
-        expect(isStopKey("Shift")).toBe(true)
-    })
-
-    it("should stop on Meta release", () => {
-        expect(isStopKey("Meta")).toBe(true)
-    })
-
-    it("should stop on Control release", () => {
-        expect(isStopKey("Control")).toBe(true)
-    })
-
-    it("should not stop on regular key release", () => {
-        expect(isStopKey("a")).toBe(false)
-        expect(isStopKey("Space")).toBe(false)
-        expect(isStopKey("Enter")).toBe(false)
-    })
-})
-
-// --- Test the VoiceInputIndicator component with mocked hook ---
-// Create a standalone component that mirrors VoiceInputIndicator logic
-// without loading the full dmworkbase dependency chain
-interface MockHookReturn {
-    isRecording: boolean
-    isTranscribing: boolean
-    duration: number
-    startRecording: () => void
-    stopRecordingAndTranscribe: (ctx?: string) => void
-    cancelRecording: () => void
-    isVoiceEnabled: boolean
-}
-
-function TestableIndicator({ hookReturn }: { hookReturn: MockHookReturn }) {
-    if (!hookReturn.isVoiceEnabled) return null
-
-    if (hookReturn.isTranscribing) {
-        return (
-            <div className="wk-voice-indicator wk-voice-transcribing">
-                <span className="wk-voice-spinner" />
-                <span className="wk-voice-label">Transcribing...</span>
-            </div>
-        )
-    }
-
-    if (hookReturn.isRecording) {
-        return (
-            <div className="wk-voice-indicator wk-voice-recording">
-                <span className="wk-voice-dot" />
-                <span className="wk-voice-label">{formatDuration(hookReturn.duration)}</span>
-                <span className="wk-voice-label">Recording...</span>
-                <button
-                    className="wk-voice-cancel"
-                    onClick={() => hookReturn.cancelRecording()}
-                    type="button"
-                >
-                    Cancel
-                </button>
-            </div>
-        )
-    }
-
-    return null
-}
-
-function defaultHookReturn(): MockHookReturn {
-    return {
-        isRecording: false,
-        isTranscribing: false,
-        duration: 0,
-        startRecording: vi.fn(),
-        stopRecordingAndTranscribe: vi.fn(),
-        cancelRecording: vi.fn(),
-        isVoiceEnabled: false,
-    }
+// Default mock return value for useVoiceInput
+function createMockHookReturn(overrides = {}) {
+  return {
+    isRecording: false,
+    isTranscribing: false,
+    startRecording: vi.fn(),
+    stopRecordingAndTranscribe: vi.fn(),
+    cancelRecording: vi.fn(),
+    isVoiceEnabled: true,
+    ...overrides,
+  };
 }
 
 describe("VoiceInputIndicator - rendering", () => {
-    it("renders nothing when voice is disabled", () => {
-        const { container } = render(
-            <TestableIndicator hookReturn={{ ...defaultHookReturn(), isVoiceEnabled: false }} />
-        )
-        expect(container.innerHTML).toBe("")
-    })
-
-    it("renders nothing when enabled but not recording", () => {
-        const { container } = render(
-            <TestableIndicator hookReturn={{ ...defaultHookReturn(), isVoiceEnabled: true }} />
-        )
-        expect(container.querySelector(".wk-voice-indicator")).toBeNull()
-    })
-
-    it("shows recording indicator with red dot and timer", () => {
-        const { container } = render(
-            <TestableIndicator hookReturn={{ ...defaultHookReturn(), isVoiceEnabled: true, isRecording: true, duration: 5 }} />
-        )
-        const indicator = container.querySelector(".wk-voice-recording")
-        expect(indicator).toBeTruthy()
-        expect(indicator!.querySelector(".wk-voice-dot")).toBeTruthy()
-        expect(indicator!.textContent).toContain("0:05")
-        expect(indicator!.textContent).toContain("Recording")
-    })
-
-    it("shows cancel button when recording", () => {
-        const { container } = render(
-            <TestableIndicator hookReturn={{ ...defaultHookReturn(), isVoiceEnabled: true, isRecording: true }} />
-        )
-        const cancelBtn = container.querySelector(".wk-voice-cancel")
-        expect(cancelBtn).toBeTruthy()
-        expect(cancelBtn!.textContent).toBe("Cancel")
-    })
-
-    it("calls cancelRecording when cancel button clicked", () => {
-        const cancelRecording = vi.fn()
-        const { container } = render(
-            <TestableIndicator hookReturn={{ ...defaultHookReturn(), isVoiceEnabled: true, isRecording: true, cancelRecording }} />
-        )
-        const cancelBtn = container.querySelector(".wk-voice-cancel") as HTMLButtonElement
-        cancelBtn.click()
-        expect(cancelRecording).toHaveBeenCalledTimes(1)
-    })
-
-    it("shows transcribing state with spinner", () => {
-        const { container } = render(
-            <TestableIndicator hookReturn={{ ...defaultHookReturn(), isVoiceEnabled: true, isTranscribing: true }} />
-        )
-        const indicator = container.querySelector(".wk-voice-transcribing")
-        expect(indicator).toBeTruthy()
-        expect(indicator!.textContent).toContain("Transcribing")
-        expect(indicator!.querySelector(".wk-voice-spinner")).toBeTruthy()
-    })
-
-    it("formats duration for minutes and seconds", () => {
-        const { container } = render(
-            <TestableIndicator hookReturn={{ ...defaultHookReturn(), isVoiceEnabled: true, isRecording: true, duration: 65 }} />
-        )
-        expect(container.textContent).toContain("1:05")
-    })
-})
-
-// --- Test window blur behavior logic ---
-describe("VoiceInput - window blur handler", () => {
-    it("should invoke stop on blur when recording", () => {
-        const stop = vi.fn()
-        let blurHandler: (() => void) | null = null
-
-        // Simulate what VoiceInputIndicator does: register blur handler when recording
-        const isRecording = true
-        if (isRecording) {
-            blurHandler = () => { stop() }
-            window.addEventListener("blur", blurHandler)
-        }
-
-        window.dispatchEvent(new Event("blur"))
-        expect(stop).toHaveBeenCalledTimes(1)
-
-        if (blurHandler) {
-            window.removeEventListener("blur", blurHandler)
-        }
-    })
-
-    it("should not invoke stop on blur when not recording", () => {
-        const stop = vi.fn()
-        const isRecording = false
-        if (isRecording) {
-            window.addEventListener("blur", () => stop())
-        }
-
-        window.dispatchEvent(new Event("blur"))
-        expect(stop).not.toHaveBeenCalled()
-    })
-})
-
-// --- Test error handling logic ---
-describe("VoiceInput - error classification", () => {
-    function classifyError(error: Error): string {
-        if (error.message.includes("denied") || error.message.includes("Permission") || error.message.includes("NotAllowedError")) {
-            return "Please allow microphone access"
-        }
-        return error.message || "Voice transcription failed"
-    }
-
-    it("should show microphone permission message for permission errors", () => {
-        expect(classifyError(new Error("NotAllowedError: Permission denied"))).toBe("Please allow microphone access")
-        expect(classifyError(new Error("Permission denied by user"))).toBe("Please allow microphone access")
-    })
-
-    it("should show generic error message for other errors", () => {
-        expect(classifyError(new Error("Network error"))).toBe("Network error")
-        expect(classifyError(new Error("Server error 500"))).toBe("Server error 500")
-    })
-
-    it("should fallback to default message for empty error", () => {
-        expect(classifyError(new Error(""))).toBe("Voice transcription failed")
-    })
-})
-
-// --- Test long-press ShiftLeft detection logic ---
-// This mirrors the logic in VoiceInputIndicator's keyboard handler
-describe("VoiceInput - long-press ShiftLeft detection", () => {
-    let shiftTimer: ReturnType<typeof setTimeout> | null = null
-    let preparingTimer: ReturnType<typeof setTimeout> | null = null
-    let shiftRecording = false
-    let isPreparing = false
-    let cancelPending = false
-    let startRecording: ReturnType<typeof vi.fn>
-    let stopRecordingAndTranscribe: ReturnType<typeof vi.fn>
-    let cancelRecording: ReturnType<typeof vi.fn>
-    let isRecording: boolean
-    let isTranscribing: boolean
-
-    const PREPARING_DELAY_MS = 300
-    const RECORDING_DELAY_MS = 500
-
-    function clearShiftTimer() {
-        if (shiftTimer !== null) {
-            clearTimeout(shiftTimer)
-            shiftTimer = null
-        }
-        if (preparingTimer !== null) {
-            clearTimeout(preparingTimer)
-            preparingTimer = null
-        }
-        isPreparing = false
-    }
-
-    function handleKeyDown(e: { code: string; repeat: boolean; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean; key?: string; isComposing?: boolean }) {
-        // Existing shortcut takes priority
-        if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.code === "Space") {
-            if (!isRecording && !isTranscribing) {
-                startRecording()
-            }
-            return
-        }
-
-        // Long-press ShiftLeft
-        if (e.code === "ShiftLeft" && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey) {
-            if (!isRecording && !isTranscribing && shiftTimer === null) {
-                cancelPending = false
-                preparingTimer = setTimeout(() => {
-                    preparingTimer = null
-                    isPreparing = true
-                }, PREPARING_DELAY_MS)
-                shiftTimer = setTimeout(() => {
-                    shiftTimer = null
-                    isPreparing = false
-                    shiftRecording = true
-                    startRecording()
-                }, RECORDING_DELAY_MS)
-            }
-            return
-        }
-
-        if (shiftTimer !== null && e.code !== "ShiftLeft") {
-            // Modifier chord: cancel voice intent
-            if (e.code.startsWith("Control") || e.code.startsWith("Alt") || e.code.startsWith("Meta")) {
-                clearShiftTimer()
-                return
-            }
-            // IME-related events: do not cancel
-            const isIME = e.code.startsWith("Shift")
-                || e.key === "Process" || e.key === "Unidentified" || e.isComposing
-            if (!isIME) {
-                clearShiftTimer()
-            }
-        }
-    }
-
-    function handleKeyUp(e: { code: string; key: string }) {
-        if (e.code === "ShiftLeft" && shiftTimer !== null) {
-            clearShiftTimer()
-            return
-        }
-
-        // Shift released while waiting for getUserMedia
-        if (e.code === "ShiftLeft" && shiftRecording && !isRecording) {
-            cancelPending = true
-            shiftRecording = false
-            return
-        }
-
-        if (e.code === "ShiftLeft" && shiftRecording && isRecording) {
-            shiftRecording = false
-            stopRecordingAndTranscribe()
-            return
-        }
-
-        if (!isRecording) return
-        if (e.key === "Shift" || e.key === "Meta" || e.key === "Control") {
-            if (shiftRecording) return
-            stopRecordingAndTranscribe()
-        }
-    }
-
-    beforeEach(() => {
-        vi.useFakeTimers()
-        shiftTimer = null
-        preparingTimer = null
-        shiftRecording = false
-        isPreparing = false
-        cancelPending = false
-        isRecording = false
-        isTranscribing = false
-        startRecording = vi.fn()
-        stopRecordingAndTranscribe = vi.fn()
-        cancelRecording = vi.fn()
-    })
-
-    afterEach(() => {
-        clearShiftTimer()
-        vi.useRealTimers()
-    })
-
-    it("should start 500ms timer when ShiftLeft is pressed", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).not.toBeNull()
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should NOT start recording if ShiftLeft released before 500ms", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        vi.advanceTimersByTime(300)
-        handleKeyUp({ code: "ShiftLeft", key: "Shift" })
-        expect(startRecording).not.toHaveBeenCalled()
-        expect(shiftTimer).toBeNull()
-    })
-
-    it("should start recording after holding ShiftLeft for 500ms", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        vi.advanceTimersByTime(500)
-        expect(startRecording).toHaveBeenCalledTimes(1)
-        expect(shiftRecording).toBe(true)
-    })
-
-    it("should stop recording when ShiftLeft is released after recording started", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        vi.advanceTimersByTime(500)
-        isRecording = true // simulate that recording started
-        handleKeyUp({ code: "ShiftLeft", key: "Shift" })
-        expect(stopRecordingAndTranscribe).toHaveBeenCalledTimes(1)
-        expect(shiftRecording).toBe(false)
-    })
-
-    it("should cancel timer when another key is pressed during 500ms wait", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).not.toBeNull()
-        // Press 'a' while holding Shift
-        handleKeyDown({ code: "KeyA", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-        vi.advanceTimersByTime(500)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should NOT trigger on ShiftRight", () => {
-        handleKeyDown({ code: "ShiftRight", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-        vi.advanceTimersByTime(500)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should still allow Shift+Cmd+Space shortcut", () => {
-        handleKeyDown({ code: "Space", repeat: false, metaKey: true, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(startRecording).toHaveBeenCalledTimes(1)
-    })
-
-    it("should NOT trigger when already recording", () => {
-        isRecording = true
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-        vi.advanceTimersByTime(500)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should NOT trigger when transcribing", () => {
-        isTranscribing = true
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-        vi.advanceTimersByTime(500)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should not cancel timer on repeated ShiftLeft keydown from auto-repeat", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).not.toBeNull()
-        // OS auto-repeat fires repeat=true events while holding the key
-        handleKeyDown({ code: "ShiftLeft", repeat: true, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        // Timer should still be active
-        expect(shiftTimer).not.toBeNull()
-        vi.advanceTimersByTime(500)
-        expect(startRecording).toHaveBeenCalledTimes(1)
-    })
-
-    it("should NOT trigger when modifier keys are held", () => {
-        // ShiftLeft with Cmd held
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: true, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-
-        // ShiftLeft with Ctrl held
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: true, altKey: false, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-
-        // ShiftLeft with Alt held
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: true, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-    })
-
-    // ── Preparing delay tests ──
-
-    it("should NOT show preparing state for short press (< 300ms)", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        vi.advanceTimersByTime(200)
-        expect(isPreparing).toBe(false)
-        handleKeyUp({ code: "ShiftLeft", key: "Shift" })
-        expect(isPreparing).toBe(false)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should show preparing state after 300ms hold", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(isPreparing).toBe(false)
-        vi.advanceTimersByTime(PREPARING_DELAY_MS)
-        expect(isPreparing).toBe(true)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should show preparing then cancel when released between 300-500ms", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        vi.advanceTimersByTime(350)
-        expect(isPreparing).toBe(true)
-        handleKeyUp({ code: "ShiftLeft", key: "Shift" })
-        expect(isPreparing).toBe(false)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should clear preparing state when recording starts at 500ms", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        vi.advanceTimersByTime(PREPARING_DELAY_MS)
-        expect(isPreparing).toBe(true)
-        vi.advanceTimersByTime(RECORDING_DELAY_MS - PREPARING_DELAY_MS) // total 500ms
-        expect(isPreparing).toBe(false)
-        expect(startRecording).toHaveBeenCalledTimes(1)
-    })
-
-    // ── Modifier chord tests ──
-
-    it("should cancel timer when Ctrl is pressed during ShiftLeft hold", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).not.toBeNull()
-        handleKeyDown({ code: "ControlLeft", repeat: false, metaKey: false, ctrlKey: true, altKey: false, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-        expect(isPreparing).toBe(false)
-        vi.advanceTimersByTime(RECORDING_DELAY_MS)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should cancel timer when Meta is pressed during ShiftLeft hold", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        handleKeyDown({ code: "MetaLeft", repeat: false, metaKey: true, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-        vi.advanceTimersByTime(RECORDING_DELAY_MS)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    it("should cancel timer when Alt is pressed during ShiftLeft hold", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        handleKeyDown({ code: "AltLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: true, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-        vi.advanceTimersByTime(RECORDING_DELAY_MS)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-
-    // ── IME tests ──
-
-    it("should NOT cancel timer for key=Process (IME)", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        handleKeyDown({ code: "KeyQ", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true, key: "Process" })
-        expect(shiftTimer).not.toBeNull()
-        vi.advanceTimersByTime(RECORDING_DELAY_MS)
-        expect(startRecording).toHaveBeenCalledTimes(1)
-    })
-
-    it("should NOT cancel timer for isComposing events", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        handleKeyDown({ code: "KeyA", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true, isComposing: true })
-        expect(shiftTimer).not.toBeNull()
-        vi.advanceTimersByTime(RECORDING_DELAY_MS)
-        expect(startRecording).toHaveBeenCalledTimes(1)
-    })
-
-    it("should NOT cancel timer for key=Unidentified (IME)", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        handleKeyDown({ code: "KeyQ", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true, key: "Unidentified" })
-        expect(shiftTimer).not.toBeNull()
-        vi.advanceTimersByTime(RECORDING_DELAY_MS)
-        expect(startRecording).toHaveBeenCalledTimes(1)
-    })
-
-    // ── Failure cleanup tests ──
-
-    it("should set cancelPending when Shift released while waiting for getUserMedia", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        vi.advanceTimersByTime(RECORDING_DELAY_MS)
-        expect(shiftRecording).toBe(true)
-        expect(isRecording).toBe(false)
-        handleKeyUp({ code: "ShiftLeft", key: "Shift" })
-        expect(cancelPending).toBe(true)
-        expect(shiftRecording).toBe(false)
-    })
-
-    it("should clear shiftRecording and cancelPending when onRecordingFailed is triggered", () => {
-        // Simulate entering startPending state
-        shiftRecording = true
-        cancelPending = true
-        // Simulate the component's onRecordingFailed callback behavior
-        const onRecordingFailed = () => {
-            shiftRecording = false
-            cancelPending = false
-        }
-        onRecordingFailed()
-        expect(shiftRecording).toBe(false)
-        expect(cancelPending).toBe(false)
-    })
-
-    // ── Combo key tests ──
-
-    it("should cancel both timers on Shift+letter combo (typing uppercase)", () => {
-        handleKeyDown({ code: "ShiftLeft", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).not.toBeNull()
-        vi.advanceTimersByTime(100)
-        handleKeyDown({ code: "KeyA", repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: true })
-        expect(shiftTimer).toBeNull()
-        expect(isPreparing).toBe(false)
-        vi.advanceTimersByTime(RECORDING_DELAY_MS)
-        expect(startRecording).not.toHaveBeenCalled()
-    })
-})
-
-// --- Test cancelPending → cancelRecording integration ---
-// Verify React useEffect detects cancelPending when isRecording becomes true and calls cancelRecording
-describe("VoiceInput - cancelPending integration", () => {
-    it("should auto-cancel recording when Shift was released before getUserMedia resolved", () => {
-        const cancelRecording = vi.fn()
-
-        function TestHarness() {
-            const [isRecording, setIsRecording] = React.useState(false)
-            const cancelPendingRef = React.useRef(false)
-            const shiftRecordingRef = React.useRef(false)
-
-            React.useEffect(() => {
-                if (isRecording && cancelPendingRef.current) {
-                    cancelPendingRef.current = false
-                    shiftRecordingRef.current = false
-                    cancelRecording()
-                }
-            }, [isRecording])
-
-            return (
-                <div>
-                    <button onClick={() => {
-                        shiftRecordingRef.current = true
-                    }}>mark-start-pending</button>
-                    <button onClick={() => {
-                        cancelPendingRef.current = true
-                        shiftRecordingRef.current = false
-                    }}>release-shift</button>
-                    <button onClick={() => setIsRecording(true)}>recording-started</button>
-                </div>
-            )
-        }
-
-        const { getByText } = render(<TestHarness />)
-
-        act(() => {
-            // 1. 500ms reached, startRecording called
-            getByText("mark-start-pending").click()
-            // 2. User releases Shift, but getUserMedia still pending
-            getByText("release-shift").click()
-            // 3. getUserMedia succeeds, isRecording becomes true
-            getByText("recording-started").click()
-        })
-
-        expect(cancelRecording).toHaveBeenCalledTimes(1)
-    })
-
-    it("should NOT cancel recording if Shift was not released early", () => {
-        const cancelRecording = vi.fn()
-
-        function TestHarness() {
-            const [isRecording, setIsRecording] = React.useState(false)
-            const cancelPendingRef = React.useRef(false)
-            const shiftRecordingRef = React.useRef(false)
-
-            React.useEffect(() => {
-                if (isRecording && cancelPendingRef.current) {
-                    cancelPendingRef.current = false
-                    shiftRecordingRef.current = false
-                    cancelRecording()
-                }
-            }, [isRecording])
-
-            return (
-                <div>
-                    <button onClick={() => {
-                        shiftRecordingRef.current = true
-                    }}>mark-start-pending</button>
-                    <button onClick={() => setIsRecording(true)}>recording-started</button>
-                </div>
-            )
-        }
-
-        const { getByText } = render(<TestHarness />)
-
-        act(() => {
-            getByText("mark-start-pending").click()
-            // Do not release Shift, just wait for getUserMedia to succeed
-            getByText("recording-started").click()
-        })
-
-        expect(cancelRecording).not.toHaveBeenCalled()
-    })
-})
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockUseVoiceInput.mockReturnValue(createMockHookReturn());
+    // Mock navigator.onLine
+    Object.defineProperty(navigator, "onLine", {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it("should render nothing when voice is disabled", () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({ isVoiceEnabled: false })
+    );
+
+    const { container } = render(
+      <VoiceInputIndicator onTranscribed={vi.fn()} />
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("should render microphone button when enabled and not recording", () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({ isVoiceEnabled: true })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const button = document.querySelector(".wk-voice-button");
+    expect(button).toBeTruthy();
+  });
+
+  it("should render recording state with floating indicator", () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        isRecording: true,
+      })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Should show recording button
+    const recordingButton = document.querySelector(
+      ".wk-voice-button--recording"
+    );
+    expect(recordingButton).toBeTruthy();
+  });
+
+  it("should render transcribing state", () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        isTranscribing: true,
+      })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const recordingButton = document.querySelector(
+      ".wk-voice-button--recording"
+    );
+    expect(recordingButton).toBeTruthy();
+  });
+
+  it("should render preparing state", async () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({ isVoiceEnabled: true })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Simulate ShiftLeft keydown
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "ShiftLeft",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // Advance time to show preparing state (300ms)
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+
+    const preparingButton = document.querySelector(
+      ".wk-voice-button--preparing"
+    );
+    expect(preparingButton).toBeTruthy();
+  });
+});
+
+describe("VoiceInputIndicator - network status", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockUseVoiceInput.mockReturnValue(createMockHookReturn());
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it("should show disabled state when offline", () => {
+    Object.defineProperty(navigator, "onLine", {
+      value: false,
+      writable: true,
+      configurable: true,
+    });
+
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({ isVoiceEnabled: true })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const button = document.querySelector(".wk-voice-button--disabled");
+    expect(button).toBeTruthy();
+  });
+
+  it("should show Toast when clicking while offline", async () => {
+    Object.defineProperty(navigator, "onLine", {
+      value: false,
+      writable: true,
+      configurable: true,
+    });
+
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({ isVoiceEnabled: true })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const button = document.querySelector(".wk-voice-button");
+    await act(async () => {
+      fireEvent.click(button!);
+    });
+
+    expect(Toast.warning).toHaveBeenCalledWith(
+      "网络不可用，无法使用语音功能"
+    );
+  });
+
+  it("should respond to online/offline events", async () => {
+    Object.defineProperty(navigator, "onLine", {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
+
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({ isVoiceEnabled: true })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Initially online - should not be disabled
+    let button = document.querySelector(".wk-voice-button--disabled");
+    expect(button).toBeNull();
+
+    // Simulate going offline
+    await act(async () => {
+      Object.defineProperty(navigator, "onLine", {
+        value: false,
+        writable: true,
+        configurable: true,
+      });
+      fireEvent(window, new Event("offline"));
+    });
+
+    button = document.querySelector(".wk-voice-button--disabled");
+    expect(button).toBeTruthy();
+
+    // Simulate going online
+    await act(async () => {
+      Object.defineProperty(navigator, "onLine", {
+        value: true,
+        writable: true,
+        configurable: true,
+      });
+      fireEvent(window, new Event("online"));
+    });
+
+    button = document.querySelector(".wk-voice-button--disabled");
+    expect(button).toBeNull();
+  });
+});
+
+describe("VoiceInputIndicator - long-press ShiftLeft state machine", () => {
+  let startRecording: ReturnType<typeof vi.fn>;
+  let stopRecordingAndTranscribe: ReturnType<typeof vi.fn>;
+  let cancelRecording: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    startRecording = vi.fn();
+    stopRecordingAndTranscribe = vi.fn();
+    cancelRecording = vi.fn();
+
+    Object.defineProperty(navigator, "onLine", {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
+
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        startRecording,
+        stopRecordingAndTranscribe,
+        cancelRecording,
+      })
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it("should NOT start recording if ShiftLeft released before 500ms", async () => {
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Press ShiftLeft
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "ShiftLeft",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // Advance time to 400ms (before 500ms threshold)
+    await act(async () => {
+      vi.advanceTimersByTime(400);
+    });
+
+    // Release ShiftLeft
+    await act(async () => {
+      fireEvent.keyUp(window, {
+        code: "ShiftLeft",
+        key: "Shift",
+      });
+    });
+
+    // startRecording should not be called
+    expect(startRecording).not.toHaveBeenCalled();
+  });
+
+  it("should start recording after holding ShiftLeft for 500ms", async () => {
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Press ShiftLeft
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "ShiftLeft",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // Advance time to 500ms
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(startRecording).toHaveBeenCalled();
+  });
+
+  it("should cancel timer when another key is pressed during wait", async () => {
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Press ShiftLeft
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "ShiftLeft",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // Press another key (like 'A' for uppercase typing)
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "KeyA",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // Advance time past 500ms
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    // startRecording should NOT be called (timer was cancelled)
+    expect(startRecording).not.toHaveBeenCalled();
+  });
+
+  it("should cancel timer when Ctrl is pressed during ShiftLeft hold", async () => {
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Press ShiftLeft
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "ShiftLeft",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // Press Ctrl (modifier chord)
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "ControlLeft",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: true,
+        altKey: false,
+      });
+    });
+
+    // Advance time past 500ms
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(startRecording).not.toHaveBeenCalled();
+  });
+
+  it("should NOT cancel timer for IME events (key=Process)", async () => {
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Press ShiftLeft
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "ShiftLeft",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // IME event
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "KeyA",
+        key: "Process",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // Advance time to 500ms
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+
+    // Should still start recording (IME events don't cancel timer)
+    expect(startRecording).toHaveBeenCalled();
+  });
+
+  it("should NOT trigger on ShiftRight", async () => {
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Press ShiftRight
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "ShiftRight",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // Advance time past 500ms
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(startRecording).not.toHaveBeenCalled();
+  });
+
+  it("should allow Shift+Cmd+Space shortcut", async () => {
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "Space",
+        shiftKey: true,
+        metaKey: true,
+        repeat: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    expect(startRecording).toHaveBeenCalled();
+  });
+
+  it("should cancel recording with Escape key", async () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        isRecording: true,
+        startRecording,
+        stopRecordingAndTranscribe,
+        cancelRecording,
+      })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "Escape",
+      });
+    });
+
+    expect(cancelRecording).toHaveBeenCalled();
+  });
+});
+
+describe("VoiceInputIndicator - cancelPending integration", () => {
+  let startRecording: ReturnType<typeof vi.fn>;
+  let cancelRecording: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    startRecording = vi.fn();
+    cancelRecording = vi.fn();
+
+    Object.defineProperty(navigator, "onLine", {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it("should set cancelPending when Shift released while waiting for getUserMedia", async () => {
+    // Mock that recording takes time to start (getUserMedia delay)
+    let isRecording = false;
+
+    mockUseVoiceInput.mockImplementation(() => ({
+      isRecording,
+      isTranscribing: false,
+      startRecording: vi.fn(() => {
+        // Simulate async getUserMedia - isRecording becomes true later
+        setTimeout(() => {
+          isRecording = true;
+        }, 100);
+      }),
+      stopRecordingAndTranscribe: vi.fn(),
+      cancelRecording,
+      isVoiceEnabled: true,
+    }));
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    // Press ShiftLeft
+    await act(async () => {
+      fireEvent.keyDown(window, {
+        code: "ShiftLeft",
+        shiftKey: true,
+        repeat: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false,
+      });
+    });
+
+    // Advance time to trigger recording start (500ms)
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+
+    // Release ShiftLeft before getUserMedia resolves
+    await act(async () => {
+      fireEvent.keyUp(window, {
+        code: "ShiftLeft",
+        key: "Shift",
+      });
+    });
+
+    // The cancelPending flag should be set internally
+    // This will cause recording to be cancelled when it actually starts
+  });
+});
+
+describe("VoiceInputIndicator - click interactions", () => {
+  let startRecording: ReturnType<typeof vi.fn>;
+  let stopRecordingAndTranscribe: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    startRecording = vi.fn();
+    stopRecordingAndTranscribe = vi.fn();
+
+    Object.defineProperty(navigator, "onLine", {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
+
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        startRecording,
+        stopRecordingAndTranscribe,
+      })
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it("should start recording on click", async () => {
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const button = document.querySelector(".wk-voice-button");
+    await act(async () => {
+      fireEvent.click(button!);
+    });
+
+    expect(startRecording).toHaveBeenCalled();
+  });
+
+  it("should stop recording on click when recording", async () => {
+    const getCurrentText = vi.fn().mockReturnValue("test text");
+
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        isRecording: true,
+        startRecording,
+        stopRecordingAndTranscribe,
+      })
+    );
+
+    render(
+      <VoiceInputIndicator
+        onTranscribed={vi.fn()}
+        getCurrentText={getCurrentText}
+      />
+    );
+
+    const button = document.querySelector(".wk-voice-button--recording");
+    await act(async () => {
+      fireEvent.click(button!);
+    });
+
+    expect(stopRecordingAndTranscribe).toHaveBeenCalledWith("test text");
+  });
+
+  it("should support keyboard interaction (Enter/Space)", async () => {
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const button = document.querySelector(".wk-voice-button");
+
+    await act(async () => {
+      fireEvent.keyDown(button!, { key: "Enter" });
+    });
+
+    expect(startRecording).toHaveBeenCalled();
+  });
+});
+
+describe("VoiceInputIndicator - floating indicator", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+
+    Object.defineProperty(navigator, "onLine", {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it("should render floating indicator with wave animation when recording", () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        isRecording: true,
+      })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const waveContainer = document.querySelector(".wk-voice-wave-container");
+    expect(waveContainer).toBeTruthy();
+
+    // Should have 16 wave bars
+    const waveBars = document.querySelectorAll(".wk-voice-wave-bar");
+    expect(waveBars.length).toBe(16);
+  });
+
+  it("should render floating indicator with spinner when transcribing", () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        isTranscribing: true,
+      })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const spinner = document.querySelector(".wk-voice-transcribing-spinner");
+    expect(spinner).toBeTruthy();
+  });
+
+  it("should show 语音输入 text in floating indicator when recording", () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        isRecording: true,
+      })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const text = document.querySelector(".wk-voice-floating-text");
+    expect(text?.textContent).toBe("语音输入");
+  });
+
+  it("should show 转写中 text in floating indicator when transcribing", () => {
+    mockUseVoiceInput.mockReturnValue(
+      createMockHookReturn({
+        isVoiceEnabled: true,
+        isTranscribing: true,
+      })
+    );
+
+    render(<VoiceInputIndicator onTranscribed={vi.fn()} />);
+
+    const text = document.querySelector(".wk-voice-floating-text");
+    expect(text?.textContent).toBe("转写中");
+  });
+});

@@ -344,6 +344,7 @@ body.octo-sidepanel-v3 .octo-composer {
   position: relative;
   display: flex;
   flex-direction: column;
+  padding: 0;
   background: var(--wk-bg-app);
   border: 1px solid var(--wk-ink-12);
   border-radius: var(--wk-r-xl);

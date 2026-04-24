@@ -246,13 +246,21 @@
     display: none;
     align-items: center;
     justify-content: center;
-    margin-bottom: 24px;
+    gap: 12px;
+    margin-bottom: 32px;
 }
 
 .wk-login-content-logo img {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+}
+
+.wk-login-content-logo-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
 }
 
 /* ---- Slogan / panel title ---- */

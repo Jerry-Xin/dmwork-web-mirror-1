@@ -228,7 +228,8 @@ class Login extends Component<any, LoginState> {
                     <div className="wk-login-content">
                         {/* Mobile logo fallback */}
                         <div className="wk-login-content-logo">
-                            <img src={`/logo.png`} alt="logo" height={56} style={{ width: 'auto', display: 'inline-block', marginBottom: -10 }} />
+                            <img src={`/logo-app.png`} alt="logo" />
+                            <span className="wk-login-content-logo-name">{WKApp.config.appName || 'Octo'}</span>
                         </div>
 
                         {vm.inviteInfo && (

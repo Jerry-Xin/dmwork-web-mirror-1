@@ -616,6 +616,21 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     color: var(--wk-brand-primary, #1C1C23);
 }
 
+.wk-conv-compact-thread-overflow-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--wk-color-error);
+    background: color-mix(in srgb, var(--wk-color-error) 10%, transparent);
+    border-radius: var(--wk-r-full);
+    margin-left: auto;
+}
+
 
 /* 父群聊有子区时，# icon 下方延伸竖线，连接下面的子区 */
 .wk-conv-compact-item--has-threads {

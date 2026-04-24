@@ -440,7 +440,7 @@ export default class ConversationList extends Component<ConversationListProps, C
     }
 
     // 将子区放在父群组后面，最多显示2个，超出部分用计数表示
-    private groupThreadsWithParent(convs: ConversationWrap[]): { items: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }>, threadsByParent: Map<string, ConversationWrap[]> } {
+    private groupThreadsWithParent(convs: ConversationWrap[]): { items: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number; unreadCount: number }>, threadsByParent: Map<string, ConversationWrap[]> } {
         const MAX_VISIBLE_THREADS = 2
 
         // 分离群组和子区
@@ -465,7 +465,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         }
 
         // 重新组织：群组后面跟着其子区（最多2个）
-        const result: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }> = []
+        const result: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number; unreadCount: number }> = []
         const usedThreads = new Set<string>()
 
         for (const conv of convs) {
@@ -491,10 +491,15 @@ export default class ConversationList extends Component<ConversationListProps, C
 
                 // 如果有超出的子区，添加溢出提示
                 if (overflowCount > 0) {
+                    // 计算溢出子区的总未读数
+                    const overflowThreads = groupThreads.slice(MAX_VISIBLE_THREADS)
+                    const overflowUnread = overflowThreads.reduce((sum, t) => sum + t.unread, 0)
+
                     result.push({
                         type: 'thread-overflow',
                         parentGroupId: conv.channel.channelID,
-                        count: overflowCount
+                        count: overflowCount,
+                        unreadCount: overflowUnread
                     })
                 }
             }
@@ -572,7 +577,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         const { onThreadOverflowClick, compact } = this.props
         const { expandedGroupIds } = this.state
 
-        const renderItem = (item: ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }) => {
+        const renderItem = (item: ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number; unreadCount: number }) => {
             if ('type' in item && item.type === 'thread-overflow') {
                 if (compact) {
                     // compact 模式：overflow indicator 改为「+N 个子区」/ 「收起」可切换
@@ -608,6 +613,11 @@ export default class ConversationList extends Component<ConversationListProps, C
                                 onClick={toggleExpand}
                             >
                                 {isExpanded ? '收起' : `+ ${item.count} 个子区`}
+                                {!isExpanded && item.unreadCount > 0 && (
+                                    <span className="wk-conv-compact-thread-overflow-badge">
+                                        {item.unreadCount > 99 ? '99+' : item.unreadCount}
+                                    </span>
+                                )}
                             </div>
                         </React.Fragment>
                     )

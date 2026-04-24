@@ -425,11 +425,11 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 .wk-conv-compact-item {
     display: flex;
     align-items: center;
-    gap: 4px;                          /* Figma: 4px */
-    padding: 0 8px 0 16px;             /* Figma: right:8, 内容靠 align-items 居中 */
+    gap: 4px;
+    padding: 0 8px 0 20px;           /* 加大左缩进体现层级，黑条仍贴左边缘 */
     border-radius: 0;
     cursor: pointer;
-    height: 28px;                      /* Figma: 28px */
+    height: 32px;
     box-sizing: border-box;
     position: relative;
     transition: background 200ms;
@@ -451,8 +451,8 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 
 .wk-conv-compact-icon {
     flex-shrink: 0;
-    width: 16px;                       /* Figma: 16x16 */
-    height: 16px;
+    width: 24px;                       /* 群聊头像宽度，子区 icon 居中 */
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -614,6 +614,21 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
 
 .wk-conv-compact-thread-overflow:hover {
     color: var(--wk-brand-primary, #1C1C23);
+}
+
+.wk-conv-compact-thread-overflow-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--wk-color-error);
+    background: color-mix(in srgb, var(--wk-color-error) 10%, transparent);
+    border-radius: var(--wk-r-full);
+    margin-left: auto;
 }
 
 

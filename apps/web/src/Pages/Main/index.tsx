@@ -4,7 +4,7 @@ import "./index.css"
 import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
 import { Space, SpaceService } from "@dmwork/base";
-import { SpaceCreate, JoinSpaceModalConnected, NavRail, MeInfo } from "@dmwork/base";
+import { JoinSpaceModalConnected, NavRail, MeInfo } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
 
 // ─── MainContentLeft：纯路由渲染区（Sidebar + 内容） ───────────────────────
@@ -35,7 +35,6 @@ export class MainContentLeft extends Component<MainContentLeftProps> {
 
 interface MainPageState {
     allSpaces: Space[];
-    showSpaceCreate: boolean;
     showJoinSpace: boolean;
     showMeInfo: boolean;
 }
@@ -45,7 +44,6 @@ export class MainPage extends Component<{}, MainPageState> {
         super(props);
         this.state = {
             allSpaces: [],
-            showSpaceCreate: false,
             showJoinSpace: false,
             showMeInfo: false,
         };
@@ -80,7 +78,7 @@ export class MainPage extends Component<{}, MainPageState> {
 
     handleSpaceSelected = (spaceId: string) => {
         SpaceService.shared.getMySpaces().then(spaces => {
-            this.setState({ allSpaces: spaces, showSpaceCreate: false, showJoinSpace: false });
+            this.setState({ allSpaces: spaces, showJoinSpace: false });
             WKApp.shared.currentSpaceId = spaceId;
             localStorage.setItem("currentSpaceId", spaceId);
             const target = spaces.find(s => s.space_id === spaceId);
@@ -89,31 +87,6 @@ export class MainPage extends Component<{}, MainPageState> {
         }).catch(() => {
             Toast.error("刷新 Space 列表失败，请手动刷新");
         });
-    };
-
-    handleCopyInviteLink = async (spaceId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        try {
-            const detail = await WKApp.apiClient.get(`/space/${spaceId}`);
-            if (!detail.invite_code) { Toast.warning("该 Space 暂无邀请码"); return; }
-            const link = `${window.location.origin}${window.location.pathname}?invite=${detail.invite_code}`;
-            let copied = false;
-            try {
-                await navigator.clipboard.writeText(link);
-                copied = true;
-            } catch {
-                const textarea = document.createElement("textarea");
-                textarea.value = link;
-                textarea.style.cssText = "position:fixed;opacity:0";
-                document.body.appendChild(textarea);
-                textarea.select();
-                copied = document.execCommand("copy");
-                document.body.removeChild(textarea);
-            }
-            copied ? Toast.success("邀请链接已复制") : Toast.error("复制失败，请手动复制");
-        } catch {
-            Toast.error("获取邀请码失败");
-        }
     };
 
     handleAvatarClick = () => {
@@ -134,7 +107,10 @@ export class MainPage extends Component<{}, MainPageState> {
     };
 
     render() {
-        const { allSpaces, showSpaceCreate, showJoinSpace, showMeInfo } = this.state;
+        const { allSpaces, showJoinSpace, showMeInfo } = this.state;
+        // 客户端 UI 可见性控制：仅在用户拥有任一 Space 的 owner/admin 角色时显示入口；
+        // 真正的接口鉴权由 admin SPA 后端负责。allSpaces 来自登录后刷新，角色变更需重新加载。
+        const canManageSpace = allSpaces.some(s => s.role === 1 || s.role === 2);
 
         return (
             <Provider create={() => new MainVM()} render={(vm: MainVM) => {
@@ -149,9 +125,8 @@ export class MainPage extends Component<{}, MainPageState> {
                                     spaces={allSpaces}
                                     currentSpaceId={currentSpaceId}
                                     onSpaceSelect={this.handleSpaceSelected}
-                                    onCopyInviteLink={this.handleCopyInviteLink}
                                     onJoinSpace={() => this.setState({ showJoinSpace: true })}
-                                    onCreateSpace={() => this.setState({ showSpaceCreate: true })}
+                                    canManageSpace={canManageSpace}
                                     // 菜单
                                     menusList={vm.menusList}
                                     currentMenus={vm.currentMenus}
@@ -216,11 +191,6 @@ export class MainPage extends Component<{}, MainPageState> {
                             <MeInfo onClose={() => this.setState({ showMeInfo: false })} />
                         </WKModal>
 
-                        <SpaceCreate
-                            visible={showSpaceCreate}
-                            onClose={() => this.setState({ showSpaceCreate: false })}
-                            onSuccess={this.handleSpaceSelected}
-                        />
                         <JoinSpaceModalConnected
                             visible={showJoinSpace}
                             onClose={() => this.setState({ showJoinSpace: false })}

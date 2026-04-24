@@ -132,34 +132,37 @@
     width: 240px;
     background: var(--wk-bg-surface);
     border: 1px solid var(--wk-border-subtle);
-    border-radius: var(--wk-r-lg, 14px);
+    border-radius: 8px;                /* Figma: cornerRadius=8 */
     box-shadow: var(--wk-shadow-dropdown);
     z-index: 101;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: var(--wk-sp-2, 8px);
+    padding: 4px 0;                    /* Figma: 上下 4px，左右 0（行内自带 padding） */
 }
 
 .wk-navrail__dropdown-title {
-    font-size: 11px;
+    font-size: 12px;                   /* Figma: 12px Semibold */
     font-weight: 600;
-    color: var(--wk-text-tertiary);
-    padding: var(--wk-sp-1) var(--wk-sp-2) var(--wk-sp-1-5);
-    letter-spacing: 0.3px;
+    color: rgba(28, 28, 35, 0.40);    /* Figma: 40% */
+    padding: 8px 12px;                 /* Figma: T8 B8 L12 R12 */
+    letter-spacing: 0;
     flex-shrink: 0;
 }
 
 /* 可滚动 Space 列表区 */
 .wk-navrail__dropdown-spaces {
     overflow-y: auto;
-    max-height: calc(100vh - 200px);
+    max-height: 596px;                 /* Figma: 弹层最大 728px - 标题 36 - 分割线 8 - 底部操作 64 - 上下 pad 8 = ~612，保守取 596 */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;                          /* Figma: Space 列表 gap=4 */
 }
 
 .wk-navrail__dropdown-divider {
     height: 1px;
-    background: var(--wk-border-subtle);
-    margin: var(--wk-sp-1, 4px) 0;
+    background: rgba(28, 28, 35, 0.15); /* Figma: 分割线颜色 */
+    margin: 4px 12px;                   /* Figma: 左右 margin 12px */
     flex-shrink: 0;
 }
 

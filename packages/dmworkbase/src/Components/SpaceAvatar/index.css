@@ -11,6 +11,8 @@
 
 /* sizes */
 .wk-space-avatar--xs  { width: 28px; height: 28px; font-size: 12px; border-radius: 6px; }
+/* Figma: Space 切换器行内 36x36 */
+.wk-space-avatar--switcher { width: 36px; height: 36px; font-size: 14px; border-radius: 8px; }
 .wk-space-avatar--sm  { width: 24px; height: 24px; font-size: 11px; border-radius: 6px; }
 .wk-space-avatar--md  { width: 32px; height: 32px; font-size: 14px; border-radius: 8px; }
 .wk-space-avatar--lg  { width: 48px; height: 48px; font-size: 20px; border-radius: 12px; }

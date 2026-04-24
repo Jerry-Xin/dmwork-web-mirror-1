@@ -11,9 +11,7 @@ export interface NavBottomProps {
     spaces: Space[];
     currentSpaceId?: string;
     onSpaceSelect: (spaceId: string) => void;
-    onCopyInviteLink?: (spaceId: string, e: React.MouseEvent) => void;
     onJoinSpace?: () => void;
-    onCreateSpace?: () => void;
 }
 
 function IconSettings() {
@@ -30,9 +28,7 @@ export default function NavBottom({
     spaces,
     currentSpaceId,
     onSpaceSelect,
-    onCopyInviteLink,
     onJoinSpace,
-    onCreateSpace,
 }: NavBottomProps) {
     return (
         <div className="wk-navrail__bottom">
@@ -60,9 +56,7 @@ export default function NavBottom({
                 spaces={spaces}
                 currentSpaceId={currentSpaceId}
                 onSpaceSelect={onSpaceSelect}
-                onCopyInviteLink={onCopyInviteLink}
                 onJoinSpace={onJoinSpace}
-                onCreateSpace={onCreateSpace}
             />
         </div>
     );

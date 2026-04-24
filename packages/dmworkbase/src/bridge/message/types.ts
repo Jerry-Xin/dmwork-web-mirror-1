@@ -44,6 +44,12 @@ export interface MessageRowUIProps {
 
   /** 是否显示多选 Checkbox（多选模式时为 true） */
   showCheckbox?: boolean
+
+  /** 头像点击回调（私聊场景：点头像打开私聊） */
+  onAvatarClick?: (e: React.MouseEvent) => void
+
+  /** 发送者名称点击回调（@ 场景：点名字展示用户信息） */
+  onSenderNameClick?: () => void
   
   /** 消息内容（子组件） */
   children: React.ReactNode

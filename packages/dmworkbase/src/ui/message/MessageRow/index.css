@@ -98,11 +98,7 @@
  */
 .wk-msg-row-avatar-placeholder {
   width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 4px;
+  flex-shrink: 0;
 }
 
 /**

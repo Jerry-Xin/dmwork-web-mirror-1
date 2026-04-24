@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Toast } from "@douyinfe/semi-ui";
 import { Mic } from "lucide-react";
 import useVoiceInput from "./useVoiceInput";
 import "./voiceInput.css";
 import { ChatContextResult } from "../Conversation/chatContext";
-import IconClick from "../IconClick";
 
 interface VoiceInputIndicatorProps {
   onTranscribed: (text: string, shouldReplace: boolean) => void;
@@ -12,11 +12,13 @@ interface VoiceInputIndicatorProps {
   getChatContext?: () => ChatContextResult;
 }
 
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
+// Floating indicator positioning constants
+const FLOATING_GAP = 20;
+const INDICATOR_HEIGHT = 48;
+
+// Long-press timing constants
+const PREPARING_DELAY_MS = 300;
+const RECORDING_DELAY_MS = 500;
 
 export default function VoiceInputIndicator({
   onTranscribed,
@@ -30,13 +32,34 @@ export default function VoiceInputIndicator({
   const cancelPendingRef = useRef(false);
   const [isPreparing, setIsPreparing] = useState(false);
 
-  const PREPARING_DELAY_MS = 300;
-  const RECORDING_DELAY_MS = 500;
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const isOnlineRef = useRef(isOnline);
+  isOnlineRef.current = isOnline;
+  const buttonGroupRef = useRef<HTMLDivElement>(null);
+
+  // Floating indicator position state
+  const [floatingPosition, setFloatingPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+
+  // Network status detection - PRD: 无网络时话筒 icon 置灰
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const {
     isRecording,
     isTranscribing,
-    duration,
     startRecording,
     stopRecordingAndTranscribe,
     cancelRecording,
@@ -45,14 +68,25 @@ export default function VoiceInputIndicator({
     onTranscribed,
     getChatContext,
     onError: (error) => {
+      // 麦克风权限被拒绝时显示中文提示
       if (
         error.message.includes("denied") ||
         error.message.includes("Permission") ||
         error.message.includes("NotAllowedError")
       ) {
-        Toast.error("Please allow microphone access");
-      } else {
-        Toast.error(error.message || "Voice transcription failed");
+        Toast.error("请允许麦克风访问权限");
+      } else if (
+        error.message.includes("NotFoundError") ||
+        error.message.includes("NotReadableError")
+      ) {
+        // 设备不存在或不可用
+        Toast.error("麦克风不可用");
+      } else if (
+        !error.message.includes("file size") &&
+        !error.message.includes("Transcription failed")
+      ) {
+        // 兜底：显示通用错误（排除已在 useVoiceInput 中 Toast 的错误）
+        Toast.error("语音输入失败");
       }
     },
     onRecordingFailed: () => {
@@ -98,15 +132,74 @@ export default function VoiceInputIndicator({
     }
   }, [isRecording, cancelRecording]);
 
+  // Calculate floating indicator position when recording starts
+  const updateFloatingPosition = useCallback(() => {
+    if (!buttonGroupRef.current) return;
+
+    // Find the parent .wk-messageinput-card element
+    const card = buttonGroupRef.current.closest(".wk-messageinput-card");
+    if (!card) return;
+
+    const cardRect = card.getBoundingClientRect();
+    setFloatingPosition({
+      top: cardRect.top - FLOATING_GAP - INDICATOR_HEIGHT,
+      left: cardRect.left + cardRect.width / 2,
+    });
+  }, []);
+
+  // Update position when recording or transcribing, and on window resize/scroll
+  useEffect(() => {
+    if (!isRecording && !isTranscribing) {
+      setFloatingPosition(null);
+      return;
+    }
+
+    updateFloatingPosition();
+
+    const handleResize = () => updateFloatingPosition();
+
+    // 使用 requestAnimationFrame 节流 scroll 事件
+    let rafId: number | null = null;
+    const handleScroll = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        updateFloatingPosition();
+        rafId = null;
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll, true);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, [isRecording, isTranscribing, updateFloatingPosition]);
+
   // Keyboard shortcut: Shift + Cmd/Ctrl + Space, and long-press ShiftLeft
   useEffect(() => {
     if (!isVoiceEnabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Esc to cancel recording
+      if (e.code === "Escape" && isRecordingRef.current) {
+        e.preventDefault();
+        cancelRecording();
+        return;
+      }
+
       // Existing shortcut: Shift+Cmd/Ctrl+Space
       if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.code === "Space") {
         if (!isRecordingRef.current && !isTranscribingRef.current) {
           e.preventDefault();
+          // Check network status before starting
+          if (!isOnlineRef.current) {
+            Toast.warning("网络不可用，无法使用语音功能");
+            return;
+          }
           startRecordingRef.current();
         }
         return;
@@ -132,6 +225,12 @@ export default function VoiceInputIndicator({
           }, PREPARING_DELAY_MS);
           shiftTimerRef.current = setTimeout(() => {
             shiftTimerRef.current = null;
+            // Check network status before starting
+            if (!isOnlineRef.current) {
+              Toast.warning("网络不可用，无法使用语音功能");
+              setIsPreparing(false);
+              return;
+            }
             shiftRecordingRef.current = true;
             startRecordingRef.current();
           }, RECORDING_DELAY_MS);
@@ -217,7 +316,7 @@ export default function VoiceInputIndicator({
       window.removeEventListener("blur", handleBlurWhilePreparing);
       clearShiftTimer();
     };
-  }, [isVoiceEnabled, getCurrentText]);
+  }, [isVoiceEnabled, getCurrentText, cancelRecording]);
 
   // Window blur: auto-stop recording
   useEffect(() => {
@@ -232,63 +331,171 @@ export default function VoiceInputIndicator({
 
   if (!isVoiceEnabled) return null;
 
+  // Handle click/keyboard for voice button
+  const handleVoiceClick = () => {
+    if (!isOnline) {
+      Toast.warning("网络不可用，无法使用语音功能");
+      return;
+    }
+    startRecording();
+  };
+
+  const handleVoiceKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      handleVoiceClick();
+    }
+  };
+
+  // Handle stop recording click/keyboard
+  const handleStopClick = () => {
+    const contextText = getCurrentText?.();
+    stopRecordingAndTranscribe(contextText);
+  };
+
+  const handleStopKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      handleStopClick();
+    }
+  };
+
   if (isTranscribing) {
-    return (
-      <div className="wk-voice-indicator wk-voice-transcribing">
-        <span className="wk-voice-spinner" />
-        <span className="wk-voice-label">Transcribing...</span>
+    // If no position yet, still show the button in recording state
+    if (!floatingPosition) {
+      return (
+        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+          <div
+            className="wk-voice-button wk-voice-button--recording"
+            title="转写中..."
+          >
+            <Mic size={18} color="currentColor" />
+          </div>
+        </div>
+      );
+    }
+
+    const transcribingIndicator = (
+      <div
+        className="wk-voice-floating-indicator"
+        style={{
+          top: floatingPosition.top,
+          left: floatingPosition.left,
+          transform: "translateX(-50%)",
+        }}
+      >
+        <div className="wk-voice-floating-content">
+          <span className="wk-voice-floating-text">转写中</span>
+        </div>
+        <span className="wk-voice-floating-divider" />
+        <div className="wk-voice-transcribing-spinner" />
       </div>
+    );
+
+    return (
+      <>
+        {createPortal(transcribingIndicator, document.body)}
+        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+          <div
+            className="wk-voice-button wk-voice-button--recording"
+            title="转写中..."
+          >
+            <Mic size={18} color="currentColor" />
+          </div>
+        </div>
+      </>
     );
   }
 
   if (isRecording) {
-    return (
-      <div className="wk-voice-indicator wk-voice-recording">
-        <span className="wk-voice-dot" />
-        <span className="wk-voice-label">{formatDuration(duration)}</span>
-        <span className="wk-voice-label">Recording...</span>
-        <button
-          className="wk-voice-cancel"
-          onClick={(e) => {
-            e.preventDefault();
-            cancelRecording();
-          }}
-          type="button"
-        >
-          Cancel
-        </button>
+    // If no position yet, still show the button in recording state
+    if (!floatingPosition) {
+      return (
+        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+          <div
+            className="wk-voice-button wk-voice-button--recording"
+            title="点击停止录音"
+            onClick={handleStopClick}
+            onKeyDown={handleStopKeyDown}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: "pointer" }}
+          >
+            <Mic size={18} color="currentColor" />
+          </div>
+        </div>
+      );
+    }
+
+    const floatingIndicator = (
+      <div
+        className="wk-voice-floating-indicator"
+        style={{
+          top: floatingPosition.top,
+          left: floatingPosition.left,
+          transform: "translateX(-50%)",
+        }}
+      >
+        <div className="wk-voice-floating-content">
+          <span className="wk-voice-floating-text">语音输入</span>
+        </div>
+        <span className="wk-voice-floating-divider" />
+        <div className="wk-voice-wave-container">
+          {Array.from({ length: 16 }, (_, i) => (
+            <span key={i} className="wk-voice-wave-bar" />
+          ))}
+        </div>
       </div>
+    );
+
+    return (
+      <>
+        {createPortal(floatingIndicator, document.body)}
+        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+          <div
+            className="wk-voice-button wk-voice-button--recording"
+            title="点击停止录音"
+            onClick={handleStopClick}
+            onKeyDown={handleStopKeyDown}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: "pointer" }}
+          >
+            <Mic size={18} color="currentColor" />
+          </div>
+        </div>
+      </>
     );
   }
 
   if (isPreparing) {
     return (
-      <div className="wk-voice-indicator wk-voice-preparing">
-        <span className="wk-voice-label">Hold for voice...</span>
+      <div className="wk-voice-button-group" ref={buttonGroupRef}>
+        <div
+          className="wk-voice-button wk-voice-button--preparing"
+          title="准备中..."
+        >
+          <Mic size={18} color="currentColor" />
+        </div>
       </div>
     );
   }
 
-  // 默认状态：显示麦克风按钮 + 下拉箭头
+  // 默认状态：显示麦克风按钮
+  // PRD: 无网络时话筒 icon 置灰，点击时 Toast「网络不可用，无法使用语音功能」
   return (
-    <div className="wk-voice-button-group">
-      <IconClick
-        size="sm"
-        title="语音输入 (长按 Shift)"
-        icon={<Mic size={18} color="currentColor" />}
-        onClick={() => {
-          startRecording();
-        }}
-      />
+    <div className="wk-voice-button-group" ref={buttonGroupRef}>
       <div
-        className="wk-voice-dropdown-arrow"
-        title="语音设置"
-        onClick={(e) => {
-          e.stopPropagation();
-          // TODO: 打开语音设置菜单
-        }}
+        className={`wk-voice-button ${
+          !isOnline ? "wk-voice-button--disabled" : ""
+        }`}
+        title={isOnline ? "语音输入 (长按 Shift)" : "网络不可用"}
+        onClick={handleVoiceClick}
+        onKeyDown={handleVoiceKeyDown}
+        role="button"
+        tabIndex={isOnline ? 0 : -1}
       >
-        <span className="wk-voice-dropdown-triangle" />
+        <Mic size={18} color="currentColor" />
       </div>
     </div>
   );

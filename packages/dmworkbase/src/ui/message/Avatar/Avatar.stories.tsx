@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import React from 'react'
 import Avatar from './index'
 
 const meta: Meta<typeof Avatar> = {
@@ -81,6 +82,21 @@ export const Small: Story = {
     isOnline: true,
     showOnlineDot: true,
     alt: '小头像',
+  },
+}
+
+/**
+ * 可点击头像（展示 pointer cursor + onClick 回调）
+ * 点击头像后会触发 onAvatarClick，Storybook Actions 面板可看到事件记录。
+ */
+export const Clickable: Story = {
+  args: {
+    src: 'https://i.pravatar.cc/36?img=10',
+    size: 36,
+    isOnline: true,
+    showOnlineDot: true,
+    alt: '可点击头像',
+    onClick: (e: React.MouseEvent) => alert(`头像点击 (x: ${e.clientX}, y: ${e.clientY})`),
   },
 }
 

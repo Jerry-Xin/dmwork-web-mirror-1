@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import WKSDK, { Channel, ChannelInfo, ChannelInfoListener, ChannelTypePerson } from 'wukongimjssdk'
 import WKApp from '../../App'
 import { MessageWrap } from '../../Service/Model'
@@ -13,6 +13,13 @@ export interface MessageRowSelectionState {
   isSelected: boolean
   /** 点击 checkbox 时的回调（来自 context.checkeMessage） */
   onSelect?: (selected: boolean) => void
+}
+
+export interface MessageRowInteractionState {
+  /** 头像点击回调（私聊场景：点头像打开私聊，传入 fromUID） */
+  onAvatarClick?: (uid: string, e: React.MouseEvent) => void
+  /** 发送者名称点击回调（@ 场景：点名字展示用户信息，传入 fromUID） */
+  onSenderNameClick?: (uid: string) => void
 }
 
 /**
@@ -34,7 +41,8 @@ function getSenderName(channelInfo: ChannelInfo | undefined, fromUID: string): s
  */
 export function getMessageRow(
   message: MessageWrap,
-  selection?: MessageRowSelectionState
+  selection?: MessageRowSelectionState,
+  interaction?: MessageRowInteractionState
 ): Omit<MessageRowUIProps, 'children'> {
   const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
     new Channel(message.fromUID, ChannelTypePerson)
@@ -52,6 +60,15 @@ export function getMessageRow(
   const timestamp = formatTimestamp(message.timestamp)
   const timeOnly = formatTimeOnly(message.timestamp)
 
+  // 把 uid 绑定到回调
+  const uid = message.fromUID
+  const onAvatarClick = interaction?.onAvatarClick
+    ? (e: React.MouseEvent) => interaction.onAvatarClick!(uid, e)
+    : undefined
+  const onSenderNameClick = interaction?.onSenderNameClick
+    ? () => interaction.onSenderNameClick!(uid)
+    : undefined
+
   return {
     isSend: message.send,
     isContinue,
@@ -64,6 +81,8 @@ export function getMessageRow(
     timeOnly,
     isOnline: channelInfo?.online,
     onSelect: selection?.onSelect,
+    onAvatarClick,
+    onSenderNameClick,
   }
 }
 
@@ -82,7 +101,8 @@ export function getMessageRow(
  */
 export function useMessageRow(
   message: MessageWrap,
-  selection?: MessageRowSelectionState
+  selection?: MessageRowSelectionState,
+  interaction?: MessageRowInteractionState
 ): Omit<MessageRowUIProps, 'children'> {
   // 用 tick 来触发重渲染（channelInfo 更新后）
   const [, setTick] = useState(0)
@@ -113,7 +133,7 @@ export function useMessageRow(
     }
   }, [message.fromUID, forceUpdate])
 
-  return getMessageRow(message, selection)
+  return getMessageRow(message, selection, interaction)
 }
 
 /**

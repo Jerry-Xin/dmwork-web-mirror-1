@@ -173,6 +173,8 @@ export class MergeforwardCell extends MessageCell<any,MergeforwardCellState> {
                         onContextMenu={(event) => context.showContextMenus(message, event)}
                         isActive={context.isContextMenuOpen(message.message)}
                         onClick={context.editOn() ? () => context.checkeMessage(message.message, !message.checked) : undefined}
+                        onAvatarClick={(e) => context.onTapAvatar(message.fromUID, e)}
+                        onSenderNameClick={() => context.showUser(message.fromUID)}
                     >
                         <MergeforwardCard
                             {...uiProps.card}

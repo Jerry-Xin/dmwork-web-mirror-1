@@ -388,6 +388,8 @@ export class FileCell extends MessageCell<any, FileCellState> {
                     showCheckbox={context.editOn()}
                     isSelected={!!message.checked}
                     onSelect={(selected) => context.checkeMessage(message.message, selected)}
+                    onAvatarClick={(e) => context.onTapAvatar(message.fromUID, e)}
+                    onSenderNameClick={() => context.showUser(message.fromUID)}
                 >
                     <div>
                         <div className="wk-message-file">

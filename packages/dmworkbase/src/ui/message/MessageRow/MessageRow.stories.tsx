@@ -178,6 +178,32 @@ export const Conversation: Story = {
 }
 
 /**
+ * 头像 + 用户名点击（恢复 #941 中断的私聊 / @ 交互）
+ * - 点头像 → onAvatarClick（模拟打开私聊）
+ * - 点用户名 → onSenderNameClick（模拟展示用户信息）
+ * Storybook Actions 面板可看到触发记录；也可直接点看 alert。
+ */
+export const WithClickHandlers: Story = {
+  args: {
+    isSend: false,
+    isContinue: false,
+    isSelected: false,
+    showAvatar: true,
+    avatarUrl: 'https://i.pravatar.cc/36?img=30',
+    senderName: '张三（点我名字）',
+    timestamp: '10:30',
+    isOnline: true,
+    onAvatarClick: (e) => alert(`头像点击 → 打开私聊 (x:${e.clientX})`),
+    onSenderNameClick: () => alert('用户名点击 → 展示用户信息'),
+    children: (
+      <Bubble position="single" isSend={false}>
+        点左侧头像或顶部名字，验证回调触发
+      </Bubble>
+    ),
+  },
+}
+
+/**
  * Hover 态演示
  */
 export const HoverDemo: Story = {

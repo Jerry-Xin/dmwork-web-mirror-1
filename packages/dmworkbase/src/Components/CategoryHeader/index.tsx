@@ -5,6 +5,7 @@ export interface CategoryHeaderProps {
     name: string
     groupCount?: number
     unreadCount?: number
+    hasMention?: boolean
     isCollapsed: boolean
     isEmpty?: boolean
     onToggle: () => void
@@ -15,12 +16,15 @@ export interface CategoryHeaderProps {
     isEditing?: boolean
     onRenameConfirm?: (newName: string) => void
     onRenameCancel?: () => void
+    // 拖拽 handle props（由 useSortable 传入）
+    dragHandleProps?: React.HTMLAttributes<HTMLSpanElement>
 }
 
 const CategoryHeader: React.FC<CategoryHeaderProps> = ({
     name,
     groupCount,
     unreadCount,
+    hasMention,
     isCollapsed,
     isEmpty,
     onToggle,
@@ -29,6 +33,7 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
     isEditing,
     onRenameConfirm,
     onRenameCancel,
+    dragHandleProps,
 }) => {
     const inputRef = useRef<HTMLInputElement>(null)
     const isConfirmed = useRef(false)
@@ -119,8 +124,25 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
             onClick={onToggle}
             onContextMenu={onContextMenu}
         >
+            {/* 拖拽 handle（由父组件传入 useSortable listeners） */}
+            {dragHandleProps && (
+                <span
+                    className="wk-category-header__drag-handle"
+                    {...dragHandleProps}
+                    onClick={e => e.stopPropagation()}
+                >
+                    <svg width="10" height="14" viewBox="0 0 10 14" fill="none">
+                        <circle cx="3" cy="3" r="1.2" fill="currentColor" />
+                        <circle cx="7" cy="3" r="1.2" fill="currentColor" />
+                        <circle cx="3" cy="7" r="1.2" fill="currentColor" />
+                        <circle cx="7" cy="7" r="1.2" fill="currentColor" />
+                        <circle cx="3" cy="11" r="1.2" fill="currentColor" />
+                        <circle cx="7" cy="11" r="1.2" fill="currentColor" />
+                    </svg>
+                </span>
+            )}
             <span className={`wk-category-header__arrow${isCollapsed ? " wk-category-header__arrow--collapsed" : ""}`}>
-                <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                <svg viewBox="0 0 16 16" width="16" height="16"><path d="M4 6l4 5 4-5z" fill="currentColor" /></svg>
             </span>
             <span className="wk-category-header__name">
                 {name}
@@ -130,9 +152,15 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
                     <span className="wk-category-header__count"> ({groupCount})</span>
                 ) : null}
             </span>
-            {!isEmpty && !!unreadCount && unreadCount > 0 && (
-                <span className="wk-category-header__badge">
-                    {unreadCount > 99 ? "99+" : unreadCount}
+            {/* 分组折叠时才显示角标，展开时隐藏 */}
+            {isCollapsed && !isEmpty && !!unreadCount && unreadCount > 0 && (
+                <span className="wk-category-header__badges">
+                    <span className="wk-category-header__badge">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                    {hasMention && (
+                        <span className="wk-category-header__badge wk-category-header__badge--mention">@</span>
+                    )}
                 </span>
             )}
         </div>

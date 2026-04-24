@@ -1,5 +1,4 @@
 import WKModal from "../../Components/WKModal"
-import { ChannelInfoListener } from "wukongimjssdk"
 import { Channel, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageContent } from "wukongimjssdk"
 import React from "react"
 import MergeforwardMessageList from "../../Components/MergeforwardMessageList"
@@ -7,6 +6,9 @@ import { MessageContentTypeConst } from "../../Service/Const"
 import MessageBase from "../Base"
 import MessageTrail from "../Base/tail"
 import { MessageCell } from "../MessageCell"
+import MessageRow from "../../ui/message/MessageRow"
+import MergeforwardCard from "../../ui/message/MergeforwardCard"
+import { getMergeforwardMessageUI } from "../../bridge/message/useMergeforwardMessageUI"
 
 import "./index.css"
 
@@ -98,7 +100,6 @@ export default class MergeforwardContent extends MessageContent {
 }
 
 export class MergeforwardCell extends MessageCell<any,MergeforwardCellState> {
-    channelInfoListener!:ChannelInfoListener
 
     constructor(props:any) {
         super(props)
@@ -144,19 +145,59 @@ export class MergeforwardCell extends MessageCell<any,MergeforwardCellState> {
     }
 
     componentDidMount() {
-        this.channelInfoListener = ()=>{
-            this.setState({})
-        }
-        WKSDK.shared().channelManager.addListener(this.channelInfoListener)
+        super.componentDidMount()
     }
     componentWillUnmount() {
-        WKSDK.shared().channelManager.removeListener(this.channelInfoListener)
+        super.componentWillUnmount()
     }
 
     render() {
-        const { message,context } = this.props
+        const { message, context } = this.props
         const { showList } = this.state
         const content = message.content as MergeforwardContent
+
+        // TODO: 后续改成 feature flag
+        const useNewUI = true
+
+        // 新 UI 实现
+        if (useNewUI) {
+            const uiProps = getMergeforwardMessageUI(message, {
+                showCheckbox: context.editOn(),
+                isSelected: !!message.checked,
+                onSelect: (selected) => context.checkeMessage(message.message, selected),
+            })
+            return (
+                <>
+                    <MessageRow
+                        {...uiProps.row}
+                        onContextMenu={(event) => context.showContextMenus(message, event)}
+                        isActive={context.isContextMenuOpen(message.message)}
+                        onClick={context.editOn() ? () => context.checkeMessage(message.message, !message.checked) : undefined}
+                        onAvatarClick={(e) => context.onTapAvatar(message.fromUID, e)}
+                        onSenderNameClick={() => context.showUser(message.fromUID)}
+                    >
+                        <MergeforwardCard
+                            {...uiProps.card}
+                            onClick={context.editOn() ? undefined : () => this.setState({ showList: true })}
+                        />
+                    </MessageRow>
+                    <WKModal
+                        className="wk-base-modal wk-mergeforward-modal"
+                        title={this.getTitle(content)}
+                        visible={showList}
+                        onCancel={() => this.setState({ showList: false })}
+                        footer={null}
+                    >
+                        <MergeforwardMessageList
+                            mergeforwardContent={content}
+                            onClose={() => this.setState({ showList: false })}
+                        />
+                    </WKModal>
+                </>
+            )
+        }
+
+        // 旧 UI 实现（保持向后兼容）
         return <MessageBase hiddeBubble={true} message={message} context={context}><div className="wk-mergeforwards">
             <div className="wk-mergeforwards-content" onClick={()=>{
                 this.setState({
@@ -180,12 +221,13 @@ export class MergeforwardCell extends MessageCell<any,MergeforwardCellState> {
                 </div>
             </div>
         </div>
-        <WKModal className="wk-base-modal" visible={showList} onCancel={()=>{
-            this.setState({
-                showList: false,
-            })
+        <WKModal className="wk-base-modal wk-mergeforward-modal" title={this.getTitle(content)} visible={showList} onCancel={()=>{
+            this.setState({ showList: false })
         }}>
-            <MergeforwardMessageList mergeforwardContent={content}></MergeforwardMessageList>
+            <MergeforwardMessageList
+                mergeforwardContent={content}
+                onClose={() => this.setState({ showList: false })}
+            />
         </WKModal>
         </MessageBase>
     }

@@ -1,5 +1,5 @@
 import { Setting, StreamFlag } from "wukongimjssdk"
-import { Channel, ChannelInfo, ChannelTypePerson, Conversation, WKSDK, Message, MessageContentType, MessageStatus, MessageText } from "wukongimjssdk"
+import { Channel, ChannelInfo, ChannelTypePerson, Conversation, WKSDK, Message, MessageContentType, MessageStatus, MessageText, ReminderType } from "wukongimjssdk"
 import WKApp from "../App"
 import { MessageContentTypeConst, MessageReasonCode, OrderFactor } from "./Const"
 import { DefaultEmojiService } from "./EmojiService"
@@ -105,16 +105,20 @@ export class ConversationWrap {
         this.conversation.lastMessage = lastMessage
     }
 
-    public get isMentionMe() {
-        return this.conversation.isMentionMe
-    }
-
-    public get remoteExtra() {
-        return this.conversation.remoteExtra
+    public get isMentionMe(): boolean {
+        // 优先用 reminders（覆盖历史未读 @ 场景，含子区）
+        // 兜底用 SDK 的 isMentionMe（基于 lastMessage.mention）
+        const hasReminderMention = (this.conversation.reminders?.length ?? 0) > 0
+            && this.conversation.reminders!.some(r => r.reminderType === ReminderType.ReminderTypeMentionMe && !r.done)
+        return hasReminderMention || (this.conversation.isMentionMe ?? false)
     }
 
     public set isMentionMe(isMentionMe: boolean | undefined) {
         this.conversation.isMentionMe = isMentionMe
+    }
+
+    public get remoteExtra() {
+        return this.conversation.remoteExtra
     }
 
     public get reminders() {
@@ -389,7 +393,30 @@ export class MessageWrap {
             return this.parseMentionLegacy(text, mention.uids)
         }
 
+        // mention.all：把文本中的 @所有人/@all 替换成 uid="all" 的 mention Part
+        if (mention.all) {
+            return this.parseMentionAll(text)
+        }
+
         return [new Part(PartType.text, text)]
+    }
+
+    private parseMentionAll(text: string): Array<Part> {
+        const regex = /@所有人|@all/gi
+        const parts: Part[] = []
+        let lastIndex = 0
+        let match: RegExpExecArray | null
+        while ((match = regex.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                parts.push(new Part(PartType.text, text.substring(lastIndex, match.index)))
+            }
+            parts.push(new Part(PartType.mention, match[0], { uid: 'all' }))
+            lastIndex = match.index + match[0].length
+        }
+        if (lastIndex < text.length) {
+            parts.push(new Part(PartType.text, text.substring(lastIndex)))
+        }
+        return parts.length > 0 ? parts : [new Part(PartType.text, text)]
     }
 
     private parseMentionWithEntities(text: string, entities: Array<{uid: string; offset: number; length: number}>): Array<Part> | null {
@@ -550,7 +577,7 @@ export class MessageWrap {
             if (part.type === PartType.text) {
                 let text = part.text;
                 while (text.length > 0) {
-                    const matchResult = text.match(/((http|ftp|https):\/\/|www.)[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?/)
+                    const matchResult = text.match(/((http|ftp|https):\/\/|www.)[\w\-_]+(\.[\w\-_]+)+([\w\-\.,?^=%&amp;:/~\+#]*[\w\-?^=%&amp;/~\+#])?/)
                     if (!matchResult) {
                         newParts.push(new Part(PartType.text, text))
                         break

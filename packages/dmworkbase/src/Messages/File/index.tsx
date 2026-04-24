@@ -4,8 +4,14 @@ import { MessageCell } from "../MessageCell";
 import MessageBase from "../Base";
 import WKApp from "../../App";
 import { FileContent } from "./FileContent";
+import { downloadFile } from "../../Utils/download";
 import { WKSDK, Task, TaskStatus } from "wukongimjssdk";
 import { Toast } from "@douyinfe/semi-ui";
+import WKModal from "../../Components/WKModal";
+import MarkdownContent from "../Text/MarkdownContent";
+import MessageRow from "../../ui/message/MessageRow";
+import { getFileMessageUI } from "../../bridge/message/useFileMessageUI";
+import { isSafeUrl } from "../../Utils/security";
 import { canPreviewInPanel } from "../../Components/FilePreviewPanel";
 
 export { FileContent } from "./FileContent";
@@ -67,6 +73,208 @@ export function getFileIconInfo(
   }
 }
 
+/** 文件类型图标，对齐 Figma 设计稿 */
+function FileTypeIcon({
+  extension,
+  name,
+}: {
+  extension: string;
+  name?: string;
+}) {
+  const ext = getExtension(extension, name);
+
+  // PDF
+  if (ext === "pdf") {
+    return (
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 40 40"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect width="40" height="40" rx="8" fill="#FEE2E2" />
+        <path
+          d="M12 10C12 8.9 12.9 8 14 8H24L30 14V30C30 31.1 29.1 32 28 32H14C12.9 32 12 31.1 12 30V10Z"
+          fill="#EF4444"
+        />
+        <path d="M24 8L30 14H26C24.9 14 24 13.1 24 12V8Z" fill="#FCA5A5" />
+        <text
+          x="20"
+          y="26"
+          textAnchor="middle"
+          fill="white"
+          fontSize="7"
+          fontWeight="700"
+          fontFamily="sans-serif"
+        >
+          PDF
+        </text>
+      </svg>
+    );
+  }
+
+  // DOC/DOCX
+  if (ext === "doc" || ext === "docx") {
+    return (
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 40 40"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect width="40" height="40" rx="8" fill="#DBEAFE" />
+        <path
+          d="M12 10C12 8.9 12.9 8 14 8H24L30 14V30C30 31.1 29.1 32 28 32H14C12.9 32 12 31.1 12 30V10Z"
+          fill="#3B82F6"
+        />
+        <path d="M24 8L30 14H26C24.9 14 24 13.1 24 12V8Z" fill="#93C5FD" />
+        <text
+          x="20"
+          y="26"
+          textAnchor="middle"
+          fill="white"
+          fontSize="6.5"
+          fontWeight="700"
+          fontFamily="sans-serif"
+        >
+          DOC
+        </text>
+      </svg>
+    );
+  }
+
+  // XLS/XLSX
+  if (ext === "xls" || ext === "xlsx") {
+    return (
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 40 40"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect width="40" height="40" rx="8" fill="#DCFCE7" />
+        <path
+          d="M12 10C12 8.9 12.9 8 14 8H24L30 14V30C30 31.1 29.1 32 28 32H14C12.9 32 12 31.1 12 30V10Z"
+          fill="#22C55E"
+        />
+        <path d="M24 8L30 14H26C24.9 14 24 13.1 24 12V8Z" fill="#86EFAC" />
+        <text
+          x="20"
+          y="26"
+          textAnchor="middle"
+          fill="white"
+          fontSize="6.5"
+          fontWeight="700"
+          fontFamily="sans-serif"
+        >
+          XLS
+        </text>
+      </svg>
+    );
+  }
+
+  // PPT/PPTX
+  if (ext === "ppt" || ext === "pptx") {
+    return (
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 40 40"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect width="40" height="40" rx="8" fill="#FFEDD5" />
+        <path
+          d="M12 10C12 8.9 12.9 8 14 8H24L30 14V30C30 31.1 29.1 32 28 32H14C12.9 32 12 31.1 12 30V10Z"
+          fill="#F97316"
+        />
+        <path d="M24 8L30 14H26C24.9 14 24 13.1 24 12V8Z" fill="#FDba74" />
+        <text
+          x="20"
+          y="26"
+          textAnchor="middle"
+          fill="white"
+          fontSize="6.5"
+          fontWeight="700"
+          fontFamily="sans-serif"
+        >
+          PPT
+        </text>
+      </svg>
+    );
+  }
+
+  // ZIP/压缩包
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
+    return (
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 40 40"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect width="40" height="40" rx="8" fill="#FEF9C3" />
+        <path
+          d="M12 10C12 8.9 12.9 8 14 8H24L30 14V30C30 31.1 29.1 32 28 32H14C12.9 32 12 31.1 12 30V10Z"
+          fill="#EAB308"
+        />
+        <path d="M24 8L30 14H26C24.9 14 24 13.1 24 12V8Z" fill="#FDE047" />
+        <text
+          x="20"
+          y="26"
+          textAnchor="middle"
+          fill="white"
+          fontSize="6.5"
+          fontWeight="700"
+          fontFamily="sans-serif"
+        >
+          ZIP
+        </text>
+      </svg>
+    );
+  }
+
+  // 通用文件
+  return (
+    <svg
+      width="40"
+      height="40"
+      viewBox="0 0 40 40"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect width="40" height="40" rx="8" fill="#F3F4F6" />
+      <path
+        d="M12 10C12 8.9 12.9 8 14 8H24L30 14V30C30 31.1 29.1 32 28 32H14C12.9 32 12 31.1 12 30V10Z"
+        fill="#9CA3AF"
+      />
+      <path d="M24 8L30 14H26C24.9 14 24 13.1 24 12V8Z" fill="#D1D5DB" />
+      <line
+        x1="16"
+        y1="20"
+        x2="26"
+        y2="20"
+        stroke="white"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="16"
+        y1="24"
+        x2="22"
+        y2="24"
+        stroke="white"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function getExtension(extension: string, name?: string): string {
   const ext = (extension || "").toLowerCase();
   if (ext) return ext;
@@ -79,20 +287,23 @@ function getExtension(extension: string, name?: string): string {
 }
 
 function isPreviewable(extension: string, name?: string): boolean {
-  return canPreviewInPanel(extension, name);
+  const ext = getExtension(extension, name);
+  return [
+    "pdf",
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "bmp",
+    "webp",
+    "md",
+    "txt",
+  ].includes(ext);
 }
 
 function isTextFile(extension: string, name?: string): boolean {
   const ext = getExtension(extension, name);
   return ["md", "txt"].includes(ext);
-}
-
-function isSafeURL(url: string): boolean {
-  return (
-    url.startsWith("http://") ||
-    url.startsWith("https://") ||
-    url.startsWith("/")
-  );
 }
 
 const SMALL_FILE_THRESHOLD = 1024 * 1024; // 1MB 以下不显示进度条
@@ -103,9 +314,12 @@ interface RestartableTask extends Task {
 }
 
 interface FileCellState {
-  downloading: boolean;
   uploadProgress: number; // 0~100 整数百分比
   uploadStatus: TaskStatus | null;
+  textPreviewVisible: boolean;
+  textPreviewContent: string;
+  textPreviewName: string;
+  textPreviewExt: string;
 }
 
 export class FileCell extends MessageCell<any, FileCellState> {
@@ -123,13 +337,17 @@ export class FileCell extends MessageCell<any, FileCellState> {
   constructor(props: any) {
     super(props);
     this.state = {
-      downloading: false,
       uploadProgress: 0,
       uploadStatus: null,
+      textPreviewVisible: false,
+      textPreviewContent: "",
+      textPreviewName: "",
+      textPreviewExt: "",
     };
   }
 
   componentDidMount() {
+    super.componentDidMount();
     const { message } = this.props;
     const content = message.content as FileContent;
     // 小文件不显示进度，跳过订阅
@@ -154,6 +372,7 @@ export class FileCell extends MessageCell<any, FileCellState> {
   }
 
   componentWillUnmount() {
+    super.componentWillUnmount();
     WKSDK.shared().taskManager.removeListener(this._taskListener);
   }
 
@@ -174,50 +393,71 @@ export class FileCell extends MessageCell<any, FileCellState> {
     const { message } = this.props;
     const content = message.content as FileContent;
     const url = this.getFileURL(content);
-    if (!url || !isSafeURL(url)) return;
+    if (!url || !isSafeUrl(url)) return;
 
-    try {
-      if (isTextFile(content.extension, content.name)) {
-        // Text files: fetch as ArrayBuffer and decode as UTF-8 to avoid CDN charset issues
-        const resp = await fetch(url);
-        const buf = await resp.arrayBuffer();
-        const text = new TextDecoder("utf-8").decode(buf);
-        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = blobUrl;
-        a.download = content.name || "file";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-      } else {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = content.name || "file";
-        a.target = "_blank";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
-    } catch {
-      alert("文件下载失败");
-    }
+    await downloadFile(url, content.name || "file");
   };
 
   handlePreview = () => {
     const { message } = this.props;
     const content = message.content as FileContent;
     const url = this.getFileURL(content);
-    if (!url || !isSafeURL(url)) return;
+    if (!url || !isSafeUrl(url)) return;
 
-    // 触发右侧面板预览
-    WKApp.mittBus.emit("wk:file-preview", {
-      url,
-      name: content.name || "未知文件",
-      extension: getExtension(content.extension, content.name),
-      size: content.size,
-    });
+    const ext = getExtension(content.extension, content.name);
+
+    // 优先使用右侧面板预览（支持的文件类型）
+    if (canPreviewInPanel(ext, content.name)) {
+      WKApp.mittBus.emit("wk:file-preview", {
+        url,
+        name: content.name || "未知文件",
+        extension: ext,
+        size: content.size,
+      });
+      return;
+    }
+
+    // 文本文件使用弹窗预览
+    if (isTextFile(content.extension, content.name)) {
+      this.handleTextPreview(url, content.name, ext);
+      return;
+    }
+
+    // 其他文件在新窗口打开
+    window.open(url, "_blank");
+  };
+
+  handleTextPreview = async (url: string, name: string, extension: string) => {
+    const TEXT_PREVIEW_LIMIT = 5 * 1024 * 1024; // 5MB
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        Toast.error("文件预览失败");
+        return;
+      }
+      const contentLength = parseInt(
+        response.headers.get("Content-Length") || "0",
+        10
+      );
+      if (contentLength > TEXT_PREVIEW_LIMIT) {
+        alert("File too large to preview");
+        return;
+      }
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > TEXT_PREVIEW_LIMIT) {
+        alert("File too large to preview");
+        return;
+      }
+      const text = new TextDecoder("utf-8").decode(buffer);
+      this.setState({
+        textPreviewVisible: true,
+        textPreviewContent: text,
+        textPreviewName: name,
+        textPreviewExt: extension.toLowerCase(),
+      });
+    } catch {
+      Toast.error("文件预览失败");
+    }
   };
 
   render() {
@@ -243,13 +483,8 @@ export class FileCell extends MessageCell<any, FileCellState> {
       return (
         <MessageBase context={context} message={message}>
           <div className="wk-message-file wk-message-file--uploading">
-            <div
-              className="wk-message-file-icon"
-              style={{ backgroundColor: iconInfo.color }}
-            >
-              <span className="wk-message-file-icon-label">
-                {iconInfo.label}
-              </span>
+            <div className="wk-message-file-icon">
+              <FileTypeIcon extension={content.extension} name={content.name} />
             </div>
             <div className="wk-message-file-info">
               <div className="wk-message-file-name" title={content.name}>
@@ -273,23 +508,32 @@ export class FileCell extends MessageCell<any, FileCellState> {
       return (
         <MessageBase context={context} message={message}>
           <div className="wk-message-file wk-message-file--failed">
-            <div
-              className="wk-message-file-icon"
-              style={{ backgroundColor: "#EF4444" }}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="22"
-                height="22"
-                fill="none"
-                stroke="#fff"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
+            <div className="wk-message-file-icon">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="8" fill="#FEE2E2" />
+                <path
+                  d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                  fill="#EF4444"
+                  transform="translate(8,8) scale(0.9)"
+                />
+                <line
+                  x1="20"
+                  y1="18"
+                  x2="20"
+                  y2="23"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="20"
+                  y1="27"
+                  x2="20.01"
+                  y2="27"
+                  stroke="white"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
               </svg>
             </div>
             <div className="wk-message-file-info">
@@ -333,39 +577,71 @@ export class FileCell extends MessageCell<any, FileCellState> {
       );
     }
 
+    const uiProps = getFileMessageUI(message);
+
     return (
-      <MessageBase context={context} message={message}>
-        <div>
-          <div className="wk-message-file">
-            <div
-              className="wk-message-file-icon"
-              style={{ backgroundColor: iconInfo.color }}
-            >
-              <span className="wk-message-file-icon-label">
-                {iconInfo.label}
-              </span>
-            </div>
-            <div className="wk-message-file-info">
-              <div className="wk-message-file-name" title={content.name}>
-                {content.name || "未知文件"}
+      <>
+        <MessageRow
+          {...uiProps.row}
+          onContextMenu={(event) => context.showContextMenus(message, event)}
+          isActive={context.isContextMenuOpen(message.message)}
+          showCheckbox={context.editOn()}
+          isSelected={!!message.checked}
+          onSelect={(selected) =>
+            context.checkeMessage(message.message, selected)
+          }
+          onAvatarClick={(e) => context.onTapAvatar(message.fromUID, e)}
+          onSenderNameClick={() => context.showUser(message.fromUID)}
+        >
+          <div>
+            <div className="wk-message-file">
+              <div className="wk-message-file-icon">
+                <FileTypeIcon
+                  extension={content.extension}
+                  name={content.name}
+                />
               </div>
-              <div className="wk-message-file-meta">
-                <span className="wk-message-file-size">
-                  {formatFileSize(content.size)}
-                </span>
-                {content.extension && (
-                  <span className="wk-message-file-ext">
-                    {content.extension.toUpperCase()}
+              <div className="wk-message-file-info">
+                <div className="wk-message-file-name" title={content.name}>
+                  {content.name || "未知文件"}
+                </div>
+                <div className="wk-message-file-meta">
+                  <span className="wk-message-file-size">
+                    {formatFileSize(content.size)}
                   </span>
-                )}
+                  {content.extension && (
+                    <span className="wk-message-file-ext">
+                      {content.extension.toUpperCase()}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="wk-message-file-actions">
-              {canPreview && (
+              <div className="wk-message-file-actions">
+                {canPreview && (
+                  <div
+                    className="wk-message-file-action"
+                    title="预览"
+                    onClick={this.handlePreview}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  </div>
+                )}
                 <div
                   className="wk-message-file-action"
-                  title="预览"
-                  onClick={this.handlePreview}
+                  title="下载"
+                  onClick={this.handleDownload}
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -377,38 +653,36 @@ export class FileCell extends MessageCell<any, FileCellState> {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
                 </div>
-              )}
-              <div
-                className="wk-message-file-action"
-                title="下载"
-                onClick={this.handleDownload}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="18"
-                  height="18"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
               </div>
             </div>
+            {content.caption && (
+              <div className="wk-message-file-caption">{content.caption}</div>
+            )}
           </div>
-          {content.caption && (
-            <div className="wk-message-file-caption">{content.caption}</div>
-          )}
-        </div>
-      </MessageBase>
+        </MessageRow>
+        <WKModal
+          className="wk-base-modal"
+          visible={this.state.textPreviewVisible}
+          title={this.state.textPreviewName}
+          size="lg"
+          onCancel={() => this.setState({ textPreviewVisible: false })}
+        >
+          <div className="wk-text-file-preview">
+            {this.state.textPreviewExt === "md" ? (
+              <MarkdownContent content={this.state.textPreviewContent} />
+            ) : (
+              <pre className="wk-text-file-preview-plain">
+                {this.state.textPreviewContent}
+              </pre>
+            )}
+          </div>
+        </WKModal>
+      </>
     );
   }
 }

@@ -1,0 +1,253 @@
+/**
+ * ForwardModal 样式
+ * Figma: 461:9093 · 625×560px · 左右两列布局
+ */
+
+/* ── 弹窗容器 ── */
+.wk-fm {
+  display: flex;
+  flex-direction: column;
+  width: 625px;
+  height: 560px;
+  overflow: hidden;
+  background: #FFFFFF;
+  border-radius: 12px;
+}
+
+/* ── Header ── */
+.wk-fm-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  padding: 0 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(46, 50, 56, 0.09);
+}
+
+.wk-fm-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1C1C23;
+}
+
+/* ── 内容区（左右两列）── */
+.wk-fm-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 分割线 */
+.wk-fm-divider {
+  width: 1px;
+  background: rgba(46, 50, 56, 0.09);
+  flex-shrink: 0;
+}
+
+/* ── 左列：可选列表 ── */
+.wk-fm-left {
+  display: flex;
+  flex-direction: column;
+  width: 296px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* 搜索框 */
+.wk-fm-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 8px 4px;
+  padding: 0 12px;
+  height: 32px;
+  background: var(--wk-neutral-100, #F2F3F4);
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.wk-fm-search-icon {
+  color: rgba(28, 28, 35, 0.4);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.wk-fm-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: #1C1C23;
+}
+
+.wk-fm-search-input::placeholder {
+  color: rgba(28, 28, 35, 0.35);
+}
+
+/* 可选列表 */
+.wk-fm-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* 列表项 */
+.wk-fm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  height: 36px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.wk-fm-item:hover {
+  background: rgba(28, 28, 35, 0.03);
+}
+
+.wk-fm-item--child {
+  padding-left: 36px;
+}
+
+.wk-fm-item-name {
+  flex: 1;
+  font-size: 14px;
+  color: #1C1C23;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 右列：已选列表 ── */
+.wk-fm-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 8px 0;
+}
+
+.wk-fm-selected-title {
+  font-size: 12px;
+  color: rgba(28, 28, 35, 0.4);
+  padding: 0 8px 6px;
+  flex-shrink: 0;
+}
+
+.wk-fm-selected-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.wk-fm-selected-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  height: 36px;
+}
+
+.wk-fm-selected-item:hover {
+  background: rgba(28, 28, 35, 0.03);
+}
+
+.wk-fm-remove-btn {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  color: rgba(28, 28, 35, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  transition: background 0.1s, color 0.1s;
+}
+
+.wk-fm-remove-btn:hover {
+  background: rgba(28, 28, 35, 0.06);
+  color: #1C1C23;
+}
+
+/* 空状态 */
+.wk-fm-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  font-size: 13px;
+  color: rgba(28, 28, 35, 0.35);
+}
+
+.wk-fm-empty--right {
+  height: 100%;
+}
+
+/* ── 头像公用 ── */
+.wk-fm-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+}
+
+.wk-fm-avatar-wrap .wk-avatar {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+
+/* ── Footer ── */
+.wk-fm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  height: 60px;
+  padding: 0 16px;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(46, 50, 56, 0.09);
+}
+
+.wk-fm-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.wk-fm-btn--cancel {
+  background: #FFFFFF;
+  color: rgba(28, 28, 35, 0.8);
+  border: 1px solid rgba(28, 28, 35, 0.15);
+}
+
+.wk-fm-btn--cancel:hover {
+  background: rgba(28, 28, 35, 0.04);
+}
+
+.wk-fm-btn--confirm {
+  background: #1C1C23;
+  color: #FFFFFF;
+  min-width: 64px;
+}
+
+.wk-fm-btn--confirm:hover {
+  opacity: 0.85;
+}
+
+.wk-fm-btn--confirm:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

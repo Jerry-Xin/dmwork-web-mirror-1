@@ -8,11 +8,12 @@
  */
 import React, { useState } from "react"
 import { Channel, ChannelTypeGroup } from "wukongimjssdk"
+import WKApp from "../../App"
 import { useCategoryList } from "../../Hooks/useCategoryList"
 import { ConversationWrap } from "../../Service/Model"
 import { ConvFilter } from "../ConversationList"
 import ConversationList from "../ConversationList"
-import ConversationListGrouped, { ValidCategoryItem } from "../ConversationListGrouped"
+import ConversationListGrouped, { ValidCategoryItem, isValidCategoryItem } from "../ConversationListGrouped"
 import CreateCategoryModal from "../CreateCategoryModal"
 import { ContextMenusData } from "../ContextMenus"
 
@@ -23,6 +24,10 @@ export interface ChatConversationListProps {
     onConversationClick: (conv: ConversationWrap) => void
     onClearMessages: (channel: Channel) => void
     onThreadOverflowClick: (groupNo: string) => void
+    /** 外部触发「新建分组」Modal（如顶部 + 按钮），调用后 Modal 显示 */
+    onOpenCreateCategoryRef?: React.MutableRefObject<(() => void) | null>
+    /** 群聊创建成功后回调，用于刷新会话列表 */
+    onGroupCreated?: () => void
 }
 
 const ChatConversationList: React.FC<ChatConversationListProps> = ({
@@ -32,6 +37,8 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
     onConversationClick,
     onClearMessages,
     onThreadOverflowClick,
+    onOpenCreateCategoryRef,
+    onGroupCreated,
 }) => {
     const {
         categories,
@@ -47,6 +54,18 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
 
     const [createModalVisible, setCreateModalVisible] = useState(false)
 
+    // 暴露「打开新建分组 Modal」给外层（如顶部 + 按钮）
+    React.useEffect(() => {
+        if (onOpenCreateCategoryRef) {
+            onOpenCreateCategoryRef.current = () => setCreateModalVisible(true)
+        }
+        return () => {
+            if (onOpenCreateCategoryRef) {
+                onOpenCreateCategoryRef.current = null
+            }
+        }
+    }, [onOpenCreateCategoryRef])
+
     const existingCategoryNames = categories.map(c => c.name)
 
     // 构建「移到分组」子菜单（含 ✓ 标识 + 新建分组入口）
@@ -60,11 +79,14 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
             cat => (cat.groups || []).some(g => g.group_no === groupNo)
         )?.category_id
 
-        const items: ContextMenusData[] = categories.map(cat => ({
-            title: cat.name,
-            checked: currentCategoryId === cat.category_id,
-            onClick: () => moveGroupToCategory(groupNo, cat.category_id),
-        }))
+        // 过滤默认分组（is_default），不在「移到分组」子菜单里显示
+        const items: ContextMenusData[] = categories
+            .filter(cat => !cat.is_default && isValidCategoryItem(cat))
+            .map(cat => ({
+                title: cat.name,
+                checked: currentCategoryId === cat.category_id,
+                onClick: () => moveGroupToCategory(groupNo, cat.category_id),
+            }))
         items.push({ separator: true } as ContextMenusData)
         items.push({ title: "+ 新建分组", onClick: () => setCreateModalVisible(true) })
 
@@ -80,7 +102,7 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
                     onConversationClick={onConversationClick}
                     onClearMessages={onClearMessages}
                     onThreadOverflowClick={onThreadOverflowClick}
-                    categories={categories as ValidCategoryItem[]}
+                    categories={categories.filter(isValidCategoryItem)}
                     isLoading={isLoading}
                     error={error}
                     onRetry={reload}
@@ -89,6 +111,23 @@ const ChatConversationList: React.FC<ChatConversationListProps> = ({
                     onSortCategories={sortCategories}
                     onMoveGroupToCategory={moveGroupToCategory}
                     onOpenCreateCategory={() => setCreateModalVisible(true)}
+                    onStartGroup={() => {
+                        WKApp.endpoints.organizationalLayer(null, {
+                            onSuccess: () => {
+                                reload()
+                                onGroupCreated?.()
+                            }
+                        })
+                    }}
+                    onCreateGroupInCategory={(categoryId: string) => {
+                        WKApp.endpoints.organizationalLayer(null, {
+                            defaultCategoryId: categoryId,
+                            onSuccess: () => {
+                                reload()
+                                onGroupCreated?.()
+                            }
+                        })
+                    }}
                 />
             ) : (
                 <ConversationList

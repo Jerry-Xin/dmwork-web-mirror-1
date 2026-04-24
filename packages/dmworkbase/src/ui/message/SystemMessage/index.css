@@ -1,0 +1,9 @@
+/**
+ * SystemMessage 组件样式
+ */
+
+.wk-msg-system {
+  display: flex;
+  justify-content: center;
+  padding: var(--wk-sp-2) 0;
+}

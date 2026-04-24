@@ -1,0 +1,256 @@
+import { useState, useEffect, useCallback, useRef } from "react"
+import { WKSDK, Channel, ChannelInfo, ChannelInfoListener } from "wukongimjssdk"
+import { ConversationWrap } from "../../Service/Model"
+import { ChannelTypeCommunityTopic } from "../../Service/Const"
+import WKApp from "../../App"
+import { ForwardItem } from "./ForwardModal"
+
+function channelInfoToForwardItem(channelInfo: ChannelInfo): ForwardItem {
+  return {
+    channelID: channelInfo.channel.channelID,
+    channelType: channelInfo.channel.channelType,
+    displayName: channelInfo.orgData.displayName || channelInfo.channel.channelID,
+    isAI: channelInfo.orgData?.robot === 1,
+    isThread: channelInfo.channel.channelType === ChannelTypeCommunityTopic,
+  }
+}
+
+function conversationWrapToForwardItem(wrap: ConversationWrap, parentChannelID?: string): ForwardItem {
+  const channelInfo = wrap.channelInfo
+  const isThread = wrap.channel.channelType === ChannelTypeCommunityTopic
+  // hasThreads: 判断该群聊下是否有子区（子区会出现在 conversations 里，其 orgData.parentGroupNo 指向父群）
+  const hasThreads = !isThread && WKSDK.shared().conversationManager.conversations?.some(
+    (c) => c.channel.channelType === ChannelTypeCommunityTopic
+      && (WKSDK.shared().channelManager.getChannelInfo(c.channel)?.orgData?.parentGroupNo === wrap.channel.channelID)
+  )
+  return {
+    channelID: wrap.channel.channelID,
+    channelType: wrap.channel.channelType,
+    displayName: channelInfo?.orgData.displayName || wrap.channel.channelID,
+    isAI: channelInfo?.orgData?.robot === 1,
+    isThread,
+    hasThreads: hasThreads ?? false,
+    parentChannelID,
+  }
+}
+
+function sortConversations(wraps: ConversationWrap[]): ConversationWrap[] {
+  return [...wraps].sort((a, b) => {
+    let aScore = a.timestamp
+    let bScore = b.timestamp
+    if (a.channelInfo?.top) aScore += 1_000_000
+    if (b.channelInfo?.top) bScore += 1_000_000
+    return bScore - aScore
+  })
+}
+
+export interface UseForwardModalResult {
+  /** 关键字过滤后的列表（用于渲染列表项） */
+  items: ForwardItem[]
+  /** 全量列表（用于已选头像区，不受搜索过滤影响） */
+  allItems: ForwardItem[]
+  selectedIDs: string[]
+  selectedChannels: Channel[]
+  /** 实际 input 显示值（即时更新） */
+  inputValue: string
+  /** 触发 debounce 过滤的 keyword */
+  keyword: string
+  loading: boolean
+  /** 更新 input 显示值，内部 debounce 后更新过滤 keyword */
+  setInputValue: (val: string) => void
+  toggleSelect: (item: ForwardItem) => void
+  confirm: () => void
+  reset: () => void
+}
+
+export function useForwardModal(
+  onFinished?: (channels: Channel[]) => void
+): UseForwardModalResult {
+  const [conversationItems, setConversationItems] = useState<ForwardItem[]>([])
+  const [friendItems, setFriendItems] = useState<ForwardItem[]>([])
+  const [selectedIDs, setSelectedIDs] = useState<string[]>([])
+  const [inputValue, setInputValueState] = useState("")
+  const [keyword, setKeyword] = useState("")
+  const [loading, setLoading] = useState(true)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const setInputValue = useCallback((val: string) => {
+    setInputValueState(val)
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    debounceTimerRef.current = setTimeout(() => {
+      setKeyword(val)
+    }, 300)
+  }, [])
+
+  // unmount 时清理 debounce timer，防止在已卸载组件上触发 setState
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    }
+  }, [])
+
+  // 存一份 channel 引用，用于 confirm 时返回
+  const channelMapRef = useRef<Map<string, Channel>>(new Map())
+
+  // 保存原始 wraps 引用，供 channelInfoListener 触发后重新构建
+  const wrapsRef = useRef<ConversationWrap[]>([])
+
+  const rebuildConvItems = useCallback(() => {
+    // 分离：群聊（非子区）和子区
+    const groupWraps: ConversationWrap[] = []
+    const threadWraps: ConversationWrap[] = []
+    for (const wrap of wrapsRef.current) {
+      channelMapRef.current.set(wrap.channel.channelID, wrap.channel)
+      if (wrap.channel.channelType === ChannelTypeCommunityTopic) {
+        threadWraps.push(wrap)
+      } else {
+        groupWraps.push(wrap)
+      }
+    }
+
+    // 按 parentGroupNo 建 Map
+    const threadsByParent = new Map<string, ConversationWrap[]>()
+    const orphanThreads: ConversationWrap[] = []
+    for (const tw of threadWraps) {
+      const parentGroupNoRaw = tw.channelInfo?.orgData?.parentGroupNo
+      const parentGroupNo = parentGroupNoRaw != null ? String(parentGroupNoRaw) : undefined
+      if (parentGroupNo) {
+        const list = threadsByParent.get(parentGroupNo) || []
+        list.push(tw)
+        threadsByParent.set(parentGroupNo, list)
+      } else {
+        orphanThreads.push(tw)
+      }
+    }
+
+    // 输出顺序：父群 → 其子区（紧跟） → 下一父群
+    const items: ForwardItem[] = []
+    for (const gw of groupWraps) {
+      items.push(conversationWrapToForwardItem(gw))
+      const children = threadsByParent.get(gw.channel.channelID) || []
+      for (const tw of children) {
+        items.push(conversationWrapToForwardItem(tw, gw.channel.channelID))
+      }
+    }
+    // 找不到父群的孤儿子区追加到末尾
+    for (const ow of orphanThreads) {
+      items.push(conversationWrapToForwardItem(ow))
+    }
+
+    setConversationItems(items)
+  }, [])
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      try {
+        // 最近会话
+        const conversations = WKSDK.shared().conversationManager.conversations ?? []
+        const wraps: ConversationWrap[] = []
+        for (const conv of conversations) {
+          const info = WKSDK.shared().channelManager.getChannelInfo(conv.channel)
+          if (!info) {
+            WKSDK.shared().channelManager.fetchChannelInfo(conv.channel)
+          }
+          wraps.push(new ConversationWrap(conv))
+        }
+        wrapsRef.current = sortConversations(wraps)
+        rebuildConvItems()
+
+        // 好友
+        const friends = (await WKApp.dataSource.commonDataSource.searchFriends("")) ?? []
+        const fItems = friends.map((info: ChannelInfo) => {
+          channelMapRef.current.set(info.channel.channelID, info.channel)
+          return channelInfoToForwardItem(info)
+        })
+        setFriendItems(fItems)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // 订阅 channelInfo 更新，触发列表重渲（头像/名称补全）
+    const channelListener: ChannelInfoListener = (_channelInfo: ChannelInfo) => {
+      rebuildConvItems()
+    }
+    WKSDK.shared().channelManager.addListener(channelListener)
+
+    load()
+
+    return () => {
+      WKSDK.shared().channelManager.removeListener(channelListener)
+    }
+  }, [rebuildConvItems])
+
+  // 合并去重：conversationItems 优先，friend 已在 conversation 里的跳过
+  const convIDs = new Set(conversationItems.map((i: ForwardItem) => i.channelID))
+  const uniqueFriends = friendItems.filter((f: ForwardItem) => !convIDs.has(f.channelID))
+  const allItems = [...conversationItems, ...uniqueFriends]
+
+  // 关键字过滤（方案 A：命中子区时带出父群；命中父群不自动展开子区）
+  const filtered = keyword
+    ? (() => {
+        const kw = keyword.toLowerCase()
+        // 先找命中的项
+        const matched = allItems.filter((i) => i.displayName.toLowerCase().includes(kw))
+        // 命中子区时，把父群也加进来（若父群本身未命中）
+        const parentIDsToInclude = new Set<string>()
+        for (const item of matched) {
+          if (item.parentChannelID) {
+            parentIDsToInclude.add(item.parentChannelID)
+          }
+        }
+        const matchedIDs = new Set(matched.map((i) => i.channelID))
+        const parents = parentIDsToInclude.size > 0
+          ? allItems.filter((i) => parentIDsToInclude.has(i.channelID) && !matchedIDs.has(i.channelID))
+          : []
+        // 保持树状顺序：遍历 allItems，只保留命中项 + 需要带出的父群
+        const includeIDs = new Set([...matchedIDs, ...parents.map((p) => p.channelID)])
+        return allItems.filter((i) => includeIDs.has(i.channelID))
+      })()
+    : allItems
+
+  const toggleSelect = useCallback((item: ForwardItem) => {
+    setSelectedIDs((prev: string[]) =>
+      prev.includes(item.channelID)
+        ? prev.filter((id: string) => id !== item.channelID)
+        : [...prev, item.channelID]
+    )
+  }, [])
+
+  const selectedIDsRef = useRef<string[]>(selectedIDs)
+  selectedIDsRef.current = selectedIDs
+
+  const selectedChannels = selectedIDs
+    .map((id: string) => channelMapRef.current.get(id))
+    .filter(Boolean) as Channel[]
+
+  const confirm = useCallback(() => {
+    const channels = selectedIDsRef.current
+      .map((id: string) => channelMapRef.current.get(id))
+      .filter(Boolean) as Channel[]
+    if (onFinished && channels.length > 0) {
+      onFinished(channels)
+    }
+  }, [onFinished])
+
+  const reset = useCallback(() => {
+    setSelectedIDs([])
+    setInputValueState("")
+    setKeyword("")
+  }, [])
+
+  return {
+    items: filtered,
+    allItems,
+    selectedIDs,
+    selectedChannels,
+    inputValue,
+    keyword,
+    loading,
+    setInputValue,
+    toggleSelect,
+    confirm,
+    reset,
+  }
+}

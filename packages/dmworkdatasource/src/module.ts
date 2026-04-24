@@ -59,6 +59,10 @@ export default class DataSourceModule implements IModule {
                         displayName: thread.name,
                         thread: thread,
                         parentGroupNo: parsed.groupNo,
+                        // GROUP.md 字段透传
+                        has_thread_md: thread.has_thread_md,
+                        thread_md_version: thread.thread_md_version,
+                        thread_md_updated_at: thread.thread_md_updated_at,
                     };
                     return channelInfo;
                 } catch (err) {
@@ -211,7 +215,7 @@ export default class DataSourceModule implements IModule {
             const conversations = WKSDK.shared().conversationManager.conversations
             if (conversations && conversations.length > 0) {
                 for (const conversation of conversations) {
-                    if (conversation.channel.channelType === ChannelTypeGroup) {
+                    if (conversation.channel.channelType === ChannelTypeGroup || conversation.channel.channelType === ChannelTypeCommunityTopic) {
                         channelIDs.push(conversation.channel.channelID)
                     }
                 }

@@ -69,11 +69,27 @@ body[theme-mode=dark] .wk-action-list-item:hover {
     align-items: center;
 }
 
-/* ── compact variant（NavRail Space 弹窗底部操作） ── */
+/* ── compact variant（NavRail Space 弹窗底部操作，对齐 Figma .MenuItem） ── */
 .wk-action-list-item--compact {
-    padding: var(--wk-sp-2);
-    gap: 8px;
-    border-radius: var(--wk-r-sm);
+    padding: 6px 12px;                 /* Figma: 行高 32px，上下 6px */
+    gap: 8px;                          /* Figma: content gap=8 */
+    border-radius: 0;
+    height: 32px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.wk-action-list-item--compact:hover {
+    background: none;                  /* 覆盖默认 hover，改用伪元素 */
+}
+
+.wk-action-list-item--compact:hover::before {
+    content: "";
+    position: absolute;
+    inset: 0 4px;                      /* 左右各缩 4px，与 SpaceItem 一致 */
+    border-radius: 6px;
+    background: rgba(28, 28, 35, 0.04);
+    pointer-events: none;
 }
 
 .wk-action-list-item--compact .wk-action-list-item__icon {
@@ -81,18 +97,19 @@ body[theme-mode=dark] .wk-action-list-item:hover {
     height: 16px;
     border-radius: 0;
     background: none;
-    color: var(--wk-text-secondary);
+    color: rgba(31, 28, 35, 0.60);    /* Figma: icon 颜色 60% */
 }
 
-.wk-action-list-item--compact.wk-action-list-item--join .wk-action-list-item__icon    { color: var(--wk-color-success); }
-.wk-action-list-item--compact.wk-action-list-item--create .wk-action-list-item__icon  { color: var(--wk-brand-primary); }
-
 .wk-action-list-item--compact .wk-action-list-item__label {
-    font-size: 13px;
-    font-weight: 400;
-    color: var(--wk-text-secondary);
+    font-size: 14px;                   /* Figma: 14px */
+    font-weight: 400;                  /* Figma: fw 400 */
+    color: rgba(28, 28, 35, 1.00);    /* Figma: 纯黑 */
 }
 
 .wk-action-list-item--compact .wk-action-list-item__desc {
     display: none;
+}
+
+.wk-action-list-item--compact .wk-action-list-item__trailing {
+    color: rgba(28, 28, 35, 0.40);    /* Figma: 右箭头颜色 40% */
 }

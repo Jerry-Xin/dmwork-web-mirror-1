@@ -7,6 +7,7 @@ import "./index.css"
 export interface ContextMenusProps {
     onContext: (context: ContextMenusContext) => void
     menus?: ContextMenusData[]
+    onHide?: () => void
 }
 
 export interface ContextMenusState {
@@ -84,6 +85,7 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
 
     hide(): void {
         this.setState({ showContextMenus: false })
+        this.props.onHide?.()
     }
 
     show(event: React.MouseEvent<Element, MouseEvent>): void {
@@ -171,7 +173,7 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
                                         <span style={{ flex: 1 }}>{child.title}</span>
                                         {child.checked && (
                                             <span style={{
-                                                color: 'var(--wk-brand-primary, #7C5CFC)',
+                                                color: 'var(--wk-brand-primary, #1C1C23)',
                                                 fontSize: 13,
                                                 fontWeight: 600,
                                                 flexShrink: 0,

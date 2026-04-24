@@ -10,16 +10,33 @@ import WKAvatar, { isBot } from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import WKViewQueueHeader from "../WKViewQueueHeader";
 import WKApp from "../../App";
+import { downloadFile } from "../../Utils/download";
 import MarkdownContent from "../../Messages/Text/MarkdownContent";
+import Lightbox from "yet-another-react-lightbox";
+import Download from "yet-another-react-lightbox/plugins/download";
+import "yet-another-react-lightbox/styles.css";
 
 import "./index.css"
 
 
 export interface MergeforwardMessageListProps {
     mergeforwardContent: MergeforwardContent
+    onClose?: () => void
 }
 
-export default class MergeforwardMessageList extends Component<MergeforwardMessageListProps> {
+interface MergeforwardMessageListState {
+    previewImgSrc: string | null
+    previewImageContent: ImageContent | null
+}
+
+export default class MergeforwardMessageList extends Component<MergeforwardMessageListProps, MergeforwardMessageListState> {
+    constructor(props: MergeforwardMessageListProps) {
+        super(props)
+        this.state = {
+            previewImgSrc: null,
+            previewImageContent: null,
+        }
+    }
 
     getTitle(content: MergeforwardContent) {
         if (content.channelType === ChannelTypeGroup) {
@@ -127,9 +144,13 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
         if(msg.contentType === MessageContentType.image) {
            const imageContent = msg.content as ImageContent
            const size = this.imageScale(imageContent.width,imageContent.height)
+           const src = this.getImageSrc(imageContent) || ""
 
-           return <img style={{"width":`${size.width}px`,"height":`${size.height}px`,borderRadius:"var(--wk-r-xs, 4px)"}} src={this.getImageSrc(imageContent)}>
-           </img>
+           return <img
+               style={{"width":`${size.width}px`,"height":`${size.height}px`,borderRadius:"var(--wk-r-xs, 4px)",cursor:"pointer"}}
+               src={src}
+               onClick={() => this.setState({ previewImgSrc: src, previewImageContent: imageContent })}
+           />
         }
         if (msg.contentType === MessageContentTypeConst.file) {
             const fileContent = msg.content as FileContent
@@ -139,16 +160,9 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
             return (
                 <div
                     className={`wk-mergeforward-file${url ? " wk-mergeforward-file--clickable" : ""}`}
-                    onClick={() => {
-                        if (url && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/"))) {
-                            const a = document.createElement("a")
-                            a.href = url
-                            a.download = fileContent.name || "file"
-                            a.target = "_blank"
-                            document.body.appendChild(a)
-                            a.click()
-                            document.body.removeChild(a)
-                        }
+                    onClick={async () => {
+                        if (!url) return
+                        await downloadFile(url, fileContent.name || "file")
                     }}
                 >
                     <div className="wk-mergeforward-file__icon" style={{ backgroundColor: iconBg }}>
@@ -170,56 +184,66 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
 
     render(): ReactNode {
         const { mergeforwardContent } = this.props
-        return <div className="wk-mergeforwardmessagelist">
-            <div className="wk-mergeforwardmessagelist-header">
-                <WKViewQueueHeader hideBack={true} title={this.getTitle(mergeforwardContent)}></WKViewQueueHeader>
-            </div>
+        const { previewImgSrc, previewImageContent } = this.state
+        return <><div className="wk-mergeforwardmessagelist">
+            {/* Content：消息列表，pad T10 B10 L16 R16，gap=16 */}
             <div className="wk-mergeforwardmessagelist-content">
-                <div className="wk-mergeforwardmessagelist-content-timeline">
-                    {this.getTimeline(mergeforwardContent)}
-                </div>
-                <div className="wk-mergeforwardmessagelist-content-msgs">
-                    {
-                        mergeforwardContent.msgs.map((m,i) => {
-                            const fromChannel = new Channel(m.fromUID, ChannelTypePerson)
-                            let fromChannelInfo = WKSDK.shared().channelManager.getChannelInfo(fromChannel)
-                            if(!fromChannelInfo) {
-                                WKSDK.shared().channelManager.fetchChannelInfo(fromChannel)
-                            }
-                            let showAvatar = true
-                            if(i > 0) {
-                                showAvatar = mergeforwardContent.msgs[i-1].fromUID !== m.fromUID
-                            }
-                            return <div className="wk-mergeforwardmessagelist-content-msg" key={m.messageID}>
-                                <div className="wk-mergeforwardmessagelist-content-msg-avatar">
-                                    {
-                                        showAvatar?<WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)}></WKAvatar>:undefined
-                                    }
-                                </div>
-                                <div className="wk-mergeforwardmessagelist-content-msg-info">
+                {mergeforwardContent.msgs.map((m, i) => {
+                    const fromChannel = new Channel(m.fromUID, ChannelTypePerson)
+                    let fromChannelInfo = WKSDK.shared().channelManager.getChannelInfo(fromChannel)
+                    if (!fromChannelInfo) {
+                        WKSDK.shared().channelManager.fetchChannelInfo(fromChannel)
+                    }
+                    const showAvatar = i === 0 || mergeforwardContent.msgs[i - 1].fromUID !== m.fromUID
+                    return (
+                        <div className="wk-mergeforwardmessagelist-content-msg" key={m.messageID}>
+                            {/* 头像 32x32 圆形，连续消息占位 */}
+                            <div className={showAvatar ? "wk-mergeforwardmessagelist-content-msg-avatar" : "wk-mergeforwardmessagelist-content-msg-avatar--placeholder"}>
+                                {showAvatar && <WKAvatar channel={new Channel(m.fromUID, ChannelTypePerson)} />}
+                            </div>
+
+                            <div className="wk-mergeforwardmessagelist-content-msg-info">
+                                {/* 名字 + 时间（仅首条或换人时显示） */}
+                                {showAvatar && (
                                     <div className="wk-mergeforwardmessagelist-content-msg-info-first">
-                                        <div className="wk-mergeforwardmessagelist-content-msg-info-first-name">
+                                        <span className="wk-mergeforwardmessagelist-content-msg-info-first-name">
                                             {fromChannelInfo?.title}
                                             {isBot(m.fromUID) && <AiBadge size="small" />}
-                                        </div>
-                                        <div className="wk-mergeforwardmessagelist-content-msg-info-first-time">
-                                                {getTimeStringAutoShort2(m.timestamp*1000,true)}
-                                        </div>
+                                        </span>
+                                        <span className="wk-mergeforwardmessagelist-content-msg-info-first-time">
+                                            {getTimeStringAutoShort2(m.timestamp * 1000, true)}
+                                        </span>
                                     </div>
-                                    <div className="wk-mergeforwardmessagelist-content-msg-info-second">
-                                           <div className="wk-mergeforwardmessagelist-content-msg-info-second-msgcontent">
-                                           {
-                                               this.getMsgContent(m)
-                                            }
-                                           </div>
-                                    </div>
+                                )}
+
+                                {/* 消息内容 */}
+                                <div className="wk-mergeforwardmessagelist-content-msg-info-second-msgcontent">
+                                    {this.getMsgContent(m)}
                                 </div>
                             </div>
-                        })
-                    }
-
-                </div>
+                        </div>
+                    )
+                })}
             </div>
         </div>
+        <Lightbox
+            open={!!previewImgSrc}
+            close={() => this.setState({ previewImgSrc: null, previewImageContent: null })}
+            slides={previewImgSrc ? [{ src: previewImgSrc, alt: "" }] : []}
+            plugins={[Download]}
+            download={{ download: ({ slide }) => {
+                if (slide?.src) {
+                    const name = previewImageContent?.name || "image.png"
+                    downloadFile(slide.src, name)
+                }
+            }}}
+            carousel={{ finite: true }}
+            controller={{ closeOnBackdropClick: true }}
+            render={{
+                buttonPrev: () => null,
+                buttonNext: () => null,
+            }}
+        />
+        </>
     }
 }

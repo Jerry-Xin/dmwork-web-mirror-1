@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import "highlight.js/styles/github-dark.css";
@@ -54,7 +55,7 @@ const rehypePlugins: any[] = [
     [rehypeSanitize, sanitizeSchema],
 ];
 
-const remarkPlugins: any[] = [remarkGfm];
+const remarkPlugins: any[] = [remarkGfm, remarkBreaks];
 
 /**
  * 预处理 Markdown 内容：
@@ -165,11 +166,19 @@ function processTextChildren(
             if (segments.length === 1 && segments[0].type === "text") return child;
             return segments.map((seg, i) => {
                 if (seg.type === "mention") {
+                    // 根据 uid 判断 mention 等级
+                    let mentionClass = "mention-fallback"; // 默认降级态
+                    if (seg.uid === "all" || seg.uid === "channel") {
+                        mentionClass = "mention-highlight"; // @所有人/@频道
+                    } else if (seg.uid && seg.uid !== "") {
+                        mentionClass = "mention-entity"; // 普通用户
+                    }
+                    const isAll = seg.uid === "all" || seg.uid === "channel"
                     return (
                         <span
                             key={i}
-                            className={`wk-message-mention ${isSend ? "wk-message-mention-send" : "wk-message-mention-recv"}`}
-                            onClick={() => seg.uid && onMentionClick?.(seg.uid)}
+                            className={mentionClass}
+                            onClick={isAll ? undefined : () => seg.uid && onMentionClick?.(seg.uid)}
                         >
                             {seg.name}
                         </span>

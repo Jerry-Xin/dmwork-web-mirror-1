@@ -1,0 +1,54 @@
+/**
+ * ReplyBlock — 引用消息块
+ * Figma 387:62976
+ */
+
+.wk-reply-block {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  background: rgba(28, 28, 35, 0.04);
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.wk-reply-block__bar {
+  width: 2px;
+  border-radius: 1px;
+  background: rgba(28, 28, 35, 0.40);
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 18px;
+}
+
+.wk-reply-block__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.wk-reply-block__name {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(28, 28, 35, 0.60);
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wk-reply-block__digest {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(28, 28, 35, 0.60);
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -26,11 +26,14 @@ export class ChannelDataSource implements IChannelDataSource {
         }
         return WKApp.apiClient.put(`groups/${channel.channelID}/members/${subscriberUID}`, attr)
     }
-    createChannel(uids: string[]): Promise<any> {
+    createChannel(uids: string[], options?: { categoryId?: string }): Promise<any> {
         const body: any = { members: uids }
         const spaceId = WKApp.shared.currentSpaceId
         if (spaceId) {
             body.space_id = spaceId
+        }
+        if (options?.categoryId) {
+            body.category_id = options.categoryId
         }
         return WKApp.apiClient.post(`group/create`, body);
     }
@@ -151,7 +154,7 @@ export class ChannelDataSource implements IChannelDataSource {
         return WKApp.apiClient.post(`groups/${channel.channelID}/blacklist/remove`, { uids: uids })
     }
 
-    getGroupMd(channel: Channel): Promise<any> {
+    getGroupMd(channel: Channel): Promise<{ content: string; version: number }> {
         return WKApp.apiClient.get(`groups/${channel.channelID}/md`)
     }
 
@@ -161,6 +164,18 @@ export class ChannelDataSource implements IChannelDataSource {
 
     deleteGroupMd(channel: Channel): Promise<void> {
         return WKApp.apiClient.delete(`groups/${channel.channelID}/md`)
+    }
+
+    getThreadMd(groupNo: string, shortId: string): Promise<{ content: string; version: number }> {
+        return WKApp.apiClient.get(`groups/${groupNo}/threads/${shortId}/md`)
+    }
+
+    updateThreadMd(groupNo: string, shortId: string, content: string): Promise<{ version: number }> {
+        return WKApp.apiClient.put(`groups/${groupNo}/threads/${shortId}/md`, { content })
+    }
+
+    deleteThreadMd(groupNo: string, shortId: string): Promise<void> {
+        return WKApp.apiClient.delete(`groups/${groupNo}/threads/${shortId}/md`)
     }
 
     setBotAdmin(channel: Channel, uid: string): Promise<void> {
@@ -182,12 +197,17 @@ export class ChannelDataSource implements IChannelDataSource {
     }
 
     // Thread (子区) API
-    async threadList(groupNo: string): Promise<Thread[]> {
-        const resp = await WKApp.apiClient.get(`groups/${groupNo}/threads`)
-        if (!resp || !Array.isArray(resp)) {
+    async threadList(groupNo: string, req?: {
+        page_index?: number
+        page_size?: number
+    }): Promise<Thread[]> {
+        const resp = await WKApp.apiClient.get(`groups/${groupNo}/threads`, {
+            param: req
+        })
+        if (!resp || !resp.list || !Array.isArray(resp.list)) {
             return []
         }
-        return resp.map((item: any) => this.toThread(item, groupNo))
+        return resp.list.map((item: any) => this.toThread(item, groupNo))
     }
 
     async threadCreate(groupNo: string, name: string, sourceMessageId?: number): Promise<Thread> {
@@ -210,6 +230,10 @@ export class ChannelDataSource implements IChannelDataSource {
 
     async threadDelete(groupNo: string, shortId: string): Promise<void> {
         return WKApp.apiClient.delete(`groups/${groupNo}/threads/${shortId}`)
+    }
+
+    async threadUpdate(groupNo: string, shortId: string, data: { name: string }): Promise<void> {
+        return WKApp.apiClient.put(`groups/${groupNo}/threads/${shortId}`, data)
     }
 
     async threadJoin(shortId: string): Promise<void> {
@@ -267,6 +291,11 @@ export class ChannelDataSource implements IChannelDataSource {
             unread_count: data.unread_count,
             last_message_content: data.last_message_content,
             last_message_sender_name: data.last_message_sender_name,
+            has_thread_md: !!data.has_thread_md,
+            thread_md_version: data.thread_md_version || 0,
+            thread_md_updated_at: data.thread_md_updated_at,
+            group_name: data.group_name,
+            last_message_at: data.last_message_at,
         }
     }
 }

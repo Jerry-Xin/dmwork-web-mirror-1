@@ -150,6 +150,7 @@ export class VoiceCell extends MessageCell<any,VoiceCellState> {
     }
 
     componentWillUnmount() {
+        super.componentWillUnmount()
         voicePlayerManager.unregister(this);
         this.clearTimer();
     }

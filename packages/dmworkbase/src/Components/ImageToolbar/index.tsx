@@ -1,6 +1,6 @@
 import type ConversationContext from "../Conversation/context";
 import React from "react";
-import { Component, ReactNode } from "react";
+import { Component, ReactNode, createRef } from "react";
 import { Toast } from "@douyinfe/semi-ui";
 import IconClick from "../IconClick";
 
@@ -14,12 +14,20 @@ interface ImageToolbarProps {
 export default class ImageToolbar extends Component<ImageToolbarProps> {
     pasteListen!: (event: any) => void
     $fileInput: any
+    private containerRef = createRef<HTMLDivElement>()
 
     componentDidMount() {
         const { conversationContext } = this.props
 
         // 粘贴图片 → 入队（#143：不再立即发送）
+        // 当主群聊和子区同时打开时，两个 ImageToolbar 实例各挂一次全局 paste 事件。
+        // 通过比较焦点所在的 .wk-messageinput-box 和当前 toolbar 所在的 .wk-messageinput-box
+        // 确保只有焦点所在的输入框响应粘贴，避免重复上传。
         this.pasteListen = (event: any) => {
+            const activeBox = document.activeElement?.closest?.('.wk-messageinput-box')
+            const myBox = this.containerRef.current?.closest?.('.wk-messageinput-box')
+            if (!activeBox || !myBox || activeBox !== myBox) return
+
             const files: File[] = Array.from(event.clipboardData?.files || [])
             const images = files.filter(f => f.type && f.type.startsWith('image/'))
             if (images.length > 0) {
@@ -60,7 +68,7 @@ export default class ImageToolbar extends Component<ImageToolbarProps> {
     render(): ReactNode {
         const { icon } = this.props
         return (
-            <div className="wk-imagetoolbar">
+            <div className="wk-imagetoolbar" ref={this.containerRef}>
                 <IconClick
                     icon={typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
                     onClick={this.chooseFile}

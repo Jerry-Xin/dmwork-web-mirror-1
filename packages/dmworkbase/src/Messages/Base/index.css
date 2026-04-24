@@ -21,8 +21,8 @@
 
 
 .wk-message-base-send {
-    align-items: flex-end;
-    margin-right: 5px;
+    /* 发送消息也靠左对齐,和接收消息布局一致 */
+    margin-left: 15px;
 }
 
 .wk-message-base-recv {
@@ -47,6 +47,7 @@
 
 .senderAvatar-placeholder {
     cursor: default;
+    height: auto;
 }
 
 .senderAvatar img {
@@ -62,8 +63,7 @@
 }
 
 .wk-message-base-send .wk-message-base-box {
-    flex-direction: row-reverse;
-    margin-right: 10px;
+    flex-direction: row;
 }
 
 /* 自己的消息也显示头像（通过 row-reverse 位于右侧） */
@@ -77,7 +77,7 @@
 }
 
 .wk-message-base-send .wk-msg-body {
-    align-items: flex-end;
+    align-items: flex-start;
 }
 
 /* ── Head 行（name + time，在气泡外面） ── */
@@ -233,7 +233,7 @@ body[theme-mode=dark] .wk-message-base-bubble-box.recv .wk-message-base-bubble  
     align-items: center;
     justify-content: space-between;
     border-top: 1px solid rgba(0,0,0,0.05);
-    background: rgba(124,92,252,0.02);
+    background: rgba(28,28,35,0.02);
 }
 
 .wk-message-base-bubble-box.ai-panel .wk-ai-panel-foot .messageTime {
@@ -359,7 +359,7 @@ body[theme-mode=dark] .wk-message-base-bubble-box.recv .wk-message-base-bubble  
 
 .reply {
     position: relative;
-    color: #666;
+    color: var(--wk-text-secondary);
     font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -470,4 +470,45 @@ body[theme-mode=dark] .wk-message-base-bubble-box.recv .wk-message-base-bubble  
     margin-right: 10px;
     margin-top: 5px;
     color: var(--wk-color-font-tip);
+}
+/* 多选模式 */
+.wk-message-selecting {
+  cursor: pointer;
+  padding-left: 44px;
+  position: relative;
+}
+
+.wk-message-selected {
+  background: rgba(28, 28, 35, 0.04);
+  border-radius: 8px;
+}
+
+.wk-message-checkbox {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.wk-message-checkbox-inner {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1.5px solid rgba(28, 28, 35, 0.25);
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.wk-message-checkbox-inner--checked {
+  background: #1C1C23;
+  border-color: #1C1C23;
 }

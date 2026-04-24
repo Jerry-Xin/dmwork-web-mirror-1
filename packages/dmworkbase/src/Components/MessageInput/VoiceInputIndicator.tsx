@@ -1,199 +1,502 @@
-import React, { useEffect, useRef, useState } from "react"
-import { Toast } from "@douyinfe/semi-ui"
-import useVoiceInput from "./useVoiceInput"
-import "./voiceInput.css"
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { Toast } from "@douyinfe/semi-ui";
+import { Mic } from "lucide-react";
+import useVoiceInput from "./useVoiceInput";
+import "./voiceInput.css";
+import { ChatContextResult } from "../Conversation/chatContext";
 
 interface VoiceInputIndicatorProps {
-    onTranscribed: (text: string, shouldReplace: boolean) => void
-    getCurrentText?: () => string | undefined
-    getChatContext?: () => string | undefined
+  onTranscribed: (text: string, shouldReplace: boolean) => void;
+  getCurrentText?: () => string | undefined;
+  getChatContext?: () => ChatContextResult;
 }
 
-function formatDuration(seconds: number): string {
-    const m = Math.floor(seconds / 60)
-    const s = seconds % 60
-    return `${m}:${s.toString().padStart(2, "0")}`
-}
+// Floating indicator positioning constants
+const FLOATING_GAP = 20;
+const INDICATOR_HEIGHT = 48;
 
-export default function VoiceInputIndicator({ onTranscribed, getCurrentText, getChatContext }: VoiceInputIndicatorProps) {
-    const {
-        isRecording,
-        isTranscribing,
-        duration,
-        startRecording,
-        stopRecordingAndTranscribe,
-        cancelRecording,
-        isVoiceEnabled,
-    } = useVoiceInput({
-        onTranscribed,
-        getChatContext,
-        onError: (error) => {
-            if (error.message.includes("denied") || error.message.includes("Permission") || error.message.includes("NotAllowedError")) {
-                Toast.error("Please allow microphone access")
-            } else {
-                Toast.error(error.message || "Voice transcription failed")
-            }
-        },
-    })
+// Long-press timing constants
+const PREPARING_DELAY_MS = 300;
+const RECORDING_DELAY_MS = 500;
 
-    // Refs to avoid closure staleness in timer/keyboard callbacks
-    const startRecordingRef = useRef(startRecording)
-    startRecordingRef.current = startRecording
-    const stopRecordingRef = useRef(stopRecordingAndTranscribe)
-    stopRecordingRef.current = stopRecordingAndTranscribe
-    const isRecordingRef = useRef(isRecording)
-    isRecordingRef.current = isRecording
-    const isTranscribingRef = useRef(isTranscribing)
-    isTranscribingRef.current = isTranscribing
+export default function VoiceInputIndicator({
+  onTranscribed,
+  getCurrentText,
+  getChatContext,
+}: VoiceInputIndicatorProps) {
+  // Long-press ShiftLeft state
+  const shiftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const preparingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shiftRecordingRef = useRef(false);
+  const cancelPendingRef = useRef(false);
+  const [isPreparing, setIsPreparing] = useState(false);
 
-    // Long-press ShiftLeft state
-    const shiftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-    const shiftRecordingRef = useRef(false)
-    const [isPreparing, setIsPreparing] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const isOnlineRef = useRef(isOnline);
+  isOnlineRef.current = isOnline;
+  const buttonGroupRef = useRef<HTMLDivElement>(null);
 
-    const clearShiftTimer = () => {
-        if (shiftTimerRef.current !== null) {
-            clearTimeout(shiftTimerRef.current)
-            shiftTimerRef.current = null
-        }
-        setIsPreparing(false)
+  // Floating indicator position state
+  const [floatingPosition, setFloatingPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+
+  // Network status detection - PRD: 无网络时话筒 icon 置灰
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const {
+    isRecording,
+    isTranscribing,
+    startRecording,
+    stopRecordingAndTranscribe,
+    cancelRecording,
+    isVoiceEnabled,
+  } = useVoiceInput({
+    onTranscribed,
+    getChatContext,
+    onError: (error) => {
+      // 麦克风权限被拒绝时显示中文提示
+      if (
+        error.message.includes("denied") ||
+        error.message.includes("Permission") ||
+        error.message.includes("NotAllowedError")
+      ) {
+        Toast.error("请允许麦克风访问权限");
+      } else if (
+        error.message.includes("NotFoundError") ||
+        error.message.includes("NotReadableError")
+      ) {
+        // 设备不存在或不可用
+        Toast.error("麦克风不可用");
+      } else if (
+        !error.message.includes("file size") &&
+        !error.message.includes("Transcription failed")
+      ) {
+        // 兜底：显示通用错误（排除已在 useVoiceInput 中 Toast 的错误）
+        Toast.error("语音输入失败");
+      }
+    },
+    onRecordingFailed: () => {
+      shiftRecordingRef.current = false;
+      cancelPendingRef.current = false;
+      setIsPreparing(false);
+    },
+  });
+
+  // Refs to avoid closure staleness in timer/keyboard callbacks
+  const startRecordingRef = useRef(startRecording);
+  startRecordingRef.current = startRecording;
+  const stopRecordingRef = useRef(stopRecordingAndTranscribe);
+  stopRecordingRef.current = stopRecordingAndTranscribe;
+  const isRecordingRef = useRef(isRecording);
+  isRecordingRef.current = isRecording;
+  const isTranscribingRef = useRef(isTranscribing);
+  isTranscribingRef.current = isTranscribing;
+
+  const clearShiftTimer = () => {
+    if (shiftTimerRef.current !== null) {
+      clearTimeout(shiftTimerRef.current);
+      shiftTimerRef.current = null;
     }
-
-    // Keyboard shortcut: Shift + Cmd/Ctrl + Space, and long-press ShiftLeft
-    useEffect(() => {
-        if (!isVoiceEnabled) return
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Existing shortcut: Shift+Cmd/Ctrl+Space
-            if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.code === "Space") {
-                if (!isRecordingRef.current && !isTranscribingRef.current) {
-                    e.preventDefault()
-                    startRecordingRef.current()
-                }
-                return
-            }
-
-            // Long-press ShiftLeft: start 500ms timer
-            if (e.code === "ShiftLeft" && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey) {
-                if (!isRecordingRef.current && !isTranscribingRef.current && shiftTimerRef.current === null) {
-                    setIsPreparing(true)
-                    shiftTimerRef.current = setTimeout(() => {
-                        shiftTimerRef.current = null
-                        setIsPreparing(false)
-                        shiftRecordingRef.current = true
-                        startRecordingRef.current()
-                    }, 500)
-                }
-                return
-            }
-
-            // Any other key pressed while waiting cancels the timer
-            // Ignore: repeated ShiftLeft, other modifier keys (IME may fire these),
-            // and composition events from input methods
-            if (shiftTimerRef.current !== null && e.code !== "ShiftLeft") {
-                // Don't cancel for modifier keys or composition — IME switching
-                // on Shift often fires synthetic modifier/process events
-                const isModifier = e.code.startsWith("Shift") || e.code.startsWith("Control")
-                    || e.code.startsWith("Alt") || e.code.startsWith("Meta")
-                    || e.key === "Process" || e.key === "Unidentified" || e.isComposing
-                if (!isModifier) {
-                    clearShiftTimer()
-                }
-            }
-        }
-
-        const handleKeyUp = (e: KeyboardEvent) => {
-            // ShiftLeft released while timer is pending: cancel (normal Shift press)
-            if (e.code === "ShiftLeft" && shiftTimerRef.current !== null) {
-                clearShiftTimer()
-                return
-            }
-
-            // ShiftLeft released after long-press recording started: stop recording
-            if (e.code === "ShiftLeft" && shiftRecordingRef.current && isRecordingRef.current) {
-                shiftRecordingRef.current = false
-                e.preventDefault()
-                const contextText = getCurrentText?.()
-                stopRecordingRef.current(contextText)
-                return
-            }
-
-            if (!isRecordingRef.current) return
-            // Stop recording when any modifier key is released (existing Shift+Cmd+Space flow)
-            if (e.key === "Shift" || e.key === "Meta" || e.key === "Control") {
-                // Don't stop if this was a long-press ShiftLeft release handled above
-                if (shiftRecordingRef.current) return
-                e.preventDefault()
-                const contextText = getCurrentText?.()
-                stopRecordingRef.current(contextText)
-            }
-        }
-
-        const handleBlurWhilePreparing = () => {
-            clearShiftTimer()
-        }
-
-        window.addEventListener("keydown", handleKeyDown)
-        window.addEventListener("keyup", handleKeyUp)
-        window.addEventListener("blur", handleBlurWhilePreparing)
-
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown)
-            window.removeEventListener("keyup", handleKeyUp)
-            window.removeEventListener("blur", handleBlurWhilePreparing)
-            clearShiftTimer()
-        }
-    }, [isVoiceEnabled, getCurrentText])
-
-    // Window blur: auto-stop recording
-    useEffect(() => {
-        if (!isRecording) return
-        const handleBlur = () => {
-            const contextText = getCurrentText?.()
-            stopRecordingAndTranscribe(contextText)
-        }
-        window.addEventListener("blur", handleBlur)
-        return () => window.removeEventListener("blur", handleBlur)
-    }, [isRecording, stopRecordingAndTranscribe, getCurrentText])
-
-    if (!isVoiceEnabled) return null
-
-    if (isTranscribing) {
-        return (
-            <div className="wk-voice-indicator wk-voice-transcribing">
-                <span className="wk-voice-spinner" />
-                <span className="wk-voice-label">Transcribing...</span>
-            </div>
-        )
+    if (preparingTimerRef.current !== null) {
+      clearTimeout(preparingTimerRef.current);
+      preparingTimerRef.current = null;
     }
+    setIsPreparing(false);
+  };
 
+  // Handle transition from preparing/pending -> actual recording or auto-cancel.
+  useEffect(() => {
+    if (isRecording && cancelPendingRef.current) {
+      cancelPendingRef.current = false;
+      shiftRecordingRef.current = false;
+      setIsPreparing(false);
+      cancelRecording();
+      return;
+    }
     if (isRecording) {
-        return (
-            <div className="wk-voice-indicator wk-voice-recording">
-                <span className="wk-voice-dot" />
-                <span className="wk-voice-label">{formatDuration(duration)}</span>
-                <span className="wk-voice-label">Recording...</span>
-                <button
-                    className="wk-voice-cancel"
-                    onClick={(e) => {
-                        e.preventDefault()
-                        cancelRecording()
-                    }}
-                    type="button"
-                >
-                    Cancel
-                </button>
-            </div>
-        )
+      setIsPreparing(false);
+    }
+  }, [isRecording, cancelRecording]);
+
+  // Calculate floating indicator position when recording starts
+  const updateFloatingPosition = useCallback(() => {
+    if (!buttonGroupRef.current) return;
+
+    // Find the parent .wk-messageinput-card element
+    const card = buttonGroupRef.current.closest(".wk-messageinput-card");
+    if (!card) return;
+
+    const cardRect = card.getBoundingClientRect();
+    setFloatingPosition({
+      top: cardRect.top - FLOATING_GAP - INDICATOR_HEIGHT,
+      left: cardRect.left + cardRect.width / 2,
+    });
+  }, []);
+
+  // Update position when recording or transcribing, and on window resize/scroll
+  useEffect(() => {
+    if (!isRecording && !isTranscribing) {
+      setFloatingPosition(null);
+      return;
     }
 
-    if (isPreparing) {
-        return (
-            <div className="wk-voice-indicator wk-voice-preparing">
-                <span className="wk-voice-label">Hold for voice...</span>
-            </div>
-        )
+    updateFloatingPosition();
+
+    const handleResize = () => updateFloatingPosition();
+
+    // 使用 requestAnimationFrame 节流 scroll 事件
+    let rafId: number | null = null;
+    const handleScroll = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        updateFloatingPosition();
+        rafId = null;
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll, true);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, [isRecording, isTranscribing, updateFloatingPosition]);
+
+  // Keyboard shortcut: Shift + Cmd/Ctrl + Space, and long-press ShiftLeft
+  useEffect(() => {
+    if (!isVoiceEnabled) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Esc to cancel recording
+      if (e.code === "Escape" && isRecordingRef.current) {
+        e.preventDefault();
+        cancelRecording();
+        return;
+      }
+
+      // Existing shortcut: Shift+Cmd/Ctrl+Space
+      if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.code === "Space") {
+        if (!isRecordingRef.current && !isTranscribingRef.current) {
+          e.preventDefault();
+          // Check network status before starting
+          if (!isOnlineRef.current) {
+            Toast.warning("网络不可用，无法使用语音功能");
+            return;
+          }
+          startRecordingRef.current();
+        }
+        return;
+      }
+
+      // Long-press ShiftLeft: start 500ms timer
+      if (
+        e.code === "ShiftLeft" &&
+        !e.repeat &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
+        if (
+          !isRecordingRef.current &&
+          !isTranscribingRef.current &&
+          shiftTimerRef.current === null
+        ) {
+          cancelPendingRef.current = false;
+          preparingTimerRef.current = setTimeout(() => {
+            preparingTimerRef.current = null;
+            setIsPreparing(true);
+          }, PREPARING_DELAY_MS);
+          shiftTimerRef.current = setTimeout(() => {
+            shiftTimerRef.current = null;
+            // Check network status before starting
+            if (!isOnlineRef.current) {
+              Toast.warning("网络不可用，无法使用语音功能");
+              setIsPreparing(false);
+              return;
+            }
+            shiftRecordingRef.current = true;
+            startRecordingRef.current();
+          }, RECORDING_DELAY_MS);
+        }
+        return;
+      }
+
+      if (shiftTimerRef.current !== null && e.code !== "ShiftLeft") {
+        // Modifier chord (Ctrl/Meta/Alt pressed): cancel voice intent
+        if (
+          e.code.startsWith("Control") ||
+          e.code.startsWith("Alt") ||
+          e.code.startsWith("Meta")
+        ) {
+          clearShiftTimer();
+          return;
+        }
+        // IME-related events: do not cancel timer
+        const isIME =
+          e.code.startsWith("Shift") ||
+          e.key === "Process" ||
+          e.key === "Unidentified" ||
+          e.isComposing;
+        if (!isIME) {
+          clearShiftTimer();
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      // ShiftLeft released while timer is pending: cancel (normal Shift press)
+      if (e.code === "ShiftLeft" && shiftTimerRef.current !== null) {
+        clearShiftTimer();
+        return;
+      }
+
+      // ShiftLeft released while waiting for getUserMedia (recording not yet started)
+      if (
+        e.code === "ShiftLeft" &&
+        shiftRecordingRef.current &&
+        !isRecordingRef.current
+      ) {
+        cancelPendingRef.current = true;
+        shiftRecordingRef.current = false;
+        return;
+      }
+
+      // ShiftLeft released after long-press recording started: stop recording
+      if (
+        e.code === "ShiftLeft" &&
+        shiftRecordingRef.current &&
+        isRecordingRef.current
+      ) {
+        shiftRecordingRef.current = false;
+        e.preventDefault();
+        const contextText = getCurrentText?.();
+        stopRecordingRef.current(contextText);
+        return;
+      }
+
+      if (!isRecordingRef.current) return;
+      // Stop recording when any modifier key is released (existing Shift+Cmd+Space flow)
+      if (e.key === "Shift" || e.key === "Meta" || e.key === "Control") {
+        // Don't stop if this was a long-press ShiftLeft release handled above
+        if (shiftRecordingRef.current) return;
+        e.preventDefault();
+        const contextText = getCurrentText?.();
+        stopRecordingRef.current(contextText);
+      }
+    };
+
+    const handleBlurWhilePreparing = () => {
+      clearShiftTimer();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleBlurWhilePreparing);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleBlurWhilePreparing);
+      clearShiftTimer();
+    };
+  }, [isVoiceEnabled, getCurrentText, cancelRecording]);
+
+  // Window blur: auto-stop recording
+  useEffect(() => {
+    if (!isRecording) return;
+    const handleBlur = () => {
+      const contextText = getCurrentText?.();
+      stopRecordingAndTranscribe(contextText);
+    };
+    window.addEventListener("blur", handleBlur);
+    return () => window.removeEventListener("blur", handleBlur);
+  }, [isRecording, stopRecordingAndTranscribe, getCurrentText]);
+
+  if (!isVoiceEnabled) return null;
+
+  // Handle click/keyboard for voice button
+  const handleVoiceClick = () => {
+    if (!isOnline) {
+      Toast.warning("网络不可用，无法使用语音功能");
+      return;
+    }
+    startRecording();
+  };
+
+  const handleVoiceKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      handleVoiceClick();
+    }
+  };
+
+  // Handle stop recording click/keyboard
+  const handleStopClick = () => {
+    const contextText = getCurrentText?.();
+    stopRecordingAndTranscribe(contextText);
+  };
+
+  const handleStopKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      handleStopClick();
+    }
+  };
+
+  if (isTranscribing) {
+    // If no position yet, still show the button in recording state
+    if (!floatingPosition) {
+      return (
+        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+          <div
+            className="wk-voice-button wk-voice-button--recording"
+            title="转写中..."
+          >
+            <Mic size={18} color="currentColor" />
+          </div>
+        </div>
+      );
     }
 
-    return null
+    const transcribingIndicator = (
+      <div
+        className="wk-voice-floating-indicator"
+        style={{
+          top: floatingPosition.top,
+          left: floatingPosition.left,
+          transform: "translateX(-50%)",
+        }}
+      >
+        <div className="wk-voice-floating-content">
+          <span className="wk-voice-floating-text">转写中</span>
+        </div>
+        <span className="wk-voice-floating-divider" />
+        <div className="wk-voice-transcribing-spinner" />
+      </div>
+    );
+
+    return (
+      <>
+        {createPortal(transcribingIndicator, document.body)}
+        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+          <div
+            className="wk-voice-button wk-voice-button--recording"
+            title="转写中..."
+          >
+            <Mic size={18} color="currentColor" />
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (isRecording) {
+    // If no position yet, still show the button in recording state
+    if (!floatingPosition) {
+      return (
+        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+          <div
+            className="wk-voice-button wk-voice-button--recording"
+            title="点击停止录音"
+            onClick={handleStopClick}
+            onKeyDown={handleStopKeyDown}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: "pointer" }}
+          >
+            <Mic size={18} color="currentColor" />
+          </div>
+        </div>
+      );
+    }
+
+    const floatingIndicator = (
+      <div
+        className="wk-voice-floating-indicator"
+        style={{
+          top: floatingPosition.top,
+          left: floatingPosition.left,
+          transform: "translateX(-50%)",
+        }}
+      >
+        <div className="wk-voice-floating-content">
+          <span className="wk-voice-floating-text">语音输入</span>
+        </div>
+        <span className="wk-voice-floating-divider" />
+        <div className="wk-voice-wave-container">
+          {Array.from({ length: 16 }, (_, i) => (
+            <span key={i} className="wk-voice-wave-bar" />
+          ))}
+        </div>
+      </div>
+    );
+
+    return (
+      <>
+        {createPortal(floatingIndicator, document.body)}
+        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+          <div
+            className="wk-voice-button wk-voice-button--recording"
+            title="点击停止录音"
+            onClick={handleStopClick}
+            onKeyDown={handleStopKeyDown}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: "pointer" }}
+          >
+            <Mic size={18} color="currentColor" />
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (isPreparing) {
+    return (
+      <div className="wk-voice-button-group" ref={buttonGroupRef}>
+        <div
+          className="wk-voice-button wk-voice-button--preparing"
+          title="准备中..."
+        >
+          <Mic size={18} color="currentColor" />
+        </div>
+      </div>
+    );
+  }
+
+  // 默认状态：显示麦克风按钮
+  // PRD: 无网络时话筒 icon 置灰，点击时 Toast「网络不可用，无法使用语音功能」
+  return (
+    <div className="wk-voice-button-group" ref={buttonGroupRef}>
+      <div
+        className={`wk-voice-button ${
+          !isOnline ? "wk-voice-button--disabled" : ""
+        }`}
+        title={isOnline ? "语音输入 (长按 Shift)" : "网络不可用"}
+        onClick={handleVoiceClick}
+        onKeyDown={handleVoiceKeyDown}
+        role="button"
+        tabIndex={isOnline ? 0 : -1}
+      >
+        <Mic size={18} color="currentColor" />
+      </div>
+    </div>
+  );
 }

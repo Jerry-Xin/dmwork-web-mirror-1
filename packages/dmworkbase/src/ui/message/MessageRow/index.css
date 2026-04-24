@@ -1,0 +1,183 @@
+/**
+ * MessageRow 组件样式
+ */
+
+.wk-msg-row {
+  display: flex;
+  gap: 12px;
+  padding: 0 16px;
+  margin-top: 12px;
+  transition: background-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/**
+ * Hover 态背景（向上下各扩展 2px,不影响布局）
+ */
+.wk-msg-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  bottom: -2px;
+  background-color: rgba(28, 28, 35, 0.04);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wk-msg-row:hover::before,
+.wk-msg-row--active::before {
+  opacity: 1;
+}
+
+/* 右键菜单打开时，消息行浮到遮罩上方，保持 hover 态 */
+.wk-msg-row--active {
+  z-index: 99;
+  position: relative;
+}
+
+/* 确保内容在背景上方 */
+.wk-msg-row > * {
+  position: relative;
+  z-index: 1;
+}
+
+/**
+ * 发送方消息（和接收方一样左对齐，只是可能没有头像）
+ */
+.wk-msg-row--send {
+  /* 发送方和接收方布局相同，都是左对齐 */
+}
+
+/**
+ * 连续消息（和上一条间距 12px）
+ */
+.wk-msg-row.wk-msg-row--continue {
+  margin-top: 12px !important;
+}
+
+/**
+ * 非连续消息（换发送者,和上一条间距 24px）
+ */
+.wk-msg-row:not(.wk-msg-row--continue) {
+  margin-top: 24px !important;
+}
+
+/**
+ * 选中状态
+ */
+.wk-msg-row--selected {
+  background-color: rgba(127, 59, 245, 0.08);
+}
+
+/**
+ * 多选 Checkbox（占位 flex item，在头像左侧）
+ */
+.wk-msg-row-checkbox {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  cursor: pointer;
+}
+
+/**
+ * 头像区域
+ */
+.wk-msg-row-avatar {
+  flex-shrink: 0;
+}
+
+/**
+ * 连续消息的头像占位符（hover 时显示时间）
+ */
+.wk-msg-row-avatar-placeholder {
+  width: 36px;
+  flex-shrink: 0;
+}
+
+/**
+ * 内容区
+ */
+.wk-msg-row-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/**
+ * 头部（发送者名称 + 时间戳）
+ */
+.wk-msg-row-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 22px;
+  line-height: 22px;
+}
+
+.wk-msg-row-sender {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.wk-msg-row-timestamp {
+  font-size: 12px;
+  color: rgba(28, 28, 35, 0.4);
+}
+
+/**
+ * 连续消息的时间戳（hover 时显示在头像位置）
+ */
+.wk-msg-row-timestamp-hover {
+  font-size: 10px;
+  color: rgba(28, 28, 35, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.wk-msg-row:hover .wk-msg-row-timestamp-hover,
+.wk-msg-row--active .wk-msg-row-timestamp-hover {
+  opacity: 1;
+}
+
+/**
+ * 消息体
+ */
+.wk-msg-row-body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 多选模式：整行可点 */
+.wk-msg-row--selecting {
+  cursor: pointer;
+}
+
+.wk-msg-row-checkbox-inner {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(28, 28, 35, 0.25);
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.wk-msg-row-checkbox-inner--checked {
+  background: #1C1C23;
+  border-color: #1C1C23;
+}

@@ -13,6 +13,7 @@ import { EndpointID } from "../../Service/Const";
 import { ShowConversationOptions } from "../../EndpointCommon";
 import { Space, SpaceService } from "../../Service/SpaceService";
 import { isSafeUrl } from "../../Utils/security";
+import { downloadFile } from "../../Utils/download";
 
 
 const TOP_CONVERSATION_SCORE_BOOST = 1000000000000;
@@ -208,7 +209,8 @@ export class ChatVM extends ProviderListener {
                 if (conversation.channel.channelType === ChannelTypeGroup) {
                     const key = `${conversation.channel.channelID}_${conversation.channel.channelType}`
                     if (!WKApp.shared.channelSpaceMap.has(key)) {
-                        // 缓存未命中：异步获取 channelInfo 补写缓存
+                        // 缓存未命中：暂存 conversation，等 channelInfoListener 回调补写缓存后再处理
+                        this._pendingSpaceConversations.set(key, conversation)
                         WKSDK.shared().channelManager.fetchChannelInfo(conversation.channel)
                         return // 等待 channelInfoListener 回调处理
                     }
@@ -397,15 +399,17 @@ export class ChatVM extends ProviderListener {
     }
 
     async requestConversationList() {
-
         this.loading = true
-        // 切换 Space 时清空 SDK 内部缓存和当前列表，避免旧 Space 会话残留
-        WKSDK.shared().conversationManager.conversations = []
-        this.conversations = []
-        this._pendingSpaceConversations.clear()
         this.notifyListener()
-        const conversationWraps = new Array<ConversationWrap>()
+
+        // 先拉取数据，避免清空列表导致 UI 闪烁（fix #266）
         const conversations = await WKSDK.shared().conversationManager.sync({})
+
+        // 拉取成功后再清空+替换（切换 Space 时清空 SDK 内部缓存，避免旧 Space 会话残留）
+        WKSDK.shared().conversationManager.conversations = []
+        this._pendingSpaceConversations.clear()
+
+        const conversationWraps = new Array<ConversationWrap>()
         if (conversations && conversations.length > 0) {
             for (const conversation of conversations) {
                 // Space 过滤：复用共享函数（含 channelSpaceMap 缓存）
@@ -495,17 +499,13 @@ export async function handleGlobalSearchClick(item: any, type: string,hideModal?
         }
         WKApp.endpoints.showConversation(new Channel(item.channel.channel_id, item.channel.channel_type), opts)
     } else if (type === "file") {
-        // 下载文件
-        const payload = item.payload
-        let downloadURL = WKApp.dataSource.commonDataSource.getImageURL(payload.url || '')
-        if (downloadURL.indexOf("?") != -1) {
-            downloadURL += "&filename=" + encodeURIComponent(payload.name)
-        } else {
-            downloadURL += "?filename=" + encodeURIComponent(payload.name)
-        }
-        // Validate URL protocol to prevent XSS attacks (fixes #347)
+        hideModal?.()
+        const payload = item.payload;
+        if (!payload.url) return;
+        const downloadURL = WKApp.dataSource.commonDataSource.getFileURL(payload.url);
+        if (!downloadURL) return;
         if (isSafeUrl(downloadURL)) {
-            window.open(`${downloadURL}`, 'top');
+            await downloadFile(downloadURL, payload.name || "file");
         }
     }
 }

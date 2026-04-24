@@ -8,12 +8,14 @@ import { Modal } from "@douyinfe/semi-ui";
 import { ConversationWrap, MessageWrap } from "../../Service/Model";
 import { getTimeStringAutoShort2 } from '../../Utils/time'
 import classNames from "classnames";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 
 import "./index.css"
-import { Badge, Toast } from "@douyinfe/semi-ui";
+
 import WKApp from "../../App";
 import { EndpointID } from "../../Service/Const";
-import { Hash } from "lucide-react";
+import GroupIcon from "../Icons/GroupIcon";
 import ThreadIcon from "../Icons/ThreadIcon";
 import ContextMenus, { ContextMenusContext, ContextMenusData } from "../ContextMenus";
 import { ChannelSettingManager } from "../../Service/ChannelSetting";
@@ -24,13 +26,152 @@ import { FlameMessageCell } from "../../Messages/Flame";
 import WKAvatar from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import ConversationVM from "../Conversation/vm";
-export type ConvFilter = 'all' | 'human' | 'ai' | 'group'
+export type ConvFilter = 'all' | 'human' | 'ai' | 'group' | 'dm'
+
+// ── CompactGroupItem：群聊 Tab 紧凑 item，支持拖拽 ──────────────────────
+interface CompactGroupItemProps {
+    conversationWrap: ConversationWrap
+    selected: boolean
+    avatarKey?: string
+    onClick: () => void
+    onDoubleClick?: (e: React.MouseEvent) => void
+    onContextMenu: (e: React.MouseEvent) => void
+    /** 该群聊有子区，需要在 # icon 下方画竖线 */
+    hasThreads?: boolean
+    onToggleThreads?: (e: React.MouseEvent) => void
+    /** 折叠时子区的未读数（展开时为 0） */
+    threadUnread?: number
+}
+
+const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
+    conversationWrap, selected, avatarKey, onClick, onDoubleClick, onContextMenu, hasThreads, onToggleThreads, threadUnread = 0,
+}) => {
+    const totalUnread = conversationWrap.unread + threadUnread
+    const channelInfo = conversationWrap.channelInfo
+    // channelInfo 未加载时主动拉取，加载完触发 re-render
+    React.useEffect(() => {
+        if (!channelInfo) {
+            WKSDK.shared().channelManager.fetchChannelInfo(conversationWrap.channel)
+        }
+    }, [conversationWrap.channel.channelID])
+
+    const isThread = conversationWrap.channel.channelType === ChannelTypeCommunityTopic
+
+    // 子区继承父群聊 mute 状态
+    const parentGroupNo = isThread ? (channelInfo?.orgData?.parentGroupNo as string | undefined) : undefined
+    const parentChannelInfo = parentGroupNo
+        ? WKSDK.shared().channelManager.getChannelInfo(new Channel(parentGroupNo, ChannelTypeGroup))
+        : undefined
+    const effectiveMute = !!(channelInfo?.mute || parentChannelInfo?.mute)
+
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+        id: `grp::${conversationWrap.channel.channelID}`,
+        data: {
+            type: 'group',
+            groupNo: conversationWrap.channel.channelID,
+        },
+        // 子区不参与跨分组拖拽
+        disabled: isThread,
+    })
+
+    const style: React.CSSProperties = {
+        transform: CSS.Translate.toString(transform),
+        opacity: isDragging ? 0.4 : undefined,
+    }
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={classNames(
+                "wk-conv-compact-item",
+                selected ? "wk-conv-compact-item--selected" : undefined,
+                totalUnread > 0 ? "wk-conv-compact-item--unread" : undefined,
+                isThread ? "wk-conv-compact-item--thread" : undefined,
+                isDragging ? "wk-conv-compact-item--dragging" : undefined,
+                hasThreads ? "wk-conv-compact-item--has-threads" : undefined,
+                effectiveMute ? "wk-conv-compact-item--muted" : undefined,
+            )}
+            onClick={onClick}
+            onDoubleClick={onDoubleClick}
+            onMouseDown={onDoubleClick ? (e) => { if (e.detail >= 2) e.preventDefault() } : undefined}
+            onContextMenu={onContextMenu}
+        >
+            {/* 拖拽 handle（非子区才显示） */}
+            {!isThread && (
+                <span
+                    className="wk-conv-compact-drag-handle"
+                    {...attributes}
+                    {...listeners}
+                    onClick={e => e.stopPropagation()}
+                >
+                    <svg width="10" height="14" viewBox="0 0 10 14" fill="none">
+                        <circle cx="3" cy="3" r="1.2" fill="currentColor" />
+                        <circle cx="7" cy="3" r="1.2" fill="currentColor" />
+                        <circle cx="3" cy="7" r="1.2" fill="currentColor" />
+                        <circle cx="7" cy="7" r="1.2" fill="currentColor" />
+                        <circle cx="3" cy="11" r="1.2" fill="currentColor" />
+                        <circle cx="7" cy="11" r="1.2" fill="currentColor" />
+                    </svg>
+                </span>
+            )}
+            <span className={`wk-conv-compact-icon${totalUnread > 0 ? ' wk-conv-compact-icon--reddot' : ''}`}>
+                {isThread
+                    ? <ThreadIcon size={13} />
+                    : (
+                        <WKAvatar key={avatarKey} channel={conversationWrap.channel} style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0 }} />
+                    )
+                }
+            </span>
+            {conversationWrap.isMentionMe && totalUnread > 0 && (
+                <span className="wk-mention-badge">@我</span>
+            )}
+            <span className="wk-conv-compact-name">
+                {channelInfo?.orgData.displayName
+                    ? channelInfo.orgData.displayName
+                    : isThread
+                        ? <span className="wk-conv-compact-name-skeleton" />
+                        : conversationWrap.channel.channelID
+                }
+            </span>
+            {effectiveMute && (
+                <span className="wk-conv-compact-mute-icon">
+                    <svg className="icon" viewBox="0 0 1131 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="12" height="12"><path d="M914.688 892.736L64 236.224l38.784-50.88L271.36 315.648a300.288 300.288 0 0 1 246.976-157.952v-33.28c0-16.64 13.504-30.08 30.08-30.08h2.304c16.576 0 30.08 13.44 30.08 30.08v32.96a299.776 299.776 0 0 1 284.928 299.136v294.272l45.504 58.624 48.768 37.696-45.312 45.632zM234.624 480.384l506.88 391.232H140.416l94.272-121.536-0.064-269.696z" fill="#bfbfbf" /></svg>
+                </span>
+            )}
+            {totalUnread > 0 && (
+                <span className="wk-conv-compact-badges">
+                    <span
+                        className="wk-conv-compact-badge"
+                        style={effectiveMute ? { backgroundColor: "var(--semi-color-text-2)", color: "#fff" } : undefined}
+                    >
+                        {totalUnread > 99 ? '99+' : totalUnread}
+                    </span>
+                </span>
+            )}
+            {hasThreads && (
+                <span
+                    className="wk-conv-compact-thread-tag"
+                    aria-label="展开/收起子区"
+                    onClick={(e) => { e.stopPropagation(); onToggleThreads?.(e) }}
+                >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="#6569E8">
+                        <path d="M12 2.81a1 1 0 0 1 0-1.41l.36-.36a1 1 0 0 1 1.41 0l9.2 9.2a1 1 0 0 1 0 1.4l-.7.7a1 1 0 0 1-1.3.13l-9.54-6.72a1 1 0 0 1-.08-1.58l1-1L12 2.8ZM12 21.2a1 1 0 0 1 0 1.41l-.35.35a1 1 0 0 1-1.41 0l-9.2-9.19a1 1 0 0 1 0-1.41l.7-.7a1 1 0 0 1 1.3-.12l9.54 6.72a1 1 0 0 1 .07 1.58l-1 1 .35.36ZM15.66 16.8a1 1 0 0 1-1.38.28l-8.49-5.66A1 1 0 1 1 6.9 9.76l8.49 5.65a1 1 0 0 1 .27 1.39ZM17.1 14.25a1 1 0 1 0 1.11-1.66L9.73 6.93a1 1 0 0 0-1.11 1.66l8.49 5.66Z" />
+                    </svg>
+                </span>
+            )}
+        </div>
+    )
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 export interface ConversationListProps {
     conversations: ConversationWrap[]
     select?: Channel
     /** 外部控制过滤，不传则内部默认 'all' */
     filter?: ConvFilter
+    /** 紧凑模式：隐藏头像/消息预览/时间戳，显示 # icon，用于群聊 Tab */
+    compact?: boolean
     onClick?: (conversation: ConversationWrap) => void
     onClearMessages?: (channel: Channel) => void
     /** 点击 "+N 个子区" 时的回调，传入父群组 ID */
@@ -41,6 +182,8 @@ export interface ConversationListProps {
 
 export interface ConversationListState {
     selectConversationWrap?: ConversationWrap
+    /** compact 模式：已展开全部子区的父群聊 ID 集合（点击 +N 后加入） */
+    expandedGroupIds: Set<string>
 }
 
 export default class ConversationList extends Component<ConversationListProps, ConversationListState>{
@@ -50,7 +193,7 @@ export default class ConversationList extends Component<ConversationListProps, C
     constructor(props: ConversationListProps) {
         super(props)
 
-        this.state = {}
+        this.state = { expandedGroupIds: new Set() }
     }
 
     componentDidMount() {
@@ -71,8 +214,18 @@ export default class ConversationList extends Component<ConversationListProps, C
         TypingManager.shared.removeTypingListener(this.typingListener)
     }
 
+
     _handleScroll = () => {
         this.contextMenusContext.hide()
+    }
+
+    _toggleGroupExpand = (groupId: string) => {
+        this.setState(s => {
+            const next = new Set(s.expandedGroupIds)
+            if (next.has(groupId)) next.delete(groupId)
+            else next.add(groupId)
+            return { expandedGroupIds: next }
+        })
     }
     _handleContextMenu(conversationWrap: ConversationWrap, event: React.MouseEvent) {
         this.contextMenusContext.show(event)
@@ -166,15 +319,41 @@ export default class ConversationList extends Component<ConversationListProps, C
         return false
     }
 
-    conversationItem(conversationWrap: ConversationWrap, hasThreads = false) {
-        
-
+    conversationItem(conversationWrap: ConversationWrap, hasThreads = false, threadUnread = 0) {
         let channelInfo = conversationWrap.channelInfo
         if (!channelInfo) {
             WKSDK.shared().channelManager.fetchChannelInfo(conversationWrap.channel)
         }
 
+        const { compact } = this.props
         const avatarKey = WKApp.shared.getChannelAvatarTag(conversationWrap.channel);
+
+        // ── Compact 模式（群聊 Tab）：用 CompactGroupItem 函数组件（支持拖拽） ──
+        if (compact) {
+            const selected = !!(this.props.select && this.props.select.isEqual(conversationWrap.channel))
+            return (
+                <CompactGroupItem
+                    key={conversationWrap.channel.getChannelKey()}
+                    conversationWrap={conversationWrap}
+                    selected={selected}
+                    avatarKey={avatarKey}
+                    hasThreads={hasThreads}
+                    threadUnread={threadUnread}
+                    onClick={() => { if (this.props.onClick) this.props.onClick(conversationWrap) }}
+                    onDoubleClick={
+                        conversationWrap.channel.channelType === ChannelTypeGroup && hasThreads
+                            ? (e) => { e.preventDefault(); this._toggleGroupExpand(conversationWrap.channel.channelID) }
+                            : undefined
+                    }
+                    onToggleThreads={
+                        conversationWrap.channel.channelType === ChannelTypeGroup && hasThreads
+                            ? (e) => { e.preventDefault(); this._toggleGroupExpand(conversationWrap.channel.channelID) }
+                            : undefined
+                    }
+                    onContextMenu={(e) => { this._handleContextMenu(conversationWrap, e) }}
+                />
+            )
+        }
 
         const { select, onClick } = this.props
         const typing = TypingManager.shared.getTyping(conversationWrap.channel)
@@ -195,7 +374,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                             <WKAvatar channel={conversationWrap.channel} key={avatarKey}></WKAvatar>
                             {hasThreads && (
                               <div className="wk-conv-group-hash-badge">
-                                <Hash size={10} strokeWidth={2.5} />
+                                <GroupIcon size={10} />
                               </div>
                             )}
                             {channelInfo && this.needShowOnlineStatus(channelInfo) ? <OnlineStatusBadge tip={this.getOnlineTip(channelInfo)}></OnlineStatusBadge> : undefined}
@@ -246,7 +425,16 @@ export default class ConversationList extends Component<ConversationListProps, C
                         </div>
                         <div className="wk-conversationlist-item-reddot">
                             {
-                                conversationWrap.unread > 0 ? <Badge style={channelInfo?.mute ? { "border": "none", "backgroundColor": "var(--semi-color-text-2)" } : { "border": "none", "backgroundColor": "var(--wk-brand-primary)" }} count={conversationWrap.unread} type='danger'></Badge> : undefined
+                                conversationWrap.unread > 0
+                                    ? <span className="wk-conv-compact-badges">
+                                        <span className="wk-conv-compact-badge" style={channelInfo?.mute ? { backgroundColor: "var(--semi-color-text-2)", color: "#fff" } : undefined}>
+                                            {conversationWrap.unread > 99 ? '99+' : conversationWrap.unread}
+                                        </span>
+                                        {conversationWrap.isMentionMe && (
+                                            <span className="wk-mention-badge">@我</span>
+                                        )}
+                                    </span>
+                                    : undefined
                             }
                         </div>
                     </div>
@@ -279,6 +467,8 @@ export default class ConversationList extends Component<ConversationListProps, C
         const channelInfo = conv.channelInfo
         // 群组和子区频道都归类到 group 过滤器
         if (filter === 'group') return conv.channel.channelType === ChannelTypeGroup || conv.channel.channelType === ChannelTypeCommunityTopic
+        // dm = human + ai（私聊 Tab 包含所有私聊会话）
+        if (filter === 'dm') return conv.channel.channelType === ChannelTypePerson
         if (filter === 'ai') {
             if (conv.channel.channelType !== ChannelTypePerson) return false
             // channelInfo 未加载时隐藏，等 channelInfoListener 触发重渲后再显示
@@ -294,9 +484,9 @@ export default class ConversationList extends Component<ConversationListProps, C
         return true
     }
 
-    // 将子区放在父群组后面，最多显示2个，超出部分用计数表示
-    private groupThreadsWithParent(convs: ConversationWrap[]): { items: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }>, threadsByParent: Map<string, ConversationWrap[]> } {
-        const MAX_VISIBLE_THREADS = 2
+    // 将子区放在父群组后面，默认全部收起（MAX_VISIBLE_THREADS=0），展开后显示全部
+    private groupThreadsWithParent(convs: ConversationWrap[]): { items: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number; unreadCount: number }>, threadsByParent: Map<string, ConversationWrap[]> } {
+        const MAX_VISIBLE_THREADS = 0
 
         // 分离群组和子区
         const threads: ConversationWrap[] = []
@@ -319,8 +509,8 @@ export default class ConversationList extends Component<ConversationListProps, C
             }
         }
 
-        // 重新组织：群组后面跟着其子区（最多2个）
-        const result: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }> = []
+        // 重新组织：群组后面跟着其子区（默认全收起）
+        const result: Array<ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number; unreadCount: number }> = []
         const usedThreads = new Set<string>()
 
         for (const conv of convs) {
@@ -329,7 +519,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                 continue
             }
             result.push(conv)
-            // 如果是群组，添加其子区（最多2个）
+            // 如果是群组，子区默认全部折叠进 overflow
             if (conv.channel.channelType === ChannelTypeGroup) {
                 const groupThreads = threadsByParent.get(conv.channel.channelID) || []
                 const visibleThreads = groupThreads.slice(0, MAX_VISIBLE_THREADS)
@@ -346,10 +536,15 @@ export default class ConversationList extends Component<ConversationListProps, C
 
                 // 如果有超出的子区，添加溢出提示
                 if (overflowCount > 0) {
+                    // 计算溢出子区的总未读数
+                    const overflowThreads = groupThreads.slice(MAX_VISIBLE_THREADS)
+                    const overflowUnread = overflowThreads.reduce((sum, t) => sum + t.unread, 0)
+
                     result.push({
                         type: 'thread-overflow',
                         parentGroupId: conv.channel.channelID,
-                        count: overflowCount
+                        count: overflowCount,
+                        unreadCount: overflowUnread
                     })
                 }
             }
@@ -424,37 +619,56 @@ export default class ConversationList extends Component<ConversationListProps, C
             }
         }
 
-        const { onThreadOverflowClick } = this.props
-        const renderItem = (item: ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number }) => {
+        const { onThreadOverflowClick, compact } = this.props
+        const { expandedGroupIds } = this.state
+
+        const renderItem = (item: ConversationWrap | { type: 'thread-overflow'; parentGroupId: string; count: number; unreadCount: number }) => {
             if ('type' in item && item.type === 'thread-overflow') {
+                // 展开/收起由双击群组行触发，不显示「+N 个子区」控件
+                const isExpanded = expandedGroupIds.has(item.parentGroupId)
+                if (!isExpanded) return null
+                const extraThreads = threadsByParent.get(item.parentGroupId) ?? []
                 return (
-                    <div
-                        key={`overflow-${item.parentGroupId}`}
-                        className="wk-conversationlist-thread-overflow"
-                        onClick={() => onThreadOverflowClick?.(item.parentGroupId)}
-                    >
-                        <span>+{item.count} 个子区</span>
-                    </div>
+                    <React.Fragment key={`overflow-${item.parentGroupId}`}>
+                        {extraThreads.map(conv => {
+                            const selected = !!(this.props.select && this.props.select.isEqual(conv.channel))
+                            return (
+                                <CompactGroupItem
+                                    key={conv.channel.getChannelKey()}
+                                    conversationWrap={conv}
+                                    selected={selected}
+                                    onClick={() => { if (this.props.onClick) this.props.onClick(conv) }}
+                                    onContextMenu={(e) => { this._handleContextMenu(conv, e) }}
+                                />
+                            )
+                        })}
+                    </React.Fragment>
                 )
             }
             const conv = item as ConversationWrap
+
+            // compact 模式展开：已展开分组的子区（overflow 之后的部分）是否显示
+            // 注意：groupThreadsWithParent 只给前 2 个，overflow 的在 threadsByParent 里
+            // 这里 item 已经是 groupThreadsWithParent 处理后的，超出的不在 items 里
+            // 所以只需要在 overflow click 后渲染额外的子区
+            // → 用 expandedGroupIds 控制是否渲染 threadsByParent 里超出 MAX 的部分（见下方额外渲染）
+
             const hasThreads = conv.channel.channelType === ChannelTypeGroup
                 && threadsByParent.has(conv.channel.channelID)
-            return this.conversationItem(conv, hasThreads)
+            const threadUnread = (() => {
+                if (!hasThreads) return 0
+                const isExpanded = expandedGroupIds.has(conv.channel.channelID)
+                if (isExpanded) return 0
+                const threads = threadsByParent.get(conv.channel.channelID) ?? []
+                // 子区勿扰继承父群组，父群组勿扰时整行不显示未读，这里只需汇总子区未读
+                return threads.reduce((sum, t) => sum + t.unread, 0)
+            })()
+            return this.conversationItem(conv, hasThreads, threadUnread)
         }
 
         return <div id="wk-conversationlist" className="wk-conversationlist" onScroll={this._handleScroll}>
-            {/* 置顶区 */}
-            {finalPinned.length > 0 && <>
-                <div className="wk-conv-section">置顶</div>
-                {finalPinned.map(renderItem)}
-            </>}
-
-            {/* 最近 */}
-            {finalRecent.length > 0 && <>
-                {finalPinned.length > 0 && <div className="wk-conv-section">最近</div>}
-                {finalRecent.map(renderItem)}
-            </>}
+            {finalPinned.map(renderItem)}
+            {finalRecent.map(renderItem)}
         
 
             <ContextMenus onContext={(ctx) => {
@@ -499,70 +713,81 @@ export default class ConversationList extends Component<ConversationListProps, C
                     }
                 })
 
-                // 3. 移到分组（仅群聊，且有分组数据时显示）
+                // 3. 额外菜单项（移出分组 / 移到分组等，由上层通过 extraContextMenus 传入）
                 if (extraMenus.length > 0) {
+                    menus.push(...extraMenus)
+                }
+
+                // 4. 免打扰 / 关闭免打扰（子区不显示，勿扰状态继承父群组）
+                if (channel?.channelType !== ChannelTypeCommunityTopic) {
                     menus.push({
-                        title: "移到分组",
-                        icon: "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z",
-                        children: extraMenus,
+                        title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
+                        icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
+                        onClick: () => { if (channelInfo) this.onMute(channelInfo) }
                     })
                 }
 
-                // 4. 置顶 / 取消置顶
-                menus.push({
-                    title: channelInfo?.top ? "取消置顶" : "置顶",
-                    icon: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
-                    onClick: () => { if (channelInfo) this.onTop(channelInfo) }
-                })
-
-                // 5. 免打扰 / 关闭免打扰
-                menus.push({
-                    title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
-                    icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
-                    onClick: () => { if (channelInfo) this.onMute(channelInfo) }
-                })
+                // 5. 展开/收起子区（compact 模式下、群组且有子区时显示）
+                if (compact && channel && channel.channelType === ChannelTypeGroup && threadsByParent.has(channel.channelID)) {
+                    const isExpanded = expandedGroupIds.has(channel.channelID)
+                    menus.push({
+                        title: isExpanded ? "收起子区" : "展开子区",
+                        icon: isExpanded
+                            ? "M19 9l-7 7-7-7"
+                            : "M5 15l7-7 7 7",
+                        onClick: () => { this._toggleGroupExpand(channel.channelID) }
+                    })
+                }
 
                 // 6. 分隔线
                 menus.push({ separator: true } as ContextMenusData)
 
-                // 7. 更多（子菜单：清空聊天记录 / 关闭并清空）
-                menus.push({
-                    title: "更多",
-                    icon: "M12 12m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 5m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 19m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0",
-                    children: [
-                        {
-                            title: "清空聊天记录",
-                            danger: true,
-                            onClick: () => {
-                                if (!channel) return
-                                Modal.confirm({
-                                    title: '确认清空',
-                                    content: '确定要清空所有聊天记录吗？此操作不可撤销。',
-                                    okText: '确定',
-                                    cancelText: '取消',
-                                    onOk: () => { this.onClearMessages(channel) },
-                                })
-                            }
-                        },
-                        {
-                            title: "关闭窗口并清空记录",
-                            danger: true,
-                            onClick: () => {
-                                if (!channel) return
-                                Modal.confirm({
-                                    title: '确认关闭并清空',
-                                    content: '确定要关闭窗口并清空所有聊天记录吗？此操作不可撤销。',
-                                    okText: '确定',
-                                    cancelText: '取消',
-                                    onOk: () => {
-                                        this.onCloseChat(channel)
-                                        this.onClearMessages(channel)
-                                    },
-                                })
-                            }
-                        },
-                    ]
-                })
+                // 7. 清空聊天记录 / 关闭并清空
+                // 子区：直接展开到顶层（免打扰已去掉，菜单项够少）
+                // 群组：保留在「更多」子菜单里
+                const clearItems = [
+                    {
+                        title: "清空聊天记录",
+                        danger: true,
+                        onClick: () => {
+                            if (!channel) return
+                            Modal.confirm({
+                                title: '确认清空',
+                                content: '确定要清空所有聊天记录吗？此操作不可撤销。',
+                                okText: '确定',
+                                cancelText: '取消',
+                                onOk: () => { this.onClearMessages(channel) },
+                            })
+                        }
+                    },
+                    {
+                        title: "关闭窗口并清空记录",
+                        danger: true,
+                        onClick: () => {
+                            if (!channel) return
+                            Modal.confirm({
+                                title: '确认关闭并清空',
+                                content: '确定要关闭窗口并清空所有聊天记录吗？此操作不可撤销。',
+                                okText: '确定',
+                                cancelText: '取消',
+                                onOk: () => {
+                                    this.onCloseChat(channel)
+                                    this.onClearMessages(channel)
+                                },
+                            })
+                        }
+                    },
+                ]
+
+                if (channel?.channelType === ChannelTypeCommunityTopic) {
+                    menus.push(...clearItems)
+                } else {
+                    menus.push({
+                        title: "更多",
+                        icon: "M12 12m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 5m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 19m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0",
+                        children: clearItems,
+                    })
+                }
 
                 return menus
             })()} />

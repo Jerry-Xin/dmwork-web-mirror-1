@@ -8,11 +8,17 @@ import MessageHead from "../Base/head";
 import MessageTrail from "../Base/tail";
 import { MessageCell } from "../MessageCell";
 import MarkdownContent, { type MentionInfo, type EmojiInfo } from "./MarkdownContent";
+import MessageRow from "../../ui/message/MessageRow"
+import ReplyBlock from "../../ui/message/ReplyBlock";
+import TextContent from "../../ui/message/TextContent";
+import { getTextMessageUI } from "../../bridge/message/useTextMessageUI";
 import "./index.css"
 
 
 // 文本消息
+// channelInfo 订阅逻辑已上移至 MessageCell base class，此处无需重复处理
 export class TextCell extends MessageCell {
+
     constructor(props: any) {
         super(props)
     }
@@ -100,7 +106,9 @@ export class TextCell extends MessageCell {
 
         // content.text 是 SDK MessageText 实例的 text 属性（decodeJSON 里赋值）
         // fallback 到 parts 拼接（发送方消息 text 已由构造函数设置，一般不走这里）
-        const rawContent = message.content as any
+        const rawContent = (message.message?.remoteExtra?.isEdit && message.message?.remoteExtra?.contentEdit)
+            ? message.message.remoteExtra.contentEdit as any
+            : message.content as any
         const plainText = rawContent?.text
             || parts?.map((p: Part) => p.text).join("")
             || ""
@@ -132,6 +140,45 @@ export class TextCell extends MessageCell {
 
     render() {
         const { message, context } = this.props
+
+        // TODO: 后续改成 feature flag
+        const useNewUI = true
+
+        // 新 UI 实现
+        if (useNewUI) {
+            const uiProps = getTextMessageUI(message, {
+                showCheckbox: context.editOn(),
+                isSelected: !!message.checked,
+                onSelect: (selected) => context.checkeMessage(message.message, selected),
+            })
+
+            return (
+                <MessageRow 
+                    {...uiProps.row}
+                    onContextMenu={(event) => context.showContextMenus(message, event)}
+                    isActive={context.isContextMenuOpen(message.message)}
+                    onClick={context.editOn() ? () => context.checkeMessage(message.message, !message.checked) : undefined}
+                    onAvatarClick={(e) => context.onTapAvatar(message.fromUID, e)}
+                    onSenderNameClick={() => context.showUser(message.fromUID)}
+                >
+                    <div>
+                        {message?.content?.reply && (
+                            <ReplyBlock
+                                fromName={message.content.reply.fromName || ''}
+                                digest={message.content.reply.content?.conversationDigest || ''}
+                                onClick={() => context.locateMessage(message.content.reply.messageSeq)}
+                            />
+                        )}
+                        <TextContent
+                            {...uiProps.content}
+                            onMentionClick={(uid) => context.showUser(uid)}
+                        />
+                    </div>
+                </MessageRow>
+            )
+        }
+
+        // 旧 UI 实现（保持向后兼容）
         const largeEmoji = this.isLargeCustomEmoji()
         const bubbleStyle = largeEmoji ? { background: "transparent", boxShadow: "none", padding: 0 } : undefined
         return <MessageBase message={message} context={context} bubbleStyle={bubbleStyle} onBubble={() => {
@@ -146,7 +193,7 @@ export class TextCell extends MessageCell {
                             <img alt="" src={WKApp.shared.avatarUser(message.content.reply.fromUID)} style={{ width: "12px", height: "12px",borderRadius:"50%" }} />
                         </div>
                         <div className="wk-message-text-reply-authorname">
-                            {message.content.reply.fromName} 
+                            {message.content.reply.fromName}
                         </div>
                     </div>
                     <div className="wk-message-text-reply-content">

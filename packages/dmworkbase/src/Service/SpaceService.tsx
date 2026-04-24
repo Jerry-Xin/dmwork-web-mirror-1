@@ -2,6 +2,13 @@ import WKApp from "../App"
 import { ChannelTypePerson, ChannelTypeGroup, Channel, Conversation, Message, WKSDK } from "wukongimjssdk"
 import { hasSpacePrefix } from "./SpacePrefix"
 
+export type JoinSpaceStatus = "NEED_APPROVAL" | "PENDING"
+
+export interface JoinSpaceResult {
+    space_id?: string
+    status?: JoinSpaceStatus
+}
+
 export { hasSpacePrefix } from "./SpacePrefix"
 
 // 系统 Bot channelID 集合
@@ -158,8 +165,8 @@ export class SpaceService {
         return resp || []
     }
 
-    async createSpace(name: string, description: string): Promise<SpaceCreateResp> {
-        return WKApp.apiClient.post("space/create", { name, description })
+    async createSpace(name: string, description: string, joinMode: number = 0): Promise<SpaceCreateResp> {
+        return WKApp.apiClient.post("space/create", { name, description, join_mode: joinMode })
     }
 
     async getSpace(spaceId: string): Promise<Space> {
@@ -185,7 +192,7 @@ export class SpaceService {
         return WKApp.apiClient.get(`space/invite/${inviteCode}`)
     }
 
-    async joinSpace(inviteCode: string): Promise<void> {
+    async joinSpace(inviteCode: string): Promise<JoinSpaceResult> {
         return WKApp.apiClient.post("space/join", { invite_code: inviteCode })
     }
 

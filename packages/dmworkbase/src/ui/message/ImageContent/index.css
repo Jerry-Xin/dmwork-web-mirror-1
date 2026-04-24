@@ -1,0 +1,34 @@
+/**
+ * SingleImage 组件样式
+ */
+
+.wk-msg-single-image {
+  border-radius: var(--wk-r-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.wk-msg-single-image:hover {
+  opacity: 0.9;
+}
+
+.wk-msg-single-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--wk-neutral-100, #F2F3F4);
+}
+
+/**
+ * MultiImage 组件样式（Figma B-8）
+ * 纵向堆叠，每张独立渲染
+ */
+
+.wk-msg-multi-image {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 660px;
+}

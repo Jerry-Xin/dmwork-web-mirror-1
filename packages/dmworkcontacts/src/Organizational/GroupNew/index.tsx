@@ -1,6 +1,6 @@
 import React from "react";
 import { Component, ReactNode } from "react";
-import WKSDK, { Channel, ChannelTypePerson, Subscriber } from "wukongimjssdk";
+import WKSDK, { Channel, ChannelTypeGroup, ChannelTypePerson, Subscriber } from "wukongimjssdk";
 
 import {
   Button,
@@ -32,6 +32,8 @@ interface IPorpsOrganizationalGroupNew {
   render?: JSX.Element;
   remove?: () => void;
   autoShow?: boolean;
+  defaultCategoryId?: string;
+  onSuccess?: () => void;
 }
 
 interface ISateOrganizationalGroupNew {
@@ -460,9 +462,14 @@ export class OrganizationalGroupNew extends Component<
     if (this.props.action === OrganizationalGroupNewAction.createGroup) {
 
       try {
-        await WKApp.dataSource.channelDataSource.createChannel([
-          ...getOptPersonnelData,
-        ])
+        const result = await WKApp.dataSource.channelDataSource.createChannel(
+          [...getOptPersonnelData],
+          { categoryId: this.props.defaultCategoryId }
+        )
+        if (result?.group_no) {
+          WKApp.endpoints.showConversation(new Channel(result.group_no, ChannelTypeGroup))
+        }
+        this.props.onSuccess?.()
       } catch (error: any) {
         Toast.error(error.msg);
         return

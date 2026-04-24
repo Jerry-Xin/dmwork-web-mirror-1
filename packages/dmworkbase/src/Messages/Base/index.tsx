@@ -275,19 +275,13 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
 
                         {/* 消息体列 */}
                         <div className="wk-msg-body">
-                            {/* Head 行：name + time，在气泡外面 */}
-                            {showHead && !message.send && !isAi && (
+                            {/* Head 行：name + time (发送和接收都显示,布局一致) */}
+                            {showHead && !isAi && (
                                 <div className="wk-msg-head">
                                     <span className="wk-msg-head-name" style={{ color: getTitleColor(displayName) }}>
                                         {displayName}
                                     </span>
                                     {channelInfo?.orgData?.robot === 1 && <AiBadge size="small" />}
-                                    <span className="wk-msg-head-time">{timeStr}</span>
-                                </div>
-                            )}
-                            {/* 发送消息的 head: 仅 time，右对齐 */}
-                            {showHead && message.send && (
-                                <div className="wk-msg-head wk-msg-head-right">
                                     <span className="wk-msg-head-time">{timeStr}</span>
                                 </div>
                             )}

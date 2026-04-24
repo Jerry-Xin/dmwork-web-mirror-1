@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { WKApp } from "@dmwork/base";
+import { WKApp, toJoinApprovalStatus } from "@dmwork/base";
 import { SpaceService } from "@dmwork/base";
 import { Button, Input, Toast } from "@douyinfe/semi-ui";
 import "./index.css";
 
-type View = "home" | "join" | "join-confirm" | "create";
+type View = "home" | "join" | "join-confirm";
 
 interface InviteInfo {
     invite_code: string;
@@ -19,7 +19,7 @@ interface JoinSpacePageProps {
     onSuccess: () => void;
 }
 
-const ACCENT = "var(--wk-color-primary, #5b6abf)";
+const ACCENT = "var(--wk-color-primary, #1C1C23)";
 
 const setCurrentSpace = (spaceId: string) => {
     if (spaceId) localStorage.setItem("currentSpaceId", spaceId);
@@ -33,10 +33,6 @@ export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
     const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
     const [verifyLoading, setVerifyLoading] = useState(false);
     const [joinLoading, setJoinLoading] = useState(false);
-
-    // --- 创建 Space ---
-    const [spaceName, setSpaceName] = useState("");
-    const [createLoading, setCreateLoading] = useState(false);
 
     /** 验证邀请码，展示 Space 信息 */
     const handleVerifyCode = async () => {
@@ -66,6 +62,19 @@ export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
         setJoinLoading(true);
         try {
             const result: any = await SpaceService.shared.joinSpace(inviteInfo.invite_code);
+            const status = result?.status;
+
+            if (status === "NEED_APPROVAL" || status === "PENDING") {
+                // 审批状态：先调 onSuccess 离开 JoinSpacePage，再触发钩子渲染审批结果页
+                // 顺序保证 Layout 先切出 JoinSpacePage，再渲染 JoinApprovalResult，避免中间态
+                onSuccess();
+                WKApp.endpoints.onJoinApproval(
+                    toJoinApprovalStatus(status),
+                    inviteInfo.invite_code
+                );
+                return;
+            }
+
             setCurrentSpace(result?.space_id || inviteInfo.space_id);
             Toast.success("已加入 " + inviteInfo.space_name);
             onSuccess();
@@ -74,7 +83,6 @@ export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
             if (msg.includes("已满") || msg.includes("SPACE_FULL")) {
                 Toast.error("空间已满，无法加入");
             } else if (msg.includes("已是成员") || msg.includes("already")) {
-                // 已是成员也算成功，直接进入
                 setCurrentSpace(inviteInfo.space_id);
                 onSuccess();
             } else {
@@ -82,25 +90,6 @@ export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
             }
         } finally {
             setJoinLoading(false);
-        }
-    };
-
-    /** 创建新 Space */
-    const handleCreate = async () => {
-        const name = spaceName.trim();
-        if (!name) { Toast.warning("请输入 Space 名称"); return; }
-        if (name.length > 50) { Toast.error("名称不能超过 50 个字符"); return; }
-        setCreateLoading(true);
-        try {
-            const result = await SpaceService.shared.createSpace(name, "");
-            setCurrentSpace(result?.space_id);
-            Toast.success("Space 创建成功！");
-            onSuccess();
-        } catch (e: any) {
-            const msg = e?.msg || e?.message || "";
-            Toast.error(msg || "创建失败，请重试");
-        } finally {
-            setCreateLoading(false);
         }
     };
 
@@ -119,7 +108,7 @@ export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
                         <h2 className="wk-join-space-title">
                             欢迎使用 {WKApp.config.appName || "DMWork"}！
                         </h2>
-                        <p className="wk-join-space-subtitle">加入团队或创建新的工作空间开始协作</p>
+                        <p className="wk-join-space-subtitle">输入邀请码加入你的团队</p>
                         <div className="wk-join-space-actions">
                             <Button
                                 type="primary"
@@ -128,14 +117,6 @@ export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
                                 onClick={() => setView("join")}
                             >
                                 📩 输入邀请码加入
-                            </Button>
-                            <Button
-                                type="secondary"
-                                size="large"
-                                className="wk-join-space-btn"
-                                onClick={() => setView("create")}
-                            >
-                                ✨ 创建新 Space
                             </Button>
                         </div>
                     </>
@@ -208,37 +189,6 @@ export default function JoinSpacePage({ onSuccess }: JoinSpacePageProps) {
                         >
                             ← 重新输入邀请码
                         </button>
-                    </>
-                )}
-
-                {/* ── 创建 Space ── */}
-                {view === "create" && (
-                    <>
-                        <button className="wk-join-space-back" onClick={() => { setView("home"); setSpaceName(""); }}>
-                            ← 返回
-                        </button>
-                        <h2 className="wk-join-space-title">创建新 Space</h2>
-                        <p className="wk-join-space-subtitle">给你的团队起一个名字</p>
-                        <Input
-                            className="wk-join-space-input"
-                            size="large"
-                            placeholder="Space 名称（如：研发团队）"
-                            value={spaceName}
-                            onChange={setSpaceName}
-                            onEnterPress={handleCreate}
-                            autoFocus
-                            maxLength={50}
-                            showClear
-                        />
-                        <Button
-                            type="primary"
-                            size="large"
-                            className="wk-join-space-btn wk-join-space-btn--full"
-                            loading={createLoading}
-                            onClick={handleCreate}
-                        >
-                            创建
-                        </Button>
                     </>
                 )}
             </div>

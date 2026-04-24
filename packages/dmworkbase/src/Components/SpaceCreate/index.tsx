@@ -1,8 +1,9 @@
 import React, { Component } from "react";
-import { Toast } from "@douyinfe/semi-ui";
+import { Toast, Checkbox } from "@douyinfe/semi-ui";
 import WKModal from "../WKModal";
 import WKInput from "../WKInput";
 import { SpaceService } from "../../Service/SpaceService";
+import { extractErrorMsg } from "../../Service/APIClient";
 import WKButton from "../WKButton";
 import InputEdit from "../InputEdit";
 import "./index.css";
@@ -16,6 +17,7 @@ export interface SpaceCreateProps {
 interface SpaceCreateState {
     name: string;
     description: string;
+    joinMode: number;  // 0=直接加入，1=需要审批
     loading: boolean;
     inviteUrl: string;
 }
@@ -26,26 +28,27 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
         this.state = {
             name: "",
             description: "",
+            joinMode: 0,
             loading: false,
             inviteUrl: "",
         };
     }
 
     handleCreate = async () => {
-        const { name, description } = this.state;
+        const { name, description, joinMode } = this.state;
         if (!name.trim()) {
             Toast.warning("请输入 Space 名称");
             return;
         }
         this.setState({ loading: true });
         try {
-            const resp = await SpaceService.shared.createSpace(name.trim(), description.trim());
+            const resp = await SpaceService.shared.createSpace(name.trim(), description.trim(), joinMode);
             const invite = await SpaceService.shared.createInvite(resp.space_id);
-            this.setState({ name: "", description: "", inviteUrl: invite.invite_url, loading: false });
+            this.setState({ name: "", description: "", joinMode: 0, inviteUrl: invite.invite_url, loading: false });
             Toast.success("Space 创建成功");
             this.props.onSuccess(resp.space_id);
-        } catch {
-            Toast.error("创建失败，请重试");
+        } catch (err: unknown) {
+            Toast.error(extractErrorMsg(err) || "创建失败，请重试");
             this.setState({ loading: false });
         }
     };
@@ -57,13 +60,13 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
     };
 
     handleClose = () => {
-        this.setState({ name: "", description: "", inviteUrl: "", loading: false });
+        this.setState({ name: "", description: "", joinMode: 0, inviteUrl: "", loading: false });
         this.props.onClose();
     };
 
     render() {
         const { visible } = this.props;
-        const { name, description, loading, inviteUrl } = this.state;
+        const { name, description, joinMode, loading, inviteUrl } = this.state;
 
         return (
             <WKModal
@@ -101,6 +104,14 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
                                 maxCount={200}
                                 onChange={(v) => this.setState({ description: v })}
                             />
+                        </div>
+                        <div className="wk-spacecreate-field">
+                            <Checkbox
+                                checked={joinMode === 1}
+                                onChange={(e) => this.setState({ joinMode: e.target.checked ? 1 : 0 })}
+                            >
+                                开启加入审批（成员需管理员审批后才能加入）
+                            </Checkbox>
                         </div>
                         <div className="wk-spacecreate-actions">
                             <WKButton variant="secondary" onClick={this.handleClose}>取消</WKButton>

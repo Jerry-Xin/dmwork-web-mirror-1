@@ -22,7 +22,7 @@
     transition: color 0.15s;
 }
 .wk-emojitoolbar:hover .wk-toolbar-icon {
-    color: #5b6abf !important;
+    color: var(--wk-brand-primary) !important;
 }
 
 .wk-emojitoolbar-emojipanel {
@@ -116,8 +116,8 @@ body[theme-mode=dark] .wk-emojitoolbar-emojipanel {
 }
 
 .wk-emojipanel-content ul li img {
-    height: 26px;
-    width: 26px;
+    height: 28px;
+    width: 28px;
     margin: auto;
     display: block;
 

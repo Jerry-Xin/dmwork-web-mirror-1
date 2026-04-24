@@ -1,13 +1,13 @@
 import { MessageContent, Channel, ChannelTypePerson } from "wukongimjssdk"
 import React from "react"
 import { Toast } from "@douyinfe/semi-ui"
-import ThreadIcon from "../../Components/Icons/ThreadIcon"
 import { MessageCell } from "../MessageCell"
 import WKApp from "../../App"
 import { ChannelTypeCommunityTopic } from "../../Service/Const"
 import WKAvatar from "../../Components/WKAvatar"
 import { getTimeStringAutoShort2 } from "../../Utils/time"
 import { parseThreadChannelId } from "../../Service/Thread"
+import MessageRow from "../../ui/message/MessageRow"
 import "./index.css"
 
 interface LastMessage {
@@ -113,47 +113,62 @@ export class ThreadCreatedCell extends MessageCell {
       participantUids = [content.last_message.from_uid]
     }
 
+    // 手动构造 MessageRow props (使用 Thread 创建者信息)
+    const rowProps = {
+      isSend: message.send,
+      isContinue: false, // Thread 消息总是显示完整header
+      isSelected: false,
+      showAvatar: true,
+      avatarUrl: WKApp.shared.avatarUser(content.from_uid || message.fromUID),
+      senderName: content.from_name || '用户',
+      timestamp: getTimeStringAutoShort2(message.timestamp * 1000, true),
+      isOnline: false,
+    }
+
     return (
-      <div className="wk-thread-created" onClick={this.handleClick}>
-        {/* 消息图标 */}
-        <ThreadIcon className="wk-thread-created-icon" size={16} />
+      <MessageRow 
+        {...rowProps}
+        onContextMenu={(event) => this.props.context.showContextMenus(message, event)}
+        isActive={this.props.context.isContextMenuOpen(message.message)}
+        onAvatarClick={(e) => this.props.context.onTapAvatar(content.from_uid || message.fromUID, e)}
+        onSenderNameClick={() => this.props.context.showUser(content.from_uid || message.fromUID)}
+      >
+        <div className="wk-thread-created-card" onClick={this.handleClick}>
+        {/* 消息正文预览 */}
+        <div className="wk-thread-created-preview">
+          {content.content || '新建了子区'}
+        </div>
 
-        {/* 文案：xxx 发起了子区: xxx */}
-        <span className="wk-thread-created-text">
-          <span className="wk-thread-created-creator">{content.from_name || '用户'}</span>
-          <span className="wk-thread-created-label"> 发起了子区: </span>
-          <span className="wk-thread-created-name">{content.thread_name}</span>
-        </span>
+        {/* 底部元数据行 */}
+        <div className="wk-thread-created-meta">
+          {/* Thread 链接 */}
+          <span className="wk-thread-created-link">
+            🧵{content.thread_name}·{messageCount}条回复
+          </span>
 
-        {/* 参与者头像（最多3个） */}
-        {participantUids.length > 0 && (
-          <div className="wk-thread-created-avatars">
-            {participantUids.map((uid, idx) => (
-              <WKAvatar
-                key={uid}
-                channel={new Channel(uid, ChannelTypePerson)}
-                style={{
-                  width: 18,
-                  height: 18,
-                  fontSize: 9,
-                  borderRadius: '50%',
-                  marginLeft: idx > 0 ? -6 : 0,
-                  border: '1.5px solid var(--wk-bg-surface)',
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* 回复数 */}
-        {messageCount > 0 && (
-          <span className="wk-thread-created-count">{messageCount}条回复</span>
-        )}
-
-        {/* 时间 */}
-        <span className="wk-thread-created-dot">·</span>
-        <span className="wk-thread-created-time">{timeStr}</span>
+          {/* 参与者头像组 */}
+          {participantUids.length > 0 && (
+            <div className="wk-thread-created-avatars">
+              {participantUids.map((uid, idx) => (
+                <WKAvatar
+                  key={uid}
+                  channel={new Channel(uid, ChannelTypePerson)}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    fontSize: 8,
+                    borderRadius: '50%',
+                    marginLeft: idx > 0 ? -8 : 0,
+                    border: '1.5px solid rgba(255,255,255,1)',
+                    flexShrink: 0,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+      </MessageRow>
     )
   }
 }

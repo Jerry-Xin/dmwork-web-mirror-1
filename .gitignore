@@ -48,8 +48,8 @@ debug-storybook.log
 .mcp.json
 .gstack/
 
-
-
 dm__test
 
 .ftre/snapshot
+AGENTS.config.local.json
+package-lock.json

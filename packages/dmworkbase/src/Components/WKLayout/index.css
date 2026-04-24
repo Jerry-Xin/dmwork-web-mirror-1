@@ -1,6 +1,6 @@
 
 .wk-layout {
-    --wk-width-layout-tab: 60px;
+    --wk-width-layout-tab: 56px;    /* Figma: 与 NavRail 56px 对齐 */
     --wk-height-layout-tab-min: 60px;
     --wk-layer-transition: 300ms cubic-bezier(0.33,1,0.68,1);
     --wk-slide-transition: 450ms cubic-bezier(0.25, 1, 0.5, 1);
@@ -17,25 +17,66 @@
 }
 
 .wk-layout-content {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     height: 100%;
     display: flex;
+    overflow: hidden;
+    position: relative;  /* anchor for the absolute splitter */
 }
 
 .wk-layout-content-left {
-    width: var( --wk-width-layout-content-left);
+    width: var(--wk-width-layout-content-left);
     height: 100%;
     flex-shrink: 0;
-    border-right: 1px solid var(--wk-border-subtle);
     background: var(--wk-bg-base);
+    border-right: 1px solid var(--wk-border-subtle);
 }
 
 .wk-layout-content-right {
-    width: calc(100% - var(--wk-width-layout-content-left));
+    flex: 1;
+    min-width: 0;
     height: 100%;
     display: flex;
     position: relative;
     overflow: hidden;
+}
+
+/* ── Draggable Splitter ── */
+.wk-layout-splitter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--wk-width-layout-content-left);
+    width: 12px;
+    margin-left: -6px;   /* center on the border line */
+    cursor: col-resize;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wk-layout-splitter-line {
+    width: 0;
+    height: 100%;
+    transition: width var(--wk-dur-fast) var(--wk-ease),
+                background var(--wk-dur-fast) var(--wk-ease);
+}
+
+.wk-layout-splitter:hover .wk-layout-splitter-line,
+.wk-layout-splitter-active .wk-layout-splitter-line {
+    width: 3px;
+    background: var(--wk-brand-primary);
+    border-radius: var(--wk-r-full);
+}
+
+/* Overlay during drag to prevent content from stealing mouse events */
+.wk-layout-drag-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    cursor: col-resize;
 }
 
 @media screen and (max-width: 640px)  {
@@ -66,6 +107,10 @@
 
     .wk-layout-content-left {
         width: 100%;
+    }
+
+    .wk-layout-splitter {
+        display: none;
     }
 
 }

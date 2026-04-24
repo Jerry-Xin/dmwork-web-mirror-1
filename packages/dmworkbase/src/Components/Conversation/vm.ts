@@ -247,9 +247,11 @@ export default class ConversationVM extends ProviderListener {
             seenUIDs.add(message.fromUID)
             const channel = new Channel(message.fromUID, ChannelTypePerson)
             const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
+            // 优先使用 message.from.title, 再用 channelInfo.title, 最后用 fromUID
+            const name = message.from?.title || channelInfo?.title || message.fromUID
             participants.push({
                 uid: message.fromUID,
-                name: channelInfo?.title || message.fromUID,
+                name: name,
                 channel,
             })
         }
@@ -284,12 +286,12 @@ export default class ConversationVM extends ProviderListener {
             if (pendingSessionMessages.length === 0) {
                 return
             }
-            if (pendingSessionMessages.length >= 3) {
+            if (pendingSessionMessages.length >= 2) {
                 const firstMessage = pendingSessionMessages[0]
                 const sessionId = this.getFoldSessionId(firstMessage)
                 const previousState = this.foldSessionState.get(sessionId)
                 const lastMessage = pendingSessionMessages[pendingSessionMessages.length - 1]
-                const shouldAnimate = allowFoldAnimation && isActive && pendingSessionMessages.length === 3 && !previousState
+                const shouldAnimate = allowFoldAnimation && isActive && pendingSessionMessages.length === 2 && !previousState
                 const sessionState: FoldSessionUIState = {
                     expanded: previousState?.expanded || false,
                     userToggled: previousState?.userToggled || false,
@@ -376,8 +378,8 @@ export default class ConversationVM extends ProviderListener {
         for (const typingMessage of typingMessages) {
             const lastItem = renderItems[renderItems.length - 1]
             // isBotMessage() excludes typing content type, so check fromUID directly
-            const typingFromBot = typingMessage.fromUID
-                && WKSDK.shared().channelManager.getChannelInfo(new Channel(typingMessage.fromUID, ChannelTypePerson))?.orgData?.robot === 1
+            const typingFromBot = typingMessage.fromUID &&
+                WKSDK.shared().channelManager.getChannelInfo(new Channel(typingMessage.fromUID, ChannelTypePerson))?.orgData?.robot === 1
             if (lastItem?.type === "foldSession" && lastItem.session.isActive && typingFromBot) {
                 lastItem.session.typing = typingMessage
                 lastItem.session.expandedMessages = getFoldSessionExpandedMessages({
@@ -805,6 +807,8 @@ export default class ConversationVM extends ProviderListener {
             if (this.onFirstMessagesLoaded) {
                 this.onFirstMessagesLoaded()
             }
+            // 进入会话即标记 reminders 已读，避免折叠分组后 @ 角标残留
+            this.markReminderDones()
         })
 
         // 订阅 task 上传失败事件（module.tsx 全局触发，这里仅处理当前 channel）

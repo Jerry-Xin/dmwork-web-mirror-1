@@ -2,24 +2,15 @@
   position: relative;
   width: 100%;
   max-width: min(680px, calc(100vw - 120px));
-  background: var(--wk-ai-panel-bg);
-  border: 1px solid var(--wk-ai-border);
-  border-radius: var(--wk-r-lg);
+  background: rgba(28, 28, 35, 0.04);
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
   overflow: hidden;
-  transition: border-color var(--wk-dur) var(--wk-ease),
-    box-shadow var(--wk-dur) var(--wk-ease),
-    transform var(--wk-dur) var(--wk-ease);
-}
-
-.wk-fold-session-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--wk-brand-gradient);
-  border-radius: 3px 0 0 3px;
+  transition: background var(--wk-dur) var(--wk-ease);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .wk-fold-session-card:hover {
@@ -44,16 +35,13 @@
     wk-fold-session-merge-flash 0.8s var(--wk-ease);
 }
 
+/* 卡片头部:已移到外层,这里隐藏 */
 .wk-fold-session-card-head {
-  padding: var(--wk-sp-3) var(--wk-sp-4) var(--wk-sp-3)
-    calc(var(--wk-sp-4) + 6px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wk-sp-3);
-  cursor: pointer;
+  display: none;
 }
 
+/* 以下样式已移至外层 Conversation,保留代码便于回滚 */
+/*
 .wk-fold-session-card-head-left {
   min-width: 0;
   display: flex;
@@ -108,14 +96,15 @@
 
 .wk-fold-session-card-tag {
   flex-shrink: 0;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: var(--wk-font-semibold);
-  color: var(--wk-text-accent);
-  background: var(--wk-ai-surface);
-  padding: 1px 6px;
-  border-radius: 3px;
+  color: #FFFFFF;
+  background: #0077FA;
+  padding: 2px 8px;
+  border-radius: 4px;
   letter-spacing: 0.3px;
 }
+*/
 
 .wk-fold-session-card-meta {
   flex-shrink: 0;
@@ -183,50 +172,56 @@
   transform: rotate(180deg);
 }
 
+/* 分割线: Line + "讨论记录" + Line */
+.wk-fold-session-divider {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.wk-fold-session-divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(28, 28, 35, 0.1);
+}
+
+.wk-fold-session-divider-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(28, 28, 35, 0.4);
+  white-space: nowrap;
+}
+
+/* 展开区域:无动画,直接显示/隐藏 */
 .wk-fold-session-card-expanded {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.4s var(--wk-ease);
+  display: none;
 }
 
 .wk-fold-session-card-expanded-show {
-  grid-template-rows: 1fr;
+  display: block;
 }
 
 .wk-fold-session-card-expanded-inner {
   display: flex;
   flex-direction: column;
-  gap: var(--wk-sp-2);
-  overflow: hidden;
-  min-height: 0;
-  /* 水平 padding 常驻，避免收起时内容左移 */
-  padding: 0 var(--wk-sp-4) 0 calc(var(--wk-sp-4) + 6px);
-  border-top: 0 solid var(--wk-border-subtle);
-  border-bottom: 0 solid var(--wk-border-subtle);
-  transition: padding 0.4s var(--wk-ease), border-top-width 0.4s var(--wk-ease),
-    border-bottom-width 0.4s var(--wk-ease);
-}
-
-.wk-fold-session-card-expanded-show .wk-fold-session-card-expanded-inner {
-  padding-top: var(--wk-sp-2);
-  padding-bottom: var(--wk-sp-3);
-  border-top-width: 1px;
-  border-bottom-width: 1px;
+  gap: 12px;
+  padding: 12px 0 0 0; /* 展开区域顶部间距 */
 }
 
 .wk-fold-session-card-summary {
-  padding: var(--wk-sp-3) var(--wk-sp-4) var(--wk-sp-3)
-    calc(var(--wk-sp-4) + 6px);
+  padding: 0;
   display: none;
+  order: -1;
 }
 
 .wk-fold-session-card-summary-show {
   display: block;
-  border-top: 1px solid var(--wk-border-subtle);
 }
 
-.wk-fold-session-card-expanded-show + .wk-fold-session-card-summary-show {
-  border-top: none;
+/* 展开时隐藏 summary (折叠卡片) */
+.wk-fold-session-card-expanded-show ~ .wk-fold-session-card-summary-show {
+  display: none;
 }
 
 .wk-fold-session-card-summary-highlight {
@@ -301,9 +296,18 @@
 }
 
 .wk-fold-session-card-summary-content {
-  font: var(--wk-text-body);
-  line-height: var(--wk-leading-loose);
-  color: var(--wk-text-primary);
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(28, 28, 35, 0.8);
+}
+
+/* 隐藏表情图标,折叠状态显示为普通消息 */
+.wk-fold-session-card-summary-icon {
+  display: none;
 }
 
 @keyframes wk-fold-session-live-dot {

@@ -17,6 +17,7 @@ import {
   MessageTask,
 } from "wukongimjssdk";
 import React, { Component, HTMLProps } from "react";
+import moment from "moment";
 import Provider from "../../Service/Provider";
 import ConversationVM from "./vm";
 import "./index.css";
@@ -38,6 +39,7 @@ import WKAvatar from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import { IconClose, IconEdit, IconReply } from "@douyinfe/semi-icons";
 import { Toast, Spin } from "@douyinfe/semi-ui";
+import WKModal from "../WKModal";
 import { FlameMessageCell } from "../../Messages/Flame";
 import FoldSessionCard, { FoldSessionCardParticipant } from "./FoldSessionCard";
 import { BeatLoader } from "react-spinners";
@@ -56,11 +58,16 @@ import {
   getFileIconInfo,
 } from "../../Messages/File";
 import { ImageContent } from "../../Messages/Image";
+import { downloadFile } from "../../Utils/download";
 import Lightbox from "yet-another-react-lightbox";
 import Download from "yet-another-react-lightbox/plugins/download";
-import AttachmentPreview from "../AttachmentPreview";
 import { buildChatContext, ChatContextChannelInfo } from "./chatContext";
 import FoldSessionExpandedList from "./FoldSessionExpandedList";
+
+const foldSessionAvatarIcon = new URL(
+  "./fold-session-avatar.svg",
+  import.meta.url
+).href;
 
 const FoldImage: React.FC<{ src: string }> = ({ src }) => {
   const [open, setOpen] = React.useState(false);
@@ -127,12 +134,18 @@ export class Conversation
   private _cachedSelectedText: string | null = null;
   private _beforeUnloadHandler: () => void;
   private _guardId: symbol = Symbol("pendingAttachmentGuard");
-  private onOpenThreadPanel?: (threadChannelId: string, threadName: string) => void;
+  private _addAttachmentFn?: (files: File[]) => void;
+  private onOpenThreadPanel?: (
+    threadChannelId: string,
+    threadName: string
+  ) => void;
 
   constructor(props: any) {
     super(props);
     this.state = {
       inputExpanded: false,
+      showDeleteConfirm: false,
+      contextMenuMessageID: null as string | null,
     };
     this.onOpenThreadPanel = props.onOpenThreadPanel;
     this._beforeUnloadHandler = () => {
@@ -379,7 +392,8 @@ export class Conversation
   // ── Attachment Queue (#143 / #144) ──────────────────────────────────────
 
   getPendingAttachments(): File[] {
-    return this.vm.pendingAttachments;
+    // 从编辑器中获取附件文件
+    return this._messageInputContext?.getAttachmentFiles() || [];
   }
 
   addPendingAttachments(files: File[]): string | null {
@@ -401,13 +415,7 @@ export class Conversation
       "wsf",
       "ps1",
     ];
-    const current = this.vm.pendingAttachments;
     const incoming = Array.from(files);
-
-    // 检查数量上限
-    if (current.length + incoming.length > ConversationVM.MAX_ATTACHMENTS) {
-      return `最多只能同时发送 ${ConversationVM.MAX_ATTACHMENTS} 个文件`;
-    }
 
     // 检查类型黑名单
     for (const f of incoming) {
@@ -417,31 +425,21 @@ export class Conversation
       }
     }
 
-    // 检查总大小
-    const totalSize = [...current, ...incoming].reduce(
-      (sum, f) => sum + f.size,
-      0
-    );
-    if (totalSize > ConversationVM.MAX_TOTAL_SIZE) {
-      return `所有文件总大小不能超过 100MB`;
+    // 调用编辑器的 addAttachment 方法插入附件节点
+    if (this._addAttachmentFn) {
+      this._addAttachmentFn(incoming);
     }
-
-    // 同名文件检查由调用方（FileToolbar）负责弹提示，此处直接追加
-    this.vm.pendingAttachments = [...current, ...incoming];
-    this.vm.notifyListener();
     return null;
   }
 
-  removePendingAttachment(index: number): void {
-    const arr = [...this.vm.pendingAttachments];
-    arr.splice(index, 1);
-    this.vm.pendingAttachments = arr;
-    this.vm.notifyListener();
+  removePendingAttachment(_index: number): void {
+    // 附件现在由编辑器管理，通过编辑器节点删除
+    // 此方法保留以兼容接口，但不再需要手动调用
   }
 
   clearPendingAttachments(): void {
-    this.vm.pendingAttachments = [];
-    this.vm.notifyListener();
+    // 附件现在由编辑器管理，清空编辑器内容时会自动清除
+    // 此方法保留以兼容接口
   }
 
   channel(): Channel {
@@ -451,6 +449,7 @@ export class Conversation
   // 显示消息上下文菜单
   showContextMenus(message: Message, event: React.MouseEvent) {
     this.vm.selectMessage = message;
+    this.setState({ contextMenuMessageID: message.messageID });
 
     // 缓存当前选区文本（仅当选区完全在当前消息气泡内时）
     this._cachedSelectedText = null;
@@ -471,6 +470,11 @@ export class Conversation
   }
   hideContextMenus(): void {
     this.contextMenusContext.hide();
+    this.setState({ contextMenuMessageID: null });
+  }
+
+  isContextMenuOpen(message: Message): boolean {
+    return this.state.contextMenuMessageID === message.messageID
   }
 
   getCachedSelectedText(): string | null {
@@ -521,7 +525,7 @@ export class Conversation
 
     // 注册附件发送守卫：返回 false 表示有未发送附件，需弹确认
     WKApp.shared.pendingAttachmentGuard = () =>
-      this.vm.pendingAttachments.length === 0;
+      this.getPendingAttachments().length === 0;
     WKApp.shared.pendingAttachmentGuardId = this._guardId;
 
     if (this.vm.hasDraft()) {
@@ -554,10 +558,7 @@ export class Conversation
       WKApp.shared.pendingAttachmentGuard = undefined;
       WKApp.shared.pendingAttachmentGuardId = undefined;
     }
-    // 清空附件队列（用户已通过 Chat 层 confirm 确认丢弃）
-    if (this.vm.pendingAttachments.length > 0) {
-      this.vm.pendingAttachments = [];
-    }
+    // 附件现在由编辑器管理，组件卸载时编辑器会自动清理
     this.dealloc();
   }
   dealloc() {
@@ -748,21 +749,13 @@ export class Conversation
       return (
         <div
           className="wk-fold-file"
-          onClick={() => {
+          onClick={async () => {
             const rawUrl = content.url || content.remoteUrl || "";
             if (!rawUrl) return;
             const fileUrl =
               WKApp.dataSource.commonDataSource.getFileURL(rawUrl);
             if (!fileUrl) return;
-            const a = document.createElement("a");
-            a.href = fileUrl.startsWith("http")
-              ? fileUrl
-              : window.location.origin + "/" + fileUrl.replace(/^\//, "");
-            a.download = content.name || "file";
-            a.target = "_blank";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            await downloadFile(fileUrl, content.name || "file");
           }}
         >
           <div
@@ -854,6 +847,49 @@ export class Conversation
     const summarySender =
       summaryMessage.from?.title || typingSender || summaryMessage.fromUID;
 
+    // 判断是单个还是多个 AI
+    const isMultiAI = participants.length > 1;
+    const tagLabel = isMultiAI ? "AI协作" : "AI助手";
+
+    // 折叠逻辑: 超过 5 个 AI 时折叠显示
+    const shouldCollapse = participants.length > 5;
+
+    // 参与者名字显示
+    let participantNameDisplay: React.ReactNode;
+    if (shouldCollapse) {
+      // 折叠模式: 显示第一个名字 + "等X人"
+      const collapsedText = `${participants[0].name}等${participants.length}人`;
+      participantNameDisplay = (
+        <span className="wk-fold-session-participants-collapsed">
+          <span className="wk-fold-session-participant-name wk-fold-session-participant-name-ai">
+            {collapsedText}
+          </span>
+          <div className="wk-fold-session-tooltip">
+            {participants.map((participant) => (
+              <div key={participant.id} className="wk-fold-session-tooltip-item">
+                <div className="wk-fold-session-tooltip-avatar">
+                  {participant.avatar}
+                </div>
+                <span className="wk-fold-session-tooltip-name">
+                  {participant.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </span>
+      );
+    } else {
+      // 正常模式: 显示所有名字
+      const participantLabel = participants
+        .map((participant) => participant.name)
+        .join(" × ");
+      participantNameDisplay = (
+        <span className="wk-fold-session-participant-name wk-fold-session-participant-name-ai">
+          {participantLabel}
+        </span>
+      );
+    }
+
     return (
       <div
         key={session.sessionId}
@@ -864,58 +900,119 @@ export class Conversation
           last ? "wk-message-item-last" : undefined
         )}
       >
-        <FoldSessionCard
-          className="wk-message-item-fold-session-card"
-          participants={participants}
-          count={session.count}
-          selectionMode={this.vm.editOn}
-          isActive={session.isActive}
-          isExpanded={session.isExpanded}
-          appearing={session.shouldAppear}
-          flash={session.shouldMergeFlash}
-          showSummary={showSummary}
-          highlightSummary={session.highlightSummary}
-          summaryId={summaryId}
-          summarySender={summarySender}
-          summaryContent={this.renderFoldSessionSummary(summaryMessage)}
-          expandedContent={this.renderFoldSessionExpandedList(
-            session.expandedMessages
-          )}
-          onToggle={() => {
-            this.vm.toggleFoldSession(session.sessionId);
-          }}
-          summaryChecked={!!summaryMessage.checked}
-          summarySelectable={summarySelectable}
-          onSummaryToggleSelect={(checked) => {
-            if (!summarySelectable) {
-              return;
-            }
-            this.vm.checkedMessage(summaryMessage.message, checked);
-          }}
-          onAnimationEnd={(event) => {
-            if (event.target === event.currentTarget) {
-              if (
-                event.animationName === "wk-fold-session-appear" &&
-                session.shouldMergeFlash
-              ) {
-                return;
-              }
-              this.vm.clearFoldSessionAnimation(session.sessionId);
-            }
-          }}
-          onSummaryContextMenu={
-            summaryMessage.contentType !== MessageContentTypeConst.typing
-              ? (event) => {
-                  this.showContextMenus(summaryMessage.message, event);
+        <div className="wk-message-item-fold-session-shell">
+          <div
+            className="wk-message-item-fold-session-avatar"
+            aria-hidden="true"
+          >
+            <img
+              className="wk-message-item-fold-session-avatar-icon"
+              src={foldSessionAvatarIcon}
+              alt=""
+            />
+          </div>
+          <div className="wk-message-item-fold-session-content">
+            {/* 标题行: 名字+Tag+时间 + 收起/展开 */}
+            <div className="wk-fold-session-title-row">
+              <div className="wk-fold-session-participants">
+                {participantNameDisplay}
+                <span className="wk-fold-session-tag">{tagLabel}</span>
+              </div>
+              <span className="wk-fold-session-time">
+                {moment(session.lastMessage.timestamp * 1000).format("HH:mm")}
+              </span>
+              <button
+                type="button"
+                className="wk-fold-session-toggle-btn"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  const wasExpanded = session.isExpanded;
+                  this.vm.toggleFoldSession(session.sessionId);
+                  
+                  // 展开时,确保内容可见(无动画,下一帧立即滚动)
+                  if (!wasExpanded) {
+                    requestAnimationFrame(() => {
+                      const element = document.getElementById(session.anchorId);
+                      if (element) {
+                        const rect = element.getBoundingClientRect();
+                        const viewportHeight = window.innerHeight;
+                        // 如果元素下半部分不在视口内,滚动让它完整可见
+                        if (rect.bottom > viewportHeight) {
+                          element.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'nearest' 
+                          });
+                        }
+                      }
+                    });
+                  }
+                }}
+                aria-label={
+                  session.isExpanded
+                    ? `收起${session.count}条讨论`
+                    : `展开${session.count}条讨论`
                 }
-              : undefined
-          }
-          onSummaryAnimationEnd={(event) => {
-            if (event.target === event.currentTarget) {
-              this.vm.clearFoldSessionSummaryHighlight(session.sessionId);
-            }
-          }}
-        />
+              >
+                {session.isExpanded
+                  ? `收起${session.count}条讨论`
+                  : `展开${session.count}条讨论`}
+              </button>
+            </div>
+            <FoldSessionCard
+              className="wk-message-item-fold-session-card"
+              participants={participants}
+              count={session.count}
+              selectionMode={this.vm.editOn}
+              isActive={session.isActive}
+              isExpanded={session.isExpanded}
+              appearing={session.shouldAppear}
+              flash={session.shouldMergeFlash}
+              showSummary={showSummary}
+              highlightSummary={session.highlightSummary}
+              summaryId={summaryId}
+              summarySender={summarySender}
+              summaryTime={moment(summaryMessage.timestamp * 1000).format("HH:mm")}
+              summaryContent={this.renderFoldSessionSummary(summaryMessage)}
+              expandedContent={this.renderFoldSessionExpandedList(
+                session.expandedMessages
+              )}
+              onToggle={() => {
+                this.vm.toggleFoldSession(session.sessionId);
+              }}
+              summaryChecked={!!summaryMessage.checked}
+              summarySelectable={summarySelectable}
+              onSummaryToggleSelect={(checked) => {
+                if (!summarySelectable) {
+                  return;
+                }
+                this.vm.checkedMessage(summaryMessage.message, checked);
+              }}
+              onAnimationEnd={(event) => {
+                if (event.target === event.currentTarget) {
+                  if (
+                    event.animationName === "wk-fold-session-appear" &&
+                    session.shouldMergeFlash
+                  ) {
+                    return;
+                  }
+                  this.vm.clearFoldSessionAnimation(session.sessionId);
+                }
+              }}
+              onSummaryContextMenu={
+                summaryMessage.contentType !== MessageContentTypeConst.typing
+                  ? (event) => {
+                      this.showContextMenus(summaryMessage.message, event);
+                    }
+                  : undefined
+              }
+              onSummaryAnimationEnd={(event) => {
+                if (event.target === event.currentTarget) {
+                  this.vm.clearFoldSessionSummaryHighlight(session.sessionId);
+                }
+              }}
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -939,7 +1036,9 @@ export class Conversation
     const isSystemMessage =
       message.revoke ||
       message.contentType === MessageContentTypeConst.screenshot ||
-      (message.contentType >= 1000 && message.contentType <= 2000);
+      (message.contentType >= 1000 && 
+       message.contentType <= 2000 && 
+       message.contentType !== MessageContentTypeConst.threadCreated);
     return (
       <div
         onAnimationEnd={() => {
@@ -1277,7 +1376,6 @@ export class Conversation
             <>
               <ConversationSelectionStateBridge
                 editOn={vm.editOn}
-                checkedCount={vm.getCheckedMessages().length}
                 onChange={this.props.onSelectionStateChange}
               />
               <div
@@ -1367,17 +1465,8 @@ export class Conversation
                     ) : undefined}
                   </div>
                 </div>
-                <div className="wk-conversation-topview">
-                  {vm.currentReplyMessage ? (
-                    <ReplyView
-                      message={vm.currentReplyMessage}
-                      vm={vm}
-                      onClose={() => {
-                        vm.currentReplyMessage = undefined;
-                      }}
-                    ></ReplyView>
-                  ) : undefined}
-                </div>
+                {/* ReplyView 已移到 MessageInput 内部的 topView prop */}
+                <div className="wk-conversation-topview"></div>
                 <div
                   className={classNames(
                     "wk-conversation-multiplepanel",
@@ -1390,13 +1479,13 @@ export class Conversation
                       vm.unCheckAllMessages();
                     }}
                     onForward={() => {
+                      const messages = vm.getCheckedMessages();
+                      if (!messages || messages.length === 0) {
+                        Toast.error("请先选择消息！");
+                        return;
+                      }
                       WKApp.shared.baseContext.showConversationSelect(
                         (channels: Channel[]) => {
-                          const messages = vm.getCheckedMessages();
-                          if (!messages || messages.length === 0) {
-                            Toast.error("请先选择消息！");
-                            return;
-                          }
                           for (const message of messages) {
                             let cloneContent = message.content; // TODO:这里理论上需要clone一份 但是不clone也没发现问题
                             for (const channel of channels) {
@@ -1409,6 +1498,11 @@ export class Conversation
                       );
                     }}
                     onMergeForward={() => {
+                      const checkedMsgs = vm.getCheckedMessages();
+                      if (!checkedMsgs || checkedMsgs.length === 0) {
+                        Toast.error("请先选择消息！");
+                        return;
+                      }
                       WKApp.shared.baseContext.showConversationSelect(
                         (channels: Channel[]) => {
                           vm.sendMergeforward(channels);
@@ -1417,22 +1511,77 @@ export class Conversation
                         }
                       );
                     }}
-                    onDelete={async () => {
-                      const checkedMessagewraps = vm.getCheckedMessages();
-                      const checkedMessages = checkedMessagewraps.map((m) => {
-                        return m.message;
-                      });
-                      await vm.deleteMessages(checkedMessages);
-
-                      vm.editOn = false;
-                      vm.unCheckAllMessages();
+                    onDelete={() => {
+                      const checkedMsgs = vm.getCheckedMessages();
+                      if (!checkedMsgs || checkedMsgs.length === 0) {
+                        Toast.error("请先选择消息！");
+                        return;
+                      }
+                      this.setState({ showDeleteConfirm: true });
                     }}
                   ></MultiplePanel>
+
+                <WKModal
+                  visible={!!this.state.showDeleteConfirm}
+                  footer={null}
+                  options={{ closable: false }}
+                  className="wk-delete-confirm-modal"
+                  onCancel={() => this.setState({ showDeleteConfirm: false })}
+                >
+                  {/* 整体自定义，对齐 Figma 387-63814 */}
+                  <div style={{ padding: "24px 24px 20px" }}>
+                    {/* Header */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M11 2L20.66 18H1.34L11 2Z" fill="#FF8C00"/>
+                          <path d="M11 9V13" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+                          <circle cx="11" cy="15.5" r="0.85" fill="white"/>
+                        </svg>
+                        <span style={{ fontSize: 16, fontWeight: 600, color: "#1C1C23" }}>确认删除消息？</span>
+                      </div>
+                      <button
+                        onClick={() => this.setState({ showDeleteConfirm: false })}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "rgba(28,28,35,0.4)", fontSize: 18, lineHeight: 1 }}
+                      >×</button>
+                    </div>
+                    {/* Content */}
+                    <p style={{ margin: "0 0 24px", color: "rgba(28,28,35,0.6)", fontSize: 14, lineHeight: "22px" }}>
+                      删除的消息将从你的会话记录中消失，但仍然对会话内其他人可见。
+                    </p>
+                    {/* Footer */}
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                      <button
+                        onClick={() => this.setState({ showDeleteConfirm: false })}
+                        style={{ padding: "7px 20px", borderRadius: 999, border: "1px solid rgba(28,28,35,0.15)", background: "#fff", color: "rgba(28,28,35,0.8)", fontSize: 14, cursor: "pointer", fontWeight: 500 }}
+                      >取消</button>
+                      <button
+                        onClick={async () => {
+                          const checkedMessagewraps = vm.getCheckedMessages();
+                          const messages = checkedMessagewraps.map((m) => m.message).filter(Boolean);
+                          this.setState({ showDeleteConfirm: false });
+                          if (messages.length === 0) return;
+                          try {
+                            await vm.deleteMessages(messages);
+                            vm.editOn = false;
+                            vm.unCheckAllMessages();
+                          } catch (e) {
+                            Toast.error("删除失败，请重试");
+                          }
+                        }}
+                        style={{ padding: "7px 20px", borderRadius: 999, border: "none", background: "#FF4D4F", color: "#fff", fontSize: 14, cursor: "pointer", fontWeight: 500 }}
+                      >确认</button>
+                    </div>
+                  </div>
+                </WKModal>
+
                 </div>
                 <div
                   className="wk-conversation-footer"
                   style={
-                    this.state.inputExpanded
+                    vm.editOn
+                      ? { display: "none" }
+                      : this.state.inputExpanded
                       ? {
                           flex: 1,
                           minHeight: 0,
@@ -1442,12 +1591,6 @@ export class Conversation
                       : undefined
                   }
                 >
-                  {vm.pendingAttachments.length > 0 && (
-                    <AttachmentPreview
-                      conversationContext={this}
-                      files={vm.pendingAttachments}
-                    />
-                  )}
                   <div
                     className="wk-conversation-footer-content"
                     style={
@@ -1463,10 +1606,24 @@ export class Conversation
                   >
                     <MessageInput
                       botCommands={botCommands}
-                      hasPendingAttachments={vm.pendingAttachments.length > 0}
+                      onAddAttachment={(addFn: (files: File[]) => void) => {
+                        // 存储 addAttachment 方法，供外部调用
+                        this._addAttachmentFn = addFn;
+                      }}
                       members={this.vm.subscribers.filter(
                         (s) => s.uid !== WKApp.loginInfo.uid
                       )}
+                      topView={
+                        vm.currentReplyMessage ? (
+                          <ReplyView
+                            message={vm.currentReplyMessage}
+                            vm={vm}
+                            onClose={() => {
+                              vm.currentReplyMessage = undefined;
+                            }}
+                          />
+                        ) : undefined
+                      }
                       onExpandChange={(expanded) => {
                         this.setState({ inputExpanded: expanded });
                       }}
@@ -1495,14 +1652,41 @@ export class Conversation
                               : undefined,
                         });
                       }}
-                      onSend={async (text: string, mention?: MentionModel) => {
+                      onSend={async (
+                        text: string,
+                        mention?: MentionModel,
+                        attachments?: { id: string; file: File }[]
+                      ) => {
                         const content = new MessageText(text);
                         if (mention) {
                           const mn = new Mention();
                           mn.all = mention.all;
                           mn.uids = mention.uids;
-                          mn.entities = mention.entities;
                           content.mention = mn;
+                          // SDK encode() 会覆盖 mention，导致 entities 丢失
+                          // override encode()，在 SDK 生成的 bytes 后重新注入 entities
+                          if (mention.entities && mention.entities.length > 0) {
+                            const entities = mention.entities;
+                            // 1. 本地立即渲染：把 entities 写入 contentObj，走 entity 解析路径
+                            if (!content.contentObj) content.contentObj = {};
+                            if (!content.contentObj.mention) content.contentObj.mention = {};
+                            content.contentObj.mention.entities = entities;
+                            // 2. 发送给服务端：override encode()，把 entities 写入 payload
+                            const originalEncode = content.encode.bind(content);
+                            content.encode = () => {
+                              try {
+                                const bytes = originalEncode();
+                                // bytes 是 JSON 字符串的 Uint8Array，解码修改再编码回去
+                                const str = new TextDecoder().decode(bytes);
+                                const obj = JSON.parse(str);
+                                if (!obj.mention) obj.mention = {};
+                                obj.mention.entities = entities;
+                                return new TextEncoder().encode(JSON.stringify(obj));
+                              } catch {
+                                return originalEncode();
+                              }
+                            };
+                          }
                         }
                         if (vm.currentReplyMessage) {
                           if (vm.currentHandlerType === 2) {
@@ -1538,13 +1722,11 @@ export class Conversation
                           vm.currentReplyMessage = undefined;
                         }
 
-                        // ── 附件队列发送 (#143 / #144) ──────────────
-                        const attachments = [...vm.pendingAttachments];
-                        if (attachments.length > 0) {
-                          // 先清空预览区，发送过程中不允许继续追加（防止重复）
-                          // 注意：清空在循环前，失败文件不会自动回滚到队列（设计如此，符合 IM 惯例）
-                          this.clearPendingAttachments();
-                          for (const file of attachments) {
+                        // ── 附件发送（从编辑器中提取） ──────────────
+                        const filesToSend =
+                          attachments?.map((a) => a.file) || [];
+                        if (filesToSend.length > 0) {
+                          for (const file of filesToSend) {
                             try {
                               if (file.type && file.type.startsWith("image/")) {
                                 const reader = new FileReader();
@@ -1612,6 +1794,9 @@ export class Conversation
               <ContextMenus
                 onContext={(ctx) => {
                   this.contextMenusContext = ctx;
+                }}
+                onHide={() => {
+                  this.setState({ contextMenuMessageID: null });
                 }}
                 menus={
                   vm.selectMessage
@@ -1852,49 +2037,40 @@ class ReplyView extends Component<ReplyViewProps> {
     const fromChannelInfo = WKSDK.shared().channelManager.getChannelInfo(
       new Channel(message.fromUID, ChannelTypePerson)
     );
+    const isEdit = vm.currentHandlerType === 2;
+    const label = isEdit ? "编辑" : "回复";
+    const userName = fromChannelInfo?.title || "";
+    const messageText = message.remoteExtra?.isEdit
+      ? message.remoteExtra?.contentEdit?.conversationDigest
+      : message.content.conversationDigest;
+
     return (
-      <div className="wk-replyview">
-        <div className="wk-replyview-close">
-          {vm.currentHandlerType === 1 ? (
-            <IconReply className="wk-replyview-close-icon" />
-          ) : (
-            <IconEdit className="wk-replyview-close-icon" />
-          )}
-        </div>
-        <div className="wk-replyview-content">
-          <div className="wk-replyview-content-first">
-            <div className="wk-replyview-content-userinfo">
-              <div className="wk-replyview-content-userinfo-avatar">
-                <WKAvatar
-                  style={{ width: "24px", height: "24px", borderRadius: "50%" }}
-                  channel={new Channel(message.fromUID, ChannelTypePerson)}
-                ></WKAvatar>
-              </div>
-              <div className="wk-replyview-content-userinfo-name">
-                {fromChannelInfo?.title}
-                {fromChannelInfo?.orgData?.robot === 1 && (
-                  <AiBadge size="small" />
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="wk-replyview-content-second">
-            <div className="wk-replyview-content-msg">
-              {message.remoteExtra?.isEdit
-                ? message.remoteExtra?.contentEdit?.conversationDigest
-                : message.content.conversationDigest}
-            </div>
-          </div>
-        </div>
-        <div
-          className="wk-replyview-close"
+      <div className="wk-replyview-new">
+        <button
+          className="wk-replyview-new-close"
           onClick={() => {
             if (onClose) {
               onClose();
             }
           }}
         >
-          <IconClose className="wk-replyview-close-icon" />
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div className="wk-replyview-new-divider"></div>
+        <div className="wk-replyview-new-content">
+          <span className="wk-replyview-new-label">{label}</span>
+          <span className="wk-replyview-new-name">{userName}：</span>
+          <span className="wk-replyview-new-text">{messageText}</span>
         </div>
       </div>
     );
@@ -1912,91 +2088,17 @@ class MultiplePanel extends Component<MultiplePanelProps> {
     const { onClose, onForward, onMergeForward, onDelete } = this.props;
     return (
       <div className="wk-multiplepanel">
-        <div
-          className="wk-multiplepanel-close"
-          onClick={() => {
-            if (onClose) {
-              onClose();
-            }
-          }}
-        >
-          <IconClose size="large" />
-        </div>
-        <div className="wk-multiplepanel-content">
-          <div
-            className="wk-multiplepanel-content-item"
-            onClick={() => {
-              if (onForward) {
-                onForward();
-              }
-            }}
-          >
-            <div className="wk-multiplepanel-content-item-icon">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <polyline points="9 14 4 9 9 4"></polyline>
-                <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
-              </svg>{" "}
-            </div>
-            <div className="wk-multiplepanel-content-item-title">逐条转发</div>
-          </div>
-          <div
-            className="wk-multiplepanel-content-item"
-            onClick={() => {
-              if (onMergeForward) {
-                onMergeForward();
-              }
-            }}
-          >
-            <div className="wk-multiplepanel-content-item-icon">
-              <svg
-                className="wk-multiplepanel-content-item-icon-svg"
-                aria-hidden="true"
-                viewBox="0 0 1024 1024"
-              >
-                <path d="M362.666667 704h554.666666a21.333333 21.333333 0 0 1 21.333334 21.333333v42.666667a21.333333 21.333333 0 0 1-21.333334 21.333333H362.666667a21.333333 21.333333 0 0 1-21.333334-21.333333v-42.666667a21.333333 21.333333 0 0 1 21.333334-21.333333zM106.666667 874.666667h810.666666a21.333333 21.333333 0 0 1 21.333334 21.333333v42.666667a21.333333 21.333333 0 0 1-21.333334 21.333333H106.666667a21.333333 21.333333 0 0 1-21.333334-21.333333v-42.666667a21.333333 21.333333 0 0 1 21.333334-21.333333z m427.093333-661.034667V57.152c0-3.84 1.6-7.530667 4.416-10.24a15.36 15.36 0 0 1 21.184 0L846.72 326.122667a21.205333 21.205333 0 0 1 0 30.698666L559.36 635.754667a15.253333 15.253333 0 0 1-10.602667 4.245333 14.72 14.72 0 0 1-14.976-14.485333v-155.733334H503.893333c-116.053333 0-203.946667 22.762667-257.301333 89.792-4.416 5.546667-9.216 11.264-16.256 20.096a8.106667 8.106667 0 0 1-5.248 3.264c-3.989333 0.512-7.125333-1.536-8.128-6.144-2.730667-14.421333-3.626667-29.866667-3.626667-40.746666 0-175.210667 143.466667-322.410667 320.426667-322.410667z m85.333333 85.333333h-85.333333c-80.277333 0-151.914667 41.984-194.453333 104.981334 47.722667-13.44 102.421333-19.52 164.586666-19.52h115.2v74.410666l120.96-117.397333-120.96-117.504v75.029333z"></path>
-              </svg>
-            </div>
-            <div className="wk-multiplepanel-content-item-title">合并转发</div>
-          </div>
-          <div
-            className="wk-multiplepanel-content-item"
-            onClick={() => {
-              if (onDelete) {
-                onDelete();
-              }
-            }}
-          >
-            <div className="wk-multiplepanel-content-item-icon">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>{" "}
-            </div>
-            <div className="wk-multiplepanel-content-item-title">删除</div>
-          </div>
-        </div>
+        <button className="wk-multiplepanel-btn" onClick={onForward}>逐条转发</button>
+        <div className="wk-multiplepanel-sep" />
+        <button className="wk-multiplepanel-btn" onClick={onMergeForward}>合并转发</button>
+        <div className="wk-multiplepanel-sep" />
+        <button className="wk-multiplepanel-btn wk-multiplepanel-btn--danger" onClick={onDelete}>删除</button>
+        <div className="wk-multiplepanel-sep" />
+        <button className="wk-multiplepanel-close" onClick={onClose} aria-label="取消多选">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+        </button>
       </div>
     );
   }

@@ -4,6 +4,9 @@ import React from "react";
 import WKApp from "../../App";
 import MessageBase from "../Base";
 import { MessageCell } from "../MessageCell";
+import MessageRow from "../../ui/message/MessageRow";
+import VideoContentUI from "../../ui/message/VideoContent"
+import { getMessageRow } from "../../bridge/message/useMessageRow"
 import "./index.css"
 
 const SMALL_FILE_THRESHOLD = 1024 * 1024 // 1MB 以下不显示进度覆盖层
@@ -66,6 +69,7 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
     }
 
     componentDidMount() {
+        super.componentDidMount()
         const { message } = this.props
         // 小文件（<1MB）不显示进度，跳过订阅
         const fileSize = (message.content as any).file?.size ?? 0
@@ -80,6 +84,7 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
     }
 
     componentWillUnmount() {
+        super.componentWillUnmount()
         WKSDK.shared().taskManager.removeListener(this._taskListener)
     }
 
@@ -105,26 +110,19 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
         return `${minuteFormat}:${secondFormat}`
     }
 
-    videoScale(orgWidth: number, orgHeight: number, maxWidth = 380, maxHeight = 380) {
+    videoScale(orgWidth: number, orgHeight: number, maxWidth = 660, maxHeight = 224) {
         let actSize = { width: orgWidth, height: orgHeight };
-        if (orgWidth > orgHeight) {//横图
-            if (orgWidth > maxWidth) { // 横图超过最大宽度
-                let rate = maxWidth / orgWidth; // 缩放比例
-                actSize.width = maxWidth;
-                actSize.height = orgHeight * rate;
-            }
-        } else if (orgWidth < orgHeight) { //竖图
-            if (orgHeight > maxHeight) {
-                let rate = maxHeight / orgHeight; // 缩放比例
-                actSize.width = orgWidth * rate;
-                actSize.height = maxHeight;
-            }
-        } else if (orgWidth === orgHeight) {
-            if (orgWidth > maxWidth) {
-                let rate = maxWidth / orgWidth; // 缩放比例
-                actSize.width = maxWidth;
-                actSize.height = orgHeight * rate;
-            }
+        // 视频优先限制高度 (设计稿要求 max-height: 224px)
+        if (orgHeight > maxHeight) {
+            let rate = maxHeight / orgHeight;
+            actSize.height = maxHeight;
+            actSize.width = orgWidth * rate;
+        }
+        // 宽度也不能超过 maxWidth
+        if (actSize.width > maxWidth) {
+            let rate = maxWidth / actSize.width;
+            actSize.width = maxWidth;
+            actSize.height = actSize.height * rate;
         }
         return actSize;
     }
@@ -134,6 +132,79 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
         const content = message.content as VideoContent
         const actSize = this.videoScale(content.width, content.height)
 
+        // 新 UI 实现
+        const useNewUI = true
+        if (useNewUI) {
+            const rowProps = getMessageRow(message)
+            const src = WKApp.dataSource.commonDataSource.getFileURL(content.url)
+            const coverSrc = WKApp.dataSource.commonDataSource.getImageURL(content.cover)
+            const isUploading =
+                uploadStatus !== null &&
+                uploadStatus !== TaskStatus.success &&
+                uploadStatus !== TaskStatus.fail &&
+                uploadStatus !== TaskStatus.cancel
+            const pct = Math.round(uploadProgress)
+
+            return (
+                <MessageRow
+                    {...rowProps}
+                    onContextMenu={(event) => context.showContextMenus(message, event)}
+                    isActive={context.isContextMenuOpen(message.message)}
+                    showCheckbox={context.editOn()}
+                    isSelected={!!message.checked}
+                    onSelect={(selected) => context.checkeMessage(message.message, selected)}
+                    onAvatarClick={(e) => context.onTapAvatar(message.fromUID, e)}
+                    onSenderNameClick={() => context.showUser(message.fromUID)}
+                >
+                    <div style={{ position: 'relative' }}>
+                        <VideoContentUI
+                            src={src}
+                            coverSrc={coverSrc}
+                            width={content.width}
+                            height={content.height}
+                            duration={content.second}
+                        />
+                        {/* 上传进度覆盖层（保持原有逻辑） */}
+                        {isUploading && (
+                            <div style={{
+                                position: "absolute", inset: 0,
+                                background: "rgba(0,0,0,0.5)",
+                                display: "flex", flexDirection: "column",
+                                alignItems: "center", justifyContent: "center",
+                                gap: 8, borderRadius: 'var(--wk-r-lg)',
+                            }}>
+                                <div style={{ width: "70%", height: 4, background: "rgba(255,255,255,0.3)", borderRadius: 2, overflow: "hidden" }}>
+                                    <div style={{ height: "100%", width: `${pct}%`, background: "#fff", borderRadius: 2, transition: "width 0.2s ease" }} />
+                                </div>
+                                <span style={{ color: "#fff", fontSize: 12 }}>{pct}%</span>
+                            </div>
+                        )}
+                        {uploadStatus === TaskStatus.fail && (
+                            <div style={{
+                                position: "absolute", inset: 0,
+                                background: "rgba(0,0,0,0.55)",
+                                display: "flex", flexDirection: "column",
+                                alignItems: "center", justifyContent: "center",
+                                gap: 6, cursor: "pointer",
+                                borderRadius: 'var(--wk-r-lg)',
+                            }} onClick={(e) => {
+                                e.stopPropagation()
+                                if (!this._task) {
+                                    Toast.warning('上传任务已失效，请重新发送文件')
+                                    return
+                                }
+                                this._task.restart()
+                            }}>
+                                <span style={{ color: "#fff", fontSize: 22 }}>⚠️</span>
+                                <span style={{ color: "#fff", fontSize: 11 }}>上传失败，点击重试</span>
+                            </div>
+                        )}
+                    </div>
+                </MessageRow>
+            )
+        }
+
+        // 旧 UI 实现（保持向后兼容）
         const isUploading =
             uploadStatus !== null &&
             uploadStatus !== TaskStatus.success &&

@@ -1,16 +1,24 @@
 import React, { Component } from "react"
-import { Channel, ChannelTypePerson, WKSDK } from "wukongimjssdk"
+import { Channel, ChannelTypePerson, ChannelTypeGroup, WKSDK } from "wukongimjssdk"
 import { Modal, Toast, Spin, Popover } from "@douyinfe/semi-ui"
-import { Thread, ThreadStatus } from "../../Service/Thread"
+import { Thread, ThreadStatus, buildThreadChannelId } from "../../Service/Thread"
 import { ThreadPanelVM, ThreadPanelState } from "./vm"
 import { X, Plus, ChevronDown, ArrowLeft, MoreHorizontal } from "lucide-react"
 import ThreadIcon from "../Icons/ThreadIcon"
 import classNames from "classnames"
 import { Conversation } from "../Conversation"
-import { ChannelTypeCommunityTopic } from "../../Service/Const"
+import { ChannelTypeCommunityTopic, GroupRole } from "../../Service/Const"
 import { ErrorBoundary } from "../ErrorBoundary"
 import WKApp from "../../App"
 import { formatRelativeTime } from "../../Utils/time"
+import {
+  SMALL_SCREEN_WIDTH,
+  THREAD_DEFAULT_WIDTH,
+  SPLITTER_DEFAULT_WIDTH,
+  clampThreadWidth,
+  restoreThreadWidth,
+  persistThreadWidth,
+} from "../WKLayout/layoutWidth"
 import "./index.css"
 
 export interface ThreadPanelProps {
@@ -29,13 +37,25 @@ interface ThreadPanelComponentState {
   threads: Thread[]
   threadsLoading: boolean
   showMoreMenu: boolean
+  panelWidth: number
+  isDragging: boolean
 }
 
 export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanelComponentState> {
   private vm: ThreadPanelVM | null = null
+  private panelRef = React.createRef<HTMLDivElement>()
+  private dragStartX = 0
+  private dragStartWidth = 0
+  private lastPanelWidth = THREAD_DEFAULT_WIDTH
+  private cachedWindowWidth = 1920  // cached on drag start
+  private cachedLeftPanelWidth = 300  // cached on drag start
 
   constructor(props: ThreadPanelProps) {
     super(props)
+    const leftPanelWidth = this.getLeftPanelWidth()
+    const savedWidth = clampThreadWidth(restoreThreadWidth(), window.innerWidth, leftPanelWidth)
+    this.lastPanelWidth = savedWidth
+
     this.state = {
       view: props.thread ? "detail" : "list",
       activeExpanded: true,
@@ -51,6 +71,8 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
       threads: [],
       threadsLoading: true,
       showMoreMenu: false,
+      panelWidth: savedWidth,
+      isDragging: false,
     }
   }
 
@@ -59,6 +81,91 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     if (this.props.thread) {
       this.initVM(this.props.thread.short_id)
     }
+    // Set CSS variable on mount so chat area calc has the correct width
+    this.syncCssVariable(this.state.panelWidth)
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('mousemove', this.onPanelDragMove)
+    document.removeEventListener('mouseup', this.onPanelDragEnd)
+    if (this.state.isDragging) {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }
+
+  // ── Helper to get left panel width from CSS variable or default ──
+  private getLeftPanelWidth(): number {
+    try {
+      const root = document.documentElement
+      const cssValue = getComputedStyle(root).getPropertyValue('--wk-wdith-conversation-list').trim()
+      if (cssValue) {
+        const parsed = parseInt(cssValue, 10)
+        if (!isNaN(parsed)) return parsed
+      }
+    } catch (_) {
+      // Best-effort CSS variable read: silently fall through to default.
+      // This is intentional — DOM access may fail in edge cases (SSR, tests).
+      // Falls back to SPLITTER_DEFAULT_WIDTH; does not affect core functionality.
+    }
+    return SPLITTER_DEFAULT_WIDTH
+  }
+
+  // ── Splitter drag for thread panel width ──
+
+  private onPanelDragStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    this.dragStartX = e.clientX
+    this.dragStartWidth = this.lastPanelWidth
+    // Cache window width and left panel width for max calculation
+    this.cachedWindowWidth = window.innerWidth
+    this.cachedLeftPanelWidth = this.getLeftPanelWidth()
+    this.setState({ isDragging: true })
+    document.addEventListener('mousemove', this.onPanelDragMove)
+    document.addEventListener('mouseup', this.onPanelDragEnd)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }
+
+  private onPanelDragMove = (e: MouseEvent) => {
+    // Dragging LEFT edge: moving mouse left = wider panel
+    const delta = this.dragStartX - e.clientX
+    const newWidth = clampThreadWidth(
+      this.dragStartWidth + delta,
+      this.cachedWindowWidth,
+      this.cachedLeftPanelWidth
+    )
+    this.lastPanelWidth = newWidth
+
+    // Direct DOM update — no React re-render during drag
+    const panel = this.panelRef.current
+    if (panel) {
+      panel.style.width = newWidth + 'px'
+      // Update CSS variable on parent for chat area calc
+      panel.parentElement?.style.setProperty('--wk-width-thread-panel', newWidth + 'px')
+    }
+  }
+
+  private onPanelDragEnd = () => {
+    document.removeEventListener('mousemove', this.onPanelDragMove)
+    document.removeEventListener('mouseup', this.onPanelDragEnd)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    this.setState({ panelWidth: this.lastPanelWidth, isDragging: false })
+    persistThreadWidth(this.lastPanelWidth)
+  }
+
+  private onPanelDoubleClick = () => {
+    this.lastPanelWidth = THREAD_DEFAULT_WIDTH
+    this.setState({ panelWidth: THREAD_DEFAULT_WIDTH })
+    persistThreadWidth(THREAD_DEFAULT_WIDTH)
+    this.syncCssVariable(THREAD_DEFAULT_WIDTH)
+  }
+
+  /** Keep --wk-width-thread-panel in sync so chat area calc stays correct */
+  private syncCssVariable(width: number) {
+    const panel = this.panelRef.current
+    panel?.parentElement?.style.setProperty('--wk-width-thread-panel', width + 'px')
   }
 
   componentDidUpdate(prevProps: ThreadPanelProps) {
@@ -91,7 +198,10 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
 
     this.setState({ threadsLoading: true })
     try {
-      const threads = await WKApp.dataSource.channelDataSource.threadList(groupNo)
+      const threads = await WKApp.dataSource.channelDataSource.threadList(groupNo, {
+        page_index: 1,
+        page_size: 100
+      })
       // 按活跃时间倒序排序
       threads.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       this.setState({ threads, threadsLoading: false })
@@ -101,11 +211,18 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
   }
 
   private handleThreadClick = (thread: Thread) => {
+    // 子区列表点击 → 在面板内切换到 detail 视图，不切主窗口
     this.setState({
       view: "detail",
-      vmState: { ...this.state.vmState, thread },
+      vmState: {
+        ...this.state.vmState,
+        thread,
+        loading: true,
+        replies: [],
+        hasMore: false,
+        error: null,
+      },
     })
-    this.props.onThreadSelect?.(thread)
     this.initVM(thread.short_id)
   }
 
@@ -127,12 +244,23 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     }
   }
 
+  private canEditThread(thread: Thread): boolean {
+    const isCreator = thread.creator_uid === WKApp.loginInfo.uid
+    const groupChannel = new Channel(this.props.groupNo, ChannelTypeGroup)
+    const subscribers = WKSDK.shared().channelManager.getSubscribes(groupChannel)
+    const me = subscribers?.find(s => s.uid === WKApp.loginInfo.uid)
+    const isManagerOrOwner = me?.role === GroupRole.owner || me?.role === GroupRole.manager
+    return isCreator || isManagerOrOwner
+  }
+
   private handleEditThread = () => {
     const { vmState } = this.state
     const thread = vmState.thread
     if (!thread) return
     this.setState({ showMoreMenu: false })
 
+    // 延迟弹窗，等 Popover 完全关闭后再触发，避免 Modal 被 Popover 关闭事件误关
+    setTimeout(() => {
     let newName = thread.name
     Modal.confirm({
       title: "编辑子区名称",
@@ -172,18 +300,28 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
             { name: newName.trim() }
           )
           Toast.success("修改成功")
+          // 刷新左侧列表
           this.loadThreads()
+          // 更新详情页标题
           this.setState({
             vmState: {
               ...this.state.vmState,
               thread: { ...thread, name: newName.trim() },
             },
           })
+          // 清除 SDK 缓存，刷新 Chat header 展示的子区名称
+          const threadChannel = new Channel(
+            buildThreadChannelId(this.props.groupNo, thread.short_id),
+            ChannelTypeCommunityTopic
+          )
+          WKSDK.shared().channelManager.deleteChannelInfo(threadChannel)
+          WKSDK.shared().channelManager.fetchChannelInfo(threadChannel)
         } catch {
           Toast.error("保存失败，请重试")
         }
       },
     })
+    }, 100)
   }
 
   private handleDeleteThread = () => {
@@ -192,6 +330,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
     if (!thread) return
     this.setState({ showMoreMenu: false })
 
+    setTimeout(() => {
     Modal.confirm({
       title: `删除子区「${thread.name}」？`,
       icon: null,
@@ -213,6 +352,7 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
         }
       },
     })
+    }, 100)
   }
 
   private handleCreateThread = () => {
@@ -319,9 +459,11 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
                       在完整视图打开
                     </div>
                   )}
-                  <div className="wk-thread-more-menu-item" onClick={this.handleEditThread}>
-                    编辑子区名称
-                  </div>
+                  {vmState.thread && this.canEditThread(vmState.thread) && (
+                    <div className="wk-thread-more-menu-item" onClick={this.handleEditThread}>
+                      编辑子区名称
+                    </div>
+                  )}
                   <div className="wk-thread-more-menu-item wk-thread-more-menu-item-danger" onClick={this.handleDeleteThread}>
                     删除子区
                   </div>
@@ -500,12 +642,28 @@ export default class ThreadPanel extends Component<ThreadPanelProps, ThreadPanel
   }
 
   render() {
-    const { view } = this.state
+    const { view, panelWidth, isDragging } = this.state
+    const isSmallScreen = window.innerWidth <= SMALL_SCREEN_WIDTH
+
+    const panelStyle = isSmallScreen ? undefined : {
+      width: `${panelWidth}px`,
+    }
 
     return (
-      <div className="wk-thread-panel">
+      <div className="wk-thread-panel" ref={this.panelRef} style={panelStyle}>
+        {/* Left-edge splitter for resizing — hidden on small screens */}
+        {!isSmallScreen && (
+          <div
+            className={classNames("wk-thread-panel-splitter", isDragging && "wk-thread-panel-splitter-active")}
+            onMouseDown={this.onPanelDragStart}
+            onDoubleClick={this.onPanelDoubleClick}
+          >
+            <div className="wk-thread-panel-splitter-line" />
+          </div>
+        )}
         {this.renderHeader()}
         {view === "list" ? this.renderListView() : this.renderDetailView()}
+        {isDragging && <div className="wk-thread-panel-drag-overlay" />}
       </div>
     )
   }

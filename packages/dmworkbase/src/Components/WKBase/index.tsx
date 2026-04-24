@@ -169,6 +169,9 @@ export default class WKBase
       orgCode,
       orgUid,
     } = this.state;
+    // join_org.html 由后端提供，需要通过 API 路径加载
+    // Web 环境：apiURL = "/api/v1/"，replace 后得到 "/api/"，由 Nginx 代理到后端
+    // Tauri/Electron 环境：apiURL = "https://host/v1/"，replace 后得到 "https://host/"
     const baseURL = WKApp.apiClient.config.apiURL.replace("v1/", "");
     return (
       <div className="wk-base">
@@ -200,9 +203,9 @@ export default class WKBase
         </WKModal>
 
         <WKModal
-          className="wk-base-modal"
+          className="wk-base-modal wk-base-modal-forward"
           visible={showConversationSelect}
-          options={{ mask: false }}
+          options={{ mask: false, width: 625 }}
           onCancel={() => {
             this.setState({
               showConversationSelect: false,
@@ -217,6 +220,11 @@ export default class WKBase
               if (conversationSelectFinished) {
                 conversationSelectFinished(channels);
               }
+            }}
+            onCancel={() => {
+              this.setState({
+                showConversationSelect: false,
+              });
             }}
             title={conversationSelectTitle}
           ></ConversationSelect>

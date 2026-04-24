@@ -81,7 +81,10 @@ export default function VoiceInputIndicator({
       ) {
         // 设备不存在或不可用
         Toast.error("麦克风不可用");
-      } else if (!error.message.includes("file size")) {
+      } else if (
+        !error.message.includes("file size") &&
+        !error.message.includes("Transcription failed")
+      ) {
         // 兜底：显示通用错误（排除已在 useVoiceInput 中 Toast 的错误）
         Toast.error("语音输入失败");
       }

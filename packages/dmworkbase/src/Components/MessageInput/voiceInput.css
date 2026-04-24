@@ -70,14 +70,14 @@
   background-color: var(--wk-bg-surface, #ffffff);
   border: 1px solid var(--wk-border-light, rgba(28, 28, 35, 0.05));
   border-radius: 1000px;
-  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.08);
+  box-shadow: 0px 0px 20px 0px var(--wk-black-alpha-08);
   box-sizing: border-box;
 }
 
 [theme-mode="dark"] .wk-voice-floating-indicator {
   background-color: var(--wk-bg-surface, #2a2a33);
   border-color: var(--wk-border-light, rgba(255, 255, 255, 0.1));
-  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.3);
+  box-shadow: 0px 0px 20px 0px var(--wk-black-alpha-30);
 }
 
 .wk-voice-floating-content {

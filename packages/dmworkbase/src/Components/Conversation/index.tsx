@@ -1682,7 +1682,8 @@ export class Conversation
                                 if (!obj.mention) obj.mention = {};
                                 obj.mention.entities = entities;
                                 return new TextEncoder().encode(JSON.stringify(obj));
-                              } catch {
+                              } catch (e) {
+                                console.warn('[Mention] encode override failed, entities may be lost', e);
                                 return originalEncode();
                               }
                             };

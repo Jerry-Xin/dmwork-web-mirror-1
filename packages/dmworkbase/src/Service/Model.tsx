@@ -386,7 +386,17 @@ export class MessageWrap {
 
         if (entities && Array.isArray(entities)) {
             const result = this.parseMentionWithEntities(text, entities)
-            if (result !== null) return result
+            if (result !== null) {
+                // 如果同时有 @所有人，对 entity 结果里的普通 text 部分再做 @所有人 解析
+                if (mention.all) {
+                    return result.flatMap(part =>
+                        part.type === PartType.text
+                            ? this.parseMentionAll(part.text)
+                            : [part]
+                    )
+                }
+                return result
+            }
         }
 
         if (mention.uids && Array.isArray(mention.uids) && mention.uids.length > 0) {

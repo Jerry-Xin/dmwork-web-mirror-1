@@ -21,7 +21,7 @@ export default defineConfig({
       },
     },
     define: {
-      "process.env.NODE_ENV": JSON.stringify("development"),
+      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "production"),
       "process.env.PUBLIC_URL": '""',
     },
   }),

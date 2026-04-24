@@ -106,7 +106,7 @@ function ensurePendingConversationRetry(): void {
   }
 }
 
-window.setInterval(() => {
+const spaceCheckIntervalId = window.setInterval(() => {
   const currentSpaceId = localStorage.getItem('currentSpaceId') || '';
   if (currentSpaceId === lastSyncedSpaceId) {
     return;
@@ -115,6 +115,10 @@ window.setInterval(() => {
   void syncExtensionAuthStateFromWKApp(apiURL);
   syncSidepanelBadge();
 }, 1000);
+
+window.addEventListener('pagehide', () => {
+  window.clearInterval(spaceCheckIntervalId);
+});
 
 const originalLoginSave = WKApp.loginInfo.save.bind(WKApp.loginInfo);
 WKApp.loginInfo.save = () => {

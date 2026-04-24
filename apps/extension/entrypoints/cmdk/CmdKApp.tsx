@@ -235,7 +235,7 @@ export default function CmdKApp() {
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
-      // 只接受来自 parent 窗口的消息，避免任意窗口注入伪造 CMDK_OPEN
+      // source 校验：只接受来自 parent 窗口的消息
       if (e.source !== window.parent) return;
       if (e.data?.type === "CMDK_OPEN") {
         parentOriginRef.current = e.origin;
@@ -243,12 +243,13 @@ export default function CmdKApp() {
       }
     };
     window.addEventListener("message", onMessage);
-    // 先注册 listener 再告知 parent 已就绪，parent 收到 CMDK_READY 后才会发 CMDK_OPEN，
-    // 彻底避免 iframe load 事件早于本 useEffect 导致 OPEN 消息丢失
+    // CmdKOverlay 收到 CMDK_READY 后才发 CMDK_OPEN，用 "*" 因为 parent 是宿主页面 origin 不固定；
+    // 安全保障在发送方：CmdKOverlay 发 CMDK_OPEN 时指定 extensionOrigin 作为 targetOrigin，
+    // Chrome 保证只有匹配 origin 的 iframe 能收到
     try {
       window.parent.postMessage({ type: "CMDK_READY" }, "*");
     } catch {
-      /* parent 不可达时忽略，Cmd+K 面板本就是 parent 注入的 */
+      /* parent 不可达时忽略 */
     }
     return () => window.removeEventListener("message", onMessage);
   }, []);

@@ -38,7 +38,12 @@ export default defineConfig({
     web_accessible_resources: [
       {
         resources: ["/injected*.js"],
-        matches: ["<all_urls>"],
+        matches: [
+          "https://docs.qq.com/*",
+          "https://*.docs.qq.com/*",
+          "https://doc.weixin.qq.com/*",
+          "https://*.doc.weixin.qq.com/*",
+        ],
       },
       {
         resources: ["/cmdk.html"],

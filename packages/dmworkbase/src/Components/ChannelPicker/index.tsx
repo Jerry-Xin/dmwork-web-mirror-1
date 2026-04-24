@@ -186,12 +186,16 @@ export default function ChannelPicker({
     }
   };
 
+  const flatNavIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    flatNavItems.forEach((item, idx) => {
+      map.set(`${item.channelType}:${item.channelId}`, idx);
+    });
+    return map;
+  }, [flatNavItems]);
+
   const getFlatNavIndex = (item: ChannelPickerItem): number => {
-    return flatNavItems.findIndex(
-      (candidate) =>
-        candidate.channelId === item.channelId &&
-        candidate.channelType === item.channelType
-    );
+    return flatNavIndexMap.get(`${item.channelType}:${item.channelId}`) ?? -1;
   };
 
   // 每次渲染把 refs 数组截断到 flat 长度，防止上一轮残留 ref 指到已卸载元素

@@ -19,7 +19,9 @@ function getCurrentSpaceId(): string {
 async function sendRuntimeMessage(
   message: ExtensionRuntimeMessage,
 ): Promise<void> {
-  await browser.runtime.sendMessage(message).catch(() => {});
+  await browser.runtime.sendMessage(message).catch((err) => {
+    console.debug("[Extension] sendRuntimeMessage failed:", err);
+  });
 }
 
 export function applyExtensionAuthToWKApp(auth: ExtensionAuthState): void {
@@ -50,7 +52,7 @@ export async function hydrateWKAppFromExtensionAuth(): Promise<ExtensionAuthStat
   }
 
   const auth = await getExtensionAuthState();
-  if (!auth?.loggedIn || !auth.token) {
+  if (!auth?.loggedIn || !auth.token || !auth.uid) {
     return null;
   }
 

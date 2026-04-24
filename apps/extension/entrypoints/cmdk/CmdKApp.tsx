@@ -307,12 +307,13 @@ export default function CmdKApp() {
   );
 
   const removePendingAttachment = useCallback((index: number) => {
-    setPendingAttachments((prev) =>
-      prev.filter((_, itemIndex) => itemIndex !== index)
-    );
+    const next = pendingAttachmentsRef.current.filter((_, i) => i !== index);
+    pendingAttachmentsRef.current = next;
+    setPendingAttachments(next);
   }, []);
 
   const clearPendingAttachments = useCallback(() => {
+    pendingAttachmentsRef.current = [];
     setPendingAttachments([]);
   }, []);
 

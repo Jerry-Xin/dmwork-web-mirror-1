@@ -811,8 +811,6 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
       const error = conversationContext.addPendingAttachments(images);
       if (error) {
         showToast(error);
-      } else {
-        updatePendingAttachments((prev) => [...prev, ...images]);
       }
     };
 
@@ -932,8 +930,6 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
       const error = conversationContext.addPendingAttachments(files);
       if (error) {
         showToast(error);
-      } else {
-        updatePendingAttachments((prev) => [...prev, ...files]);
       }
       event.target.value = "";
     },

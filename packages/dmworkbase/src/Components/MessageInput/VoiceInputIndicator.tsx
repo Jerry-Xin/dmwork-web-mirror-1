@@ -16,6 +16,10 @@ interface VoiceInputIndicatorProps {
 const FLOATING_GAP = 20;
 const INDICATOR_HEIGHT = 48;
 
+// Long-press timing constants
+const PREPARING_DELAY_MS = 300;
+const RECORDING_DELAY_MS = 500;
+
 export default function VoiceInputIndicator({
   onTranscribed,
   getCurrentText,
@@ -53,9 +57,6 @@ export default function VoiceInputIndicator({
     };
   }, []);
 
-  const PREPARING_DELAY_MS = 300;
-  const RECORDING_DELAY_MS = 500;
-
   const {
     isRecording,
     isTranscribing,
@@ -74,8 +75,16 @@ export default function VoiceInputIndicator({
         error.message.includes("NotAllowedError")
       ) {
         Toast.error("请允许麦克风访问权限");
+      } else if (
+        error.message.includes("NotFoundError") ||
+        error.message.includes("NotReadableError")
+      ) {
+        // 设备不存在或不可用
+        Toast.error("麦克风不可用");
+      } else if (!error.message.includes("file size")) {
+        // 兜底：显示通用错误（排除已在 useVoiceInput 中 Toast 的错误）
+        Toast.error("语音输入失败");
       }
-      // 其他错误已在 useVoiceInput 中通过 Toast 处理，这里不重复
     },
     onRecordingFailed: () => {
       shiftRecordingRef.current = false;
@@ -145,12 +154,25 @@ export default function VoiceInputIndicator({
     updateFloatingPosition();
 
     const handleResize = () => updateFloatingPosition();
-    const handleScroll = () => updateFloatingPosition();
+
+    // 使用 requestAnimationFrame 节流 scroll 事件
+    let rafId: number | null = null;
+    const handleScroll = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        updateFloatingPosition();
+        rafId = null;
+      });
+    };
+
     window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll, true);
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll, true);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
     };
   }, [isRecording, isTranscribing, updateFloatingPosition]);
 

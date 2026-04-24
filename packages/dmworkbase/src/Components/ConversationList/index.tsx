@@ -32,6 +32,7 @@ export type ConvFilter = 'all' | 'human' | 'ai' | 'group' | 'dm'
 interface CompactGroupItemProps {
     conversationWrap: ConversationWrap
     selected: boolean
+    avatarKey?: string
     onClick: () => void
     onDoubleClick?: (e: React.MouseEvent) => void
     onContextMenu: (e: React.MouseEvent) => void
@@ -40,7 +41,7 @@ interface CompactGroupItemProps {
 }
 
 const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
-    conversationWrap, selected, onClick, onDoubleClick, onContextMenu, hasThreads,
+    conversationWrap, selected, avatarKey, onClick, onDoubleClick, onContextMenu, hasThreads,
 }) => {
     const channelInfo = conversationWrap.channelInfo
     // channelInfo 未加载时主动拉取，加载完触发 re-render
@@ -113,7 +114,7 @@ const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
             <span className={`wk-conv-compact-icon${conversationWrap.unread > 0 ? ' wk-conv-compact-icon--reddot' : ''}`}>
                 {isThread
                     ? <ThreadIcon size={13} />
-                    : <WKAvatar channel={conversationWrap.channel} style={{ width: 24, height: 24, borderRadius: 6, flexShrink: 0 }} />
+                    : <WKAvatar key={avatarKey} channel={conversationWrap.channel} style={{ width: 24, height: 24, borderRadius: 6, flexShrink: 0 }} />
                 }
             </span>
             {conversationWrap.isMentionMe && conversationWrap.unread > 0 && (
@@ -304,6 +305,7 @@ export default class ConversationList extends Component<ConversationListProps, C
         }
 
         const { compact } = this.props
+        const avatarKey = WKApp.shared.getChannelAvatarTag(conversationWrap.channel);
 
         // ── Compact 模式（群聊 Tab）：用 CompactGroupItem 函数组件（支持拖拽） ──
         if (compact) {
@@ -313,6 +315,7 @@ export default class ConversationList extends Component<ConversationListProps, C
                     key={conversationWrap.channel.getChannelKey()}
                     conversationWrap={conversationWrap}
                     selected={selected}
+                    avatarKey={avatarKey}
                     hasThreads={hasThreads}
                     onClick={() => { if (this.props.onClick) this.props.onClick(conversationWrap) }}
                     onDoubleClick={
@@ -324,8 +327,6 @@ export default class ConversationList extends Component<ConversationListProps, C
                 />
             )
         }
-
-        const avatarKey = WKApp.shared.getChannelAvatarTag(conversationWrap.channel);
 
         const { select, onClick } = this.props
         const typing = TypingManager.shared.getTyping(conversationWrap.channel)

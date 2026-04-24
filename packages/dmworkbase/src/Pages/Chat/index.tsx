@@ -12,7 +12,6 @@ import WKButton from "../../Components/WKButton";
 import WKModal from "../../Components/WKModal";
 import { Columns2 } from "lucide-react";
 import ThreadIcon from "../../Components/Icons/ThreadIcon";
-import GroupIcon from "../../Components/Icons/GroupIcon";
 import { ChatVM, handleGlobalSearchClick } from "./vm";
 import "./index.css";
 import { ConversationWrap } from "../../Service/Model";
@@ -20,6 +19,7 @@ import WKApp, { ThemeMode } from "../../App";
 import ChannelSetting from "../../Components/ChannelSetting";
 import classNames from "classnames";
 import { Channel, ChannelInfo, ChannelTypeGroup, ChannelTypePerson, WKSDK } from "wukongimjssdk";
+import WKAvatar from "../../Components/WKAvatar";
 import { ChannelTypeCommunityTopic } from "../../Service/Const";
 import { ChannelInfoListener } from "wukongimjssdk";
 import { ChatMenus } from "../../App";
@@ -227,10 +227,12 @@ export class ChatContentPage extends Component<
                     <div className="wk-chat-conversation-header-channel">
                       <div className="wk-chat-conversation-header-channel-avatar">
                         {channel.channelType === ChannelTypeGroup ? (
-                          // 群聊：# icon
-                          <div className="wk-chat-conversation-header-channel-hash-icon">
-                            <GroupIcon size={18} />
-                          </div>
+                          // 群聊：真实头像
+                          <WKAvatar
+                            key={WKApp.shared.getChannelAvatarTag(channel)}
+                            channel={channel}
+                            style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0 }}
+                          />
                         ) : channel.channelType === ChannelTypeCommunityTopic ? (
                           // 子区：🧵 icon，圆角背景（对齐群聊 hash-icon 样式）
                           <div className="wk-chat-conversation-header-channel-thread-icon">

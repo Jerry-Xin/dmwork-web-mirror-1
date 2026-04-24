@@ -1,6 +1,6 @@
 import { Button, Toast } from "@douyinfe/semi-ui";
 import axios from "axios";
-import { Channel } from "wukongimjssdk";
+import { Channel, WKSDK } from "wukongimjssdk";
 import React from "react";
 import { Component } from "react";
 import WKApp from "../../App";
@@ -70,11 +70,16 @@ export class ChannelAvatar extends Component<ChannelAvatarProps>{
                                 context.pop()
                             }else{
                                 finishButtonContext.loading(true)
-                                await this.uploadAvatar(file)
-                                WKApp.shared.changeChannelAvatarTag(channel)
-                                finishButtonContext.loading(false)
-                                context.pop()
-                                this.setState({})
+                                try {
+                                    await this.uploadAvatar(file)
+                                    WKApp.shared.changeChannelAvatarTag(channel)
+                                    // 触发 channelInfoListener，通知 Chat 等组件刷新头像
+                                    WKSDK.shared().channelManager.fetchChannelInfo(channel)
+                                    context.pop()
+                                    this.setState({})
+                                } finally {
+                                    finishButtonContext.loading(false)
+                                }
                             }
                         })
                     }

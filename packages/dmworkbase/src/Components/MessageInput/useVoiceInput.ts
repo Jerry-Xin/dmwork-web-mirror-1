@@ -18,7 +18,6 @@ export interface UseVoiceInputOptions {
 export interface UseVoiceInputReturn {
   isRecording: boolean;
   isTranscribing: boolean;
-  duration: number;
   startRecording: () => void;
   stopRecordingAndTranscribe: () => void;
   cancelRecording: () => void;
@@ -48,8 +47,10 @@ export default function useVoiceInput(
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [duration, setDuration] = useState(0);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+
+  // Use ref for duration to avoid re-renders every second (duration is not displayed in UI)
+  const durationRef = useRef(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -108,7 +109,7 @@ export default function useVoiceInput(
     }
     mediaRecorderRef.current = null;
     chunksRef.current = [];
-    setDuration(0);
+    durationRef.current = 0;
   }, []);
 
   const startRecording = useCallback(async () => {
@@ -153,12 +154,12 @@ export default function useVoiceInput(
 
       recorder.start();
       setIsRecording(true);
-      setDuration(0);
+      durationRef.current = 0;
 
       startTimeRef.current = Date.now();
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-        setDuration(elapsed);
+        durationRef.current = elapsed;
         if (elapsed >= maxDuration) {
           stopFnRef.current();
         }
@@ -218,10 +219,8 @@ export default function useVoiceInput(
         const memberContext = chatCtxResult.memberContext;
         const chatContext = chatCtxResult.chatContext;
 
-        // Voice input only - no contextText, no mode
         const result = await VoiceService.shared.transcribe(
           blob,
-          undefined,
           chatContext,
           personalContext,
           memberContext
@@ -276,7 +275,6 @@ export default function useVoiceInput(
   return {
     isRecording,
     isTranscribing,
-    duration,
     startRecording,
     stopRecordingAndTranscribe,
     cancelRecording,

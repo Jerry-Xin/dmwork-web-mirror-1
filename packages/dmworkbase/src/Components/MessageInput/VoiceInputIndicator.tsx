@@ -5,21 +5,18 @@ import { Mic } from "lucide-react";
 import useVoiceInput from "./useVoiceInput";
 import "./voiceInput.css";
 import { ChatContextResult } from "../Conversation/chatContext";
-// mic-recording.svg import removed - using Mic component instead
 
 interface VoiceInputIndicatorProps {
   onTranscribed: (text: string, shouldReplace: boolean) => void;
-  getCurrentText?: () => string | undefined;
-  getSelectedText?: () => string | undefined;
   getChatContext?: () => ChatContextResult;
 }
 
-type VoiceMode = "input" | "edit";
+// Floating indicator positioning constants
+const FLOATING_GAP = 20;
+const INDICATOR_HEIGHT = 48;
 
 export default function VoiceInputIndicator({
   onTranscribed,
-  getCurrentText,
-  getSelectedText,
   getChatContext,
 }: VoiceInputIndicatorProps) {
   // Long-press ShiftLeft state
@@ -29,20 +26,10 @@ export default function VoiceInputIndicator({
   const cancelPendingRef = useRef(false);
   const [isPreparing, setIsPreparing] = useState(false);
 
-  // Dropdown menu state
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [voiceMode, setVoiceMode] = useState<VoiceMode>("input");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const isOnlineRef = useRef(isOnline);
   isOnlineRef.current = isOnline;
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonGroupRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const voiceModeRef = useRef<VoiceMode>(voiceMode);
-  voiceModeRef.current = voiceMode;
-
-  // Save selected text before menu click causes focus loss
-  const savedSelectionRef = useRef<string | undefined>(undefined);
 
   // Floating indicator position state
   const [floatingPosition, setFloatingPosition] = useState<{
@@ -70,7 +57,6 @@ export default function VoiceInputIndicator({
   const {
     isRecording,
     isTranscribing,
-    duration,
     startRecording,
     stopRecordingAndTranscribe,
     cancelRecording,
@@ -142,7 +128,7 @@ export default function VoiceInputIndicator({
 
     const cardRect = card.getBoundingClientRect();
     setFloatingPosition({
-      top: cardRect.top - 20 - 48, // 20px gap + 48px indicator height
+      top: cardRect.top - FLOATING_GAP - INDICATOR_HEIGHT,
       left: cardRect.left + cardRect.width / 2,
     });
   }, []);
@@ -160,34 +146,6 @@ export default function VoiceInputIndicator({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [isRecording, isTranscribing, updateFloatingPosition]);
-
-  // Handle hover enter/leave for dropdown
-  const handleMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    // Save selection when hovering (before any click causes focus loss)
-    if (getSelectedText) {
-      savedSelectionRef.current = getSelectedText();
-    }
-    setShowDropdown(true);
-  };
-
-  const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
-      setShowDropdown(false);
-    }, 150); // Small delay to allow moving to dropdown
-  };
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Keyboard shortcut: Shift + Cmd/Ctrl + Space, and long-press ShiftLeft
   useEffect(() => {
@@ -296,7 +254,6 @@ export default function VoiceInputIndicator({
       ) {
         shiftRecordingRef.current = false;
         e.preventDefault();
-        // Voice input only - no contextText, no mode
         stopRecordingRef.current();
         return;
       }
@@ -307,7 +264,6 @@ export default function VoiceInputIndicator({
         // Don't stop if this was a long-press ShiftLeft release handled above
         if (shiftRecordingRef.current) return;
         e.preventDefault();
-        // Voice input only - no contextText, no mode
         stopRecordingRef.current();
       }
     };
@@ -326,39 +282,47 @@ export default function VoiceInputIndicator({
       window.removeEventListener("blur", handleBlurWhilePreparing);
       clearShiftTimer();
     };
-  }, [isVoiceEnabled, getCurrentText]);
+  }, [isVoiceEnabled, cancelRecording]);
 
   // Window blur: auto-stop recording
   useEffect(() => {
     if (!isRecording) return;
     const handleBlur = () => {
-      // Voice input only - no contextText, no mode
       stopRecordingAndTranscribe();
     };
     window.addEventListener("blur", handleBlur);
     return () => window.removeEventListener("blur", handleBlur);
   }, [isRecording, stopRecordingAndTranscribe]);
 
-  const handleMenuItemClick = (mode: VoiceMode) => {
-    setVoiceMode(mode);
-    setShowDropdown(false);
-    // Start recording with the selected mode
+  if (!isVoiceEnabled) return null;
+
+  // Handle click/keyboard for voice button
+  const handleVoiceClick = () => {
+    if (!isOnline) {
+      Toast.warning("网络不可用，无法使用语音功能");
+      return;
+    }
     startRecording();
   };
 
-  // Get context text for edit mode, considering saved selection
-  const getEditContextText = useCallback(() => {
-    // If there was selected text, use that; otherwise use full text
-    const selectedText = savedSelectionRef.current;
-    if (selectedText && selectedText.length > 0) {
-      return selectedText;
+  const handleVoiceKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      handleVoiceClick();
     }
-    return getCurrentText?.();
-  }, [getCurrentText]);
+  };
 
-  if (!isVoiceEnabled) return null;
+  // Handle stop recording click/keyboard
+  const handleStopClick = () => {
+    stopRecordingAndTranscribe();
+  };
 
-  const isEditMode = voiceMode === "edit";
+  const handleStopKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      handleStopClick();
+    }
+  };
 
   if (isTranscribing) {
     // If no position yet, still show the button in recording state
@@ -415,9 +379,10 @@ export default function VoiceInputIndicator({
           <div
             className="wk-voice-button wk-voice-button--recording"
             title="点击停止录音"
-            onClick={() => {
-              stopRecordingAndTranscribe();
-            }}
+            onClick={handleStopClick}
+            onKeyDown={handleStopKeyDown}
+            role="button"
+            tabIndex={0}
             style={{ cursor: "pointer" }}
           >
             <Mic size={18} color="currentColor" />
@@ -467,10 +432,10 @@ export default function VoiceInputIndicator({
           <div
             className="wk-voice-button wk-voice-button--recording"
             title="点击停止录音"
-            onClick={() => {
-              // Voice input only - no contextText, no mode
-              stopRecordingAndTranscribe();
-            }}
+            onClick={handleStopClick}
+            onKeyDown={handleStopKeyDown}
+            role="button"
+            tabIndex={0}
             style={{ cursor: "pointer" }}
           >
             <Mic size={18} color="currentColor" />
@@ -495,14 +460,6 @@ export default function VoiceInputIndicator({
 
   // 默认状态：显示麦克风按钮
   // PRD: 无网络时话筒 icon 置灰，点击时 Toast「网络不可用，无法使用语音功能」
-  const handleVoiceClick = () => {
-    if (!isOnline) {
-      Toast.warning("网络不可用，无法使用语音功能");
-      return;
-    }
-    startRecording();
-  };
-
   return (
     <div className="wk-voice-button-group" ref={buttonGroupRef}>
       <div
@@ -511,45 +468,12 @@ export default function VoiceInputIndicator({
         }`}
         title={isOnline ? "语音输入 (长按 Shift)" : "网络不可用"}
         onClick={handleVoiceClick}
+        onKeyDown={handleVoiceKeyDown}
         role="button"
         tabIndex={isOnline ? 0 : -1}
-        onKeyDown={(e) => {
-          if (e.key === " " || e.key === "Enter") {
-            e.preventDefault();
-            handleVoiceClick();
-          }
-        }}
       >
         <Mic size={18} color="currentColor" />
       </div>
-
-      {/* Dropdown Menu - temporarily disabled
-      {showDropdown && (
-        <div
-          className="wk-voice-dropdown-menu"
-          ref={dropdownRef}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          <div
-            className={`wk-voice-menu-item ${
-              voiceMode === "input" ? "wk-voice-menu-item--active" : ""
-            }`}
-            onClick={() => handleMenuItemClick("input")}
-          >
-            <span className="wk-voice-menu-item-text">语音输入</span>
-          </div>
-          <div
-            className={`wk-voice-menu-item ${
-              voiceMode === "edit" ? "wk-voice-menu-item--active" : ""
-            }`}
-            onClick={() => handleMenuItemClick("edit")}
-          >
-            <span className="wk-voice-menu-item-text">语音编辑</span>
-          </div>
-        </div>
-      )}
-      */}
     </div>
   );
 }

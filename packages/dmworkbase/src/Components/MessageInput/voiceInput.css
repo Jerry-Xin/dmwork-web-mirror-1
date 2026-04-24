@@ -75,7 +75,7 @@
   opacity: 0.7;
 }
 
-/* 语音按钮组：麦克风 + 下拉箭头（一体化） */
+/* 语音按钮组 */
 .wk-voice-button-group {
   position: relative;
   display: flex;
@@ -83,7 +83,7 @@
   height: 24px;
 }
 
-/* 一体化语音按钮：麦克风图标 + 下拉三角 */
+/* 语音按钮 */
 .wk-voice-button {
   display: flex;
   align-items: center;
@@ -139,56 +139,7 @@
   cursor: pointer;
 }
 
-.wk-voice-dropdown-triangle {
-  width: 0;
-  height: 0;
-  border-left: 3px solid transparent;
-  border-right: 3px solid transparent;
-  border-top: 4px solid currentColor;
-}
-
-/* Dropdown Menu - based on Figma design */
-.wk-voice-dropdown-menu {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  right: 0;
-  width: 160px;
-  padding: 4px 0;
-  background-color: var(--wk-bg-surface, #ffffff);
-  border-radius: 6px;
-  box-shadow: 0px 4px 14px 0px rgba(0, 0, 0, 0.1),
-    0px 0px 1px 0px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-}
-
-.wk-voice-menu-item {
-  display: flex;
-  align-items: center;
-  height: 36px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-.wk-voice-menu-item:hover {
-  background-color: var(--wk-bg-hover, rgba(0, 0, 0, 0.04));
-}
-
-.wk-voice-menu-item--active {
-  background-color: var(--wk-bg-selected, rgba(0, 0, 0, 0.06));
-}
-
-.wk-voice-menu-item-text {
-  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 20px;
-  color: var(--wk-text-primary, #1c1c23);
-  white-space: nowrap;
-}
-
 /* Floating voice indicator - based on Figma design */
-/* This needs to be positioned relative to .wk-messageinput-box */
 .wk-voice-floating-indicator {
   position: fixed;
   z-index: 1000;
@@ -198,8 +149,8 @@
   width: 184px;
   height: 48px;
   padding: 4px 16px;
-  background-color: #ffffff;
-  border: 1px solid rgba(28, 28, 35, 0.05);
+  background-color: var(--wk-bg-surface, #ffffff);
+  border: 1px solid var(--wk-border-light, rgba(28, 28, 35, 0.05));
   border-radius: 1000px;
   box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.08);
   box-sizing: border-box;
@@ -218,7 +169,7 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 22px;
-  color: #1c1c23;
+  color: var(--wk-text-primary, #1c1c23);
   white-space: nowrap;
 }
 
@@ -226,7 +177,7 @@
   width: 1px;
   height: 20px;
   margin: 0 8px;
-  background-color: rgba(28, 28, 35, 0.15);
+  background-color: var(--wk-border-color, rgba(28, 28, 35, 0.15));
   flex-shrink: 0;
 }
 
@@ -248,8 +199,8 @@
   content: "";
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(127, 59, 245, 0.2);
-  border-top-color: #7f3bf5;
+  border: 2px solid var(--wk-brand-primary-light, rgba(127, 59, 245, 0.2));
+  border-top-color: var(--wk-brand-primary, #7f3bf5);
   border-radius: 50%;
   animation: wk-voice-spin 0.6s linear infinite;
 }
@@ -266,7 +217,7 @@
 
 .wk-voice-wave-bar {
   width: 3px;
-  background-color: #7f3bf5;
+  background-color: var(--wk-brand-primary, #7f3bf5);
   border-radius: 1.5px;
   animation: wk-voice-wave 0.8s ease-in-out infinite;
 }

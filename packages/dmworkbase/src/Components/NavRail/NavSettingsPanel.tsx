@@ -13,6 +13,8 @@ export interface NavSettingsPanelProps {
     appUpdateProgress: number;
     showAppUpdateOperation: boolean;
     lastVersionInfo?: { appVersion: string; updateDesc: string };
+    /** 是否显示「空间管理」入口（仅 owner/admin 可见） */
+    canManageSpace?: boolean;
     onToggleSetting: () => void;
     onSetShowNewVersion: (v: boolean) => void;
     onSetShowAppVersion: (v: boolean) => void;
@@ -65,6 +67,7 @@ export default class NavSettingsPanel extends Component<NavSettingsPanelProps, N
             appUpdateProgress,
             showAppUpdateOperation,
             lastVersionInfo,
+            canManageSpace = false,
             onToggleSetting,
             onSetShowNewVersion,
             onSetShowAppVersion,
@@ -90,6 +93,14 @@ export default class NavSettingsPanel extends Component<NavSettingsPanelProps, N
                     }}>
                         更新日志
                     </li>
+                    {canManageSpace && (
+                        <li onClick={() => {
+                            onToggleSetting();
+                            window.location.href = "/space";
+                        }}>
+                            空间管理
+                        </li>
+                    )}
                     <li onClick={() => {
                         onToggleSetting();
                         WKApp.shared.notificationIsClose = !WKApp.shared.notificationIsClose;

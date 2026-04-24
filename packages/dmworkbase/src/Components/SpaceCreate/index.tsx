@@ -46,8 +46,11 @@ export default class SpaceCreate extends Component<SpaceCreateProps, SpaceCreate
             this.setState({ name: "", description: "", joinMode: 0, inviteUrl: invite.invite_url, loading: false });
             Toast.success("Space 创建成功");
             this.props.onSuccess(resp.space_id);
-        } catch {
-            Toast.error("创建失败，请重试");
+        } catch (err: unknown) {
+            const msg = (err && typeof err === "object" && "msg" in err && typeof (err as { msg: unknown }).msg === "string")
+                ? (err as { msg: string }).msg
+                : "";
+            Toast.error(msg || "创建失败，请重试");
             this.setState({ loading: false });
         }
     };

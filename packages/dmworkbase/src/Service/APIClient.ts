@@ -41,13 +41,14 @@ export default class APIClient {
         axios.interceptors.response.use(function (response) {
             return response;
         }, function (error) {
+            const backendMsg = error?.response?.data?.msg;
             let msg = "";
             switch (error.response && error.response.status) {
                 case 400:
-                    msg = error.response.data.msg;
+                    msg = backendMsg || "";
                     break;
                 case 404:
-                    msg = "请求地址没有找到（404）"
+                    msg = backendMsg || "请求地址没有找到（404）"
                     break;
                 case 401:
                     if(self.logoutCallback) {
@@ -55,7 +56,7 @@ export default class APIClient {
                     }
                     break;
                 default:
-                    msg = "未知错误"
+                    msg = backendMsg || "未知错误"
                     break;
             }
             return Promise.reject({ error: error, msg: msg, status: error?.response?.status });

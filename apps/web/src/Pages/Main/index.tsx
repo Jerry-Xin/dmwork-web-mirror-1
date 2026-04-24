@@ -4,7 +4,7 @@ import "./index.css"
 import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
 import { Space, SpaceService } from "@dmwork/base";
-import { SpaceCreate, JoinSpaceModalConnected, NavRail, MeInfo } from "@dmwork/base";
+import { JoinSpaceModalConnected, NavRail, MeInfo } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
 
 // ─── MainContentLeft：纯路由渲染区（Sidebar + 内容） ───────────────────────
@@ -35,7 +35,6 @@ export class MainContentLeft extends Component<MainContentLeftProps> {
 
 interface MainPageState {
     allSpaces: Space[];
-    showSpaceCreate: boolean;
     showJoinSpace: boolean;
     showMeInfo: boolean;
 }
@@ -45,7 +44,6 @@ export class MainPage extends Component<{}, MainPageState> {
         super(props);
         this.state = {
             allSpaces: [],
-            showSpaceCreate: false,
             showJoinSpace: false,
             showMeInfo: false,
         };
@@ -80,7 +78,7 @@ export class MainPage extends Component<{}, MainPageState> {
 
     handleSpaceSelected = (spaceId: string) => {
         SpaceService.shared.getMySpaces().then(spaces => {
-            this.setState({ allSpaces: spaces, showSpaceCreate: false, showJoinSpace: false });
+            this.setState({ allSpaces: spaces, showJoinSpace: false });
             WKApp.shared.currentSpaceId = spaceId;
             localStorage.setItem("currentSpaceId", spaceId);
             const target = spaces.find(s => s.space_id === spaceId);
@@ -134,7 +132,8 @@ export class MainPage extends Component<{}, MainPageState> {
     };
 
     render() {
-        const { allSpaces, showSpaceCreate, showJoinSpace, showMeInfo } = this.state;
+        const { allSpaces, showJoinSpace, showMeInfo } = this.state;
+        const canManageSpace = allSpaces.some(s => s.role === 1 || s.role === 2);
 
         return (
             <Provider create={() => new MainVM()} render={(vm: MainVM) => {
@@ -151,7 +150,7 @@ export class MainPage extends Component<{}, MainPageState> {
                                     onSpaceSelect={this.handleSpaceSelected}
                                     onCopyInviteLink={this.handleCopyInviteLink}
                                     onJoinSpace={() => this.setState({ showJoinSpace: true })}
-                                    onCreateSpace={() => this.setState({ showSpaceCreate: true })}
+                                    canManageSpace={canManageSpace}
                                     // 菜单
                                     menusList={vm.menusList}
                                     currentMenus={vm.currentMenus}
@@ -216,11 +215,6 @@ export class MainPage extends Component<{}, MainPageState> {
                             <MeInfo onClose={() => this.setState({ showMeInfo: false })} />
                         </WKModal>
 
-                        <SpaceCreate
-                            visible={showSpaceCreate}
-                            onClose={() => this.setState({ showSpaceCreate: false })}
-                            onSuccess={this.handleSpaceSelected}
-                        />
                         <JoinSpaceModalConnected
                             visible={showJoinSpace}
                             onClose={() => this.setState({ showJoinSpace: false })}

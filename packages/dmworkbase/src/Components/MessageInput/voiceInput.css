@@ -104,7 +104,8 @@
 }
 
 .wk-voice-button--recording {
-  color: var(--wk-brand-primary, #7f3bf5);
+  background-color: #f8f5fe;
+  color: #9760f6;
 }
 
 .wk-voice-button--disabled {

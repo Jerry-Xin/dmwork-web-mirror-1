@@ -718,12 +718,14 @@ export default class ConversationList extends Component<ConversationListProps, C
                     menus.push(...extraMenus)
                 }
 
-                // 4. 免打扰 / 关闭免打扰
-                menus.push({
-                    title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
-                    icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
-                    onClick: () => { if (channelInfo) this.onMute(channelInfo) }
-                })
+                // 4. 免打扰 / 关闭免打扰（子区不显示，勿扰状态继承父群组）
+                if (channel?.channelType !== ChannelTypeCommunityTopic) {
+                    menus.push({
+                        title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
+                        icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
+                        onClick: () => { if (channelInfo) this.onMute(channelInfo) }
+                    })
+                }
 
                 // 5. 展开/收起子区（compact 模式下、群组且有子区时显示）
                 if (compact && channel && channel.channelType === ChannelTypeGroup && threadsByParent.has(channel.channelID)) {
@@ -740,44 +742,52 @@ export default class ConversationList extends Component<ConversationListProps, C
                 // 6. 分隔线
                 menus.push({ separator: true } as ContextMenusData)
 
-                // 7. 更多（子菜单：清空聊天记录 / 关闭并清空）
-                menus.push({
-                    title: "更多",
-                    icon: "M12 12m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 5m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 19m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0",
-                    children: [
-                        {
-                            title: "清空聊天记录",
-                            danger: true,
-                            onClick: () => {
-                                if (!channel) return
-                                Modal.confirm({
-                                    title: '确认清空',
-                                    content: '确定要清空所有聊天记录吗？此操作不可撤销。',
-                                    okText: '确定',
-                                    cancelText: '取消',
-                                    onOk: () => { this.onClearMessages(channel) },
-                                })
-                            }
-                        },
-                        {
-                            title: "关闭窗口并清空记录",
-                            danger: true,
-                            onClick: () => {
-                                if (!channel) return
-                                Modal.confirm({
-                                    title: '确认关闭并清空',
-                                    content: '确定要关闭窗口并清空所有聊天记录吗？此操作不可撤销。',
-                                    okText: '确定',
-                                    cancelText: '取消',
-                                    onOk: () => {
-                                        this.onCloseChat(channel)
-                                        this.onClearMessages(channel)
-                                    },
-                                })
-                            }
-                        },
-                    ]
-                })
+                // 7. 清空聊天记录 / 关闭并清空
+                // 子区：直接展开到顶层（免打扰已去掉，菜单项够少）
+                // 群组：保留在「更多」子菜单里
+                const clearItems = [
+                    {
+                        title: "清空聊天记录",
+                        danger: true,
+                        onClick: () => {
+                            if (!channel) return
+                            Modal.confirm({
+                                title: '确认清空',
+                                content: '确定要清空所有聊天记录吗？此操作不可撤销。',
+                                okText: '确定',
+                                cancelText: '取消',
+                                onOk: () => { this.onClearMessages(channel) },
+                            })
+                        }
+                    },
+                    {
+                        title: "关闭窗口并清空记录",
+                        danger: true,
+                        onClick: () => {
+                            if (!channel) return
+                            Modal.confirm({
+                                title: '确认关闭并清空',
+                                content: '确定要关闭窗口并清空所有聊天记录吗？此操作不可撤销。',
+                                okText: '确定',
+                                cancelText: '取消',
+                                onOk: () => {
+                                    this.onCloseChat(channel)
+                                    this.onClearMessages(channel)
+                                },
+                            })
+                        }
+                    },
+                ]
+
+                if (channel?.channelType === ChannelTypeCommunityTopic) {
+                    menus.push(...clearItems)
+                } else {
+                    menus.push({
+                        title: "更多",
+                        icon: "M12 12m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 5m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M12 19m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0",
+                        children: clearItems,
+                    })
+                }
 
                 return menus
             })()} />

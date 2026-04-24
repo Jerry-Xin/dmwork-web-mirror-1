@@ -12,7 +12,6 @@ import MarkdownContent from "../Text/MarkdownContent";
 import MessageRow from "../../ui/message/MessageRow";
 import { getFileMessageUI } from "../../bridge/message/useFileMessageUI";
 import { isSafeUrl } from "../../Utils/security";
-import { canPreviewInPanel } from "../../Components/FilePreviewPanel";
 
 export { FileContent } from "./FileContent";
 
@@ -286,26 +285,6 @@ function getExtension(extension: string, name?: string): string {
   return "";
 }
 
-function isPreviewable(extension: string, name?: string): boolean {
-  const ext = getExtension(extension, name);
-  return [
-    "pdf",
-    "png",
-    "jpg",
-    "jpeg",
-    "gif",
-    "bmp",
-    "webp",
-    "md",
-    "txt",
-  ].includes(ext);
-}
-
-function isTextFile(extension: string, name?: string): boolean {
-  const ext = getExtension(extension, name);
-  return ["md", "txt"].includes(ext);
-}
-
 const SMALL_FILE_THRESHOLD = 1024 * 1024; // 1MB 以下不显示进度条
 
 /** task 自身支持的重试接口（MediaMessageUploadTask 实现） */
@@ -410,29 +389,17 @@ export class FileCell extends MessageCell<any, FileCellState> {
 
     const ext = getExtension(content.extension, content.name);
 
-    // 优先使用右侧面板预览（支持的文件类型）
-    if (canPreviewInPanel(ext, content.name)) {
-      const previewData = {
-        url,
-        name: content.name || "未知文件",
-        extension: ext,
-        size: content.size,
-        // 携带来源频道信息（用于判断是否在子区面板内触发）
-        sourceChannelId: message.channel.channelID,
-        sourceChannelType: message.channel.channelType,
-      };
-      WKApp.mittBus.emit("wk:file-preview", previewData);
-      return;
-    }
-
-    // 文本文件使用弹窗预览
-    if (isTextFile(content.extension, content.name)) {
-      this.handleTextPreview(url, content.name, ext);
-      return;
-    }
-
-    // 其他文件在新窗口打开
-    window.open(url, "_blank");
+    // 所有文件都发送预览事件，由面板决定如何渲染（支持的显示内容，不支持的显示提示）
+    const previewData = {
+      url,
+      name: content.name || "未知文件",
+      extension: ext,
+      size: content.size,
+      // 携带来源频道信息（用于判断是否在子区面板内触发）
+      sourceChannelId: message.channel.channelID,
+      sourceChannelType: message.channel.channelType,
+    };
+    WKApp.mittBus.emit("wk:file-preview", previewData);
   };
 
   handleTextPreview = async (url: string, name: string, extension: string) => {
@@ -472,7 +439,6 @@ export class FileCell extends MessageCell<any, FileCellState> {
     const { message, context } = this.props;
     const content = message.content as FileContent;
     const iconInfo = getFileIconInfo(content.extension, content.name);
-    const canPreview = isPreviewable(content.extension, content.name);
     const { uploadProgress, uploadStatus } = this.state;
 
     const isUploading =
@@ -602,7 +568,11 @@ export class FileCell extends MessageCell<any, FileCellState> {
           onSenderNameClick={() => context.showUser(message.fromUID)}
         >
           <div>
-            <div className="wk-message-file">
+            <div
+              className="wk-message-file wk-message-file--clickable"
+              onClick={this.handlePreview}
+              title="点击预览"
+            >
               <div className="wk-message-file-icon">
                 <FileTypeIcon
                   extension={content.extension}
@@ -625,31 +595,13 @@ export class FileCell extends MessageCell<any, FileCellState> {
                 </div>
               </div>
               <div className="wk-message-file-actions">
-                {canPreview && (
-                  <div
-                    className="wk-message-file-action"
-                    title="预览"
-                    onClick={this.handlePreview}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="18"
-                      height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </div>
-                )}
                 <div
                   className="wk-message-file-action"
                   title="下载"
-                  onClick={this.handleDownload}
+                  onClick={(e) => {
+                    e.stopPropagation(); // 阻止冒泡，避免触发预览
+                    this.handleDownload();
+                  }}
                 >
                   <svg
                     viewBox="0 0 24 24"

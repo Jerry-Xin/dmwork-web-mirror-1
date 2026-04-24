@@ -65,9 +65,10 @@ export function getTextMessageUI(message: MessageWrap, selection?: MessageRowSel
   // 获取纯文本内容（优先使用编辑后的内容）
   const rawContent = message.content as any
   const remoteExtra = (message.message as any)?.remoteExtra
-  const plainText = (remoteExtra?.isEdit && remoteExtra?.contentEdit)
-    ? remoteExtra.contentEdit
-    : (rawContent?.text || parts.map((p: Part) => p.text).join('') || '')
+  const effectiveContent = (remoteExtra?.isEdit && remoteExtra?.contentEdit)
+    ? remoteExtra.contentEdit as any
+    : rawContent
+  const plainText = effectiveContent?.text || parts.map((p: Part) => p.text).join('') || ''
 
   return {
     row: rowProps,
@@ -126,9 +127,10 @@ export function useTextMessageUI(message: MessageWrap) {
     // 获取纯文本内容（优先使用编辑后的内容）
     const rawContent = message.content as any
     const remoteExtra = (message.message as any)?.remoteExtra
-    const plainText = (remoteExtra?.isEdit && remoteExtra?.contentEdit)
-      ? remoteExtra.contentEdit
-      : (rawContent?.text || parts.map((p: Part) => p.text).join('') || '')
+    const effectiveContent = (remoteExtra?.isEdit && remoteExtra?.contentEdit)
+      ? remoteExtra.contentEdit as any
+      : rawContent
+    const plainText = effectiveContent?.text || parts.map((p: Part) => p.text).join('') || ''
 
     return {
       content: plainText,

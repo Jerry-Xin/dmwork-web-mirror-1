@@ -147,7 +147,7 @@
 
 .wk-voice-wave-bar {
   width: 3px;
-  background-color: var(--wk-brand-primary, #7f3bf5);
+  background-color: #7f3bf5;
   border-radius: 1.5px;
   animation: wk-voice-wave 0.8s ease-in-out infinite;
 }

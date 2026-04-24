@@ -579,6 +579,18 @@ body[theme-mode=dark] .wk-conversationlist:hover::-webkit-scrollbar-thumb {
     gap: 2px;
 }
 
+
+/* 子区名称比父群组小且不加粗，视觉层级区分 */
+.wk-conv-compact-item--thread .wk-conv-compact-name {
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* 未读子区：保持加粗（防止被上面的 fw400 覆盖） */
+.wk-conv-compact-item--thread.wk-conv-compact-item--unread .wk-conv-compact-name {
+    font-weight: 600;
+}
+
 /* 子区 icon 容器贴合 icon 尺寸，不撑空白 */
 .wk-conv-compact-item--thread .wk-conv-compact-icon {
     width: 13px;

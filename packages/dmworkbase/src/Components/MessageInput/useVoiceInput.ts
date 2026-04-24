@@ -237,9 +237,8 @@ export default function useVoiceInput(
         } catch (err) {
           // PRD: 转写失败时 Toast「转写失败，请重试」
           Toast.error("转写失败，请重试");
-          const error =
-            err instanceof Error ? err : new Error("Transcription failed");
-          if (onError) onError(error);
+          // 统一使用 "Transcription failed" 确保 VoiceInputIndicator 能正确过滤，避免双重 Toast
+          if (onError) onError(new Error("Transcription failed"));
         } finally {
           setIsTranscribing(false);
           contextTextRef.current = undefined;

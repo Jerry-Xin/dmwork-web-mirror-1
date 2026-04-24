@@ -19,6 +19,19 @@ interface PickerContextMenuOptions {
   onShowMessage?: (message: string) => void;
 }
 
+function guardAsync(
+  fn: () => Promise<void>,
+  onShowMessage?: (message: string) => void,
+): () => Promise<void> {
+  return async () => {
+    try {
+      await fn();
+    } catch (err) {
+      onShowMessage?.(err instanceof Error ? err.message : "操作失败");
+    }
+  };
+}
+
 function getSpaceId(onShowMessage?: (message: string) => void) {
   const spaceId = WKApp.shared.currentSpaceId;
   if (spaceId) {
@@ -45,6 +58,7 @@ export function buildChannelPickerItemContextMenus({
   confirm,
   onOpenCreateCategory,
   onConversationClosed,
+  onShowMessage,
 }: PickerContextMenuOptions) {
   return (item: ChannelPickerItem): ContextMenusData[] => {
     const channel = new Channel(item.channelId, item.channelType);
@@ -54,14 +68,14 @@ export function buildChannelPickerItemContextMenus({
       menus.push({
         title: "标为已读",
         icon: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
-        onClick: async () => {
+        onClick: guardAsync(async () => {
           await WKApp.apiClient.put("conversation/clearUnread", {
             channel_id: item.channelId,
             channel_type: item.channelType,
             unread: 0,
           });
           await refresh();
-        },
+        }, onShowMessage),
       });
     }
 
@@ -69,11 +83,11 @@ export function buildChannelPickerItemContextMenus({
       title: "关闭聊天窗口",
       icon: "M18 6 6 18 M6 6l12 12",
       onClick: () => {
-        confirm("确定要关闭此聊天窗口吗？", async () => {
+        confirm("确定要关闭此聊天窗口吗？", guardAsync(async () => {
           await WKApp.conversationProvider.deleteConversation(channel);
           onConversationClosed?.(item);
           await refresh();
-        });
+        }, onShowMessage));
       },
     });
 
@@ -85,12 +99,12 @@ export function buildChannelPickerItemContextMenus({
         .map((category) => ({
           title: category.name,
           checked: false,
-          onClick: async () => {
+          onClick: guardAsync(async () => {
             await CategoryService.moveGroupToCategory(item.channelId, {
               category_id: category.id,
             });
             await refresh();
-          },
+          }, onShowMessage),
         }));
 
       moveToChildren.push({ separator: true } as ContextMenusData);
@@ -115,12 +129,12 @@ export function buildChannelPickerItemContextMenus({
           onClick: () => {
             confirm(
               `确定将此群聊从「${currentCategoryName}」移出到默认分组吗？`,
-              async () => {
+              guardAsync(async () => {
                 await CategoryService.moveGroupToCategory(item.channelId, {
                   category_id: defaultCategory.id,
                 });
                 await refresh();
-              }
+              }, onShowMessage)
             );
           },
         });
@@ -130,7 +144,7 @@ export function buildChannelPickerItemContextMenus({
     menus.push({
       title: item.muted ? "关闭免打扰" : "开启免打扰",
       icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
-      onClick: async () => {
+      onClick: guardAsync(async () => {
         await ChannelSettingManager.shared.mute(!item.muted, channel);
         await WKSDK.shared().channelManager.fetchChannelInfo(channel).catch(() => null);
         if (item.channelType === ChannelTypeGroup) {
@@ -149,7 +163,7 @@ export function buildChannelPickerItemContextMenus({
           );
         }
         await refresh();
-      },
+      }, onShowMessage),
     });
 
     menus.push({ separator: true } as ContextMenusData);
@@ -161,10 +175,10 @@ export function buildChannelPickerItemContextMenus({
           title: "清空聊天记录",
           danger: true,
           onClick: () => {
-            confirm("确定要清空所有聊天记录吗？此操作不可撤销。", async () => {
+            confirm("确定要清空所有聊天记录吗？此操作不可撤销。", guardAsync(async () => {
               await clearMessagesForItem(item);
               await refresh();
-            });
+            }, onShowMessage));
           },
         },
         {
@@ -173,12 +187,12 @@ export function buildChannelPickerItemContextMenus({
           onClick: () => {
             confirm(
               "确定要关闭窗口并清空所有聊天记录吗？此操作不可撤销。",
-              async () => {
+              guardAsync(async () => {
                 await clearMessagesForItem(item);
                 await WKApp.conversationProvider.deleteConversation(channel);
                 onConversationClosed?.(item);
                 await refresh();
-              }
+              }, onShowMessage)
             );
           },
         },
@@ -207,7 +221,7 @@ export function buildChannelPickerCategoryContextMenus({
       {
         title: "上移",
         icon: "M18 15 12 9 6 15",
-        onClick: async () => {
+        onClick: guardAsync(async () => {
           if (index <= 0) {
             return;
           }
@@ -219,12 +233,12 @@ export function buildChannelPickerCategoryContextMenus({
           [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
           await CategoryService.sort(spaceId, { category_ids: ids });
           await refresh();
-        },
+        }, onShowMessage),
       },
       {
         title: "下移",
         icon: "M6 9l6 6 6-6",
-        onClick: async () => {
+        onClick: guardAsync(async () => {
           if (index >= categories.length - 1) {
             return;
           }
@@ -236,7 +250,7 @@ export function buildChannelPickerCategoryContextMenus({
           [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
           await CategoryService.sort(spaceId, { category_ids: ids });
           await refresh();
-        },
+        }, onShowMessage),
       },
     ];
 
@@ -258,7 +272,7 @@ export function buildChannelPickerCategoryContextMenus({
     menus.push({
       title: "重命名",
       icon: "M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z m-2-2 4 4",
-      onClick: async () => {
+      onClick: guardAsync(async () => {
         const nextName = window.prompt("输入新的分组名称", category.name);
         const trimmed = nextName?.trim();
         if (!trimmed || trimmed === category.name) {
@@ -270,7 +284,7 @@ export function buildChannelPickerCategoryContextMenus({
         }
         await CategoryService.update(spaceId, category.id, { name: trimmed });
         await refresh();
-      },
+      }, onShowMessage),
     });
 
     menus.push(...orderMenus);
@@ -284,10 +298,10 @@ export function buildChannelPickerCategoryContextMenus({
         if (!spaceId) {
           return;
         }
-        confirm(`确定删除「${category.name}」吗？分组内群聊将移至默认分组。`, async () => {
+        confirm(`确定删除「${category.name}」吗？分组内群聊将移至默认分组。`, guardAsync(async () => {
           await CategoryService.delete(spaceId, category.id);
           await refresh();
-        });
+        }, onShowMessage));
       },
     });
 

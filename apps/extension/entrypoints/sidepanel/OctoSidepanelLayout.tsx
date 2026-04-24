@@ -130,45 +130,10 @@ export default class OctoSidepanelLayout extends Component<
   private composerInputContext?: OctoComposerInputContext;
   private conversationListenerRemover?: () => void;
   private channelInfoListenerRemover?: () => void;
-  private spinnerTimer?: ReturnType<typeof setInterval>;
   private logoutConfirmTimer?: ReturnType<typeof setTimeout>;
-  private spinnerVerbIndex = 0;
   // Space 切换序列号：快速点击不同 Space 时，只有最后一次的异步回调被允许写状态，
   // 旧 seq 的回调会被丢弃，避免 Space A 的数据覆盖进 Space B 的 UI
   private spaceSelectSeq = 0;
-
-  private SPINNER_VERBS = [
-    "思考",
-    "推理",
-    "梳理",
-    "分析",
-    "检索",
-    "归纳",
-    "斟酌",
-    "对齐",
-    "琢磨",
-    "审视",
-    "审阅",
-    "解析",
-    "推演",
-    "打磨",
-    "提炼",
-    "整理",
-    "研读",
-    "构思",
-    "拟定",
-    "沉浸",
-    "咀嚼",
-    "推敲",
-    "整合",
-    "抽丝剥茧",
-    "揣摩",
-    "复盘",
-    "盘算",
-    "铺开",
-    "梳头绪",
-    "穿针引线",
-  ];
 
   constructor(props: {}) {
     super(props);
@@ -306,7 +271,6 @@ export default class OctoSidepanelLayout extends Component<
   componentWillUnmount() {
     this.conversationListenerRemover?.();
     this.channelInfoListenerRemover?.();
-    if (this.spinnerTimer) clearInterval(this.spinnerTimer);
     if (this.logoutConfirmTimer) clearTimeout(this.logoutConfirmTimer);
     document.removeEventListener("keydown", this.handleEscKey);
     document.removeEventListener("click", this.handleClickOutsideSettings);
@@ -378,47 +342,6 @@ export default class OctoSidepanelLayout extends Component<
       this.setState({ showPicker: false });
     }
   };
-
-  private startSpinner() {
-    if (this.spinnerTimer) return;
-    this.spinnerVerbIndex = Math.floor(
-      Math.random() * this.SPINNER_VERBS.length
-    );
-    this.spinnerTimer = setInterval(() => {
-      this.spinnerVerbIndex =
-        (this.spinnerVerbIndex + 1) % this.SPINNER_VERBS.length;
-      const el = document.querySelector(
-        ".octo-sidepanel-v3 .verb"
-      ) as HTMLElement | null;
-      if (el) {
-        el.style.opacity = "0";
-        setTimeout(() => {
-          el.textContent = `Agent 正在 ${
-            this.SPINNER_VERBS[this.spinnerVerbIndex]
-          }…`;
-          el.style.opacity = "1";
-        }, 150);
-      }
-    }, 1500);
-  }
-
-  private stopSpinner() {
-    if (this.spinnerTimer) {
-      clearInterval(this.spinnerTimer);
-      this.spinnerTimer = undefined;
-    }
-  }
-
-  private renderSpinner() {
-    const verb =
-      this.SPINNER_VERBS[this.spinnerVerbIndex % this.SPINNER_VERBS.length];
-    return (
-      <div className="spinner-row">
-        <span className="dotz" />
-        <span className="verb">Agent 正在 {verb}…</span>
-      </div>
-    );
-  }
 
   private handleImageClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement;

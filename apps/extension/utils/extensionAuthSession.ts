@@ -126,6 +126,9 @@ export function installExtensionLogoutBridge(
           hasUnread: false,
         }),
       )
+      .catch((err) => {
+        console.error("[Extension] Logout chain failed:", err);
+      })
       .finally(() => {
         if (useOriginalLogout) {
           originalLogout();

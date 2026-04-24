@@ -223,13 +223,17 @@ async function openOptionsPage(): Promise<void> {
 }
 
 async function focusChromeWindow(): Promise<number | undefined> {
-  const currentWindow = await browser.windows.getLastFocused();
-  if (!currentWindow.id) {
+  try {
+    const currentWindow = await browser.windows.getLastFocused();
+    if (!currentWindow.id) {
+      return undefined;
+    }
+    await browser.windows.update(currentWindow.id, { focused: true });
+    return currentWindow.id;
+  } catch (err) {
+    console.debug("[Extension] focusChromeWindow failed:", err);
     return undefined;
   }
-
-  await browser.windows.update(currentWindow.id, { focused: true });
-  return currentWindow.id;
 }
 
 async function applyPreferencesToUi(): Promise<void> {
@@ -456,7 +460,9 @@ async function handleRuntimeMessage(
             type: EXTENSION_MESSAGE_TYPE.openConversation,
             target: message.target,
           } satisfies ExtensionRuntimeMessage)
-          .catch(() => {});
+          .catch((err: unknown) => {
+            console.debug("[Extension] openConversation notify failed:", err);
+          });
       });
       return;
     }

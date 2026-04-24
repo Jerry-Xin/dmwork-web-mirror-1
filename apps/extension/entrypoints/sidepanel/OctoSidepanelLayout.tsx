@@ -1015,7 +1015,7 @@ export default class OctoSidepanelLayout extends Component<
     });
 
     const visible = items.filter((t) => pinnedIds.has(t.channelId));
-    const hiddenCount = items.length - visible.length;
+    const hiddenCount = items.length;
 
     return { visible, hiddenCount };
   }

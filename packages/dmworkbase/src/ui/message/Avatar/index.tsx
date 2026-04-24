@@ -16,6 +16,9 @@ export interface AvatarProps {
   
   /** alt 文本 */
   alt?: string
+
+  /** 头像点击回调 */
+  onClick?: (e: React.MouseEvent) => void
 }
 
 /**
@@ -28,12 +31,14 @@ export default function Avatar({
   size = 32,
   isOnline,
   showOnlineDot,
-  alt = '头像'
+  alt = '头像',
+  onClick,
 }: AvatarProps) {
   return (
     <div
       className="wk-msg-avatar"
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, cursor: onClick ? 'pointer' : undefined }}
+      onClick={onClick}
     >
       <img
         src={src}

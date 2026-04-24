@@ -49,6 +49,12 @@ export interface MessageRowProps {
 
   /** 右键菜单打开时保持 hover 高亮 */
   isActive?: boolean
+
+  /** 头像点击回调（私聊场景：点头像打开私聊） */
+  onAvatarClick?: (e: React.MouseEvent) => void
+
+  /** 发送者名称点击回调（@ 场景：点名字展示用户信息） */
+  onSenderNameClick?: () => void
 }
 
 /**
@@ -78,6 +84,8 @@ export default function MessageRow({
   onContextMenu,
   onClick,
   isActive,
+  onAvatarClick,
+  onSenderNameClick,
 }: MessageRowProps) {
   return (
     <div
@@ -123,6 +131,7 @@ export default function MessageRow({
             isOnline={isOnline}
             showOnlineDot
             alt={senderName}
+            onClick={onAvatarClick}
           />
         )}
         {/* 连续消息：头像占位,hover 时显示时间戳 */}
@@ -138,7 +147,11 @@ export default function MessageRow({
         {/* 发送者名称 + 时间戳（非连续消息时显示） */}
         {!isContinue && (
           <div className="wk-msg-row-header">
-            <span className="wk-msg-row-sender">{senderName}</span>
+            <span
+              className="wk-msg-row-sender"
+              style={{ cursor: onSenderNameClick ? 'pointer' : undefined }}
+              onClick={onSenderNameClick}
+            >{senderName}</span>
             <span className="wk-msg-row-timestamp">{timestamp}</span>
           </div>
         )}

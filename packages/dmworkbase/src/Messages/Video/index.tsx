@@ -150,9 +150,11 @@ export class VideoCell extends MessageCell<any, VideoCellState> {
                     {...rowProps}
                     onContextMenu={(event) => context.showContextMenus(message, event)}
                     isActive={context.isContextMenuOpen(message.message)}
-        showCheckbox={context.editOn()}
-        isSelected={!!message.checked}
-        onSelect={(selected) => context.checkeMessage(message.message, selected)}
+                    showCheckbox={context.editOn()}
+                    isSelected={!!message.checked}
+                    onSelect={(selected) => context.checkeMessage(message.message, selected)}
+                    onAvatarClick={(e) => context.onTapAvatar(message.fromUID, e)}
+                    onSenderNameClick={() => context.showUser(message.fromUID)}
                 >
                     <div style={{ position: 'relative' }}>
                         <VideoContentUI

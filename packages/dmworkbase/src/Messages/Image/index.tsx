@@ -169,10 +169,12 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
                     <MessageRow
                         {...uiProps.row}
                         onContextMenu={(event) => context.showContextMenus(message, event)}
-                    isActive={context.isContextMenuOpen(message.message)}
-        showCheckbox={context.editOn()}
-        isSelected={!!message.checked}
-        onSelect={(selected) => context.checkeMessage(message.message, selected)}
+                        isActive={context.isContextMenuOpen(message.message)}
+                        showCheckbox={context.editOn()}
+                        isSelected={!!message.checked}
+                        onSelect={(selected) => context.checkeMessage(message.message, selected)}
+                        onAvatarClick={(e) => context.onTapAvatar(message.fromUID, e)}
+                        onSenderNameClick={() => context.showUser(message.fromUID)}
                     >
                         {uiProps.isMulti
                             ? <MultiImage

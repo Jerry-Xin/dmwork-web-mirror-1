@@ -130,6 +130,8 @@ export class ThreadCreatedCell extends MessageCell {
         {...rowProps}
         onContextMenu={(event) => this.props.context.showContextMenus(message, event)}
         isActive={this.props.context.isContextMenuOpen(message.message)}
+        onAvatarClick={(e) => this.props.context.onTapAvatar(content.from_uid || message.fromUID, e)}
+        onSenderNameClick={() => this.props.context.showUser(content.from_uid || message.fromUID)}
       >
         <div className="wk-thread-created-card" onClick={this.handleClick}>
         {/* 消息正文预览 */}

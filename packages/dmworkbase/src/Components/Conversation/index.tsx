@@ -1662,8 +1662,31 @@ export class Conversation
                           const mn = new Mention();
                           mn.all = mention.all;
                           mn.uids = mention.uids;
-                          mn.entities = mention.entities;
                           content.mention = mn;
+                          // SDK encode() 会覆盖 mention，导致 entities 丢失
+                          // override encode()，在 SDK 生成的 bytes 后重新注入 entities
+                          if (mention.entities && mention.entities.length > 0) {
+                            const entities = mention.entities;
+                            // 1. 本地立即渲染：把 entities 写入 contentObj，走 entity 解析路径
+                            if (!content.contentObj) content.contentObj = {};
+                            if (!content.contentObj.mention) content.contentObj.mention = {};
+                            content.contentObj.mention.entities = entities;
+                            // 2. 发送给服务端：override encode()，把 entities 写入 payload
+                            const originalEncode = content.encode.bind(content);
+                            content.encode = () => {
+                              try {
+                                const bytes = originalEncode();
+                                // bytes 是 JSON 字符串的 Uint8Array，解码修改再编码回去
+                                const str = new TextDecoder().decode(bytes);
+                                const obj = JSON.parse(str);
+                                if (!obj.mention) obj.mention = {};
+                                obj.mention.entities = entities;
+                                return new TextEncoder().encode(JSON.stringify(obj));
+                              } catch {
+                                return originalEncode();
+                              }
+                            };
+                          }
                         }
                         if (vm.currentReplyMessage) {
                           if (vm.currentHandlerType === 2) {

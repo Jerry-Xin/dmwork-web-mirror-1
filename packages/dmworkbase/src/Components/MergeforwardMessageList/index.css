@@ -68,7 +68,7 @@
 .wk-mergeforwardmessagelist-content-msg-info-first-name {
     font-size: 14px;
     font-weight: 600;
-    color: #1C1C23;
+    color: var(--wk-text-primary);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -76,13 +76,13 @@
 
 .wk-mergeforwardmessagelist-content-msg-info-first-time {
     font-size: 14px;
-    color: rgba(28, 28, 35, 0.40);
+    color: var(--wk-text-tertiary);
 }
 
 /* 消息内容文字 */
 .wk-mergeforwardmessagelist-content-msg-info-second-msgcontent {
     font-size: 14px;
-    color: rgba(28, 28, 35, 0.8);
+    color: var(--wk-text-primary);
     line-height: 1.5;
     word-break: break-word;
 }
@@ -133,7 +133,7 @@
 
 .wk-mergeforward-file__name {
     font-size: 14px;
-    color: rgba(28, 28, 35, 0.80);
+    color: var(--wk-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -141,5 +141,5 @@
 
 .wk-mergeforward-file__size {
     font-size: 14px;
-    color: rgba(28, 28, 35, 0.40);
+    color: var(--wk-text-tertiary);
 }

@@ -7,6 +7,7 @@
   overflow: hidden;
   cursor: pointer;
   transition: opacity 0.2s;
+  max-width: 100%;
 }
 
 .wk-msg-single-image:hover {
@@ -18,7 +19,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: var(--wk-neutral-100, #F2F3F4);
+  background: var(--wk-bg-elevated, var(--wk-neutral-100, #F2F3F4));
 }
 
 /**
@@ -30,5 +31,16 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 660px;
+  max-width: 100%;
+}
+
+/* CLI 模式：图片宽度强制跟随侧边栏可用宽度 */
+body[data-layout="cli"] .wk-msg-single-image,
+body[data-layout="cli"] .wk-msg-multi-image {
+  max-width: 100%;
+}
+body[data-layout="cli"] .wk-msg-single-image img {
+  max-width: 100%;
+  width: auto;
+  height: auto;
 }

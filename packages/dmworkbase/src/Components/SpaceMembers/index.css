@@ -128,7 +128,7 @@ body[theme-mode=dark] .wk-spacemembers-item-name {
 }
 
 body[theme-mode=dark] .wk-spacemembers-action-btn {
-    border-color: #555;
+    border-color: var(--wk-text-secondary);
     color: #aaa;
 }
 

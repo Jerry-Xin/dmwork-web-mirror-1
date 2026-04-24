@@ -7,7 +7,7 @@
   display: flex;
   align-items: stretch;
   gap: 8px;
-  background: rgba(28, 28, 35, 0.04);
+  background: var(--wk-bg-hover);
   border-radius: 6px;
   padding: 6px 8px;
   cursor: pointer;
@@ -19,7 +19,7 @@
 .wk-reply-block__bar {
   width: 2px;
   border-radius: 1px;
-  background: rgba(28, 28, 35, 0.40);
+  background: var(--wk-text-tertiary);
   flex-shrink: 0;
   align-self: stretch;
   min-height: 18px;
@@ -36,7 +36,7 @@
 .wk-reply-block__name {
   font-size: 12px;
   font-weight: 400;
-  color: rgba(28, 28, 35, 0.60);
+  color: var(--wk-text-secondary);
   line-height: 18px;
   white-space: nowrap;
   overflow: hidden;
@@ -46,7 +46,7 @@
 .wk-reply-block__digest {
   font-size: 12px;
   font-weight: 400;
-  color: rgba(28, 28, 35, 0.60);
+  color: var(--wk-text-secondary);
   line-height: 18px;
   white-space: nowrap;
   overflow: hidden;

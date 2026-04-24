@@ -60,7 +60,7 @@ body[theme-mode=dark] .wk-space-item--selected:hover::before {
 .wk-space-item__name {
     font-size: 14px;                   /* Figma: Space 名称约 14px */
     font-weight: 500;
-    color: rgba(28, 28, 35, 0.80);    /* Figma: 普通态 80% */
+    color: var(--wk-text-primary);    /* Figma: 普通态 80% */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -76,7 +76,7 @@ body[theme-mode=dark] .wk-space-item__name { color: var(--wk-text-primary); }
 
 .wk-space-item__meta {
     font-size: 12px;
-    color: rgba(28, 28, 35, 0.40);    /* Figma: 成员数 40% */
+    color: var(--wk-text-tertiary);    /* Figma: 成员数 40% */
     line-height: 18px;
     margin-top: 0;
 }

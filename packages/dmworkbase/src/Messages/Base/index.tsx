@@ -86,6 +86,15 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
 
     getMessageStyle(hasContinue: boolean, message: MessageWrap) {
         const messageStyle: any = {}
+        const { context } = this.props
+        const isCli = typeof context.getReadingMode === "function" && context.getReadingMode() === "cli"
+        if (isCli) {
+            messageStyle.marginTop = "0px"
+            messageStyle.marginBottom = "2px"
+            messageStyle.marginLeft = "0px"
+            messageStyle.marginRight = "0px"
+            return messageStyle
+        }
         messageStyle.marginBottom = "15px"
         if (this.forceStandalone()) {
             return messageStyle
@@ -277,8 +286,12 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
 
                         {/* 消息体列 */}
                         <div className="wk-msg-body">
-                            {/* Head 行：name + time (发送和接收都显示,布局一致) */}
-                            {showHead && !isAi && (
+                            {/* Head 行：name + time
+                                - 消息模式（非 AI）：外部 head
+                                - CLI 模式 AI 消息：外部 head（统一样式，与普通消息一致的圆点+name+time）
+                                - 消息模式 AI 消息：内部 ai-panel-head（不在此处渲染）
+                            */}
+                            {showHead && (!isAi || isCli) && !message.send && (
                                 <div className="wk-msg-head">
                                     <span className="wk-msg-head-name" style={{ color: getTitleColor(displayName) }}>
                                         {displayName}
@@ -307,8 +320,8 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                                 <div className="wk-message-base-bubble" style={bubbleStyle} onContextMenu={(event) => {
                                     context.showContextMenus(message.message, event)
                                 }} data-message-seq={message.messageSeq}>
-                                    {/* AI 面板头部 */}
-                                    {isAi && showHead && (
+                                    {/* AI 面板头部（仅消息模式显示，CLI 模式下由外部 wk-msg-head 取代） */}
+                                    {isAi && showHead && !isCli && (
                                         <div className="wk-ai-panel-head">
                                             <span className="wk-ai-panel-agent-name">{displayName}</span>
                                             <AiBadge size="small" />
@@ -317,8 +330,8 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                                     <div className="wk-message-base-content">
                                         {this.props.children}
                                     </div>
-                                    {/* AI 面板底栏 */}
-                                    {isAi && (
+                                    {/* AI 面板底栏（CLI 下时间已在外部 head 显示，隐藏底栏） */}
+                                    {isAi && !isCli && (
                                         <div className="wk-ai-panel-foot">
                                             <span className="messageTime">{timeStr}</span>
                                         </div>

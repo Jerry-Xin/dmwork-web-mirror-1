@@ -51,7 +51,7 @@ body[theme-mode=dark] .wk-slash-command-item-active {
 .wk-slash-command-name {
     font-size: 14px;
     font-weight: 600;
-    color: #333;
+    color: var(--wk-text-primary);
 }
 
 body[theme-mode=dark] .wk-slash-command-name {

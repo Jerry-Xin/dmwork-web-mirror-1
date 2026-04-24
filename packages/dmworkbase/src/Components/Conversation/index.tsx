@@ -1435,7 +1435,7 @@ export class Conversation
                 )}
                 style={{
                   background: chatBg
-                    ? `url(${chatBg}) rgb(245, 247, 249)`
+                    ? `url(${chatBg}) var(--wk-bg-app, rgb(245, 247, 249))`
                     : undefined,
                 }}
               >

@@ -23,7 +23,7 @@
 }
 
 .wk-messageinput-card:focus-within {
-  border-color: #1c1c23;
+  border-color: var(--wk-text-primary);
 }
 
 /* 展开状态 */
@@ -163,7 +163,7 @@
   flex: 1;
   font-size: 14px;
   line-height: 1.4;
-  color: #333;
+  color: var(--wk-text-primary);
 }
 
 .wk-replyview-new-label {
@@ -181,7 +181,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #555;
+  color: var(--wk-text-secondary);
 }
 
 /* 输入框区域 */

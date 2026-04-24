@@ -48,7 +48,7 @@ body[theme-mode=dark] .wk-spacesettings-title {
     font-size: 13px;
     font-weight: 500;
     margin-bottom: 6px;
-    color: #333;
+    color: var(--wk-text-primary);
 }
 
 body[theme-mode=dark] .wk-spacesettings-label {

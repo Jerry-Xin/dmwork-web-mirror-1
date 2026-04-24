@@ -16,7 +16,7 @@ export type OctoLayout = 'message' | 'cli'
 const THEME_KEY = 'theme-mode'
 const LAYOUT_KEY = 'octo_v3_layout'
 const DEFAULT_THEME: OctoTheme = 'light'
-const DEFAULT_LAYOUT: OctoLayout = 'message'
+const DEFAULT_LAYOUT: OctoLayout = 'cli'
 
 function readTheme(): OctoTheme {
   try {

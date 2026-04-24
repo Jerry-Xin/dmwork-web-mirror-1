@@ -27,7 +27,7 @@
 .wk-mergeforwards-content-title {
   font-size: 14px;
   font-weight: 500;
-  color: #1C1C23;
+  color: var(--wk-text-primary);
   margin-bottom: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -44,7 +44,7 @@
 
 .wk-mergeforwards-content-item {
   font-size: 13px;
-  color: rgba(28, 28, 35, 0.4);
+  color: var(--wk-text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -63,7 +63,7 @@
   align-items: center;
   justify-content: space-between;
   font-size: 12px;
-  color: rgba(28, 28, 35, 0.35);
+  color: var(--wk-text-tertiary);
 }
 
 .wk-mergeforwards-content-tip p {
@@ -89,7 +89,7 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    color: rgba(28, 28, 35, 0.6);
+    color: var(--wk-text-secondary);
 }
 
 /* Semi Modal header 对齐 Figma */
@@ -105,7 +105,7 @@
 .wk-mergeforward-modal .semi-modal-title {
     font-size: 16px !important;
     font-weight: 500 !important;
-    color: #1c1c23 !important;
+    color: var(--wk-text-primary) !important;
 }
 
 /* Semi Modal body 内容区 */

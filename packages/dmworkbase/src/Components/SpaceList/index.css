@@ -47,7 +47,7 @@ body[theme-mode=dark] .wk-spacelist-title {
 
 .wk-spacelist-action-btn:hover {
     background-color: rgba(0, 0, 0, 0.06);
-    color: #555;
+    color: var(--wk-text-secondary);
 }
 
 body[theme-mode=dark] .wk-spacelist-action-btn:hover {
@@ -174,7 +174,7 @@ body[theme-mode=dark] .wk-spacelist-item-name {
 
 .wk-spacelist-item-action:hover {
     background-color: rgba(0, 0, 0, 0.08);
-    color: #555;
+    color: var(--wk-text-secondary);
 }
 
 body[theme-mode=dark] .wk-spacelist-item-action:hover {

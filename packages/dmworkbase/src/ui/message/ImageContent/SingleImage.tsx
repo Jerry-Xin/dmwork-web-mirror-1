@@ -46,7 +46,10 @@ export default function SingleImage({
   return (
     <div
       className="wk-msg-single-image"
-      style={{ width: displayWidth, height: displayHeight }}
+      style={{
+        width: displayWidth,
+        aspectRatio: `${displayWidth} / ${displayHeight}`,
+      }}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}

@@ -24,15 +24,11 @@
 }
 
 .wk-message-text-send {
-    color: var(--wk-text-primary, black);
+    color: var(--wk-text-primary);
 }
 
 .wk-message-text-recv {
-    color: black;
-}
-
-body[theme-mode=dark] .wk-message-text-recv {
-    color: white;
+    color: var(--wk-text-primary);
 }
 
 .wk-message-text-richemoji {

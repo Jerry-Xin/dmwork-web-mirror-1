@@ -38,7 +38,7 @@
 .wk-message-file-name {
     font-size: 14px;
     font-weight: 500;
-    color: rgba(28, 28, 35, 0.80);
+    color: var(--wk-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -50,7 +50,7 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
-    color: rgba(28, 28, 35, 0.40);
+    color: var(--wk-text-tertiary);
 }
 
 .wk-message-file-ext {

@@ -22,7 +22,7 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 22px;
-  color: rgba(28, 28, 35, 1.0);
+  color: var(--wk-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -57,7 +57,7 @@
 
 /* 参与者文字 */
 .wk-thread-created-participants {
-  color: rgba(28, 28, 35, 0.6);
+  color: var(--wk-text-secondary);
   font-size: 12px;
   white-space: nowrap;
   margin-left: auto;

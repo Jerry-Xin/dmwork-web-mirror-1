@@ -21,8 +21,8 @@
 
 
 .wk-message-base-send {
-    /* 发送消息也靠左对齐,和接收消息布局一致 */
-    margin-left: 15px;
+    align-items: flex-end;
+    margin-right: 5px;
 }
 
 .wk-message-base-recv {
@@ -62,10 +62,11 @@
 }
 
 .wk-message-base-send .wk-message-base-box {
-    flex-direction: row;
+    flex-direction: row-reverse;
+    margin-right: 10px;
 }
 
-/* 自己的消息也显示头像（通过 row-reverse 位于右侧） */
+/* 自己的消息：row-reverse 使头像位于右侧 */
 
 /* ── 消息体列（head + bubble） ── */
 .wk-msg-body {
@@ -76,7 +77,7 @@
 }
 
 .wk-message-base-send .wk-msg-body {
-    align-items: flex-start;
+    align-items: flex-end;
 }
 
 /* ── Head 行（name + time，在气泡外面） ── */
@@ -509,5 +510,148 @@ body[theme-mode=dark] .wk-message-base-bubble-box.recv .wk-message-base-bubble  
 
 .wk-message-checkbox-inner--checked {
   background: #1C1C23;
-  border-color: #1C1C23;
+  border-color: var(--wk-text-primary);
+}
+
+/* ================================================================
+   CLI 模式（简化版，对标原型 Claude Code 终端风）
+   - 32px 头像 → 7px 小圆点
+   - 圆点下方竖线贯穿到下一条消息
+   - 气泡去掉（透明背景、无 padding）
+   - 13px/1.6 字号
+   - 消息间距 2px（inline margin 由 index.tsx.getMessageStyle 控制）
+   ================================================================ */
+
+body[data-layout="cli"] .wk-message-base-recv,
+body[data-layout="cli"] .wk-message-base-send {
+  margin-left: 12px !important;
+  margin-right: 12px !important;
+}
+
+/* 发送消息在 CLI 下也从左到右，与接收消息一致 */
+body[data-layout="cli"] .wk-message-base-send .wk-message-base-box {
+  flex-direction: row;
+  margin-right: 0;
+}
+body[data-layout="cli"] .wk-message-base-send .wk-msg-body {
+  align-items: flex-start;
+}
+
+/* 头像容器：缩成 16px 列，承载圆点 + 竖线伪元素 */
+body[data-layout="cli"] .senderAvatar,
+body[data-layout="cli"] .senderAvatar-placeholder {
+  width: 16px !important;
+  height: auto !important;
+  min-height: 16px;
+  position: relative;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+body[data-layout="cli"] .senderAvatar > * {
+  display: none !important;
+}
+
+/* 7px 圆点 */
+body[data-layout="cli"] .senderAvatar::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wk-ink-45, #8a8f98);
+  z-index: 1;
+}
+
+/* 竖线：从圆点下方延伸到消息底部 */
+body[data-layout="cli"] .senderAvatar::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 16px;
+  bottom: -6px;
+  width: 1px;
+  background: var(--wk-ink-08, rgba(0, 0, 0, 0.08));
+}
+
+/* 发送消息：圆点用成功色 */
+body[data-layout="cli"] .wk-message-base-send .senderAvatar::before {
+  background: var(--wk-success, #10b981);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+/* AI 机器人：圆点用品牌色 */
+body[data-layout="cli"] .wk-message-base-bubble-box.ai-panel {
+  background: transparent !important;
+}
+body[data-layout="cli"]
+  .wk-message-base-recv
+  .wk-message-base-bubble-box.ai-panel
+  ~ *
+  .senderAvatar::before,
+body[data-layout="cli"] .wk-message-base-recv:has(.ai-panel) .senderAvatar::before {
+  background: var(--wk-brand, #7170ff);
+  box-shadow: 0 0 0 2px var(--wk-brand-glow, rgba(113, 112, 255, 0.2));
+}
+
+/* 气泡完全透明化 */
+body[data-layout="cli"] .wk-message-base-bubble-box.send .wk-message-base-bubble,
+body[data-layout="cli"] .wk-message-base-bubble-box.recv .wk-message-base-bubble {
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  max-width: 100%;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--wk-text-primary);
+}
+
+body[data-layout="cli"] .wk-message-base-bubble-box.ai-panel .wk-message-base-bubble {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+body[data-layout="cli"] .wk-message-base-bubble-box.ai-panel .wk-message-base-bubble::before {
+  display: none;
+}
+body[data-layout="cli"] .wk-message-base-bubble-box.ai-panel .wk-ai-panel-head {
+  padding: 0 0 2px 0;
+  border-bottom: none;
+}
+body[data-layout="cli"] .wk-message-base-bubble-box.ai-panel .wk-message-base-content {
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+body[data-layout="cli"] .wk-message-base-bubble-box.ai-panel .wk-ai-panel-foot {
+  display: none;
+}
+
+/* Head 行：紧凑 */
+body[data-layout="cli"] .wk-msg-head {
+  margin-bottom: 1px;
+  gap: 6px;
+}
+body[data-layout="cli"] .wk-msg-head-name {
+  font-size: 12.5px;
+}
+body[data-layout="cli"] .wk-msg-head-time {
+  font-size: 11px;
+}
+/* 发送消息 head 强制左对齐（覆盖 wk-msg-head-right） */
+body[data-layout="cli"] .wk-msg-head-right {
+  justify-content: flex-start;
+}
+body[data-layout="cli"] .wk-message-base-send .wk-msg-head {
+  justify-content: flex-start;
+}
+
+/* 消息列间距：box 的 gap 改小 */
+body[data-layout="cli"] .wk-message-base-box {
+  gap: 8px;
+}
+body[data-layout="cli"] .wk-message-base-send .wk-message-base-box {
+  gap: 8px;
 }

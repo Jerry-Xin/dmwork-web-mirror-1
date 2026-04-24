@@ -27,7 +27,7 @@ body[theme-mode=dark] .wk-item-message:hover {
 
 .wk-item-message-name {
     margin-left: 15px;
-    color: #333;
+    color: var(--wk-text-primary);
     font-size: 14px;
     font-weight: 500;
     grid-column: 1 / 2; /* 第一列 */

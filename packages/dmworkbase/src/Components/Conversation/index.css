@@ -127,7 +127,7 @@ body[theme-mode="dark"] .wk-conversation-content {
 .wk-fold-session-participant-name {
     font-size: 14px;
     font-weight: 600 !important;
-    color: #000000;
+    color: var(--wk-text-primary);
 }
 
 /* AI 名称样式 (和普通名字一样,不需要特殊样式) */
@@ -206,7 +206,7 @@ body[theme-mode="dark"] .wk-conversation-content {
 .wk-fold-session-time {
     font-size: 14px;
     font-weight: 400;
-    color: rgba(28, 28, 35, 0.4);
+    color: var(--wk-text-tertiary);
 }
 
 /* 标题行外层的 toggle 已移到卡片右上角,这些样式已废弃 */
@@ -298,12 +298,12 @@ body[theme-mode="dark"] .wk-conversation-content {
     gap: 8px;
 }
 
-/* 姓名 Tag: 白底黑字, 20px高, 8px padding */
+/* 姓名 Tag: 浅色 chip 背景 + token 文字色，两主题都可读 */
 .wk-fold-msg-name {
     font-size: 12px;
     font-weight: 700;
-    color: rgba(28, 28, 35, 1.0);
-    background: rgba(255, 255, 255, 1.0);
+    color: var(--wk-text-primary);
+    background: var(--wk-bg-elevated);
     border-radius: 3px;
     padding: 2px 8px;
     height: 20px;
@@ -315,13 +315,13 @@ body[theme-mode="dark"] .wk-conversation-content {
 .wk-fold-msg-time {
     font-size: 12px;
     font-weight: 400;
-    color: rgba(28, 28, 35, 0.4);
+    color: var(--wk-text-tertiary);
 }
 
 .wk-fold-msg-text {
     font-size: 14px;
     font-weight: 400;
-    color: rgba(28, 28, 35, 0.8);
+    color: var(--wk-text-primary);
     line-height: 1.6;
 }
 
@@ -599,7 +599,7 @@ body[theme-mode="dark"] .wk-conversation-content {
   flex: 1;
   font-size: 14px;
   line-height: 1.4;
-  color: #333;
+  color: var(--wk-text-primary);
 }
 
 .wk-replyview-new-label {
@@ -617,7 +617,7 @@ body[theme-mode="dark"] .wk-conversation-content {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #555;
+  color: var(--wk-text-secondary);
 }
 
 .wk-conversation-hasreply .wk-messageinput-box {
@@ -687,7 +687,7 @@ body[theme-mode="dark"] .wk-conversation-content {
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    color: #1c1c23;
+    color: var(--wk-text-primary);
     white-space: nowrap;
     transition: background 0.15s;
     line-height: 1;
@@ -696,7 +696,7 @@ body[theme-mode="dark"] .wk-conversation-content {
 }
 
 .wk-multiplepanel-btn:hover {
-    background: rgba(28, 28, 35, 0.08);
+    background: var(--wk-bg-hover);
 }
 
 /* 删除按钮：危险色 */
@@ -727,15 +727,15 @@ body[theme-mode="dark"] .wk-conversation-content {
     border: none;
     background: transparent;
     cursor: pointer;
-    color: rgba(28, 28, 35, 0.4);
+    color: var(--wk-text-tertiary);
     transition: background 0.15s, color 0.15s;
     flex-shrink: 0;
     padding: 0;
 }
 
 .wk-multiplepanel-close:hover {
-    background: rgba(28, 28, 35, 0.08);
-    color: #1c1c23;
+    background: var(--wk-bg-hover);
+    color: var(--wk-text-primary);
 }
 
 .wk-conversationpositionview {
@@ -975,7 +975,7 @@ body[theme-mode="dark"] .wk-conversation.wk-conversation--cli .wk-msg-row-avatar
 
 /* 行级紧凑：padding 跟老 UI 保持一致 */
 .wk-conversation.wk-conversation--cli .wk-msg-row {
-    padding: 2px 16px;
+    padding: 2px 0;
     /* MessageRow 自身用 margin-top: 24px !important (非连续) / 12px !important (连续)，
        CLI 模式需要覆盖到紧凑的 4px / 2px */
     margin-top: 4px !important;
@@ -1154,6 +1154,44 @@ body[theme-mode="dark"] .wk-conversation.wk-conversation--cli .wk-msg-row-avatar
 .wk-conversation.wk-conversation--cli .wk-message-item-fold-session-shell {
     margin-left: 0;
     gap: 8px;
+}
+
+/* title-row（卡片上方 "参与者 Tag 时间 展开按钮"）在窄侧边栏下紧凑布局 */
+.wk-conversation.wk-conversation--cli .wk-fold-session-title-row {
+    max-width: 100%;
+    gap: 6px;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+.wk-conversation.wk-conversation--cli .wk-fold-session-participants {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+.wk-conversation.wk-conversation--cli .wk-fold-session-participant-name,
+.wk-conversation.wk-conversation--cli .wk-fold-session-participant-name-ai {
+    font-size: 12.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+.wk-conversation.wk-conversation--cli .wk-fold-session-tag {
+    font-size: 10px;
+    height: 14px;
+    line-height: 14px;
+    padding: 0 4px;
+    flex-shrink: 0;
+}
+.wk-conversation.wk-conversation--cli .wk-fold-session-time {
+    font-size: 11px;
+    flex-shrink: 0;
+}
+.wk-conversation.wk-conversation--cli .wk-fold-session-toggle-btn {
+    font-size: 11px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 /* 32px 渐变 AI 图标：CLI 下收缩为 16px 时间轴列（与 .senderAvatar 同宽） */
 .wk-conversation.wk-conversation--cli .wk-message-item-fold-session-avatar {

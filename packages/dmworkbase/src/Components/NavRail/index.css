@@ -144,7 +144,7 @@
 .wk-navrail__dropdown-title {
     font-size: 12px;                   /* Figma: 12px Semibold */
     font-weight: 600;
-    color: rgba(28, 28, 35, 0.40);    /* Figma: 40% */
+    color: var(--wk-text-tertiary);    /* Figma: 40% */
     padding: 8px 12px;                 /* Figma: T8 B8 L12 R12 */
     letter-spacing: 0;
     flex-shrink: 0;

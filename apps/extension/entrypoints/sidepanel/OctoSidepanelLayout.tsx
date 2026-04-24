@@ -89,8 +89,7 @@ interface OctoSidepanelLayoutState {
   memberLoading: boolean;
   members: DrawerMember[];
   theme: string;
-  layout: string;
-  readingMode: "message" | "cli";
+  layout: "message" | "cli";
   showSettings: boolean;
   // Full Composer
   showFullComposer: boolean;
@@ -160,8 +159,7 @@ export default class OctoSidepanelLayout extends Component<
       memberLoading: false,
       members: [],
       theme: "light",
-      layout: "message",
-      readingMode: "cli",
+      layout: "cli",
       showSettings: false,
       // Full Composer
       showFullComposer: false,
@@ -189,7 +187,9 @@ export default class OctoSidepanelLayout extends Component<
   componentDidMount() {
     const themeMode = localStorage.getItem("theme-mode");
     const theme = themeMode === "1" ? "dark" : "light";
-    const layout = localStorage.getItem("octo_v3_layout") || "message";
+    const layout = (localStorage.getItem("octo_v3_layout") as
+      | "message"
+      | "cli") || "cli";
     if (theme === "dark") {
       document.body.setAttribute("theme-mode", "dark");
     } else {
@@ -422,7 +422,7 @@ export default class OctoSidepanelLayout extends Component<
     this.setState({ theme });
   };
 
-  private setLayout = (layout: string) => {
+  private setLayout = (layout: "message" | "cli") => {
     document.body.setAttribute("data-layout", layout);
     document.documentElement.setAttribute("data-layout", layout);
     localStorage.setItem("octo_v3_layout", layout);
@@ -1061,7 +1061,7 @@ export default class OctoSidepanelLayout extends Component<
       spaceName,
       theme,
       showSettings,
-      readingMode,
+      layout,
       spaces,
       currentSpaceId,
       showSpaceSwitcher,
@@ -1183,9 +1183,9 @@ export default class OctoSidepanelLayout extends Component<
                     <button
                       key={m.id}
                       className={`octo-settings-seg-btn${
-                        readingMode === m.id ? " is-active" : ""
+                        layout === m.id ? " is-active" : ""
                       }`}
-                      onClick={() => this.setState({ readingMode: m.id })}
+                      onClick={() => this.setLayout(m.id)}
                     >
                       <span>{m.label}</span>
                     </button>
@@ -1627,7 +1627,7 @@ export default class OctoSidepanelLayout extends Component<
                           key={selectedChannel.getChannelKey()}
                           channel={selectedChannel}
                           hideMessageInput={true}
-                          readingMode={this.state.readingMode}
+                          readingMode={this.state.layout}
                           onContext={(
                             ctx: ConversationContext & {
                               messageInputContext?: MessageInputContext;

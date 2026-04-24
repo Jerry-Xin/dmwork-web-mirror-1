@@ -16,7 +16,6 @@ const OctoLightbox: React.FC<OctoLightboxProps> = ({ src, onClose }) => {
   if (!src) return null;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    // 只有点到 backdrop 本身才关闭，点到图片不关
     if ((e.target as HTMLElement).classList.contains("octo-lightbox")) {
       onClose();
     }

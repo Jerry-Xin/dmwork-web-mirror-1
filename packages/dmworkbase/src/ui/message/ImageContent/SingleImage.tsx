@@ -56,6 +56,7 @@ export default function SingleImage({
         alt=""
         width={displayWidth}
         height={displayHeight}
+        data-has-lightbox
       />
     </div>
   )

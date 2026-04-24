@@ -143,7 +143,7 @@ export class EmojiPanel extends Component<EmojiPanelProps, EmojiPanelState> {
                                     onEmoji(emoji)
                                 }
                             }}>
-                                <img src={emoji.image}></img>
+                                <img src={emoji.image} style={{ width: 28, height: 28, objectFit: 'contain' }} />
                             </li>
                         }) : undefined
                     }

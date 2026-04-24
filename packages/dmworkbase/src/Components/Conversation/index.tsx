@@ -1677,7 +1677,6 @@ export class Conversation
                         }}
                         onContext={(ctx) => {
                           this._messageInputContext = ctx;
-                          // flush 延迟的 insertText（componentDidMount 时 context 可能还没就绪）
                           if (this._pendingInsertText) {
                             ctx.insertText(this._pendingInsertText);
                             this._pendingInsertText = undefined;
@@ -1710,8 +1709,27 @@ export class Conversation
                             const mn = new Mention();
                             mn.all = mention.all;
                             mn.uids = mention.uids;
-                            (mn as any).entities = mention.entities;
                             content.mention = mn;
+                            if (mention.entities && mention.entities.length > 0) {
+                              const entities = mention.entities;
+                              if (!content.contentObj) content.contentObj = {};
+                              if (!content.contentObj.mention) content.contentObj.mention = {};
+                              content.contentObj.mention.entities = entities;
+                              const originalEncode = content.encode.bind(content);
+                              content.encode = () => {
+                                try {
+                                  const bytes = originalEncode();
+                                  const str = new TextDecoder().decode(bytes);
+                                  const obj = JSON.parse(str);
+                                  if (!obj.mention) obj.mention = {};
+                                  obj.mention.entities = entities;
+                                  return new TextEncoder().encode(JSON.stringify(obj));
+                                } catch (e) {
+                                  console.warn('[Mention] encode override failed, entities may be lost', e);
+                                  return originalEncode();
+                                }
+                              };
+                            }
                           }
                           if (vm.currentReplyMessage) {
                             if (vm.currentHandlerType === 2) {

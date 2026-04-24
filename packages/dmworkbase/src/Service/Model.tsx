@@ -384,14 +384,47 @@ export class MessageWrap {
 
         if (entities && Array.isArray(entities)) {
             const result = this.parseMentionWithEntities(text, entities)
-            if (result !== null) return result
+            if (result !== null) {
+                // 如果同时有 @所有人，对 entity 结果里的普通 text 部分再做 @所有人 解析
+                if (mention.all) {
+                    return result.flatMap(part =>
+                        part.type === PartType.text
+                            ? this.parseMentionAll(part.text)
+                            : [part]
+                    )
+                }
+                return result
+            }
         }
 
         if (mention.uids && Array.isArray(mention.uids) && mention.uids.length > 0) {
             return this.parseMentionLegacy(text, mention.uids)
         }
 
+        // mention.all：把文本中的 @所有人/@all 替换成 uid="all" 的 mention Part
+        if (mention.all) {
+            return this.parseMentionAll(text)
+        }
+
         return [new Part(PartType.text, text)]
+    }
+
+    private parseMentionAll(text: string): Array<Part> {
+        const regex = /@所有人|@all/gi
+        const parts: Part[] = []
+        let lastIndex = 0
+        let match: RegExpExecArray | null
+        while ((match = regex.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                parts.push(new Part(PartType.text, text.substring(lastIndex, match.index)))
+            }
+            parts.push(new Part(PartType.mention, match[0], { uid: 'all' }))
+            lastIndex = match.index + match[0].length
+        }
+        if (lastIndex < text.length) {
+            parts.push(new Part(PartType.text, text.substring(lastIndex)))
+        }
+        return parts.length > 0 ? parts : [new Part(PartType.text, text)]
     }
 
     private parseMentionWithEntities(text: string, entities: Array<{uid: string; offset: number; length: number}>): Array<Part> | null {

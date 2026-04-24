@@ -173,11 +173,12 @@ function processTextChildren(
                     } else if (seg.uid && seg.uid !== "") {
                         mentionClass = "mention-entity"; // 普通用户
                     }
+                    const isAll = seg.uid === "all" || seg.uid === "channel"
                     return (
                         <span
                             key={i}
                             className={mentionClass}
-                            onClick={() => seg.uid && onMentionClick?.(seg.uid)}
+                            onClick={isAll ? undefined : () => seg.uid && onMentionClick?.(seg.uid)}
                         >
                             {seg.name}
                         </span>

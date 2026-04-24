@@ -12,7 +12,7 @@ export interface TextContentProps {
   /** Emoji 列表 */
   emojis?: EmojiInfo[]
 
-  /** 是否为大表情（单个自定义 emoji，160×160） */
+  /** 是否为大表情（单个自定义 emoji，230×230） */
   isLargeEmoji?: boolean
 
   /** 是否为流式消息（正在流式输出中） */
@@ -50,8 +50,8 @@ export default function TextContent({
         <img
           src={emojis[0].url}
           alt={emojis[0].key}
-          width={160}
-          height={160}
+          width={230}
+          height={230}
         />
       </div>
     )

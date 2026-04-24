@@ -50,6 +50,8 @@ export default class FileToolbar extends Component<FileToolbarProps> {
 
       if (files.length > 0) {
         event.preventDefault();
+        // 每次粘贴时获取最新的 conversationContext，避免闭包捕获旧引用
+        const { conversationContext } = this.props;
         const err = conversationContext.addPendingAttachments(files);
         if (err) Toast.error(err);
       }
@@ -65,6 +67,8 @@ export default class FileToolbar extends Component<FileToolbarProps> {
 
   componentWillUnmount() {
     document.removeEventListener("paste", this.pasteListen);
+    // 清理 drag 回调，避免内存泄漏
+    this.props.conversationContext.setDragFileCallback(() => {});
   }
 
   onFileClick = (event: React.MouseEvent<HTMLInputElement>) => {
@@ -92,7 +96,7 @@ export default class FileToolbar extends Component<FileToolbarProps> {
   };
 
   chooseFile = () => {
-    this.$fileInput.click();
+    this.$fileInput?.click();
   };
 
   render(): ReactNode {

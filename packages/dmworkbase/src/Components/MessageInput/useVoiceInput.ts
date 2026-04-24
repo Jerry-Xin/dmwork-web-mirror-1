@@ -231,9 +231,8 @@ export default function useVoiceInput(
             memberContext
           );
           if (result.text && onTranscribed) {
-            // If context_text was provided, LLM returns complete modified text - should replace
-            const shouldReplace = !!contextTextRef.current;
-            onTranscribed(result.text, shouldReplace);
+            // 转写结果始终替换输入框所有文本
+            onTranscribed(result.text, true);
           }
         } catch (err) {
           // PRD: 转写失败时 Toast「转写失败，请重试」

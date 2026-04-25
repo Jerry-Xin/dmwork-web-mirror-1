@@ -74,7 +74,7 @@ import { VideoCell, VideoContent } from "./Messages/Video";
 import { TypingCell } from "./Messages/Typing";
 import { LottieSticker, LottieStickerCell } from "./Messages/LottieSticker";
 import { LocationCell, LocationContent } from "./Messages/Location";
-import { Toast, Modal } from "@douyinfe/semi-ui";
+import { Toast, Modal, Tag } from "@douyinfe/semi-ui";
 import { ChannelSettingManager } from "./Service/ChannelSetting";
 import { DefaultEmojiService } from "./Service/EmojiService";
 import IconClick from "./Components/IconClick";
@@ -1213,24 +1213,23 @@ export default class BaseModule implements IModule {
           return undefined;
         }
         const rows = new Array();
-        // 外部群标记：存在外部成员时作为群类型展示
-        if (channelInfo?.orgData?.is_external_group === 1) {
-          rows.push(
-            new Row({
-              cell: ListItem,
-              properties: {
-                title: "群类型",
-                subTitle: "外部群",
-              },
-            })
-          );
-        }
+        const isExternalGroup = channelInfo?.orgData?.is_external_group === 1;
+        const groupNameSubTitle = isExternalGroup ? (
+          <span>
+            {channelInfo?.title}
+            <Tag color="orange" size="small" style={{ marginLeft: 6 }}>
+              外部群
+            </Tag>
+          </span>
+        ) : (
+          channelInfo?.title
+        );
         rows.push(
           new Row({
             cell: ListItem,
             properties: {
               title: "群聊名称",
-              subTitle: channelInfo?.title,
+              subTitle: groupNameSubTitle,
               onClick: () => {
                 if (!data.isManagerOrCreatorOfMe) {
                   Toast.warning("只有管理者才能修改群名字");

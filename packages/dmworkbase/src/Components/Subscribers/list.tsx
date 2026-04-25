@@ -239,9 +239,16 @@ export class SubscriberList extends Component<
                             </Tag>
                           )}
                           {item.orgData?.is_external === 1 && (
-                            <Tag size="small" color="purple" style={{ marginLeft: 4 }}>
-                              外部
-                            </Tag>
+                            <>
+                              <Tag size="small" color="purple" style={{ marginLeft: 4 }}>
+                                外部
+                              </Tag>
+                              {item.orgData?.source_space_name && (
+                                <span className="wk-subscrierlist-item-source">
+                                  来自 {item.orgData.source_space_name}
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                         <div className="wk-subscrierlist-item-desc">

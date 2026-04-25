@@ -6,7 +6,7 @@ import "./index.css"
 export interface ListItemProps {
     style: CSSProperties
     title: string
-    subTitle?: string
+    subTitle?: React.ReactNode
     onClick: () => void
 }
 
@@ -14,7 +14,8 @@ export class ListItem extends Component<ListItemProps>{
 
     render() {
         const { style, title, subTitle, onClick } = this.props
-        return <div className="wk-list-item wk-list-item-ripple" style={style} title={subTitle} onClick={() => {
+        const titleAttr = typeof subTitle === "string" ? subTitle : undefined
+        return <div className="wk-list-item wk-list-item-ripple" style={style} title={titleAttr} onClick={() => {
             if (onClick) {
                 onClick()
             }
@@ -36,7 +37,10 @@ export class ListItemMuliteLine extends Component<ListItemProps>{
 
     hasSubtitle() {
         const { subTitle } = this.props
-        return subTitle && subTitle !== ""
+        if (typeof subTitle === "string") {
+            return subTitle !== ""
+        }
+        return subTitle != null
     }
     render() {
         const { style, title, subTitle, onClick } = this.props

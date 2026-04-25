@@ -5,13 +5,21 @@ import { Channel, WKSDK } from "wukongimjssdk";
 import WKApp from "../../App";
 import Provider from "../../Service/Provider";
 import { ChannelQRCodeVM } from "./vm";
-import { Spin } from "@douyinfe/semi-ui";
+import { Button, Spin, Toast } from "@douyinfe/semi-ui";
 
 export interface ChannelQRCodeProps {
     channel: Channel
 }
 
 export default class ChannelQRCode extends Component<ChannelQRCodeProps> {
+
+    handleCopyLink = (link: string) => {
+        navigator.clipboard.writeText(link).then(() => {
+            Toast.success("已复制，链接 7 天内有效")
+        }).catch(() => {
+            Toast.error("复制失败，请重试")
+        })
+    }
 
     render() {
         const { channel } = this.props
@@ -60,7 +68,13 @@ export default class ChannelQRCode extends Component<ChannelQRCodeProps> {
                         }
                     </div>
 
-
+                    {
+                        vm.qrcodeResp && channelInfo?.orgData?.invite !== 1 ? <div className="wk-channelqrcode-actions">
+                            <Button theme="solid" type="primary" onClick={() => this.handleCopyLink(vm.qrcodeResp!.qrcode)}>
+                                复制邀请链接
+                            </Button>
+                        </div> : undefined
+                    }
 
                 </div>
             </div>

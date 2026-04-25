@@ -6,6 +6,7 @@ import WKApp from "../../App";
 import Provider from "../../Service/Provider";
 import { ChannelQRCodeVM } from "./vm";
 import { Button, Spin, Toast } from "@douyinfe/semi-ui";
+import { copyToClipboard } from "../../Utils/clipboard";
 
 export interface ChannelQRCodeProps {
     channel: Channel
@@ -13,16 +14,13 @@ export interface ChannelQRCodeProps {
 
 export default class ChannelQRCode extends Component<ChannelQRCodeProps> {
 
-    handleCopyLink = (link: string) => {
-        if (!navigator.clipboard?.writeText) {
-            Toast.error("当前环境不支持剪贴板，请手动复制")
-            return
+    handleCopyLink = async (link: string) => {
+        const ok = await copyToClipboard(link)
+        if (ok) {
+            Toast.success("邀请链接已复制，7 天内有效")
+        } else {
+            Toast.error("复制失败，请手动复制")
         }
-        navigator.clipboard.writeText(link).then(() => {
-            Toast.success("已复制，链接 7 天内有效")
-        }).catch(() => {
-            Toast.error("复制失败，请重试")
-        })
     }
 
     render() {

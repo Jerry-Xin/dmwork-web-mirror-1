@@ -14,6 +14,10 @@ export interface ChannelQRCodeProps {
 export default class ChannelQRCode extends Component<ChannelQRCodeProps> {
 
     handleCopyLink = (link: string) => {
+        if (!navigator.clipboard?.writeText) {
+            Toast.error("当前环境不支持剪贴板，请手动复制")
+            return
+        }
         navigator.clipboard.writeText(link).then(() => {
             Toast.success("已复制，链接 7 天内有效")
         }).catch(() => {

@@ -51,7 +51,7 @@ body[theme-mode="dark"] .wk-conversation-content {
 
 .wk-message-item-fold-session {
   justify-content: flex-start;
-  padding: var(--wk-sp-2) 0;
+  padding: 24px 0 0;
 }
 
 .wk-message-item-fold-session-shell {
@@ -93,6 +93,7 @@ body[theme-mode="dark"] .wk-conversation-content {
 .wk-fold-session-title-row {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 0;
     max-width: min(680px, calc(100vw - 120px)); /* 和卡片宽度一致 */
@@ -109,6 +110,7 @@ body[theme-mode="dark"] .wk-conversation-content {
 .wk-fold-session-toggle-btn {
     margin-left: auto;
     margin-right: 0; /* 对齐卡片边缘,不是内容区边缘 */
+    white-space: nowrap;
     font-size: 12px;
     font-weight: 600;
     color: rgba(127, 59, 245, 1.0);
@@ -190,16 +192,19 @@ body[theme-mode="dark"] .wk-conversation-content {
 }
 
 .wk-fold-session-tag {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 500;
     color: #FFFFFF;
     background: linear-gradient(90deg, #7B89F4 0%, #9D78F5 100%);
-    padding: 0 4px;
-    border-radius: 3px;
-    height: 16px;
+    border: none;
+    padding: 0 6px;
+    border-radius: 4px;
+    height: 18px;
     line-height: 16px;
     display: inline-flex;
     align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* 标题行时间 */
@@ -207,6 +212,7 @@ body[theme-mode="dark"] .wk-conversation-content {
     font-size: 14px;
     font-weight: 400;
     color: rgba(28, 28, 35, 0.4);
+    white-space: nowrap;
 }
 
 /* 标题行外层的 toggle 已移到卡片右上角,这些样式已废弃 */

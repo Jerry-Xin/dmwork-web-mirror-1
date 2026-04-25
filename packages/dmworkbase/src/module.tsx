@@ -1213,6 +1213,18 @@ export default class BaseModule implements IModule {
           return undefined;
         }
         const rows = new Array();
+        // 外部群标记：存在外部成员时作为群类型展示
+        if (channelInfo?.orgData?.is_external_group === 1) {
+          rows.push(
+            new Row({
+              cell: ListItem,
+              properties: {
+                title: "群类型",
+                subTitle: "外部群",
+              },
+            })
+          );
+        }
         rows.push(
           new Row({
             cell: ListItem,

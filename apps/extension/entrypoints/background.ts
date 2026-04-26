@@ -10,7 +10,6 @@ import {
   getExtensionAuthState,
   getExtensionPreferences,
   setExtensionPreferences,
-  setExtensionSidepanelActive,
   setPendingConversation,
 } from "../utils/extensionStorage";
 import type { Browser } from "wxt/browser";
@@ -502,13 +501,11 @@ export default defineBackground(async () => {
   if (chromeApi?.sidePanel?.onOpened) {
     chromeApi.sidePanel.onOpened.addListener(() => {
       markSidepanelActive();
-      void setExtensionSidepanelActive(true);
     });
   }
   if (chromeApi?.sidePanel?.onClosed) {
     chromeApi.sidePanel.onClosed.addListener(() => {
       clearSidepanelActive();
-      void setExtensionSidepanelActive(false);
     });
   }
 

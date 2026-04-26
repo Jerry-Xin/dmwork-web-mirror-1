@@ -28,8 +28,6 @@ import {
 import {
   clearPendingConversation,
   getPendingConversation,
-  setExtensionSidepanelActive,
-  setPendingConversation,
 } from '../../utils/extensionStorage';
 import {
   installExtensionLogoutBridge,
@@ -181,7 +179,6 @@ function syncSidepanelBadge(): void {
 }
 
 function syncSidepanelState(active: boolean): void {
-  void setExtensionSidepanelActive(active);
   void browser.runtime.sendMessage({
     type: EXTENSION_MESSAGE_TYPE.sidepanelState,
     active,
@@ -226,9 +223,15 @@ root.render(
 
 browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
   if (message.type === EXTENSION_MESSAGE_TYPE.openConversation) {
-    void setPendingConversation(message.target).then(() => {
-      ensurePendingConversationRetry();
-      void consumePendingConversation();
+    void openConversation(message.target);
+  }
+
+  if (message.type === EXTENSION_MESSAGE_TYPE.getActiveConversation) {
+    const channel = WKApp.shared.openChannel;
+    return Promise.resolve({
+      target: channel
+        ? { channelId: channel.channelID, channelType: channel.channelType }
+        : null,
     });
   }
 });

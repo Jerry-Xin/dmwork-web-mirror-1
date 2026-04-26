@@ -2,17 +2,11 @@ import type {
   ConversationTarget,
   ExtensionAuthState,
   ExtensionPreferences,
-  SidepanelSessionState,
 } from "./extensionRuntime";
 import {
   DEFAULT_EXTENSION_PREFERENCES,
   EXTENSION_STORAGE_KEYS,
 } from "./extensionRuntime";
-
-const DEFAULT_SIDEPANEL_SESSION: SidepanelSessionState = {
-  active: false,
-  selectedTarget: null,
-};
 
 export async function getExtensionAuthState(): Promise<ExtensionAuthState | null> {
   const result = await browser.storage.local.get(EXTENSION_STORAGE_KEYS.authState);
@@ -49,49 +43,6 @@ export async function setPendingConversation(
 
 export async function clearPendingConversation(): Promise<void> {
   await browser.storage.local.remove(EXTENSION_STORAGE_KEYS.pendingConversation);
-}
-
-export async function getExtensionSidepanelSession(): Promise<SidepanelSessionState> {
-  // 读两个独立 key，互不耦合
-  const result = await browser.storage.local.get([
-    EXTENSION_STORAGE_KEYS.sidepanelActive,
-    EXTENSION_STORAGE_KEYS.sidepanelSelectedTarget,
-    EXTENSION_STORAGE_KEYS.sidepanelSession,
-  ]);
-  const activeRaw = result[EXTENSION_STORAGE_KEYS.sidepanelActive] as
-    | boolean
-    | undefined;
-  const targetRaw = result[EXTENSION_STORAGE_KEYS.sidepanelSelectedTarget] as
-    | ConversationTarget
-    | null
-    | undefined;
-
-  // 历史遗留合并对象：只在新 key 均缺失时才回填，写入后不再读这个字段
-  const legacy = result[EXTENSION_STORAGE_KEYS.sidepanelSession] as
-    | SidepanelSessionState
-    | undefined;
-
-  return {
-    active:
-      activeRaw ?? legacy?.active ?? DEFAULT_SIDEPANEL_SESSION.active,
-    selectedTarget:
-      targetRaw ?? legacy?.selectedTarget ?? DEFAULT_SIDEPANEL_SESSION.selectedTarget,
-  };
-}
-
-export async function setExtensionSidepanelActive(active: boolean): Promise<void> {
-  // 独立 key 原子写，避免 read-modify-write 被另一 setter 并发覆盖
-  await browser.storage.local.set({
-    [EXTENSION_STORAGE_KEYS.sidepanelActive]: active,
-  });
-}
-
-export async function setExtensionSidepanelSelectedConversation(
-  target: ConversationTarget | null,
-): Promise<void> {
-  await browser.storage.local.set({
-    [EXTENSION_STORAGE_KEYS.sidepanelSelectedTarget]: target,
-  });
 }
 
 export async function getExtensionPreferences(): Promise<ExtensionPreferences> {

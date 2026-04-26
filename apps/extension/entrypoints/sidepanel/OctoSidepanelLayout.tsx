@@ -45,7 +45,6 @@ import {
 } from "@dmwork/base/src/Service/SpaceService";
 import CreateCategoryModal from "@dmwork/base/src/Components/CreateCategoryModal";
 import {
-  setExtensionSidepanelSelectedConversation,
   setExtensionTheme,
 } from "../../utils/extensionStorage";
 import { getTitleColor } from "@dmwork/base/src/Utils/titleColor";
@@ -240,26 +239,8 @@ export default class OctoSidepanelLayout extends Component<
     document.addEventListener("keydown", this.handleEscKey);
     document.addEventListener("click", this.handleClickOutsideSettings);
     document.addEventListener("click", this.handleImageClick);
-    this.syncSelectedConversationState();
   }
 
-  componentDidUpdate(
-    _prevProps: {},
-    prevState: OctoSidepanelLayoutState
-  ) {
-    const prevChannel = prevState.selectedChannel;
-    const nextChannel = this.state.selectedChannel;
-    const prevKey = prevChannel
-      ? `${prevChannel.channelID}:${prevChannel.channelType}`
-      : "";
-    const nextKey = nextChannel
-      ? `${nextChannel.channelID}:${nextChannel.channelType}`
-      : "";
-
-    if (prevKey !== nextKey) {
-      this.syncSelectedConversationState();
-    }
-  }
 
   componentWillUnmount() {
     this.conversationListenerRemover?.();
@@ -271,17 +252,6 @@ export default class OctoSidepanelLayout extends Component<
     WKApp.endpointManager.setMethod("showConversation", () => {}, {});
   }
 
-  private syncSelectedConversationState() {
-    const { selectedChannel } = this.state;
-    void setExtensionSidepanelSelectedConversation(
-      selectedChannel
-        ? {
-            channelId: selectedChannel.channelID,
-            channelType: selectedChannel.channelType,
-          }
-        : null
-    );
-  }
 
   private resetLogoutArmed = () => {
     if (this.logoutConfirmTimer) {

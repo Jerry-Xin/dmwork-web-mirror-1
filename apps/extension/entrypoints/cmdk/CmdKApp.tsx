@@ -47,10 +47,8 @@ import {
   buildChannelPickerItemContextMenus,
 } from "../../utils/channelPickerContextMenus";
 import {
-  getExtensionSidepanelSession,
-} from "../../utils/extensionStorage";
-import {
   EXTENSION_MESSAGE_TYPE,
+  type ConversationTarget,
   type ExtensionRuntimeMessage,
 } from "../../utils/extensionRuntime";
 import { formatFileSize, getImageDimensions } from "../../utils/attachment";
@@ -539,7 +537,16 @@ export default function CmdKApp() {
         console.warn("[CmdKApp] Failed to load friends:", friendsError);
       }
 
-      const sidepanelSession = await getExtensionSidepanelSession();
+      let activeTarget: ConversationTarget | null = null;
+      try {
+        const resp = await browser.runtime.sendMessage({
+          type: EXTENSION_MESSAGE_TYPE.getActiveConversation,
+        });
+        activeTarget = resp?.target ?? null;
+      } catch {
+        activeTarget = null;
+      }
+
       const nextThreads = [...channelList, ...privateChatList];
       setThreads(nextThreads);
       setCategories(pickerCategories);
@@ -554,14 +561,14 @@ export default function CmdKApp() {
           return prev;
         }
 
-        if (!sidepanelSession.active || !sidepanelSession.selectedTarget) {
+        if (!activeTarget) {
           return null;
         }
 
         const matched = nextThreads.find(
           (item) =>
-            item.channelId === sidepanelSession.selectedTarget?.channelId &&
-            item.channelType === sidepanelSession.selectedTarget?.channelType
+            item.channelId === activeTarget!.channelId &&
+            item.channelType === activeTarget!.channelType
         );
         return matched
           ? {

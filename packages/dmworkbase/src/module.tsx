@@ -970,11 +970,47 @@ export default class BaseModule implements IModule {
       (context: RouteContext<UserInfoRouteData>) => {
         const data = context.routeData();
         const channelInfo = data.channelInfo;
+        const fromSubscriberOfUser = data.fromSubscriberOfUser;
         const relation = channelInfo?.orgData?.follow;
         if (data.isSelf) {
           return;
         }
+
+        // 外部群成员：优先读取群成员接口的 source_space_name
+        // （1v1 users/{uid} 接口不具备群内外部成员上下文，source_desc 会为空）
+        const sourceSpaceName =
+          (fromSubscriberOfUser?.orgData?.source_space_name as
+            | string
+            | undefined) || "";
+        const isExternalMember =
+          fromSubscriberOfUser?.orgData?.is_external === 1;
+
+        if (isExternalMember) {
+          if (!sourceSpaceName || sourceSpaceName.trim() === "") {
+            // 无所属空间信息时，不强制展示「来源」行
+            return;
+          }
+          return new Section({
+            rows: [
+              new Row({
+                cell: ListItem,
+                properties: {
+                  title: "来源",
+                  subTitle: sourceSpaceName,
+                },
+              }),
+            ],
+          });
+        }
+
+        // 1v1 陌生联系人：保留旧的 source_desc fallback 逻辑（仅对好友展示）
         if (relation !== UserRelation.friend) {
+          return;
+        }
+        const sourceDesc = (channelInfo?.orgData?.source_desc as
+          | string
+          | undefined) || "";
+        if (!sourceDesc || sourceDesc.trim() === "") {
           return;
         }
         return new Section({
@@ -983,7 +1019,7 @@ export default class BaseModule implements IModule {
               cell: ListItem,
               properties: {
                 title: "来源",
-                subTitle: `${channelInfo?.orgData?.source_desc}`,
+                subTitle: sourceDesc,
               },
             }),
           ],

@@ -1,6 +1,6 @@
 import WKSDK from "wukongimjssdk";
 import { ChannelInfoListener } from "wukongimjssdk";
-import { Channel, ChannelInfo, ChannelTypePerson, MessageStatus } from "wukongimjssdk";
+import { Channel, ChannelInfo, ChannelTypePerson, ChannelTypeGroup, MessageStatus } from "wukongimjssdk";
 import { Component, CSSProperties, HTMLProps } from "react";
 import './index.css'
 import { BubblePosition, MessageWrap } from "../../Service/Model";
@@ -283,6 +283,15 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                                     </span>
                                     {channelInfo?.orgData?.robot === 1 && <AiBadge size="small" />}
                                     <span className="wk-msg-head-time">{timeStr}</span>
+                                </div>
+                            )}
+                            {/* 外部群成员来源标识（YUJ-51）：仅在群消息且后端标记 is_external=1 时展示 */}
+                            {showHead && !isAi
+                                && message.channel.channelType === ChannelTypeGroup
+                                && channelInfo?.orgData?.is_external === 1
+                                && channelInfo?.orgData?.source_space_name && (
+                                <div className="wk-msg-head-origin ext-origin">
+                                    来源: {channelInfo.orgData.source_space_name}
                                 </div>
                             )}
 

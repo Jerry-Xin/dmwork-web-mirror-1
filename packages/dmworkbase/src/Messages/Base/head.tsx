@@ -52,11 +52,21 @@ export default class MessageHead extends Component<MessageHeadProps> {
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(message.fromUID, ChannelTypePerson))
         const isGroupMsg = message.channel.channelType === ChannelTypeGroup
         const isBot = channelInfo?.orgData?.robot === 1
+        // 外部群成员：依赖 YUJ-50 后端在群内上下文下为 /users/{uid}
+        // 接口补齐 is_external / source_space_name 字段（或 ChannelInfo
+        // 合并群成员接口结果后透传进 orgData）。
+        const isExternalMember = isGroupMsg && channelInfo?.orgData?.is_external === 1
+        const sourceSpaceName = channelInfo?.orgData?.source_space_name as string | undefined
         return <>
            {
-                this.needTitle()?( <div className="textTitle" style={{color:getTitleColor(channelInfo?.orgData?.displayName), display:'flex', alignItems:'center', gap: 4}}>
-                <span>{channelInfo?.orgData?.displayName}</span>
-                {isBot && <AiBadge size="small" />}
+                this.needTitle()?( <div className="textTitle" style={{color:getTitleColor(channelInfo?.orgData?.displayName)}}>
+                <div className="textTitle-name-row">
+                    <span>{channelInfo?.orgData?.displayName}</span>
+                    {isBot && <AiBadge size="small" />}
+                </div>
+                {isExternalMember && sourceSpaceName && (
+                    <span className="ext-origin">来源: {sourceSpaceName}</span>
+                )}
             </div>):null
            }
         </>

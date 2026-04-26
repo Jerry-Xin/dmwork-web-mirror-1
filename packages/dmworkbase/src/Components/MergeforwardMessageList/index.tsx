@@ -185,6 +185,13 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
     render(): ReactNode {
         const { mergeforwardContent } = this.props
         const { previewImgSrc, previewImageContent } = this.state
+        // YUJ-51：按 uid 建立外部来源映射，渲染时 O(1) 查询
+        const externalByUid = new Map<string, { is_external?: number; source_space_name?: string }>()
+        ;(mergeforwardContent.users || []).forEach(u => {
+            if (u && u.uid) {
+                externalByUid.set(u.uid, { is_external: u.is_external, source_space_name: u.source_space_name })
+            }
+        })
         return <><div className="wk-mergeforwardmessagelist">
             {/* Content：消息列表，pad T10 B10 L16 R16，gap=16 */}
             <div className="wk-mergeforwardmessagelist-content">
@@ -195,6 +202,10 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
                         WKSDK.shared().channelManager.fetchChannelInfo(fromChannel)
                     }
                     const showAvatar = i === 0 || mergeforwardContent.msgs[i - 1].fromUID !== m.fromUID
+                    const extInfo = externalByUid.get(m.fromUID)
+                    const showExtOrigin = !!extInfo
+                        && extInfo.is_external === 1
+                        && !!extInfo.source_space_name
                     return (
                         <div className="wk-mergeforwardmessagelist-content-msg" key={m.messageID}>
                             {/* 头像 32x32 圆形，连续消息占位 */}
@@ -214,6 +225,12 @@ export default class MergeforwardMessageList extends Component<MergeforwardMessa
                                             {getTimeStringAutoShort2(m.timestamp * 1000, true)}
                                         </span>
                                     </div>
+                                )}
+                                {/* 外部来源（YUJ-51）：与 head.tsx 视觉一致，仅首条或换人时显示 */}
+                                {showAvatar && showExtOrigin && (
+                                    <span className="ext-origin wk-mergeforwardmessagelist-content-msg-info-origin">
+                                        来源: {extInfo!.source_space_name}
+                                    </span>
                                 )}
 
                                 {/* 消息内容 */}

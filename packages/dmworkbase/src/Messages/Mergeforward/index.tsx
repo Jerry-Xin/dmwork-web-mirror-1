@@ -12,14 +12,24 @@ import { getMergeforwardMessageUI } from "../../bridge/message/useMergeforwardMe
 
 import "./index.css"
 
+// YUJ-51：users 新增外部来源字段。后端在合并转发归档时填充，前端透传即可。
+export interface MergeforwardUser {
+    uid: string
+    name: string
+    /** 1=外部群成员；0/undefined=非外部 */
+    is_external?: number
+    /** 外部成员所属 Space 名称，仅在 is_external=1 时有意义 */
+    source_space_name?: string
+}
+
 export default class MergeforwardContent extends MessageContent {
     title!: string
     channelType!: number
-    users!: Array<{ uid: string, name: string }>
+    users!: Array<MergeforwardUser>
     msgs!: Array<Message>
 
 
-    constructor(channelType?: number, users?: Array<{ uid: string, name: string }>, msgs?: Array<Message>) {
+    constructor(channelType?: number, users?: Array<MergeforwardUser>, msgs?: Array<Message>) {
         super()
         this.channelType = channelType!
         this.users = users!
@@ -28,13 +38,25 @@ export default class MergeforwardContent extends MessageContent {
 
     decodeJSON(content: any) {
         this.channelType = content["channel_type"] || 0
-        const rawUsers: Array<{ uid: string, name: string }> = content["users"] || []
+        const rawUsers: Array<MergeforwardUser> = content["users"] || []
         const seen = new Set<string>()
-        this.users = rawUsers.filter(u => {
-            if (seen.has(u.uid)) return false
-            seen.add(u.uid)
-            return true
-        })
+        this.users = rawUsers
+            .filter(u => {
+                if (seen.has(u.uid)) return false
+                seen.add(u.uid)
+                return true
+            })
+            .map(u => {
+                // YUJ-51：透传外部来源字段；仅保留有效值避免噪音
+                const mapped: MergeforwardUser = { uid: u.uid, name: u.name }
+                if (u.is_external === 1 || u.is_external === 0) {
+                    mapped.is_external = u.is_external
+                }
+                if (typeof u.source_space_name === "string" && u.source_space_name !== "") {
+                    mapped.source_space_name = u.source_space_name
+                }
+                return mapped
+            })
         let msgMaps = content["msgs"]
 
         let messages = new Array()
@@ -52,6 +74,7 @@ export default class MergeforwardContent extends MessageContent {
                 messageMaps.push(this.messageToMap(msg))
             }
         }
+        // YUJ-51：users 原样透传，保留 is_external / source_space_name
         return { "channel_type": this.channelType || 0, "users": this.users, "msgs": messageMaps }
     }
     get contentType() {

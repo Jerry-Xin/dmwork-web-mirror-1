@@ -448,6 +448,8 @@ export class Conversation
     // 调用编辑器的 addAttachment 方法插入附件节点
     if (this._addAttachmentFn) {
       this._addAttachmentFn(incoming);
+    } else if (this._messageInputContext?.addAttachment) {
+      this._messageInputContext.addAttachment(incoming);
     }
     this.notifyPendingAttachmentsChange();
     return null;

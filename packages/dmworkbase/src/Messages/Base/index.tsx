@@ -242,6 +242,18 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
         const showAvatar = this.needAvatar()
         const timeStr = moment(message.timestamp * 1000).format('HH:mm')
 
+        // 外部群成员来源标记（YUJ-53）：优先读 msg-level 字段
+        // message.fromIsExternal / message.fromSourceSpaceName（YUJ-50 后端
+        // /message/channel/sync payload 扩展），未提供时回落到 channelInfo.orgData。
+        // 系统消息 / 机器人 / 内部成员 (from_is_external=0 或缺失) 不展示。
+        const isGroupMsg = message.channel.channelType === ChannelTypeGroup
+        const msgSourceSpaceName = message.fromSourceSpaceName
+        const orgSourceSpaceName = channelInfo?.orgData?.source_space_name as string | undefined
+        const hasMsgLevelExt = message.fromIsExternal && !!msgSourceSpaceName
+        const hasOrgLevelExt = isGroupMsg && channelInfo?.orgData?.is_external === 1 && !!orgSourceSpaceName
+        const showExtOrigin = !isAi && (hasMsgLevelExt || hasOrgLevelExt)
+        const extSourceSpaceName = hasMsgLevelExt ? msgSourceSpaceName : orgSourceSpaceName
+
         return (
             <div className={classNames("wk-message-base", context.editOn() ? "wk-message-base-check-open" : undefined)} onClick={context.editOn() ? (event) => {
                 context.checkeMessage(message.message, !message.checked)
@@ -285,13 +297,10 @@ export default class MessageBase extends Component<MessageBaseProps, any> {
                                     <span className="wk-msg-head-time">{timeStr}</span>
                                 </div>
                             )}
-                            {/* 外部群成员来源标识（YUJ-51）：仅在群消息且后端标记 is_external=1 时展示 */}
-                            {showHead && !isAi
-                                && message.channel.channelType === ChannelTypeGroup
-                                && channelInfo?.orgData?.is_external === 1
-                                && channelInfo?.orgData?.source_space_name && (
+                            {/* 外部群成员来源标识（YUJ-53）：优先 msg-level，回落 orgData */}
+                            {showHead && showExtOrigin && extSourceSpaceName && (
                                 <div className="wk-msg-head-origin ext-origin">
-                                    来源: {channelInfo.orgData.source_space_name}
+                                    来源: {extSourceSpaceName}
                                 </div>
                             )}
 

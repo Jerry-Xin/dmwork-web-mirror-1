@@ -52,11 +52,17 @@ export default class MessageHead extends Component<MessageHeadProps> {
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(message.fromUID, ChannelTypePerson))
         const isGroupMsg = message.channel.channelType === ChannelTypeGroup
         const isBot = channelInfo?.orgData?.robot === 1
-        // 外部群成员：依赖 YUJ-50 后端在群内上下文下为 /users/{uid}
-        // 接口补齐 is_external / source_space_name 字段（或 ChannelInfo
-        // 合并群成员接口结果后透传进 orgData）。
-        const isExternalMember = isGroupMsg && channelInfo?.orgData?.is_external === 1
-        const sourceSpaceName = channelInfo?.orgData?.source_space_name as string | undefined
+        // 外部群成员来源标记（YUJ-53）：
+        // 优先读 msg-level 字段 message.fromIsExternal / message.fromSourceSpaceName
+        // （YUJ-50 后端 /message/channel/sync payload 扩展）。
+        // 后端未扩展 /users/{uid} 端点，故对 channelInfo.orgData.is_external 做
+        // 向后兼容回落——若未来 /users/{uid} 也补齐该字段仍可继续工作。
+        const msgSourceSpaceName = message.fromSourceSpaceName
+        const orgSourceSpaceName = channelInfo?.orgData?.source_space_name as string | undefined
+        const hasMsgLevel = message.fromIsExternal && !!msgSourceSpaceName
+        const hasOrgLevel = isGroupMsg && channelInfo?.orgData?.is_external === 1 && !!orgSourceSpaceName
+        const isExternalMember = hasMsgLevel || hasOrgLevel
+        const sourceSpaceName = hasMsgLevel ? msgSourceSpaceName : orgSourceSpaceName
         return <>
            {
                 this.needTitle()?( <div className="textTitle" style={{color:getTitleColor(channelInfo?.orgData?.displayName)}}>

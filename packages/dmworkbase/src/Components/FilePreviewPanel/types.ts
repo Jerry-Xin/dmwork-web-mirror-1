@@ -10,6 +10,8 @@ export interface FilePreviewInfo {
   sourceChannelId?: string;
   /** 来源频道类型 */
   sourceChannelType?: number;
+  /** 消息 ID（用于标记激活态） */
+  messageId?: string;
 }
 
 /** 渲染器状态数据（内部使用） */

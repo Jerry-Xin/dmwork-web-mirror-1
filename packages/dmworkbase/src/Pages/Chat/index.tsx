@@ -63,6 +63,8 @@ export interface ChatContentPageState {
   activeThread: Thread | null;
   /** 文件预览信息（非空时显示文件预览面板） */
   previewFile: FilePreviewInfo | null;
+  /** 当前正在预览的文件消息 ID（用于卡片激活态） */
+  activePreviewMessageId: string | null;
 }
 export class ChatContentPage extends Component<
   ChatContentPageProps,
@@ -81,6 +83,7 @@ export class ChatContentPage extends Component<
       showThreadPanel: false,
       activeThread: null,
       previewFile: null,
+      activePreviewMessageId: null,
     };
   }
 
@@ -110,6 +113,7 @@ export class ChatContentPage extends Component<
         showThreadPanel: false,
         activeThread: null,
         previewFile: null,
+        activePreviewMessageId: null,
       });
       // 切换到子区完整视图
       const threadChannel = new Channel(
@@ -124,6 +128,7 @@ export class ChatContentPage extends Component<
     this.setState({
       previewFile: file,
       showThreadPanel: true, // 确保面板打开
+      activePreviewMessageId: file.messageId || null, // 保存激活的消息 ID
     });
   };
 
@@ -156,6 +161,7 @@ export class ChatContentPage extends Component<
           showChannelSetting: false,
           activeThread: detail.thread || null,
           previewFile: null, // 关闭文件预览
+          activePreviewMessageId: null,
         });
       }
     };
@@ -175,6 +181,7 @@ export class ChatContentPage extends Component<
         showThreadPanel: true,
         activeThread: null,
         previewFile: null,
+        activePreviewMessageId: null,
       });
       WKApp.shared.pendingThreadPanel = undefined;
     }
@@ -223,6 +230,7 @@ export class ChatContentPage extends Component<
           activeThread: null,
           showChannelSetting: false,
           previewFile: null, // 关闭文件预览（互斥）
+          activePreviewMessageId: null,
         });
         return;
       }
@@ -332,6 +340,7 @@ export class ChatContentPage extends Component<
                   activeThread: null,
                   showChannelSetting: false,
                   previewFile: null, // 关闭文件预览
+                  activePreviewMessageId: null,
                 });
                 return;
               }
@@ -479,6 +488,7 @@ export class ChatContentPage extends Component<
                               activeThread: null,
                               showChannelSetting: false,
                               previewFile: null, // 关闭文件预览（互斥）
+                              activePreviewMessageId: null,
                             });
                           }}
                           title="子区"
@@ -494,6 +504,7 @@ export class ChatContentPage extends Component<
                           showChannelSetting: !this.state.showChannelSetting,
                           showThreadPanel: false,
                           previewFile: null, // 关闭文件预览（互斥）
+                          activePreviewMessageId: null,
                         });
                       }}
                     >
@@ -541,6 +552,7 @@ export class ChatContentPage extends Component<
                       showThreadPanel: true,
                       showChannelSetting: false,
                       previewFile: null, // 关闭文件预览（互斥）
+                      activePreviewMessageId: null,
                       activeThread: buildThreadStub(
                         threadInfo.shortId,
                         threadInfo.groupNo,
@@ -557,6 +569,7 @@ export class ChatContentPage extends Component<
                     : require("./assets/chat_bg.svg").default
                 }
                 channel={channel}
+                activePreviewMessageId={this.state.activePreviewMessageId}
               ></Conversation>
             </ErrorBoundary>
           </div>
@@ -590,6 +603,7 @@ export class ChatContentPage extends Component<
                   showThreadPanel: false,
                   activeThread: null,
                   previewFile: null,
+                  activePreviewMessageId: null,
                 });
               }}
               onThreadSelect={(thread) => {
@@ -597,7 +611,7 @@ export class ChatContentPage extends Component<
               }}
               filePreview={previewFile}
               onFilePreviewClose={() => {
-                this.setState({ previewFile: null });
+                this.setState({ previewFile: null, activePreviewMessageId: null });
               }}
             />
           )}
@@ -605,9 +619,9 @@ export class ChatContentPage extends Component<
         {/* 子区频道的文件预览（使用 ThreadPanel 壳子，获得拖拽功能） */}
         {isThreadChannel && previewFile && (
           <ThreadPanel
-            onClose={() => this.setState({ previewFile: null })}
+            onClose={() => this.setState({ previewFile: null, activePreviewMessageId: null })}
             filePreview={previewFile}
-            onFilePreviewClose={() => this.setState({ previewFile: null })}
+            onFilePreviewClose={() => this.setState({ previewFile: null, activePreviewMessageId: null })}
           />
         )}
       </div>

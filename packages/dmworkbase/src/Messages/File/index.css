@@ -21,6 +21,17 @@
   background: rgba(28, 28, 35, 0.12);
 }
 
+/* 激活态（正在预览） */
+.wk-message-file--active {
+  border: 1px solid var(--wk-color-theme);
+  background: var(--wk-brand-tint-06);
+}
+
+.wk-message-file--active:hover {
+  border-color: var(--wk-color-theme);
+  background: var(--wk-brand-tint-06);
+}
+
 .wk-message-file-icon {
   width: 40px;
   height: 40px;

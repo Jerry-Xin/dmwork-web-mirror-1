@@ -98,6 +98,8 @@ export interface ConversationProps {
     editOn: boolean;
     checkedCount: number;
   }) => void;
+  /** 当前正在预览的文件消息 ID（用于文件卡片激活态） */
+  activePreviewMessageId?: string | null;
 }
 
 const ConversationSelectionStateBridge: React.FC<{
@@ -193,6 +195,9 @@ export class Conversation
   }
   openThreadPanel(threadChannelId: string, threadName: string): void {
     this.onOpenThreadPanel?.(threadChannelId, threadName);
+  }
+  getActivePreviewMessageId(): string | null {
+    return this.props.activePreviewMessageId ?? null;
   }
   async resendMessage(message: Message): Promise<Message> {
     await this.vm.deleteMessagesFromLocal([message]);

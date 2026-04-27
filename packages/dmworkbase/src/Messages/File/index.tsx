@@ -398,6 +398,8 @@ export class FileCell extends MessageCell<any, FileCellState> {
       // 携带来源频道信息（用于判断是否在子区面板内触发）
       sourceChannelId: message.channel.channelID,
       sourceChannelType: message.channel.channelType,
+      // 消息 ID（用于标记激活态）
+      messageId: message.messageID,
     };
     WKApp.mittBus.emit("wk:file-preview", previewData);
   };
@@ -552,6 +554,8 @@ export class FileCell extends MessageCell<any, FileCellState> {
     }
 
     const uiProps = getFileMessageUI(message);
+    // 检查是否为当前正在预览的文件
+    const isActive = context.getActivePreviewMessageId?.() === message.messageID;
 
     return (
       <>
@@ -569,7 +573,7 @@ export class FileCell extends MessageCell<any, FileCellState> {
         >
           <div>
             <div
-              className="wk-message-file wk-message-file--clickable"
+              className={`wk-message-file wk-message-file--clickable${isActive ? ' wk-message-file--active' : ''}`}
               onClick={this.handlePreview}
               title="点击预览"
             >

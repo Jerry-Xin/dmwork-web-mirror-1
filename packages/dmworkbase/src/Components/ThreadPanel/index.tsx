@@ -45,6 +45,8 @@ export interface ThreadPanelProps {
   filePreview?: FilePreviewInfo | null;
   /** 关闭文件预览的回调 */
   onFilePreviewClose?: () => void;
+  /** 回复文件消息的回调，传入消息 ID */
+  onReplyFile?: (messageId: string) => void;
 }
 
 interface ThreadPanelComponentState {
@@ -509,6 +511,11 @@ export default class ThreadPanel extends Component<
         "yml",
       ].includes(ext);
 
+      // 回复回调：仅当有 messageId 和 onReplyFile 时才启用
+      const handleReply = filePreview.messageId && this.props.onReplyFile
+        ? () => this.props.onReplyFile!(filePreview.messageId!)
+        : undefined;
+
       return (
         <FilePreviewHeader
           file={filePreview}
@@ -518,6 +525,7 @@ export default class ThreadPanel extends Component<
           showViewToggle={showViewToggle}
           viewMode={this.state.fileViewMode}
           onViewModeChange={(mode) => this.setState({ fileViewMode: mode })}
+          onReply={handleReply}
         />
       );
     }

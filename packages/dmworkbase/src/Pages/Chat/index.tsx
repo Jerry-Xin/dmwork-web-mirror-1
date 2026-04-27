@@ -613,6 +613,11 @@ export class ChatContentPage extends Component<
               onFilePreviewClose={() => {
                 this.setState({ previewFile: null, activePreviewMessageId: null });
               }}
+              onReplyFile={(messageId) => {
+                // 关闭文件预览面板并回复消息
+                this.setState({ previewFile: null, activePreviewMessageId: null });
+                this.conversationContext?.replyToMessageId?.(messageId);
+              }}
             />
           )}
 
@@ -622,6 +627,10 @@ export class ChatContentPage extends Component<
             onClose={() => this.setState({ previewFile: null, activePreviewMessageId: null })}
             filePreview={previewFile}
             onFilePreviewClose={() => this.setState({ previewFile: null, activePreviewMessageId: null })}
+            onReplyFile={(messageId) => {
+              this.setState({ previewFile: null, activePreviewMessageId: null });
+              this.conversationContext?.replyToMessageId?.(messageId);
+            }}
           />
         )}
       </div>

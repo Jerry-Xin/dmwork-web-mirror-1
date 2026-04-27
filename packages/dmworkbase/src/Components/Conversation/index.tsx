@@ -199,6 +199,12 @@ export class Conversation
   getActivePreviewMessageId(): string | null {
     return this.props.activePreviewMessageId ?? null;
   }
+  replyToMessageId(messageId: string): void {
+    const messageWrap = this.vm.findMessageWithMessageID(messageId);
+    if (messageWrap) {
+      this.reply(messageWrap.message, 1);
+    }
+  }
   async resendMessage(message: Message): Promise<Message> {
     await this.vm.deleteMessagesFromLocal([message]);
     const newMessage = await this.vm.sendMessage(

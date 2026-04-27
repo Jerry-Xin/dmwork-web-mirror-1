@@ -654,7 +654,20 @@ export default class BaseModule implements IModule {
           }
         }
 
-        if (!isManager) {
+        // Bot 创建者可撤回自己创建的 Bot 发送的消息（与群管理员同等待遇，
+        // 不受 message.send 和 24h 时间窗口限制，与后端 YUJ-60 行为一致）
+        let isBotOwner = false;
+        const fromChannelInfo = WKSDK.shared().channelManager.getChannelInfo(
+          new Channel(message.fromUID, ChannelTypePerson)
+        );
+        if (fromChannelInfo?.orgData?.robot === 1) {
+          const creatorUID = fromChannelInfo.orgData.bot_creator_uid;
+          if (creatorUID && creatorUID === WKApp.loginInfo.uid) {
+            isBotOwner = true;
+          }
+        }
+
+        if (!isManager && !isBotOwner) {
           if (!message.send) {
             return null;
           }

@@ -233,6 +233,18 @@ export class MessageWrap {
         return this.message.fromUID
     }
 
+    // 外部群消息来源标记（YUJ-50 / YUJ-53）：
+    // 由 Convert.toMessage 从 /message/channel/sync 响应 msg-level 字段
+    // from_is_external (0|1) / from_source_space_name (string) 透传过来。
+    // 消费方优先读这组 msg-level 字段；缺失时再回落到 channelInfo.orgData.is_external。
+    public get fromIsExternal(): boolean {
+        return (this.message as any).from_is_external === 1
+    }
+    public get fromSourceSpaceName(): string | undefined {
+        const v = (this.message as any).from_source_space_name
+        return typeof v === "string" && v.length > 0 ? v : undefined
+    }
+
 
     public get from(): ChannelInfo | undefined {
         return WKSDK.shared().channelManager.getChannelInfo(new Channel(this.fromUID, ChannelTypePerson))
@@ -386,7 +398,17 @@ export class MessageWrap {
 
         if (entities && Array.isArray(entities)) {
             const result = this.parseMentionWithEntities(text, entities)
-            if (result !== null) return result
+            if (result !== null) {
+                // 如果同时有 @所有人，对 entity 结果里的普通 text 部分再做 @所有人 解析
+                if (mention.all) {
+                    return result.flatMap(part =>
+                        part.type === PartType.text
+                            ? this.parseMentionAll(part.text)
+                            : [part]
+                    )
+                }
+                return result
+            }
         }
 
         if (mention.uids && Array.isArray(mention.uids) && mention.uids.length > 0) {

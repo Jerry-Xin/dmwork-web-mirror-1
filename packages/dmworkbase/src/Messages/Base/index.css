@@ -109,6 +109,12 @@
     flex-shrink: 0;
 }
 
+/* 外部群成员消息头「来源」行（YUJ-51），紧贴 wk-msg-head 下方展示 */
+.wk-msg-head-origin {
+    margin-top: 0;
+    margin-bottom: 4px;
+}
+
 /* ── Bubble box ── */
 .wk-message-base-bubble-box {
     display: flex;
@@ -422,6 +428,27 @@ body[theme-mode=dark] .wk-message-base-bubble-box.recv .wk-message-base-bubble  
     color: var(--accent-color);
     unicode-bidi: plaintext;
     display: flex;
+    flex-direction: column;
+}
+
+.textTitle-name-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+/* 外部群成员来源标识（YUJ-51） */
+/* 视觉与 YUJ-47 紫色「外部」Tag 对齐：小字、次要色，仅做来源提示用途。 */
+.ext-origin {
+    margin-top: 2px;
+    font-size: var(--wk-text-size-sm);
+    font-weight: var(--wk-font-regular);
+    color: var(--semi-color-text-2);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .icon-message-read::before {

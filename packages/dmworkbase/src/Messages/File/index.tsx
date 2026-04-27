@@ -285,6 +285,26 @@ function getExtension(extension: string, name?: string): string {
   return "";
 }
 
+function isPreviewable(extension: string, name?: string): boolean {
+  const ext = getExtension(extension, name);
+  return [
+    "pdf",
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "bmp",
+    "webp",
+    "md",
+    "txt",
+  ].includes(ext);
+}
+
+function isTextFile(extension: string, name?: string): boolean {
+  const ext = getExtension(extension, name);
+  return ["md", "txt"].includes(ext);
+}
+
 const SMALL_FILE_THRESHOLD = 1024 * 1024; // 1MB 以下不显示进度条
 
 /** task 自身支持的重试接口（MediaMessageUploadTask 实现） */
@@ -441,6 +461,7 @@ export class FileCell extends MessageCell<any, FileCellState> {
     const { message, context } = this.props;
     const content = message.content as FileContent;
     const iconInfo = getFileIconInfo(content.extension, content.name);
+    const canPreview = isPreviewable(content.extension, content.name);
     const { uploadProgress, uploadStatus } = this.state;
 
     const isUploading =
@@ -555,7 +576,8 @@ export class FileCell extends MessageCell<any, FileCellState> {
 
     const uiProps = getFileMessageUI(message);
     // 检查是否为当前正在预览的文件
-    const isActive = context.getActivePreviewMessageId?.() === message.messageID;
+    const isActive =
+      context.getActivePreviewMessageId?.() === message.messageID;
 
     return (
       <>
@@ -573,7 +595,9 @@ export class FileCell extends MessageCell<any, FileCellState> {
         >
           <div>
             <div
-              className={`wk-message-file wk-message-file--clickable${isActive ? ' wk-message-file--active' : ''}`}
+              className={`wk-message-file wk-message-file--clickable${
+                isActive ? " wk-message-file--active" : ""
+              }`}
               onClick={this.handlePreview}
               title="点击预览"
             >

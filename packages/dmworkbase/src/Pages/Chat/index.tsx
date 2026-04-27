@@ -611,11 +611,17 @@ export class ChatContentPage extends Component<
               }}
               filePreview={previewFile}
               onFilePreviewClose={() => {
-                this.setState({ previewFile: null, activePreviewMessageId: null });
+                this.setState({
+                  previewFile: null,
+                  activePreviewMessageId: null,
+                });
               }}
               onReplyFile={(messageId) => {
                 // 关闭文件预览面板并回复消息
-                this.setState({ previewFile: null, activePreviewMessageId: null });
+                this.setState({
+                  previewFile: null,
+                  activePreviewMessageId: null,
+                });
                 this.conversationContext?.replyToMessageId?.(messageId);
               }}
             />
@@ -624,11 +630,18 @@ export class ChatContentPage extends Component<
         {/* 子区频道的文件预览（使用 ThreadPanel 壳子，获得拖拽功能） */}
         {isThreadChannel && previewFile && (
           <ThreadPanel
-            onClose={() => this.setState({ previewFile: null, activePreviewMessageId: null })}
+            onClose={() =>
+              this.setState({ previewFile: null, activePreviewMessageId: null })
+            }
             filePreview={previewFile}
-            onFilePreviewClose={() => this.setState({ previewFile: null, activePreviewMessageId: null })}
+            onFilePreviewClose={() =>
+              this.setState({ previewFile: null, activePreviewMessageId: null })
+            }
             onReplyFile={(messageId) => {
-              this.setState({ previewFile: null, activePreviewMessageId: null });
+              this.setState({
+                previewFile: null,
+                activePreviewMessageId: null,
+              });
               this.conversationContext?.replyToMessageId?.(messageId);
             }}
           />

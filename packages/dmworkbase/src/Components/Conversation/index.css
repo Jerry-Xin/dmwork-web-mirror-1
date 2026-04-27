@@ -4,12 +4,12 @@
 }
 
 .wk-conversation {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
 .wk-conversation-hasreply {
@@ -51,23 +51,23 @@ body[theme-mode="dark"] .wk-conversation-content {
 
 .wk-message-item-fold-session {
   justify-content: flex-start;
-  padding: var(--wk-sp-2) 0;
+  padding: 24px 0 0;
 }
 
 .wk-message-item-fold-session-shell {
-    width: 100%;
-    min-width: 0;
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
-    margin-left: 15px;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-left: 15px;
 }
 
 .wk-message-item-fold-session-avatar {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    overflow: visible;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  overflow: visible;
 }
 
 .wk-message-item-fold-session-avatar > * {
@@ -81,132 +81,138 @@ body[theme-mode="dark"] .wk-conversation-content {
 }
 
 .wk-message-item-fold-session-content {
-    width: 100%;
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 /* 折叠会话标题行:参与者名字 + AI协作标签 + 时间 + 收起/展开 */
 .wk-fold-session-title-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 0;
-    max-width: min(680px, calc(100vw - 120px)); /* 和卡片宽度一致 */
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0;
+  max-width: min(680px, calc(100vw - 120px)); /* 和卡片宽度一致 */
 }
 
 /* 名字和Tag的容器 */
 .wk-fold-session-participants {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* 收起/展开按钮 (对齐卡片右边缘) */
 .wk-fold-session-toggle-btn {
-    margin-left: auto;
-    margin-right: 0; /* 对齐卡片边缘,不是内容区边缘 */
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(127, 59, 245, 1.0);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    padding-right: 0; /* 确保和卡片右边缘对齐 */
-    transition: opacity var(--wk-dur-fast) var(--wk-ease);
+  margin-left: auto;
+  margin-right: 0; /* 对齐卡片边缘,不是内容区边缘 */
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(127, 59, 245, 1);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  padding-right: 0; /* 确保和卡片右边缘对齐 */
+  transition: opacity var(--wk-dur-fast) var(--wk-ease);
 }
 
 .wk-fold-session-toggle-btn:hover {
-    opacity: 0.8;
+  opacity: 0.8;
 }
 
 .wk-fold-session-participant-name {
-    font-size: 14px;
-    font-weight: 600 !important;
-    color: #000000;
+  font-size: 14px;
+  font-weight: 600 !important;
+  color: #000000;
 }
 
 /* AI 名称样式 (和普通名字一样,不需要特殊样式) */
 .wk-fold-session-participant-name-ai {
-    /* 继承 .wk-fold-session-participant-name 的样式 */
+  /* 继承 .wk-fold-session-participant-name 的样式 */
 }
 
 /* 折叠提示容器 */
 .wk-fold-session-participants-collapsed {
-    position: relative;
-    display: inline-block;
+  position: relative;
+  display: inline-block;
 }
 
 /* Tooltip */
 .wk-fold-session-tooltip {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 0;
-    background: rgba(28, 28, 35, 0.9);
-    color: #FFFFFF;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-    transition-delay: 0s;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: rgba(28, 28, 35, 0.9);
+  color: #ffffff;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  transition-delay: 0s;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .wk-fold-session-participants-collapsed:hover .wk-fold-session-tooltip {
-    opacity: 1;
-    transition-delay: 0.3s;
+  opacity: 1;
+  transition-delay: 0.3s;
 }
 
 .wk-fold-session-tooltip-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
 }
 
 .wk-fold-session-tooltip-item + .wk-fold-session-tooltip-item {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .wk-fold-session-tooltip-avatar {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-    border-radius: 4px;
-    overflow: hidden;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .wk-fold-session-tooltip-name {
-    font-size: 14px;
-    font-weight: 500;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .wk-fold-session-tag {
-    font-size: 12px;
-    font-weight: 600;
-    color: #FFFFFF;
-    background: linear-gradient(90deg, #7B89F4 0%, #9D78F5 100%);
-    padding: 0 4px;
-    border-radius: 3px;
-    height: 16px;
-    line-height: 16px;
-    display: inline-flex;
-    align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #ffffff;
+  background: linear-gradient(90deg, #7b89f4 0%, #9d78f5 100%);
+  border: none;
+  padding: 0 6px;
+  border-radius: 4px;
+  height: 18px;
+  line-height: 16px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* 标题行时间 */
 .wk-fold-session-time {
-    font-size: 14px;
-    font-weight: 400;
-    color: rgba(28, 28, 35, 0.4);
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(28, 28, 35, 0.4);
+  white-space: nowrap;
 }
 
 /* 标题行外层的 toggle 已移到卡片右上角,这些样式已废弃 */
@@ -219,10 +225,10 @@ body[theme-mode="dark"] .wk-conversation-content {
 
 /* ── 折叠卡片展开区：紧凑列表样式 ── */
 .wk-fold-msg {
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
-    padding: 0;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 0;
 }
 
 .wk-fold-msg-check-open {
@@ -276,53 +282,53 @@ body[theme-mode="dark"] .wk-conversation-content {
 }
 
 .wk-fold-msg + .wk-fold-msg {
-    margin-top: 12px;
+  margin-top: 12px;
 }
 
 /* 讨论列表里不显示头像,只显示姓名 Tag */
 .wk-fold-msg-ava {
-    display: none;
+  display: none;
 }
 
 .wk-fold-msg-body {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .wk-fold-msg-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* 姓名 Tag: 白底黑字, 20px高, 8px padding */
 .wk-fold-msg-name {
-    font-size: 12px;
-    font-weight: 700;
-    color: rgba(28, 28, 35, 1.0);
-    background: rgba(255, 255, 255, 1.0);
-    border-radius: 3px;
-    padding: 2px 8px;
-    height: 20px;
-    line-height: 16px;
-    display: inline-flex;
-    align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(28, 28, 35, 1);
+  background: rgba(255, 255, 255, 1);
+  border-radius: 3px;
+  padding: 2px 8px;
+  height: 20px;
+  line-height: 16px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .wk-fold-msg-time {
-    font-size: 12px;
-    font-weight: 400;
-    color: rgba(28, 28, 35, 0.4);
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(28, 28, 35, 0.4);
 }
 
 .wk-fold-msg-text {
-    font-size: 14px;
-    font-weight: 400;
-    color: rgba(28, 28, 35, 0.8);
-    line-height: 1.6;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(28, 28, 35, 0.8);
+  line-height: 1.6;
 }
 
 .wk-fold-session-summary-loading {
@@ -635,42 +641,40 @@ body[theme-mode="dark"] .wk-conversation-content {
   cursor: pointer;
 }
 
-
-
 /* ── 多选操作栏容器（slide-up 动画） ── */
 /* ── 多选操作栏：悬浮 pill 定位容器 ──
  * absolute 定位，浮在消息区底部 + 输入框上方，居中
  * 不参与 flex 布局，不占高度
  */
 .wk-conversation-multiplepanel {
-    position: absolute;
-    bottom: 72px;
-    left: 50%;
-    transform: translateX(-50%) translateY(16px);
-    z-index: 999;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+  position: absolute;
+  bottom: 72px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .wk-conversation-multiplepanel-show {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ── 悬浮 pill 主体 ──
  * Figma 387:63357: 白底，r=1000，pad T4 B4 L16 R16，gap=12，带阴影
  */
 .wk-multiplepanel {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 4px 16px;
-    background: #ffffff;
-    border-radius: 1000px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
-    white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 16px;
+  background: #ffffff;
+  border-radius: 1000px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+  white-space: nowrap;
 }
 
 /* 纯文字小 pill 按钮
@@ -679,63 +683,63 @@ body[theme-mode="dark"] .wk-conversation-content {
  */
 /* 纯文字小 pill 按钮：默认透明，hover 出现背景 */
 .wk-multiplepanel-btn {
-    height: 32px;
-    padding: 6px 16px;
-    border-radius: 100px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: #1c1c23;
-    white-space: nowrap;
-    transition: background 0.15s;
-    line-height: 1;
-    display: flex;
-    align-items: center;
+  height: 32px;
+  padding: 6px 16px;
+  border-radius: 100px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1c1c23;
+  white-space: nowrap;
+  transition: background 0.15s;
+  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
 .wk-multiplepanel-btn:hover {
-    background: rgba(28, 28, 35, 0.08);
+  background: rgba(28, 28, 35, 0.08);
 }
 
 /* 删除按钮：危险色 */
 .wk-multiplepanel-btn--danger {
-    color: #ff563b;
+  color: #ff563b;
 }
 
 .wk-multiplepanel-btn--danger:hover {
-    background: rgba(255, 86, 59, 0.08);
+  background: rgba(255, 86, 59, 0.08);
 }
 
 /* 竖线分隔符 */
 .wk-multiplepanel-sep {
-    width: 1px;
-    height: 20px;
-    background: rgba(28, 28, 35, 0.15);
-    flex-shrink: 0;
+  width: 1px;
+  height: 20px;
+  background: rgba(28, 28, 35, 0.15);
+  flex-shrink: 0;
 }
 
 /* 关闭（×）按钮 */
 .wk-multiplepanel-close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 100px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    color: rgba(28, 28, 35, 0.4);
-    transition: background 0.15s, color 0.15s;
-    flex-shrink: 0;
-    padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 100px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: rgba(28, 28, 35, 0.4);
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  padding: 0;
 }
 
 .wk-multiplepanel-close:hover {
-    background: rgba(28, 28, 35, 0.08);
-    color: #1c1c23;
+  background: rgba(28, 28, 35, 0.08);
+  color: #1c1c23;
 }
 
 .wk-conversationpositionview {
@@ -820,7 +824,7 @@ body[theme-mode="dark"] .wk-conversationpositionview-item {
 
 @keyframes wk-message-item-reminder-move {
   0% {
-    background-color: rgba(127, 59, 245, 0.10);
+    background-color: rgba(127, 59, 245, 0.1);
   }
   60% {
     background-color: rgba(127, 59, 245, 0.06);
@@ -832,7 +836,7 @@ body[theme-mode="dark"] .wk-conversationpositionview-item {
 
 @-webkit-keyframes wk-message-item-reminder-move {
   0% {
-    background-color: rgba(127, 59, 245, 0.10);
+    background-color: rgba(127, 59, 245, 0.1);
   }
   60% {
     background-color: rgba(127, 59, 245, 0.06);
@@ -844,11 +848,11 @@ body[theme-mode="dark"] .wk-conversationpositionview-item {
 
 /* 删除确认弹窗 — 清除 Semi body 默认 padding，内容自己控制间距 */
 .wk-delete-confirm-modal .semi-modal-body {
-    padding: 0 !important;
+  padding: 0 !important;
 }
 .wk-delete-confirm-modal .semi-modal-body-wrapper {
-    margin: 0 !important;
+  margin: 0 !important;
 }
 .wk-delete-confirm-modal .semi-modal-content {
-    padding: 0 !important;
+  padding: 0 !important;
 }

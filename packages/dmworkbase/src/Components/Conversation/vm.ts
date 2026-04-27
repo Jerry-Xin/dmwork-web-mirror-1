@@ -221,8 +221,14 @@ export default class ConversationVM extends ProviderListener {
         })
     }
 
+    /** 当前 channel 是否支持 AI 消息折叠（群聊或子区） */
+    private get supportsFolding(): boolean {
+        return this.channel.channelType === ChannelTypeGroup
+            || this.channel.channelType === ChannelTypeCommunityTopic
+    }
+
     isBotMessage(message: MessageWrap): boolean {
-        if (this.channel.channelType !== ChannelTypeGroup) {
+        if (!this.supportsFolding) {
             return false
         }
         if (message.revoke || message.send) {
@@ -707,7 +713,7 @@ export default class ConversationVM extends ProviderListener {
             if (this.loading) {
                 return
             }
-            if (this.channel.channelType !== ChannelTypeGroup) {
+            if (!this.supportsFolding) {
                 return
             }
             if (channelInfo.channel.channelType !== ChannelTypePerson) {
@@ -743,7 +749,7 @@ export default class ConversationVM extends ProviderListener {
             }
         }, {})
 
-        if (this.channel.channelType === ChannelTypeGroup || this.channel.channelType === ChannelTypeCommunityTopic) {
+        if (this.supportsFolding) {
 
             // 加载频道信息
             this.channelInfo = WKSDK.shared().channelManager.getChannelInfo(this.channel)

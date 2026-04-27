@@ -52,11 +52,27 @@ export default class MessageHead extends Component<MessageHeadProps> {
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(new Channel(message.fromUID, ChannelTypePerson))
         const isGroupMsg = message.channel.channelType === ChannelTypeGroup
         const isBot = channelInfo?.orgData?.robot === 1
+        // 外部群成员来源标记（YUJ-53）：
+        // 优先读 msg-level 字段 message.fromIsExternal / message.fromSourceSpaceName
+        // （YUJ-50 后端 /message/channel/sync payload 扩展）。
+        // 后端未扩展 /users/{uid} 端点，故对 channelInfo.orgData.is_external 做
+        // 向后兼容回落——若未来 /users/{uid} 也补齐该字段仍可继续工作。
+        const msgSourceSpaceName = message.fromSourceSpaceName
+        const orgSourceSpaceName = channelInfo?.orgData?.source_space_name as string | undefined
+        const hasMsgLevel = message.fromIsExternal && !!msgSourceSpaceName
+        const hasOrgLevel = isGroupMsg && channelInfo?.orgData?.is_external === 1 && !!orgSourceSpaceName
+        const isExternalMember = hasMsgLevel || hasOrgLevel
+        const sourceSpaceName = hasMsgLevel ? msgSourceSpaceName : orgSourceSpaceName
         return <>
            {
-                this.needTitle()?( <div className="textTitle" style={{color:getTitleColor(channelInfo?.orgData?.displayName), display:'flex', alignItems:'center', gap: 4}}>
-                <span>{channelInfo?.orgData?.displayName}</span>
-                {isBot && <AiBadge size="small" />}
+                this.needTitle()?( <div className="textTitle" style={{color:getTitleColor(channelInfo?.orgData?.displayName)}}>
+                <div className="textTitle-name-row">
+                    <span>{channelInfo?.orgData?.displayName}</span>
+                    {isBot && <AiBadge size="small" />}
+                </div>
+                {isExternalMember && sourceSpaceName && (
+                    <span className="ext-origin">来源: {sourceSpaceName}</span>
+                )}
             </div>):null
            }
         </>

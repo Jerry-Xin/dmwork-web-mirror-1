@@ -485,7 +485,7 @@ export class Conversation
   }
 
   isContextMenuOpen(message: Message): boolean {
-    return this.state.contextMenuMessageID === message.messageID
+    return this.state.contextMenuMessageID === message.messageID;
   }
 
   getCachedSelectedText(): string | null {
@@ -877,7 +877,10 @@ export class Conversation
           </span>
           <div className="wk-fold-session-tooltip">
             {participants.map((participant) => (
-              <div key={participant.id} className="wk-fold-session-tooltip-item">
+              <div
+                key={participant.id}
+                className="wk-fold-session-tooltip-item"
+              >
                 <div className="wk-fold-session-tooltip-avatar">
                   {participant.avatar}
                 </div>
@@ -939,7 +942,7 @@ export class Conversation
                   event.stopPropagation();
                   const wasExpanded = session.isExpanded;
                   this.vm.toggleFoldSession(session.sessionId);
-                  
+
                   // 展开时,确保内容可见(无动画,下一帧立即滚动)
                   if (!wasExpanded) {
                     requestAnimationFrame(() => {
@@ -949,9 +952,9 @@ export class Conversation
                         const viewportHeight = window.innerHeight;
                         // 如果元素下半部分不在视口内,滚动让它完整可见
                         if (rect.bottom > viewportHeight) {
-                          element.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'nearest' 
+                          element.scrollIntoView({
+                            behavior: "smooth",
+                            block: "nearest",
                           });
                         }
                       }
@@ -982,7 +985,9 @@ export class Conversation
               highlightSummary={session.highlightSummary}
               summaryId={summaryId}
               summarySender={summarySender}
-              summaryTime={moment(summaryMessage.timestamp * 1000).format("HH:mm")}
+              summaryTime={moment(summaryMessage.timestamp * 1000).format(
+                "HH:mm"
+              )}
               summaryContent={this.renderFoldSessionSummary(summaryMessage)}
               expandedContent={this.renderFoldSessionExpandedList(
                 session.expandedMessages
@@ -1047,9 +1052,9 @@ export class Conversation
     const isSystemMessage =
       message.revoke ||
       message.contentType === MessageContentTypeConst.screenshot ||
-      (message.contentType >= 1000 && 
-       message.contentType <= 2000 && 
-       message.contentType !== MessageContentTypeConst.threadCreated);
+      (message.contentType >= 1000 &&
+        message.contentType <= 2000 &&
+        message.contentType !== MessageContentTypeConst.threadCreated);
     return (
       <div
         onAnimationEnd={() => {
@@ -1532,60 +1537,145 @@ export class Conversation
                     }}
                   ></MultiplePanel>
 
-                <WKModal
-                  visible={!!this.state.showDeleteConfirm}
-                  footer={null}
-                  options={{ closable: false }}
-                  className="wk-delete-confirm-modal"
-                  onCancel={() => this.setState({ showDeleteConfirm: false })}
-                >
-                  {/* 整体自定义，对齐 Figma 387-63814 */}
-                  <div style={{ padding: "24px 24px 20px" }}>
-                    {/* Header */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M11 2L20.66 18H1.34L11 2Z" fill="#FF8C00"/>
-                          <path d="M11 9V13" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
-                          <circle cx="11" cy="15.5" r="0.85" fill="white"/>
-                        </svg>
-                        <span style={{ fontSize: 16, fontWeight: 600, color: "#1C1C23" }}>确认删除消息？</span>
-                      </div>
-                      <button
-                        onClick={() => this.setState({ showDeleteConfirm: false })}
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "rgba(28,28,35,0.4)", fontSize: 18, lineHeight: 1 }}
-                      >×</button>
-                    </div>
-                    {/* Content */}
-                    <p style={{ margin: "0 0 24px", color: "rgba(28,28,35,0.6)", fontSize: 14, lineHeight: "22px" }}>
-                      删除的消息将从你的会话记录中消失，但仍然对会话内其他人可见。
-                    </p>
-                    {/* Footer */}
-                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                      <button
-                        onClick={() => this.setState({ showDeleteConfirm: false })}
-                        style={{ padding: "7px 20px", borderRadius: 999, border: "1px solid rgba(28,28,35,0.15)", background: "#fff", color: "rgba(28,28,35,0.8)", fontSize: 14, cursor: "pointer", fontWeight: 500 }}
-                      >取消</button>
-                      <button
-                        onClick={async () => {
-                          const checkedMessagewraps = vm.getCheckedMessages();
-                          const messages = checkedMessagewraps.map((m) => m.message).filter(Boolean);
-                          this.setState({ showDeleteConfirm: false });
-                          if (messages.length === 0) return;
-                          try {
-                            await vm.deleteMessages(messages);
-                            vm.editOn = false;
-                            vm.unCheckAllMessages();
-                          } catch (e) {
-                            Toast.error("删除失败，请重试");
-                          }
+                  <WKModal
+                    visible={!!this.state.showDeleteConfirm}
+                    footer={null}
+                    options={{ closable: false }}
+                    className="wk-delete-confirm-modal"
+                    onCancel={() => this.setState({ showDeleteConfirm: false })}
+                  >
+                    {/* 整体自定义，对齐 Figma 387-63814 */}
+                    <div style={{ padding: "24px 24px 20px" }}>
+                      {/* Header */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: 12,
                         }}
-                        style={{ padding: "7px 20px", borderRadius: 999, border: "none", background: "#FF4D4F", color: "#fff", fontSize: 14, cursor: "pointer", fontWeight: 500 }}
-                      >确认</button>
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <svg
+                            width="22"
+                            height="22"
+                            viewBox="0 0 22 22"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M11 2L20.66 18H1.34L11 2Z"
+                              fill="#FF8C00"
+                            />
+                            <path
+                              d="M11 9V13"
+                              stroke="white"
+                              strokeWidth="1.6"
+                              strokeLinecap="round"
+                            />
+                            <circle cx="11" cy="15.5" r="0.85" fill="white" />
+                          </svg>
+                          <span
+                            style={{
+                              fontSize: 16,
+                              fontWeight: 600,
+                              color: "#1C1C23",
+                            }}
+                          >
+                            确认删除消息？
+                          </span>
+                        </div>
+                        <button
+                          onClick={() =>
+                            this.setState({ showDeleteConfirm: false })
+                          }
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: 4,
+                            color: "rgba(28,28,35,0.4)",
+                            fontSize: 18,
+                            lineHeight: 1,
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                      {/* Content */}
+                      <p
+                        style={{
+                          margin: "0 0 24px",
+                          color: "rgba(28,28,35,0.6)",
+                          fontSize: 14,
+                          lineHeight: "22px",
+                        }}
+                      >
+                        删除的消息将从你的会话记录中消失，但仍然对会话内其他人可见。
+                      </p>
+                      {/* Footer */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: 8,
+                        }}
+                      >
+                        <button
+                          onClick={() =>
+                            this.setState({ showDeleteConfirm: false })
+                          }
+                          style={{
+                            padding: "7px 20px",
+                            borderRadius: 999,
+                            border: "1px solid rgba(28,28,35,0.15)",
+                            background: "#fff",
+                            color: "rgba(28,28,35,0.8)",
+                            fontSize: 14,
+                            cursor: "pointer",
+                            fontWeight: 500,
+                          }}
+                        >
+                          取消
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const checkedMessagewraps = vm.getCheckedMessages();
+                            const messages = checkedMessagewraps
+                              .map((m) => m.message)
+                              .filter(Boolean);
+                            this.setState({ showDeleteConfirm: false });
+                            if (messages.length === 0) return;
+                            try {
+                              await vm.deleteMessages(messages);
+                              vm.editOn = false;
+                              vm.unCheckAllMessages();
+                            } catch (e) {
+                              Toast.error("删除失败，请重试");
+                            }
+                          }}
+                          style={{
+                            padding: "7px 20px",
+                            borderRadius: 999,
+                            border: "none",
+                            background: "#FF4D4F",
+                            color: "#fff",
+                            fontSize: 14,
+                            cursor: "pointer",
+                            fontWeight: 500,
+                          }}
+                        >
+                          确认
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </WKModal>
-
+                  </WKModal>
                 </div>
                 <div
                   className="wk-conversation-footer"
@@ -1680,7 +1770,8 @@ export class Conversation
                             const entities = mention.entities;
                             // 1. 本地立即渲染：把 entities 写入 contentObj，走 entity 解析路径
                             if (!content.contentObj) content.contentObj = {};
-                            if (!content.contentObj.mention) content.contentObj.mention = {};
+                            if (!content.contentObj.mention)
+                              content.contentObj.mention = {};
                             content.contentObj.mention.entities = entities;
                             // 2. 发送给服务端：override encode()，把 entities 写入 payload
                             const originalEncode = content.encode.bind(content);
@@ -1692,8 +1783,14 @@ export class Conversation
                                 const obj = JSON.parse(str);
                                 if (!obj.mention) obj.mention = {};
                                 obj.mention.entities = entities;
-                                return new TextEncoder().encode(JSON.stringify(obj));
-                              } catch {
+                                return new TextEncoder().encode(
+                                  JSON.stringify(obj)
+                                );
+                              } catch (e) {
+                                console.warn(
+                                  "[Mention] encode override failed, entities may be lost",
+                                  e
+                                );
                                 return originalEncode();
                               }
                             };
@@ -2099,15 +2196,33 @@ class MultiplePanel extends Component<MultiplePanelProps> {
     const { onClose, onForward, onMergeForward, onDelete } = this.props;
     return (
       <div className="wk-multiplepanel">
-        <button className="wk-multiplepanel-btn" onClick={onForward}>逐条转发</button>
+        <button className="wk-multiplepanel-btn" onClick={onForward}>
+          逐条转发
+        </button>
         <div className="wk-multiplepanel-sep" />
-        <button className="wk-multiplepanel-btn" onClick={onMergeForward}>合并转发</button>
+        <button className="wk-multiplepanel-btn" onClick={onMergeForward}>
+          合并转发
+        </button>
         <div className="wk-multiplepanel-sep" />
-        <button className="wk-multiplepanel-btn wk-multiplepanel-btn--danger" onClick={onDelete}>删除</button>
+        <button
+          className="wk-multiplepanel-btn wk-multiplepanel-btn--danger"
+          onClick={onDelete}
+        >
+          删除
+        </button>
         <div className="wk-multiplepanel-sep" />
-        <button className="wk-multiplepanel-close" onClick={onClose} aria-label="取消多选">
+        <button
+          className="wk-multiplepanel-close"
+          onClick={onClose}
+          aria-label="取消多选"
+        >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            <path
+              d="M1 1L13 13M13 1L1 13"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
           </svg>
         </button>
       </div>

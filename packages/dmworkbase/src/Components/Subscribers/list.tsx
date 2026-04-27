@@ -238,9 +238,26 @@ export class SubscriberList extends Component<
                               Bot 管理员
                             </Tag>
                           )}
+                          {item.orgData?.is_external === 1 && (
+                            <>
+                              <Tag size="small" color="purple" style={{ marginLeft: 4 }}>
+                                外部
+                              </Tag>
+                              {item.orgData?.source_space_name && (
+                                <span className="wk-subscrierlist-item-source">
+                                  来自 {item.orgData.source_space_name}
+                                </span>
+                              )}
+                            </>
+                          )}
                         </div>
                         <div className="wk-subscrierlist-item-desc">
                           {this.getRoleName(item)}
+                          {item.orgData?.is_external === 1 && item.orgData?.source_space_name && (
+                            <span style={{ marginLeft: 6, color: "var(--semi-color-text-2)" }}>
+                              来自 {item.orgData.source_space_name}
+                            </span>
+                          )}
                         </div>
                       </div>
 

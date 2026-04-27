@@ -99,6 +99,20 @@ export class Convert {
         message.content = messageContent
 
         message.isDeleted = msgMap["is_deleted"] === 1
+
+        // 外部群成员消息来源标记（YUJ-50 backend / YUJ-53 frontend）：
+        // /message/channel/sync 响应在 msg-level 携带 from_is_external (0|1)
+        // 和 from_source_space_name (string)。Message 是 SDK 内置类，这里
+        // 通过 any 旁路写入，再由 MessageWrap 以 getter 形式读出（见 Model.tsx）。
+        const fromIsExternal = msgMap["from_is_external"]
+        if (fromIsExternal !== undefined && fromIsExternal !== null) {
+            (message as any).from_is_external = fromIsExternal === 1 ? 1 : 0
+        }
+        const fromSourceSpaceName = msgMap["from_source_space_name"]
+        if (fromSourceSpaceName !== undefined && fromSourceSpaceName !== null) {
+            (message as any).from_source_space_name = fromSourceSpaceName
+        }
+
         return message
     }
 

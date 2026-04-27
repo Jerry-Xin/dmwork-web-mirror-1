@@ -24,7 +24,6 @@ import { FilePreviewInfo } from "../FilePreviewPanel/types";
 import { fileRendererRegistry } from "../FilePreviewPanel/registry";
 import { getExtension } from "../FilePreviewPanel/types";
 import FilePreviewHeader from "../FilePreviewPanel/FilePreviewHeader";
-import { shouldShowToc } from "../FilePreviewPanel/renderers/MarkdownToc";
 import { MarkdownRenderer } from "../FilePreviewPanel/renderers/MarkdownRenderer";
 import { HtmlRenderer } from "../FilePreviewPanel/renderers/HtmlRenderer";
 import {
@@ -379,6 +378,7 @@ export default class ThreadPanel extends Component<
                 thread: { ...thread, name: newName.trim() },
               },
             });
+
             // 清除 SDK 缓存，刷新 Chat header 展示的子区名称
             const threadChannel = new Channel(
               buildThreadChannelId(this.props.groupNo, thread.short_id),
@@ -523,7 +523,6 @@ export default class ThreadPanel extends Component<
       // 判断是否为 Markdown 文件
       const isMarkdown = ["md", "markdown"].includes(ext);
 
-      // 判断是否显示 TOC 按钮（仅 Markdown 预览模式且 h2 ≥ 3）
       // 判断是否显示 TOC 按钮（仅 Markdown 预览模式且 h2 ≥ 3）
       const showTocButton =
         isMarkdown && fileViewMode === "preview" && this.state.isTocAvailable;

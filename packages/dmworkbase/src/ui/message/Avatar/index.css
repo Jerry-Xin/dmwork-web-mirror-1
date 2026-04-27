@@ -25,9 +25,9 @@
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background-color: var(--wk-status-success);
+  background-color: var(--wk-color-online);
   border: 1px solid var(--wk-bg-surface);
 }

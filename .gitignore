@@ -51,3 +51,10 @@ dm__test
 .ftre/snapshot
 AGENTS.config.local.json
 package-lock.json
+
+# AI/IDE 工件文件（不进仓库）
+.claude/
+.ftre/memory/
+.vscode/settings.json
+**/settings.local.json
+docs/superpowers/plans/

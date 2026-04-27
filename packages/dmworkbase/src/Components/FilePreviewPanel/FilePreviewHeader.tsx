@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   ChevronDown,
   FileText,
@@ -7,7 +7,6 @@ import {
   Maximize2,
   Reply,
   X,
-  ArrowLeft,
   File,
   FileImage,
   FileCode,
@@ -45,10 +44,6 @@ export interface FilePreviewHeaderProps {
   conversationFiles?: ConversationFile[];
   /** 切换文件回调 */
   onFileSelect?: (file: ConversationFile) => void;
-  /** 是否显示返回按钮 */
-  showBackButton?: boolean;
-  /** 返回按钮点击回调 */
-  onBack?: () => void;
   /** 关闭面板回调 */
   onClose: () => void;
   /** 下载文件回调 */
@@ -67,6 +62,11 @@ export interface FilePreviewHeaderProps {
   showViewToggle?: boolean;
   /** 自定义中间区域内容（类型相关工具） */
   typeTools?: React.ReactNode;
+
+  /** 侧边文件列表面板是否打开 */
+  isFilePanelOpen?: boolean;
+  /** 切换侧边文件列表面板 */
+  onFilePanelToggle?: () => void;
 }
 
 /** 根据扩展名获取文件图标 */
@@ -135,13 +135,15 @@ function getFileIcon(extension: string): React.ReactNode {
 
 /**
  * 文件预览面板统一 Header 组件
+ *
+ * 交互逻辑：
+ * 1. 侧边面板关闭时：hover 文件选择器显示浮窗下拉列表
+ * 2. 点击文件选择器：切换侧边文件列表面板的展开/收起
  */
 const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
   file,
   conversationFiles = [],
   onFileSelect,
-  showBackButton = false,
-  onBack,
   onClose,
   onDownload,
   onOpenExternal,
@@ -151,33 +153,66 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
   onViewModeChange,
   showViewToggle = false,
   typeTools,
+
+  isFilePanelOpen = false,
+  onFilePanelToggle,
 }) => {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [hoverDropdownOpen, setHoverDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<number | null>(null);
 
-  // 点击外部关闭下拉菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setDropdownOpen(false);
-      }
-    };
+  const fileList = conversationFiles;
+  const hasFiles = fileList.length > 0;
 
-    if (dropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+  // 清理 hover timeout
+  const clearHoverTimeout = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      window.clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownOpen]);
+  }, []);
 
-  const handleFileClick = (fileItem: ConversationFile) => {
-    setDropdownOpen(false);
-    onFileSelect?.(fileItem);
-  };
+  // 鼠标进入：仅在侧边面板关闭时显示浮窗
+  const handleMouseEnter = useCallback(() => {
+    if (!isFilePanelOpen && hasFiles) {
+      clearHoverTimeout();
+      hoverTimeoutRef.current = window.setTimeout(() => {
+        setHoverDropdownOpen(true);
+      }, 200); // 200ms 延迟，避免快速划过触发
+    }
+  }, [isFilePanelOpen, hasFiles, clearHoverTimeout]);
+
+  // 鼠标离开：关闭浮窗
+  const handleMouseLeave = useCallback(() => {
+    clearHoverTimeout();
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setHoverDropdownOpen(false);
+    }, 150); // 150ms 延迟，允许鼠标移到下拉面板
+  }, [clearHoverTimeout]);
+
+  // 点击：切换侧边面板
+  const handleClick = useCallback(() => {
+    if (hasFiles && onFilePanelToggle) {
+      setHoverDropdownOpen(false); // 关闭浮窗
+      onFilePanelToggle();
+    }
+  }, [hasFiles, onFilePanelToggle]);
+
+  // 选择文件
+  const handleFileClick = useCallback(
+    (fileItem: ConversationFile) => {
+      setHoverDropdownOpen(false);
+      onFileSelect?.(fileItem);
+    },
+    [onFileSelect]
+  );
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      clearHoverTimeout();
+    };
+  }, [clearHoverTimeout]);
 
   const handleDownload = () => {
     if (onDownload) {
@@ -202,44 +237,40 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
     }
   };
 
-  const hasFiles = conversationFiles.length > 0;
+  // 是否显示浮窗：侧边面板关闭 && hover 状态 && 有文件
+  const showHoverDropdown = !isFilePanelOpen && hoverDropdownOpen && hasFiles;
 
   return (
     <div className="wk-file-preview-header">
-      {/* 左侧：返回按钮 + 文件选择器 */}
+      {/* 左侧：文件选择器 */}
       <div className="wk-file-preview-header__left">
-        {/* 返回按钮 */}
-        {showBackButton && onBack && (
-          <button
-            className="wk-file-preview-header__btn"
-            onClick={onBack}
-            title="返回"
-          >
-            <ArrowLeft size={16} />
-          </button>
-        )}
-
         {/* 文件下拉选择器 */}
         <div
           className="wk-file-preview-header__dropdown"
           ref={dropdownRef}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
           <button
             className={`wk-file-preview-header__dropdown-btn ${
-              dropdownOpen ? "wk-file-preview-header__dropdown-btn--open" : ""
+              hasFiles ? "wk-file-preview-header__dropdown-btn--has-files" : ""
+            } ${
+              isFilePanelOpen || hoverDropdownOpen
+                ? "wk-file-preview-header__dropdown-btn--open"
+                : ""
             }`}
-            onClick={() => hasFiles && setDropdownOpen(!dropdownOpen)}
-            title={hasFiles ? "对话内文件" : file.name}
+            onClick={handleClick}
+            title={file.name}
           >
             {getFileIcon(file.extension)}
             <span className="wk-file-preview-header__dropdown-text">
-              {hasFiles ? "对话内文件" : file.name}
+              {file.name}
             </span>
             {hasFiles && (
               <ChevronDown
                 size={12}
                 className={`wk-file-preview-header__dropdown-caret ${
-                  dropdownOpen
+                  isFilePanelOpen
                     ? "wk-file-preview-header__dropdown-caret--open"
                     : ""
                 }`}
@@ -247,14 +278,18 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
             )}
           </button>
 
-          {/* 下拉面板 */}
-          {dropdownOpen && hasFiles && (
-            <div className="wk-file-preview-header__dropdown-panel">
+          {/* Hover 浮窗下拉面板（仅在侧边面板关闭时显示） */}
+          {showHoverDropdown && (
+            <div
+              className="wk-file-preview-header__dropdown-panel"
+              onMouseEnter={() => clearHoverTimeout()}
+              onMouseLeave={handleMouseLeave}
+            >
               <div className="wk-file-preview-header__dropdown-title">
-                对话内文件 · 悬停速选
+                对话内文件 · 点击展开列表
               </div>
               <div className="wk-file-preview-header__dropdown-list">
-                {conversationFiles.map((fileItem) => (
+                {fileList.map((fileItem) => (
                   <div
                     key={fileItem.id}
                     className={`wk-file-preview-header__dropdown-item ${
@@ -282,17 +317,12 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
                   </div>
                 ))}
               </div>
-              <div className="wk-file-preview-header__dropdown-footer">
-                点击按钮打开完整侧边栏
-              </div>
             </div>
           )}
         </div>
 
         {/* 分隔符 */}
-        {showViewToggle && (
-          <span className="wk-file-preview-header__sep" />
-        )}
+        {showViewToggle && <span className="wk-file-preview-header__sep" />}
 
         {/* 视图切换（预览/源码） */}
         {showViewToggle && onViewModeChange && (
@@ -322,9 +352,7 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
       </div>
 
       {/* 中间：类型相关工具 */}
-      <div className="wk-file-preview-header__mid">
-        {typeTools}
-      </div>
+      <div className="wk-file-preview-header__mid">{typeTools}</div>
 
       {/* 右侧：通用操作按钮 */}
       <div className="wk-file-preview-header__actions">

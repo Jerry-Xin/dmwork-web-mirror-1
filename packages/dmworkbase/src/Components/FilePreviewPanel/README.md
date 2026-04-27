@@ -305,7 +305,7 @@ pnpm storybook
 
 - [ ] `VideoRenderer` - 视频播放器
 - [ ] `AudioRenderer` - 音频播放器
-- [ ] `PptRenderer` - PPT HTML 预览
+- [x] `PptRenderer` - PPT HTML 预览 ✅
 
 ## 十一、变更记录
 

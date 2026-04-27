@@ -28,6 +28,7 @@
   --wk-color-online: var(--wk-green-dark); /* Figma: #52C41A 在线状态绿 */
   --wk-color-white: #ffffff; /* 固定白色（不跟主题走） */
   --wk-color-danger: var(--wk-red-light); /* Figma: #F54A45 未读badge/红点 */
+  --wk-color-danger-light: rgba(245, 74, 69, 0.1); /* danger 半透明背景 */
   --wk-success-tint-10: rgba(
     65,
     205,

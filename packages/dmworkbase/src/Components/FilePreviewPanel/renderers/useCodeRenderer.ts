@@ -37,7 +37,7 @@ export function useCodeRenderer(
   file: BaseRendererProps["file"],
   options: CodeRendererOptions = {}
 ): UseCodeRendererResult {
-  const { language: _language, enableHighlight = true, formatter } = options;
+  const { formatter } = options;
   const fileSize = file.size || 0;
 
   const { content, loading, error, reload } = useFileContent({

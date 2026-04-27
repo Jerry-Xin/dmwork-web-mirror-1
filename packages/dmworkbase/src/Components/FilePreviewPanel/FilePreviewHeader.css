@@ -15,7 +15,7 @@
 }
 
 /* ============================================
-   左侧区域：返回按钮 + 文件选择器 + 视图切换
+   左侧区域：文件选择器 + 视图切换
    ============================================ */
 
 .wk-file-preview-header__left {
@@ -46,8 +46,8 @@
 }
 
 .wk-file-preview-header__btn--close:hover {
-  background: var(--wk-color-danger-light, rgba(239, 68, 68, 0.1));
-  color: var(--wk-color-danger, #ef4444);
+  background: var(--wk-color-danger-light);
+  color: var(--wk-color-danger);
 }
 
 /* ============================================
@@ -64,19 +64,29 @@
   gap: 6px;
   padding: 4px 8px;
   border: none;
-  background: var(--wk-bg-hover);
+  background: transparent;
   border-radius: var(--wk-r-sm);
-  cursor: pointer;
+  cursor: default;
   color: var(--wk-text-primary);
   font-size: 13px;
   font-weight: 500;
   transition: background 0.15s;
-  max-width: 200px;
+  max-width: 240px;
 }
 
-.wk-file-preview-header__dropdown-btn:hover,
+/* 有文件列表时显示可点击状态 */
+.wk-file-preview-header__dropdown-btn--has-files {
+  cursor: pointer;
+}
+
+.wk-file-preview-header__dropdown-btn--has-files:hover,
 .wk-file-preview-header__dropdown-btn--open {
-  background: var(--wk-bg-active);
+  background: var(--wk-bg-hover);
+}
+
+.wk-file-preview-header__dropdown-btn > svg:first-child {
+  flex-shrink: 0;
+  color: var(--wk-text-secondary);
 }
 
 .wk-file-preview-header__dropdown-text {
@@ -131,6 +141,7 @@
   padding: 8px 12px;
   cursor: pointer;
   transition: background 0.15s;
+  position: relative;
 }
 
 .wk-file-preview-header__dropdown-item:hover {
@@ -169,14 +180,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.wk-file-preview-header__dropdown-footer {
-  padding: 6px 12px;
-  font-size: 10px;
-  color: var(--wk-text-tertiary);
-  border-top: 1px solid var(--wk-border-subtle);
-  text-align: center;
 }
 
 /* ============================================

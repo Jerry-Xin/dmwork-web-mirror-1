@@ -44,7 +44,7 @@
 
 .wk-file-preview-title {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--wk-text-size-md);
   font-weight: 500;
   color: var(--wk-text-primary);
   overflow: hidden;

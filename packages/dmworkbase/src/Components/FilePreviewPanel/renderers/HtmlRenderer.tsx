@@ -118,7 +118,19 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({
     if (!iframe) return;
 
     const handleMessage = (event: MessageEvent) => {
-      // 检查是否来自我们的 iframe
+      // 安全检查：验证消息来源
+      // blob URL 的 origin 是 "null"（字符串），需要特殊处理
+      // 同时检查消息是否来自我们的 iframe
+      const isFromOurIframe =
+        event.source === iframe.contentWindow ||
+        event.origin === "null" || // blob URL origin
+        event.origin === window.location.origin;
+
+      if (!isFromOurIframe) {
+        return; // 忽略来自其他来源的消息
+      }
+
+      // 检查消息类型
       if (event.data && event.data.type === "html-render-error") {
         const errorMsg = `渲染错误: ${event.data.message || "未知错误"}`;
         setRenderError(errorMsg);

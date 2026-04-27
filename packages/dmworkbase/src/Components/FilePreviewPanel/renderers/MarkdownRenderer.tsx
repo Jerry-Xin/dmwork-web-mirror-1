@@ -172,7 +172,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   }, [onTocToggle, internalTocOpen]);
 
   // 处理 TOC 项目点击（滚动到对应位置）
-  // 使用 id 直接 querySelector 查找元素，更安全
+  // 使用标题文本内容匹配，避免索引不一致的问题
   const handleTocItemClick = useCallback(
     (id: string) => {
       setActiveTocId(id);
@@ -181,16 +181,24 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       const contentEl = contentRef.current;
       if (!contentEl) return;
 
-      // 使用 data-toc-id 属性查找目标元素，更安全
-      // 如果没有 data-toc-id，回退到按索引查找
-      let targetEl = contentEl.querySelector(`[data-toc-id="${id}"]`);
+      // 找到目标 TOC 项
+      const targetTocItem = tocItems.find((item) => item.id === id);
+      if (!targetTocItem) return;
 
-      if (!targetEl) {
-        // 回退方案：查找所有标题元素并按索引匹配
-        const headings = contentEl.querySelectorAll("h2, h3");
-        const targetIndex = tocItems.findIndex((item) => item.id === id);
-        if (targetIndex !== -1 && targetIndex < headings.length) {
-          targetEl = headings[targetIndex];
+      // 通过标题文本内容匹配 DOM 元素，更可靠
+      const headings = contentEl.querySelectorAll("h2, h3");
+      let targetEl: Element | null = null;
+
+      for (const heading of headings) {
+        // 规范化文本内容进行比较（去除多余空白）
+        const headingText = (heading.textContent || "")
+          .trim()
+          .replace(/\s+/g, " ");
+        const tocText = targetTocItem.text.trim().replace(/\s+/g, " ");
+
+        if (headingText === tocText) {
+          targetEl = heading;
+          break;
         }
       }
 
@@ -209,6 +217,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     const contentEl = contentRef.current;
     if (!contentEl) return;
 
+    // 构建标题文本到 TOC ID 的映射，避免每次滚动时重复查找
+    const textToIdMap = new Map<string, string>();
+    for (const item of tocItems) {
+      const normalizedText = item.text.trim().replace(/\s+/g, " ");
+      textToIdMap.set(normalizedText, item.id);
+    }
+
     // 节流的滚动处理函数
     const handleScroll = throttle(() => {
       const headings = contentEl.querySelectorAll("h2, h3");
@@ -216,13 +231,20 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
       let currentId: string | undefined;
 
-      headings.forEach((heading, index) => {
+      headings.forEach((heading) => {
         const rect = heading.getBoundingClientRect();
         const containerRect = contentEl.getBoundingClientRect();
         const relativeTop = rect.top - containerRect.top;
 
-        if (relativeTop < offset && tocItems[index]) {
-          currentId = tocItems[index].id;
+        if (relativeTop < offset) {
+          // 通过文本内容查找对应的 TOC ID
+          const headingText = (heading.textContent || "")
+            .trim()
+            .replace(/\s+/g, " ");
+          const matchedId = textToIdMap.get(headingText);
+          if (matchedId) {
+            currentId = matchedId;
+          }
         }
       });
 

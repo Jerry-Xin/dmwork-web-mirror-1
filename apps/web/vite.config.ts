@@ -2,6 +2,18 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import commonjs from 'vite-plugin-commonjs'
+import { execSync } from 'child_process'
+
+// 构建时注入版本号：优先用 CI 环境变量（Docker build-arg 传入），本地开发用 git hash 兜底
+const appVersion = process.env.APP_VERSION ?? (() => {
+    try {
+        return execSync('git rev-parse --short HEAD', { stdio: 'pipe' })
+            .toString()
+            .trim()
+    } catch {
+        return 'dev'
+    }
+})()
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
@@ -92,6 +104,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false, // 开发环境允许自签名证书
         },
+        '/version.json': {
+          target: apiOrigin,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
     optimizeDeps: {
@@ -118,6 +135,8 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),
       'process.env.PUBLIC_URL': '""',
+      // 版本号：供 versionChecker 比对，静默降级（值为 'dev' 时不启动检测）
+      'window.__APP_VERSION__': JSON.stringify(appVersion),
     },
     envPrefix: 'VITE_',
   }

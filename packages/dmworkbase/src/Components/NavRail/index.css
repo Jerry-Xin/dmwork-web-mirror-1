@@ -274,6 +274,115 @@
     right: var(--wk-sp-1, 4px);
 }
 
+/* ── 设置按钮 + 气泡的包裹层 ── */
+.wk-navrail__settings-wrap {
+    position: relative;
+}
+
+/* ── 版本更新气泡 ── */
+.wk-navrail__version-bubble {
+    position: absolute;
+    left: calc(100% + 12px); /* 设置按钮右侧，留出三角空间 */
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--wk-bg-elevated, #fff);
+    border: 1px solid var(--wk-border-default);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    white-space: nowrap;
+    z-index: 100;
+    animation: wk-bubble-in 0.2s ease;
+}
+
+@keyframes wk-bubble-in {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* 左侧指向设置按钮的小三角 */
+.wk-navrail__version-bubble-arrow {
+    position: absolute;
+    left: -6px;
+    bottom: 12px;
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-right: 6px solid var(--wk-bg-elevated, #fff);
+    filter: drop-shadow(-1px 0 0 var(--wk-border-default));
+}
+
+.wk-navrail__version-bubble-text {
+    font-size: 12px;
+    color: var(--wk-text-primary);
+}
+
+.wk-navrail__version-bubble-refresh {
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: none;
+    background: var(--wk-brand-primary);
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.wk-navrail__version-bubble-refresh:hover {
+    opacity: 0.85;
+}
+
+.wk-navrail__version-bubble-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: none;
+    background: none;
+    color: var(--wk-text-tertiary);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.wk-navrail__version-bubble-close:hover {
+    color: var(--wk-text-primary);
+}
+
+
+/* ── 设置面板内版本更新提示 ── */
+.wk-navrail__settings-version-update {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--wk-border-subtle);
+    cursor: default;
+}
+
+.wk-navrail__settings-list li.wk-navrail__settings-version-update:hover {
+    background: transparent;
+}
+
+.wk-navrail__settings-version-refresh {
+    padding: 2px 10px;
+    border-radius: 4px;
+    border: none;
+    background: var(--wk-brand-primary);
+    color: #fff;
+    font-size: var(--wk-text-size-sm, 13px);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.wk-navrail__settings-version-refresh:hover {
+    opacity: 0.85;
+}
+
 /* ── Settings panel (flyout) ── */
 .wk-navrail__settings-list {
     position: fixed;

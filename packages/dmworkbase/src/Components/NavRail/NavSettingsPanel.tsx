@@ -1,4 +1,5 @@
 import WKApp from "../../App";
+import { checkVersionOnce } from "../../Utils/versionChecker";
 import classnames from "classnames";
 import React, { Component } from "react";
 import { Toast, Spin, Button, Progress } from "@douyinfe/semi-ui";
@@ -25,6 +26,7 @@ export interface NavSettingsPanelProps {
 interface NavSettingsPanelState {
     changelog: { notes: string; version: string; pub_date: string } | null;
     changelogLoading: boolean;
+    hasNewVersionLocal: boolean;   // 面板内自检版本结果
 }
 
 export default class NavSettingsPanel extends Component<NavSettingsPanelProps, NavSettingsPanelState> {
@@ -33,6 +35,19 @@ export default class NavSettingsPanel extends Component<NavSettingsPanelProps, N
     state: NavSettingsPanelState = {
         changelog: null,
         changelogLoading: false,
+        hasNewVersionLocal: false,
+    };
+
+    componentDidUpdate(prevProps: NavSettingsPanelProps) {
+        // 面板刚打开时检查一次版本
+        if (this.props.settingSelected && !prevProps.settingSelected) {
+            this.checkVersion();
+        }
+    }
+
+    checkVersion = async () => {
+        const serverVersion = await checkVersionOnce();
+        this.setState({ hasNewVersionLocal: serverVersion !== null });
     };
 
     fetchChangelog = async () => {
@@ -75,6 +90,8 @@ export default class NavSettingsPanel extends Component<NavSettingsPanelProps, N
             onNotifyListener,
         } = this.props;
 
+        const { hasNewVersionLocal } = this.state;
+
         return (
             <>
                 {/* 点击外部关闭 mask */}
@@ -85,6 +102,27 @@ export default class NavSettingsPanel extends Component<NavSettingsPanelProps, N
                     />
                 )}
                 <ul className={classnames("wk-sider-setting-list wk-navrail__settings-list", settingSelected ? "open" : undefined)}>
+                    {/* 版本更新提示（面板打开时自检，有新版本时展示） */}
+                    {hasNewVersionLocal && (
+                        <li className="wk-navrail__settings-version-update" onClick={(e) => e.stopPropagation()}>
+                            <span>发现新版本</span>
+                            <button
+                                className="wk-navrail__settings-version-refresh"
+                                onClick={() => {
+                                    const key = 'wk_version_reload_count';
+                                    const count = Number(sessionStorage.getItem(key) || 0);
+                                    if (count < 3) {
+                                        sessionStorage.setItem(key, String(count + 1));
+                                        window.location.reload();
+                                    } else {
+                                        alert('页面已多次刷新仍检测到新版本，请按 Ctrl+Shift+R（Mac: Cmd+Shift+R）强制刷新并清除缓存。');
+                                    }
+                                }}
+                            >
+                                立即刷新
+                            </button>
+                        </li>
+                    )}
                     {/* 暗黑模式入口已关闭 */}
                     <li onClick={() => {
                         onToggleSetting();

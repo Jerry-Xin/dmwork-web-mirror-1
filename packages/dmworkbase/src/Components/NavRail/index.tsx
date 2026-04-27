@@ -29,6 +29,7 @@ export interface NavRailVMProps {
     onInstallUpdate: () => void;
     onNotifyListener: () => void;
     onAvatarClick: () => void;
+
     /** 用户在线状态，true 时显示绿色状态点 */
     isOnline?: boolean;
     // Space 相关
@@ -38,6 +39,8 @@ export interface NavRailVMProps {
     onJoinSpace?: () => void;
     /** 是否在设置菜单中显示「空间管理」入口（仅 owner/admin 可见） */
     canManageSpace?: boolean;
+    /** 用户关闭版本更新气泡时的回调 */
+    onDismissNewVersion?: () => void;
 }
 
 export interface NavRailProps extends NavRailVMProps {}
@@ -62,6 +65,7 @@ export default class NavRail extends Component<NavRailProps> {
             onInstallUpdate,
             onNotifyListener,
             onAvatarClick,
+            onDismissNewVersion,
             isOnline = false,
             spaces,
             currentSpaceId,
@@ -108,9 +112,10 @@ export default class NavRail extends Component<NavRailProps> {
 
                     {/* 底部：分割线 + 设置 + Space */}
                     <NavBottom
-                        hasNewVersion={hasNewVersion}
                         settingSelected={settingSelected}
+                        hasNewVersion={hasNewVersion}
                         onSettingsClick={onToggleSetting}
+                        onDismissNewVersion={onDismissNewVersion}
                         spaces={spaces}
                         currentSpaceId={currentSpaceId}
                         onSpaceSelect={onSpaceSelect}

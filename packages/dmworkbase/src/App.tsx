@@ -233,6 +233,11 @@ export class LoginInfo {
     this.removeStorageItemForSID("app_id");
     this.removeStorageItemForSID("role");
     this.removeStorageItemForSID("is_work");
+    // 与 StorageService CROSS_TAB_KEYS 白名单对齐，清理双写到 localStorage 的剩余 key
+    this.removeStorageItemForSID("uid");
+    this.removeStorageItemForSID("short_no");
+    this.removeStorageItemForSID("name");
+    this.removeStorageItemForSID("sex");
   }
 }
 

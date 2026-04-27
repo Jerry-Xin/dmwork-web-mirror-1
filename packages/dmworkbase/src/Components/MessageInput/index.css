@@ -481,8 +481,10 @@
 
 .wk-attachment-node {
   display: inline-flex;
-  vertical-align: middle;
-  margin: var(--wk-sp-1) var(--wk-sp-1) var(--wk-sp-1) 0;
+  vertical-align: bottom;
+  /* margin + padding 组合：padding 为 outline 留空间，避免被父容器裁剪 */
+  margin: 0 var(--wk-sp-1) 0 0;
+  padding: 2px;
   user-select: none;
 }
 

@@ -29,6 +29,13 @@
   --wk-color-white: #ffffff; /* 固定白色（不跟主题走） */
   --wk-color-danger: var(--wk-red-light); /* Figma: #F54A45 未读badge/红点 */
   --wk-color-danger-light: rgba(245, 74, 69, 0.1); /* danger 半透明背景 */
+  --wk-color-danger-bg: #fef2f2; /* danger 背景色 */
+  --wk-color-danger-border: #fecaca; /* danger 边框色 */
+  --wk-color-danger-hover: #fee2e2; /* danger hover 态 */
+  --wk-color-danger-active: #fecaca; /* danger active 态 */
+
+  /* ── Text on brand（品牌色上的文字） ── */
+  --wk-text-on-brand: #ffffff; /* 品牌色按钮上的文字 */
   --wk-success-tint-10: rgba(
     65,
     205,
@@ -280,6 +287,12 @@ body[theme-mode="dark"] {
   --wk-color-error-bg: rgba(255, 92, 114, 0.1);
   --wk-color-info: var(--wk-blue-dark);
   --wk-color-info-bg: rgba(92, 154, 255, 0.1);
+
+  /* Danger 状态色（暗色模式） */
+  --wk-color-danger-bg: #450a0a;
+  --wk-color-danger-border: #7f1d1d;
+  --wk-color-danger-hover: #7f1d1d;
+  --wk-color-danger-active: #991b1b;
 
   /* AI 专属 */
   --wk-ai-surface: var(--wk-purple-alpha-04);

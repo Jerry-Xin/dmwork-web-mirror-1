@@ -45,6 +45,17 @@
   color: var(--wk-text-primary);
 }
 
+/* 激活状态（如 TOC 按钮展开时） */
+.wk-file-preview-header__btn--active {
+  background: var(--wk-brand-primary-bg);
+  color: var(--wk-brand-primary);
+}
+
+.wk-file-preview-header__btn--active:hover {
+  background: var(--wk-brand-primary-bg);
+  color: var(--wk-brand-primary);
+}
+
 .wk-file-preview-header__btn--close:hover {
   background: var(--wk-color-danger-light);
   color: var(--wk-color-danger);

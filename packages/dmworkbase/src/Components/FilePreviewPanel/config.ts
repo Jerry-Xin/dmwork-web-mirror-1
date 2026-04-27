@@ -5,13 +5,19 @@
 
 /** 文件大小阈值配置（单位：字节） */
 export const FILE_SIZE_THRESHOLD = {
-  /** 小于此值：完全渲染（语法高亮），约 1000 行代码 */
-  HIGHLIGHT: 30 * 1024, // 30KB
+  /** 小于此值：完全渲染（语法高亮） */
+  HIGHLIGHT: 100 * 1024, // 100KB
 
-  /** 小于此值：纯文本渲染（无高亮），约 3000 行代码 */
-  PLAIN_TEXT: 100 * 1024, // 100KB
+  /** 小于此值：纯文本渲染（无高亮） */
+  PLAIN_TEXT: 1 * 1024 * 1024, // 1MB
 
-  /** 大于 PLAIN_TEXT：不渲染，提示下载 */
+  /** 小于此值：允许预览（超过则提示下载） */
+  MAX_PREVIEW: 20 * 1024 * 1024, // 20MB
+
+  /** Markdown 预览模式大小限制（超过此值自动切换到源码模式） */
+  MARKDOWN_PREVIEW: 200 * 1024, // 200KB
+
+  /** 大于 MAX_PREVIEW：不渲染，提示下载 */
 } as const;
 
 /** 分页配置 */
@@ -38,10 +44,10 @@ export const CODE_RENDER = {
   FONT_FAMILY: '"SF Mono", Monaco, "Cascadia Code", Consolas, monospace',
 
   /** 代码字号 */
-  FONT_SIZE: '13px',
+  FONT_SIZE: "13px",
 
   /** 代码行高 */
-  LINE_HEIGHT: '1.6',
+  LINE_HEIGHT: "1.6",
 } as const;
 
 /**
@@ -55,20 +61,32 @@ export function formatFileSize(bytes: number): string {
 
 /**
  * 判断文件渲染模式
+ * - highlight: 语法高亮渲染（< 100KB）
+ * - plain: 纯文本渲染（100KB ~ 1MB）
+ * - too-large: 文件过大，不渲染（> 20MB）
  */
-export type RenderMode = 'highlight' | 'plain' | 'too-large';
+export type RenderMode = "highlight" | "plain" | "too-large";
 
 export function getRenderMode(size: number): RenderMode {
-  if (size <= FILE_SIZE_THRESHOLD.HIGHLIGHT) return 'highlight';
-  if (size <= FILE_SIZE_THRESHOLD.PLAIN_TEXT) return 'plain';
-  return 'too-large';
+  if (size <= FILE_SIZE_THRESHOLD.HIGHLIGHT) return "highlight";
+  if (size <= FILE_SIZE_THRESHOLD.PLAIN_TEXT) return "plain";
+  if (size <= FILE_SIZE_THRESHOLD.MAX_PREVIEW) return "plain";
+  return "too-large";
 }
 
 /**
  * 判断是否应该获取文件内容
+ * 文件大小超过 20MB 时不获取
  */
 export function shouldFetchContent(fileSize: number): boolean {
   // 如果 fileSize 为 0（未知），则尝试获取
-  // 如果 fileSize 超过阈值，则不获取
-  return fileSize === 0 || fileSize <= FILE_SIZE_THRESHOLD.PLAIN_TEXT;
+  // 如果 fileSize 超过 20MB 阈值，则不获取
+  return fileSize === 0 || fileSize <= FILE_SIZE_THRESHOLD.MAX_PREVIEW;
+}
+
+/**
+ * 判断文件是否过大无法预览
+ */
+export function isFileTooLarge(fileSize: number): boolean {
+  return fileSize > FILE_SIZE_THRESHOLD.MAX_PREVIEW;
 }

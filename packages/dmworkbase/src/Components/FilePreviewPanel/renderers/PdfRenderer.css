@@ -1,12 +1,21 @@
+/* ============================================
+   PdfRenderer - PDF 渲染器样式
+   类名前缀: wk-file-preview-pdf-renderer
+   ============================================ */
+
 .wk-file-preview-pdf-renderer {
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
   overflow: hidden;
+  outline: none;
 }
 
-/* 工具栏 */
+/* ============================================
+   工具栏
+   ============================================ */
+
 .wk-file-preview-pdf-renderer__toolbar {
   display: flex;
   align-items: center;
@@ -53,7 +62,10 @@
   margin: 0 var(--wk-sp-1);
 }
 
-/* 缩放选择器 */
+/* ============================================
+   缩放选择器
+   ============================================ */
+
 .wk-file-preview-pdf-renderer__zoom-select {
   height: 28px;
   padding: 0 var(--wk-sp-2);
@@ -61,7 +73,7 @@
   border-radius: var(--wk-r-xs);
   background: var(--wk-bg-surface);
   color: var(--wk-text-primary);
-  font-size: 12px;
+  font-size: var(--wk-text-size-xs);
   cursor: pointer;
   outline: none;
   min-width: 90px;
@@ -75,7 +87,10 @@
   border-color: var(--wk-brand-primary);
 }
 
-/* 页面导航 */
+/* ============================================
+   页面导航
+   ============================================ */
+
 .wk-file-preview-pdf-renderer__page-nav {
   display: flex;
   align-items: center;
@@ -90,7 +105,7 @@
   border-radius: var(--wk-r-xs);
   background: var(--wk-bg-surface);
   color: var(--wk-text-primary);
-  font-size: 12px;
+  font-size: var(--wk-text-size-xs);
   text-align: center;
   outline: none;
 }
@@ -101,27 +116,121 @@
 
 .wk-file-preview-pdf-renderer__page-total {
   color: var(--wk-text-secondary);
-  font-size: 12px;
+  font-size: var(--wk-text-size-xs);
   white-space: nowrap;
 }
 
-/* 主内容区域 */
+/* ============================================
+   主内容区域
+   ============================================ */
+
 .wk-file-preview-pdf-renderer__content {
   display: flex;
   flex: 1;
   overflow: hidden;
 }
 
-/* 缩略图侧边栏 */
-.wk-file-preview-pdf-renderer__thumbnails {
-  width: 140px;
+/* ============================================
+   侧边栏
+   ============================================ */
+
+.wk-file-preview-pdf-renderer__sidebar {
+  width: 160px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--wk-bg-base);
   border-right: 1px solid var(--wk-border-subtle);
+}
+
+/* 侧边栏 Tab 切换 */
+.wk-file-preview-pdf-renderer__sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--wk-border-subtle);
+  flex-shrink: 0;
+}
+
+.wk-file-preview-pdf-renderer__sidebar-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wk-sp-1);
+  padding: var(--wk-sp-2) var(--wk-sp-2);
+  border: none;
+  background: transparent;
+  color: var(--wk-text-secondary);
+  font-size: var(--wk-text-size-xs);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+
+.wk-file-preview-pdf-renderer__sidebar-tab:hover:not(:disabled) {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+.wk-file-preview-pdf-renderer__sidebar-tab--active {
+  color: var(--wk-brand-primary);
+  font-weight: 500;
+}
+
+.wk-file-preview-pdf-renderer__sidebar-tab--active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--wk-brand-primary);
+}
+
+.wk-file-preview-pdf-renderer__sidebar-tab--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.wk-file-preview-pdf-renderer__sidebar-tab--disabled:hover {
+  background: transparent;
+  color: var(--wk-text-secondary);
+}
+
+/* 侧边栏内容区 */
+.wk-file-preview-pdf-renderer__sidebar-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 缩略图容器 */
+.wk-file-preview-pdf-renderer__thumbnails {
+  height: 100%;
   overflow-y: auto;
 }
 
-/* PDF 查看器 */
+/* 书签容器 */
+.wk-file-preview-pdf-renderer__bookmarks {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--wk-sp-2);
+}
+
+/* 无书签提示 */
+.wk-file-preview-pdf-renderer__no-bookmarks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--wk-text-tertiary);
+  font-size: var(--wk-text-size-xs);
+  text-align: center;
+  padding: var(--wk-sp-4);
+}
+
+/* ============================================
+   PDF 查看器
+   ============================================ */
+
 .wk-file-preview-pdf-renderer__viewer {
   flex: 1;
   overflow: auto;
@@ -129,7 +238,10 @@
   background: var(--wk-bg-base);
 }
 
-/* Loading state */
+/* ============================================
+   加载状态
+   ============================================ */
+
 .wk-file-preview-pdf-renderer__loading {
   position: absolute;
   top: 0;
@@ -162,7 +274,10 @@
   }
 }
 
-/* Error state */
+/* ============================================
+   错误状态
+   ============================================ */
+
 .wk-file-preview-pdf-renderer__error {
   display: flex;
   flex-direction: column;
@@ -180,7 +295,10 @@
   color: var(--wk-text-tertiary);
 }
 
-/* Override react-pdf-viewer styles */
+/* ============================================
+   覆盖 react-pdf-viewer 默认样式
+   ============================================ */
+
 .wk-file-preview-pdf-renderer .rpv-core__viewer {
   height: 100%;
 }
@@ -189,6 +307,7 @@
   background: var(--wk-bg-base);
 }
 
+/* 缩略图样式覆盖 */
 .wk-file-preview-pdf-renderer .rpv-thumbnail__container {
   padding: var(--wk-sp-2);
 }
@@ -201,19 +320,63 @@
   border-color: var(--wk-brand-primary);
 }
 
-/* Dark mode adjustments */
-body[theme-mode="dark"] .wk-file-preview-pdf-renderer__toolbar {
-  background: #1f1f1f;
+.wk-file-preview-pdf-renderer
+  .rpv-thumbnail__item--selected
+  .rpv-thumbnail__label {
+  color: var(--wk-brand-primary);
 }
 
-body[theme-mode="dark"] .wk-file-preview-pdf-renderer__thumbnails {
-  background: #1a1a1a;
+/* 书签样式覆盖 */
+.wk-file-preview-pdf-renderer .rpv-bookmark__container {
+  padding: 0;
+}
+
+.wk-file-preview-pdf-renderer .rpv-bookmark__title {
+  color: var(--wk-text-primary);
+  font-size: var(--wk-text-size-sm);
+  padding: var(--wk-sp-1) var(--wk-sp-2);
+  border-radius: var(--wk-r-xs);
+  transition: background 0.15s;
+}
+
+.wk-file-preview-pdf-renderer .rpv-bookmark__title:hover {
+  background: var(--wk-bg-hover);
+}
+
+.wk-file-preview-pdf-renderer .rpv-bookmark__toggle {
+  color: var(--wk-text-secondary);
+}
+
+.wk-file-preview-pdf-renderer .rpv-bookmark__list {
+  padding-left: var(--wk-sp-3);
+}
+
+/* ============================================
+   暗色模式
+   ============================================ */
+
+body[theme-mode="dark"] .wk-file-preview-pdf-renderer__toolbar {
+  background: var(--wk-bg-elevated);
+}
+
+body[theme-mode="dark"] .wk-file-preview-pdf-renderer__sidebar {
+  background: var(--wk-bg-base);
 }
 
 body[theme-mode="dark"] .wk-file-preview-pdf-renderer__viewer {
-  background: #1a1a1a;
+  background: var(--wk-bg-base);
 }
 
 body[theme-mode="dark"] .wk-file-preview-pdf-renderer .rpv-core__inner-pages {
-  background: #1a1a1a;
+  background: var(--wk-bg-base);
+}
+
+body[theme-mode="dark"] .wk-file-preview-pdf-renderer .rpv-bookmark__title {
+  color: var(--wk-text-primary);
+}
+
+body[theme-mode="dark"]
+  .wk-file-preview-pdf-renderer
+  .rpv-bookmark__title:hover {
+  background: var(--wk-bg-hover);
 }

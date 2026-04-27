@@ -26,9 +26,9 @@ export interface JsonlRendererProps extends BaseRendererProps {}
  * 使用虚拟滚动高效渲染大数据量
  *
  * 文件大小分级处理（复用 config.ts 统一阈值）：
- * - < 30KB: 语法高亮渲染
- * - 30KB ~ 100KB: 纯文本渲染
- * - > 100KB: 不渲染，提示下载
+ * - < 100KB: 语法高亮渲染
+ * - 100KB ~ 1MB: 纯文本渲染
+ * - > 20MB: 不渲染，提示下载
  */
 const JsonlRenderer: React.FC<JsonlRendererProps> = ({ file, onError }) => {
   const { loading, error, reload, renderMode, content, fileSize, contentSize } =
@@ -178,7 +178,10 @@ const JsonlRenderer: React.FC<JsonlRendererProps> = ({ file, onError }) => {
             fixedHeaderContent={() => (
               <tr>
                 {columns.map((col) => (
-                  <th key={col.key} className="wk-file-preview-jsonl-renderer__th">
+                  <th
+                    key={col.key}
+                    className="wk-file-preview-jsonl-renderer__th"
+                  >
                     <TooltipCell content={col.title} />
                   </th>
                 ))}
@@ -187,7 +190,10 @@ const JsonlRenderer: React.FC<JsonlRendererProps> = ({ file, onError }) => {
             itemContent={(_index, row) => (
               <>
                 {columns.map((col) => (
-                  <td key={col.key} className="wk-file-preview-jsonl-renderer__td">
+                  <td
+                    key={col.key}
+                    className="wk-file-preview-jsonl-renderer__td"
+                  >
                     <TooltipCell content={renderCellContent(row[col.key])} />
                   </td>
                 ))}

@@ -10,16 +10,23 @@ export interface TextRendererProps extends BaseRendererProps {}
  * 支持 txt, log, ini, conf, cfg 格式
  *
  * 文件大小分级处理：
- * - < 30KB: 纯文本渲染
- * - 30KB ~ 100KB: 纯文本渲染
- * - > 100KB: 不渲染，提示下载
+ * - < 100KB: 纯文本渲染
+ * - 100KB ~ 1MB: 纯文本渲染
+ * - > 20MB: 不渲染，提示下载
  */
 const TextRenderer: React.FC<TextRendererProps> = ({ file, onError }) => {
-  const { loading, error, reload, renderMode, formattedContent, fileSize, contentSize } =
-    useCodeRenderer(file, {
-      language: "text",
-      enableHighlight: false,
-    });
+  const {
+    loading,
+    error,
+    reload,
+    renderMode,
+    formattedContent,
+    fileSize,
+    contentSize,
+  } = useCodeRenderer(file, {
+    language: "text",
+    enableHighlight: false,
+  });
 
   return (
     <CodeRendererBase

@@ -1,0 +1,84 @@
+/* ============================================
+   FileTooLarge - 文件过大提示组件样式
+   类名前缀: wk-file-too-large
+   ============================================ */
+
+.wk-file-too-large {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--wk-sp-8);
+  gap: var(--wk-sp-4);
+  text-align: center;
+}
+
+/* 图标 */
+.wk-file-too-large__icon {
+  color: var(--wk-text-tertiary);
+}
+
+/* 内容区 */
+.wk-file-too-large__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wk-sp-2);
+}
+
+/* 标题 */
+.wk-file-too-large__title {
+  margin: 0;
+  font-size: var(--wk-text-size-lg);
+  font-weight: 500;
+  color: var(--wk-text-primary);
+}
+
+/* 提示信息 */
+.wk-file-too-large__message {
+  margin: 0;
+  font-size: var(--wk-text-size-md);
+  color: var(--wk-text-secondary);
+}
+
+/* 下载按钮 */
+.wk-file-too-large__download-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wk-sp-2);
+  padding: var(--wk-sp-2) var(--wk-sp-5);
+  margin-top: var(--wk-sp-2);
+  border: none;
+  border-radius: var(--wk-r-md);
+  background: var(--wk-brand-primary);
+  color: var(--wk-text-on-brand);
+  font-size: var(--wk-text-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.wk-file-too-large__download-btn:hover {
+  background: var(--wk-brand-primary-hover);
+}
+
+.wk-file-too-large__download-btn:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   暗色模式
+   ============================================ */
+
+body[theme-mode="dark"] .wk-file-too-large__icon {
+  color: var(--wk-text-tertiary);
+}
+
+body[theme-mode="dark"] .wk-file-too-large__title {
+  color: var(--wk-text-primary);
+}
+
+body[theme-mode="dark"] .wk-file-too-large__message {
+  color: var(--wk-text-secondary);
+}

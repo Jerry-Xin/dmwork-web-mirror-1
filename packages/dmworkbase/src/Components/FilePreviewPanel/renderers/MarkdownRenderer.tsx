@@ -1,23 +1,238 @@
-import React from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+} from "react";
 import { BaseRendererProps } from "../types";
+import { isFileTooLarge, FILE_SIZE_THRESHOLD } from "../config";
 import { useFileContent } from "../hooks/useFileContent";
+import FileTooLarge from "./FileTooLarge";
 import MarkdownContent from "../../../Messages/Text/MarkdownContent";
+import MarkdownSourceView from "./MarkdownSourceView";
+import MarkdownToc, { shouldShowToc, extractTocItems } from "./MarkdownToc";
 import "./MarkdownRenderer.css";
 
-export interface MarkdownRendererProps extends BaseRendererProps {}
+/** 超过此大小的 Markdown 自动使用源码模式（性能考虑） */
+const MARKDOWN_PREVIEW_LIMIT = FILE_SIZE_THRESHOLD.MARKDOWN_PREVIEW;
+
+export interface MarkdownRendererProps extends BaseRendererProps {
+  /** 外部控制的视图模式 */
+  viewMode?: "preview" | "source";
+  /** 视图模式变化回调 */
+  onViewModeChange?: (mode: "preview" | "source") => void;
+  /** TOC 是否展开 */
+  isTocOpen?: boolean;
+  /** TOC 展开/收起回调 */
+  onTocToggle?: () => void;
+  /** TOC 可用状态变化回调（当内容加载后判断是否满足 h2 ≥ 3 条件） */
+  onTocAvailableChange?: (available: boolean) => void;
+}
+
+/**
+ * 节流函数
+ */
+function throttle<T extends (...args: unknown[]) => void>(
+  fn: T,
+  delay: number
+): T {
+  let lastCall = 0;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  return ((...args: unknown[]) => {
+    const now = Date.now();
+    const remaining = delay - (now - lastCall);
+
+    if (remaining <= 0) {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      lastCall = now;
+      fn(...args);
+    } else if (!timeoutId) {
+      timeoutId = setTimeout(() => {
+        lastCall = Date.now();
+        timeoutId = null;
+        fn(...args);
+      }, remaining);
+    }
+  }) as T;
+}
 
 /**
  * Markdown 渲染器
  * 支持 md, markdown 格式
+ *
+ * 功能：
+ * 1. 预览模式：GFM 渲染，支持表格、任务列表、代码块语法高亮
+ * 2. 源码模式：Markdown 语法高亮 + 行号
+ * 3. 目录 (TOC)：h2 ≥ 3 时显示，支持 h2/h3 层级，点击跳转
+ * 4. 视图记忆：不跨文件，每次打开默认预览模式
  */
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   file,
   onError,
+  viewMode: externalViewMode,
+  onViewModeChange,
+  isTocOpen: externalTocOpen,
+  onTocToggle,
+  onTocAvailableChange,
 }) => {
+  // 文件大小检查（超过 20MB 不渲染）
+  if (file.size && isFileTooLarge(file.size)) {
+    return (
+      <FileTooLarge
+        fileName={file.name}
+        fileSize={file.size}
+        fileUrl={file.url}
+      />
+    );
+  }
+
+  // 内部状态（当外部未控制时使用）
+  const [internalViewMode, setInternalViewMode] = useState<
+    "preview" | "source"
+  >("preview");
+  const [internalTocOpen, setInternalTocOpen] = useState(false);
+  const [activeTocId, setActiveTocId] = useState<string | undefined>();
+
+  // 内容区域引用（用于滚动定位）
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // 确定实际使用的状态
+  const viewMode = externalViewMode ?? internalViewMode;
+  const isTocOpen = externalTocOpen ?? internalTocOpen;
+
+  // 加载文件内容
   const { content, loading, error, reload } = useFileContent({
     url: file.url,
   });
 
+  // 检测是否为大文件（超过限制强制使用源码模式）
+  const isLargeFile = useMemo(() => {
+    if (!content) return false;
+    const contentSize = new Blob([content]).size;
+    return contentSize > MARKDOWN_PREVIEW_LIMIT;
+  }, [content]);
+
+  // 大文件强制使用源码模式
+  const effectiveViewMode = isLargeFile ? "source" : viewMode;
+
+  // 提取 TOC 项目（只计算一次）
+  const tocItems = useMemo(() => {
+    if (!content) return [];
+    return extractTocItems(content);
+  }, [content]);
+
+  // 是否应该显示 TOC（条件：预览模式 + h2 ≥ 3 + 非大文件）
+  const showTocButton = useMemo(() => {
+    if (effectiveViewMode !== "preview" || !content) return false;
+    // 使用已计算的 tocItems，避免重复解析
+    const h2Count = tocItems.filter((item) => item.level === 2).length;
+    return h2Count >= 3;
+  }, [tocItems, effectiveViewMode, content]);
+
+  // 通知外部 TOC 可用状态变化
+  useEffect(() => {
+    if (!content) return;
+    const h2Count = tocItems.filter((item) => item.level === 2).length;
+    const available = effectiveViewMode === "preview" && h2Count >= 3;
+    onTocAvailableChange?.(available);
+  }, [tocItems, effectiveViewMode, content, onTocAvailableChange]);
+
+  // 处理视图模式切换
+  const handleViewModeChange = useCallback(
+    (mode: "preview" | "source") => {
+      if (onViewModeChange) {
+        onViewModeChange(mode);
+      } else {
+        setInternalViewMode(mode);
+      }
+      // 源码模式时关闭 TOC（大文件强制源码模式不触发）
+      if ((mode === "source" || isLargeFile) && isTocOpen) {
+        if (onTocToggle) {
+          onTocToggle();
+        } else {
+          setInternalTocOpen(false);
+        }
+      }
+    },
+    [onViewModeChange, isTocOpen, onTocToggle]
+  );
+
+  // 处理 TOC 展开/收起
+  const handleTocToggle = useCallback(() => {
+    if (onTocToggle) {
+      onTocToggle();
+    } else {
+      setInternalTocOpen(!internalTocOpen);
+    }
+  }, [onTocToggle, internalTocOpen]);
+
+  // 处理 TOC 项目点击（滚动到对应位置）
+  const handleTocItemClick = useCallback(
+    (id: string) => {
+      setActiveTocId(id);
+
+      // 在内容区域中查找对应的标题元素
+      const contentEl = contentRef.current;
+      if (!contentEl) return;
+
+      // 查找所有标题元素
+      const headings = contentEl.querySelectorAll("h2, h3");
+
+      // 找到目标标题的索引（使用已缓存的 tocItems）
+      const targetIndex = tocItems.findIndex((item) => item.id === id);
+      if (targetIndex === -1 || targetIndex >= headings.length) return;
+
+      // 滚动到目标位置
+      const targetEl = headings[targetIndex];
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    [tocItems]
+  );
+
+  // 监听滚动，更新激活的 TOC 项（节流处理）
+  useEffect(() => {
+    if (!isTocOpen || effectiveViewMode !== "preview" || !content) return;
+
+    const contentEl = contentRef.current;
+    if (!contentEl) return;
+
+    // 节流的滚动处理函数
+    const handleScroll = throttle(() => {
+      const headings = contentEl.querySelectorAll("h2, h3");
+      const offset = 50; // 偏移量，提前高亮
+
+      let currentId: string | undefined;
+
+      headings.forEach((heading, index) => {
+        const rect = heading.getBoundingClientRect();
+        const containerRect = contentEl.getBoundingClientRect();
+        const relativeTop = rect.top - containerRect.top;
+
+        if (relativeTop < offset && tocItems[index]) {
+          currentId = tocItems[index].id;
+        }
+      });
+
+      setActiveTocId((prevId) => {
+        if (currentId !== prevId) {
+          return currentId;
+        }
+        return prevId;
+      });
+    }, 100); // 100ms 节流
+
+    contentEl.addEventListener("scroll", handleScroll, { passive: true });
+    return () => contentEl.removeEventListener("scroll", handleScroll);
+  }, [isTocOpen, effectiveViewMode, content, tocItems]);
+
+  // 加载状态
   if (loading) {
     return (
       <div className="wk-file-preview-markdown-renderer wk-file-preview-markdown-renderer--loading">
@@ -29,6 +244,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     );
   }
 
+  // 错误状态
   if (error) {
     onError?.(error);
     return (
@@ -46,6 +262,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     );
   }
 
+  // 空内容状态
   if (content === null || content.trim() === "") {
     return (
       <div className="wk-file-preview-markdown-renderer wk-file-preview-markdown-renderer--empty">
@@ -58,8 +275,36 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
   return (
     <div className="wk-file-preview-markdown-renderer">
-      <div className="wk-file-preview-markdown-renderer__content">
-        <MarkdownContent content={content} />
+      {/* TOC 侧边栏（仅预览模式显示） */}
+      {effectiveViewMode === "preview" && showTocButton && (
+        <MarkdownToc
+          content={content}
+          isOpen={isTocOpen}
+          onToggle={handleTocToggle}
+          onItemClick={handleTocItemClick}
+          activeId={activeTocId}
+        />
+      )}
+
+      {/* 内容区域 */}
+      <div
+        className="wk-file-preview-markdown-renderer__content"
+        ref={contentRef}
+      >
+        {/* 大文件提示（强制源码模式时显示） */}
+        {isLargeFile && (
+          <div className="wk-file-preview-markdown-renderer__large-file-notice">
+            文件较大，已自动切换到源码模式以提升性能
+          </div>
+        )}
+
+        {effectiveViewMode === "preview" ? (
+          <div className="wk-file-preview-markdown-renderer__preview">
+            <MarkdownContent content={content} enableMath />
+          </div>
+        ) : (
+          <MarkdownSourceView content={content} />
+        )}
       </div>
     </div>
   );
@@ -67,3 +312,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
 export default MarkdownRenderer;
 export { MarkdownRenderer };
+
+// 导出 TOC 相关函数供外部使用
+export { shouldShowToc, extractTocItems } from "./MarkdownToc";

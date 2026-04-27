@@ -10,15 +10,22 @@ export interface CodeRendererProps extends BaseRendererProps {}
  * 使用 react-syntax-highlighter 实现语法高亮
  *
  * 文件大小分级处理：
- * - < 30KB: 语法高亮渲染
- * - 30KB ~ 100KB: 纯文本渲染（无高亮）
- * - > 100KB: 不渲染，提示下载
+ * - < 100KB: 语法高亮渲染
+ * - 100KB ~ 1MB: 纯文本渲染（无高亮）
+ * - > 20MB: 不渲染，提示下载
  */
 const CodeRenderer: React.FC<CodeRendererProps> = ({ file, onError }) => {
   const language = getLanguageFromExtension(file.extension);
 
-  const { loading, error, reload, renderMode, formattedContent, fileSize, contentSize } =
-    useCodeRenderer(file, { language, enableHighlight: true });
+  const {
+    loading,
+    error,
+    reload,
+    renderMode,
+    formattedContent,
+    fileSize,
+    contentSize,
+  } = useCodeRenderer(file, { language, enableHighlight: true });
 
   return (
     <CodeRendererBase

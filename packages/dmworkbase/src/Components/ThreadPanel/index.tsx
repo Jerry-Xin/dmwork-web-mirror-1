@@ -24,6 +24,9 @@ import { FilePreviewInfo } from "../FilePreviewPanel/types";
 import { fileRendererRegistry } from "../FilePreviewPanel/registry";
 import { getExtension } from "../FilePreviewPanel/types";
 import FilePreviewHeader from "../FilePreviewPanel/FilePreviewHeader";
+import { shouldShowToc } from "../FilePreviewPanel/renderers/MarkdownToc";
+import { MarkdownRenderer } from "../FilePreviewPanel/renderers/MarkdownRenderer";
+import { HtmlRenderer } from "../FilePreviewPanel/renderers/HtmlRenderer";
 import {
   SMALL_SCREEN_WIDTH,
   THREAD_DEFAULT_WIDTH,
@@ -61,6 +64,10 @@ interface ThreadPanelComponentState {
   isDragging: boolean;
   /** 文件预览视图模式 */
   fileViewMode: "preview" | "source";
+  /** Markdown TOC 是否展开 */
+  isTocOpen: boolean;
+  /** Markdown TOC 是否可用（h2 ≥ 3） */
+  isTocAvailable: boolean;
 }
 
 export default class ThreadPanel extends Component<
@@ -103,6 +110,8 @@ export default class ThreadPanel extends Component<
       panelWidth: savedWidth,
       isDragging: false,
       fileViewMode: "preview",
+      isTocOpen: false,
+      isTocAvailable: false,
     };
   }
 
@@ -483,7 +492,7 @@ export default class ThreadPanel extends Component<
 
   private renderHeader() {
     const { onClose, filePreview, onFilePreviewClose } = this.props;
-    const { view, vmState, showMoreMenu } = this.state;
+    const { view, vmState, showMoreMenu, fileViewMode, isTocOpen } = this.state;
     const thread = vmState.thread;
 
     // 文件预览模式：使用 FilePreviewHeader 组件
@@ -511,10 +520,27 @@ export default class ThreadPanel extends Component<
         "yml",
       ].includes(ext);
 
+      // 判断是否为 Markdown 文件
+      const isMarkdown = ["md", "markdown"].includes(ext);
+
+      // 判断是否显示 TOC 按钮（仅 Markdown 预览模式且 h2 ≥ 3）
+      // 判断是否显示 TOC 按钮（仅 Markdown 预览模式且 h2 ≥ 3）
+      const showTocButton =
+        isMarkdown && fileViewMode === "preview" && this.state.isTocAvailable;
+
       // 回复回调：仅当有 messageId 和 onReplyFile 时才启用
-      const handleReply = filePreview.messageId && this.props.onReplyFile
-        ? () => this.props.onReplyFile!(filePreview.messageId!)
-        : undefined;
+      const handleReply =
+        filePreview.messageId && this.props.onReplyFile
+          ? () => this.props.onReplyFile!(filePreview.messageId!)
+          : undefined;
+
+      // 视图模式变更：切换到源码模式时关闭 TOC
+      const handleViewModeChange = (mode: "preview" | "source") => {
+        this.setState({ fileViewMode: mode });
+        if (mode === "source" && isTocOpen) {
+          this.setState({ isTocOpen: false });
+        }
+      };
 
       return (
         <FilePreviewHeader
@@ -523,9 +549,12 @@ export default class ThreadPanel extends Component<
           onBack={onFilePreviewClose}
           onClose={onClose}
           showViewToggle={showViewToggle}
-          viewMode={this.state.fileViewMode}
-          onViewModeChange={(mode) => this.setState({ fileViewMode: mode })}
+          viewMode={fileViewMode}
+          onViewModeChange={handleViewModeChange}
           onReply={handleReply}
+          showTocButton={showTocButton}
+          isTocOpen={isTocOpen}
+          onTocToggle={() => this.setState({ isTocOpen: !isTocOpen })}
         />
       );
     }
@@ -782,16 +811,59 @@ export default class ThreadPanel extends Component<
     );
   }
 
+  /** 处理 TOC 可用状态变化 */
+  private handleTocAvailableChange = (available: boolean) => {
+    if (this.state.isTocAvailable !== available) {
+      this.setState({ isTocAvailable: available });
+    }
+  };
+
   private renderFilePreviewContent() {
     const { filePreview } = this.props;
+    const { fileViewMode, isTocOpen } = this.state;
     if (!filePreview) return null;
 
     const ext = getExtension(filePreview.extension, filePreview.name);
-    const { renderer: Renderer } = fileRendererRegistry.getRenderer(ext);
+    const isMarkdown = ["md", "markdown"].includes(ext);
+    const isHtml = ["html", "htm"].includes(ext);
 
     const handleError = (error: string) => {
       console.error("FilePreview error:", error);
     };
+
+    // Markdown 文件使用增强的 MarkdownRenderer
+    if (isMarkdown) {
+      return (
+        <div className="wk-thread-panel-file-preview">
+          <MarkdownRenderer
+            file={filePreview}
+            onError={handleError}
+            viewMode={fileViewMode}
+            onViewModeChange={(mode) => this.setState({ fileViewMode: mode })}
+            isTocOpen={isTocOpen}
+            onTocToggle={() => this.setState({ isTocOpen: !isTocOpen })}
+            onTocAvailableChange={this.handleTocAvailableChange}
+          />
+        </div>
+      );
+    }
+
+    // HTML 文件使用增强的 HtmlRenderer（支持预览/源码切换）
+    if (isHtml) {
+      return (
+        <div className="wk-thread-panel-file-preview">
+          <HtmlRenderer
+            file={filePreview}
+            onError={handleError}
+            viewMode={fileViewMode}
+            onViewModeChange={(mode) => this.setState({ fileViewMode: mode })}
+          />
+        </div>
+      );
+    }
+
+    // 其他文件类型使用注册表中的渲染器
+    const { renderer: Renderer } = fileRendererRegistry.getRenderer(ext);
 
     return (
       <div className="wk-thread-panel-file-preview">

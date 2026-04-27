@@ -44,7 +44,12 @@ const CodeRendererBase: React.FC<CodeRendererBaseProps> = ({
     return (
       <div className="wk-file-preview-code-renderer wk-file-preview-code-renderer--too-large">
         <div className="wk-file-preview-code-renderer__large-file-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
             <line x1="12" y1="18" x2="12" y2="12" />
@@ -52,7 +57,7 @@ const CodeRendererBase: React.FC<CodeRendererBaseProps> = ({
           </svg>
         </div>
         <span className="wk-file-preview-code-renderer__large-file-text">
-          文件太大（{formatFileSize(fileSize)}），无法预览
+          文件过大（{formatFileSize(fileSize)}），建议下载到本地查看
         </span>
         <a
           href={file.url}
@@ -78,7 +83,10 @@ const CodeRendererBase: React.FC<CodeRendererBaseProps> = ({
     return (
       <div className="wk-file-preview-code-renderer wk-file-preview-code-renderer--error">
         <span>{error}</span>
-        <button className="wk-file-preview-code-renderer__retry" onClick={onReload}>
+        <button
+          className="wk-file-preview-code-renderer__retry"
+          onClick={onReload}
+        >
           重试
         </button>
       </div>

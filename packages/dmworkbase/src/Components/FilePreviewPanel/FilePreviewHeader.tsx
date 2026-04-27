@@ -15,6 +15,7 @@ import {
   FileArchive,
   FileAudio,
   FileVideo,
+  List,
 } from "lucide-react";
 import { FilePreviewInfo } from "./types";
 import "./FilePreviewHeader.css";
@@ -67,6 +68,18 @@ export interface FilePreviewHeaderProps {
   isFilePanelOpen?: boolean;
   /** 切换侧边文件列表面板 */
   onFilePanelToggle?: () => void;
+
+  /** 是否显示 TOC 按钮（仅 Markdown 预览模式且 h2 ≥ 3 时显示） */
+  showTocButton?: boolean;
+  /** TOC 侧边栏是否展开 */
+  isTocOpen?: boolean;
+  /** 切换 TOC 展开/收起 */
+  onTocToggle?: () => void;
+
+  /** 是否显示返回按钮（从子区进入文件预览时显示） */
+  showBackButton?: boolean;
+  /** 返回按钮点击回调 */
+  onBack?: () => void;
 }
 
 /** 根据扩展名获取文件图标 */
@@ -156,6 +169,13 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
 
   isFilePanelOpen = false,
   onFilePanelToggle,
+
+  showTocButton = false,
+  isTocOpen = false,
+  onTocToggle,
+
+  showBackButton = false,
+  onBack,
 }) => {
   const [hoverDropdownOpen, setHoverDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -356,6 +376,19 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
 
       {/* 右侧：通用操作按钮 */}
       <div className="wk-file-preview-header__actions">
+        {/* 目录按钮（仅 Markdown 预览模式且 h2 ≥ 3 时显示） */}
+        {showTocButton && onTocToggle && (
+          <button
+            className={`wk-file-preview-header__btn ${
+              isTocOpen ? "wk-file-preview-header__btn--active" : ""
+            }`}
+            onClick={onTocToggle}
+            title={isTocOpen ? "收起目录" : "展开目录"}
+          >
+            <List size={16} />
+          </button>
+        )}
+
         {/* 全屏 */}
         {onFullscreen && (
           <button

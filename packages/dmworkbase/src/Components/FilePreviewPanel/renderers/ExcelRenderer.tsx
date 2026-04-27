@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { TableVirtuoso } from "react-virtuoso";
 import { BaseRendererProps } from "../types";
+import { isFileTooLarge } from "../config";
 import { TooltipCell } from "./TooltipCell";
 import { RendererState } from "./RendererState";
 import { useFileContent } from "../hooks/useFileContent";
+import FileTooLarge from "./FileTooLarge";
 import "./ExcelRenderer.css";
 
 export interface ExcelRendererProps extends BaseRendererProps {}
@@ -98,8 +100,7 @@ function parseWorkbook(
     }) as unknown[][];
 
     const trimmedData = trimEmptyRowsAndColumns(jsonData);
-    const headers =
-      trimmedData.length > 0 ? (trimmedData[0] as string[]) : [];
+    const headers = trimmedData.length > 0 ? (trimmedData[0] as string[]) : [];
 
     // 构建列配置，用 Symbol 处理重复列名
     const headerNameCount = new Map<string, number>();
@@ -183,6 +184,17 @@ function SheetTable({ sheetData }: { sheetData: SheetData }) {
  * 使用虚拟滚动高效渲染大数据量
  */
 const ExcelRenderer: React.FC<ExcelRendererProps> = ({ file, onError }) => {
+  // 文件大小检查（超过 20MB 不渲染）
+  if (file.size && isFileTooLarge(file.size)) {
+    return (
+      <FileTooLarge
+        fileName={file.name}
+        fileSize={file.size}
+        fileUrl={file.url}
+      />
+    );
+  }
+
   const [parseError, setParseError] = useState<string | null>(null);
   const [sheets, setSheets] = useState<SheetData[]>([]);
   const [activeSheet, setActiveSheet] = useState(0);
@@ -200,29 +212,32 @@ const ExcelRenderer: React.FC<ExcelRendererProps> = ({ file, onError }) => {
   });
 
   // 解析 Excel 内容
-  const parseContent = useCallback(async (data: ArrayBuffer) => {
-    setParsing(true);
-    setParseError(null);
-    setSheets([]);
-    setActiveSheet(0);
+  const parseContent = useCallback(
+    async (data: ArrayBuffer) => {
+      setParsing(true);
+      setParseError(null);
+      setSheets([]);
+      setActiveSheet(0);
 
-    try {
-      const XLSX = await loadXlsxLibrary();
-      const parsedSheets = parseWorkbook(XLSX, new Uint8Array(data));
+      try {
+        const XLSX = await loadXlsxLibrary();
+        const parsedSheets = parseWorkbook(XLSX, new Uint8Array(data));
 
-      if (parsedSheets.length === 0) {
-        throw new Error("工作表为空");
+        if (parsedSheets.length === 0) {
+          throw new Error("工作表为空");
+        }
+
+        setSheets(parsedSheets);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "解析失败";
+        setParseError(message);
+        onError?.(message);
+      } finally {
+        setParsing(false);
       }
-
-      setSheets(parsedSheets);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "解析失败";
-      setParseError(message);
-      onError?.(message);
-    } finally {
-      setParsing(false);
-    }
-  }, [onError]);
+    },
+    [onError]
+  );
 
   // 当内容加载完成后解析
   useEffect(() => {

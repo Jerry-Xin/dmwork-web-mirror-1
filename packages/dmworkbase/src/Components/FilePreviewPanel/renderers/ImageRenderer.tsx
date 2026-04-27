@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { BaseRendererProps } from "../types";
+import { isFileTooLarge } from "../config";
+import FileTooLarge from "./FileTooLarge";
 import "./ImageRenderer.css";
 
 export interface ImageRendererProps extends BaseRendererProps {
@@ -23,6 +25,17 @@ const ImageRenderer: React.FC<ImageRendererProps> = ({
   onError,
   mode = "auto",
 }) => {
+  // 文件大小检查（超过 20MB 不渲染）
+  if (file.size && isFileTooLarge(file.size)) {
+    return (
+      <FileTooLarge
+        fileName={file.name}
+        fileSize={file.size}
+        fileUrl={file.url}
+      />
+    );
+  }
+
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });

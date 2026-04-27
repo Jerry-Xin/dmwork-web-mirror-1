@@ -10,6 +10,13 @@ export type { PdfRendererProps } from "./PdfRenderer";
 
 export { default as MarkdownRenderer } from "./MarkdownRenderer";
 export type { MarkdownRendererProps } from "./MarkdownRenderer";
+export { shouldShowToc, extractTocItems } from "./MarkdownRenderer";
+
+export { default as MarkdownToc } from "./MarkdownToc";
+export type { MarkdownTocProps, TocItem } from "./MarkdownToc";
+
+export { default as MarkdownSourceView } from "./MarkdownSourceView";
+export type { MarkdownSourceViewProps } from "./MarkdownSourceView";
 
 export { default as CodeRenderer } from "./CodeRenderer";
 export type { CodeRendererProps } from "./CodeRenderer";
@@ -33,13 +40,26 @@ export { default as JsonlRenderer } from "./JsonlRenderer";
 export type { JsonlRendererProps } from "./JsonlRenderer";
 
 export { default as PptRenderer } from "./PptRenderer";
-export type { PptRendererProps, PptData, PptPageData, PptRendererRef } from "./PptRenderer";
+export type {
+  PptRendererProps,
+  PptData,
+  PptPageData,
+  PptRendererRef,
+} from "./PptRenderer";
 
 export { default as PptPageRenderer } from "./PptPageRenderer";
 export type { PptPageRendererProps, PptPageContent } from "./PptPageRenderer";
 
 export { default as HtmlIframeRenderer } from "./HtmlIframeRenderer";
-export type { HtmlIframeRendererProps, HtmlIframeRendererRef } from "./HtmlIframeRenderer";
+export type {
+  HtmlIframeRendererProps,
+  HtmlIframeRendererRef,
+} from "./HtmlIframeRenderer";
 
 export { RendererState } from "./RendererState";
 export type { RendererStateProps, RendererStateType } from "./RendererState";
+
+export { default as FileTooLarge } from "./FileTooLarge";
+export type { FileTooLargeProps } from "./FileTooLarge";
+
+export { isFileTooLarge } from "../config";

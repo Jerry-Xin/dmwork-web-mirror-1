@@ -24,8 +24,13 @@ FilePreviewPanel/
     ├── ImageRenderer.css
     ├── PdfRenderer.tsx       # PDF 渲染器
     ├── PdfRenderer.css
-    ├── MarkdownRenderer.tsx  # Markdown 渲染器
+    ├── MarkdownRenderer.tsx  # Markdown 渲染器（支持 TOC + 预览/源码切换）
     ├── MarkdownRenderer.css
+    ├── MarkdownRenderer.stories.tsx  # Markdown 渲染器 Stories
+    ├── MarkdownToc.tsx       # Markdown 目录组件
+    ├── MarkdownToc.css
+    ├── MarkdownSourceView.tsx  # Markdown 源码视图组件
+    ├── MarkdownSourceView.css
     ├── CodeRenderer.tsx      # 代码渲染器
     ├── CodeRenderer.css
     ├── TextRenderer.tsx      # 纯文本渲染器
@@ -48,7 +53,7 @@ FilePreviewPanel/
 |--------|--------|------|------|
 | `ImageRenderer` | png, jpg, jpeg, gif, bmp, webp, svg | 智能适应模式，hover 操作按钮 | - |
 | `PdfRenderer` | pdf | 缩略图、缩放、翻页 | `@react-pdf-viewer/*` |
-| `MarkdownRenderer` | md, markdown | Markdown 渲染 | `MarkdownContent` |
+| `MarkdownRenderer` | md, markdown | Markdown 渲染（GFM + TOC + 预览/源码切换） | `MarkdownContent`, `react-syntax-highlighter` |
 | `CodeRenderer` | js, jsx, ts, tsx, json, css, scss, less, xml, yaml, yml, py, java, c, cpp, h, hpp, go, rs, rb, php, sh, bash, sql, vue, svelte | 语法高亮、行号 | `react-syntax-highlighter` |
 | `TextRenderer` | txt, log, ini, conf, cfg | 纯文本显示 | - |
 | `HtmlRenderer` | html, htm | iframe 渲染预览 | - |
@@ -65,7 +70,7 @@ FilePreviewPanel/
 |------|----------|------------------|
 | 图片预览 | `ImageRenderWithActions` | ✅ `ImageRenderer` |
 | PDF 预览 | `PDFViewer` | ✅ `PdfRenderer` |
-| Markdown | `Markdown` | ✅ `MarkdownRenderer` |
+| Markdown | `Markdown` | ✅ `MarkdownRenderer`（GFM + TOC + 预览/源码切换） |
 | HTML 预览 | `HtmlPreview` | ✅ `HtmlRenderer` |
 | 代码高亮 | `CodeRaw` | ✅ `CodeRenderer` |
 | 纯文本 | `PureText` | ✅ `TextRenderer` |
@@ -73,6 +78,16 @@ FilePreviewPanel/
 | Excel/CSV 预览 | `ExcelTable` | ✅ `ExcelRenderer`（虚拟滚动、空行裁剪、重复列名处理） |
 | JSON 格式化/表格 | `JsonRaw` / `JsonTableRender` | ✅ `JsonRenderer` |
 | JSONL 格式化/表格 | `JsonlRaw` / `JsonlTableRender` | ✅ `JsonlRenderer` |
+
+### Markdown 增强功能
+
+| 功能 | 需求 | 状态 |
+|------|------|------|
+| GFM 预览 | 表格、任务列表、代码高亮 | ✅ 已实现 |
+| 预览/源码切换 | segmented control 切换 | ✅ 已实现 |
+| TOC 目录 | h2 ≥ 3 时显示，支持 h2/h3 | ✅ 已实现 |
+| 目录滚动联动 | 点击跳转 + 滚动高亮 | ✅ 已实现 |
+| 数学公式 (KaTeX) | `$...$` 行内 + `$$...$$` 块级 | ✅ 已实现 |
 
 ### 待实现
 

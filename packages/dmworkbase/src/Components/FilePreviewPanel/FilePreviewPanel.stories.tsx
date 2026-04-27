@@ -543,7 +543,8 @@ export const MarkdownPreview: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Markdown 文件预览，支持标题、列表、代码块、引用等格式。",
+        story:
+          "Markdown 文件预览，支持 GFM 渲染（标题、列表、代码块、表格等）、预览/源码切换、TOC 目录（h2 ≥ 3 时显示）。详细演示请查看 Components/FilePreviewPanel/MarkdownRenderer。",
       },
     },
   },
@@ -718,7 +719,6 @@ export const ExcelPreview: Story = {
   },
 };
 
-
 // 长文件名
 export const LongFileName: Story = {
   args: {
@@ -745,19 +745,20 @@ export const LongFileName: Story = {
 
 // 生成指定大小的 Blob URL
 function createBlobUrl(targetSizeKB: number): string {
-  const line = '// This is a line of code that repeats to create large file content for testing purposes.\n';
+  const line =
+    "// This is a line of code that repeats to create large file content for testing purposes.\n";
   const lineSize = new Blob([line]).size;
   const targetSize = targetSizeKB * 1024;
   const repeatCount = Math.ceil(targetSize / lineSize);
-  const content = Array(repeatCount).fill(line).join('');
-  const blob = new Blob([content], { type: 'text/plain' });
+  const content = Array(repeatCount).fill(line).join("");
+  const blob = new Blob([content], { type: "text/plain" });
   return URL.createObjectURL(blob);
 }
 
 // 小文件 - 语法高亮渲染 (< 30KB)
 const SmallFileTemplate = () => {
   const [url, setUrl] = React.useState<string | null>(null);
-  
+
   React.useEffect(() => {
     const blobUrl = createBlobUrl(10);
     setUrl(blobUrl);
@@ -765,7 +766,7 @@ const SmallFileTemplate = () => {
   }, []);
 
   if (!url) return null;
-  
+
   return (
     <FilePreviewPanel
       file={{
@@ -784,16 +785,16 @@ export const CodeSmallFile: Story = {
   parameters: {
     docs: {
       description: {
-        story: "小文件（10KB）- 使用语法高亮渲染。阈值：< 30KB。",
+        story: "小文件（10KB）- 使用语法高亮渲染。阈值：< 100KB。",
       },
     },
   },
 };
 
-// 中等文件 - 纯文本渲染 (30KB ~ 100KB)
+// 中等文件 - 纯文本渲染 (100KB ~ 1MB)
 const MediumFileTemplate = () => {
   const [url, setUrl] = React.useState<string | null>(null);
-  
+
   React.useEffect(() => {
     const blobUrl = createBlobUrl(50);
     setUrl(blobUrl);
@@ -801,7 +802,7 @@ const MediumFileTemplate = () => {
   }, []);
 
   if (!url) return null;
-  
+
   return (
     <FilePreviewPanel
       file={{
@@ -820,16 +821,17 @@ export const CodeMediumFile: Story = {
   parameters: {
     docs: {
       description: {
-        story: "中等文件（50KB）- 禁用语法高亮，纯文本渲染。阈值：30KB ~ 100KB。",
+        story:
+          "中等文件（50KB）- 禁用语法高亮，纯文本渲染。阈值：100KB ~ 1MB。",
       },
     },
   },
 };
 
-// 大文件 - 不渲染，提示下载 (> 100KB)
+// 大文件 - 不渲染，提示下载 (> 20MB)
 const LargeFileTemplate = () => {
   const [url, setUrl] = React.useState<string | null>(null);
-  
+
   React.useEffect(() => {
     const blobUrl = createBlobUrl(150);
     setUrl(blobUrl);
@@ -837,7 +839,7 @@ const LargeFileTemplate = () => {
   }, []);
 
   if (!url) return null;
-  
+
   return (
     <FilePreviewPanel
       file={{
@@ -856,7 +858,8 @@ export const CodeLargeFile: Story = {
   parameters: {
     docs: {
       description: {
-        story: "大文件（150KB）- 不渲染，显示「文件太大，可下载」提示。阈值：> 100KB。",
+        story:
+          "大文件（150KB）- 不渲染，显示「文件过大，建议下载到本地查看」提示。阈值：> 20MB。",
       },
     },
   },

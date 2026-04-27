@@ -2,21 +2,33 @@
    MarkdownRenderer — 文件预览面板的 Markdown 渲染器样式
    遵守 AGENTS.md：全部使用 token，无硬编码颜色/间距/圆角
 
-   注意：Markdown 元素样式由 MarkdownContent 组件的 markdown.css 提供
-   此文件只负责容器布局和加载/错误/空状态
+   布局结构：
+   - 主容器：flex 横向布局
+   - TOC 侧边栏（可选）：固定宽度 200px
+   - 内容区域：flex: 1 填充剩余空间
    ============================================================ */
 
-/* ── 容器 ── */
+/* ── 主容器 ── */
 .wk-file-preview-markdown-renderer {
-  padding: var(--wk-sp-5);
-  overflow: auto;
+  display: flex;
+  flex-direction: row;
   height: 100%;
-  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
   background: var(--wk-bg-base);
 }
 
 /* ── 内容区域 ── */
 .wk-file-preview-markdown-renderer__content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+/* ── 预览模式内容区域 ── */
+.wk-file-preview-markdown-renderer__preview {
+  padding: var(--wk-sp-5);
   max-width: 100%;
   color: var(--wk-text-primary);
 }
@@ -78,6 +90,17 @@
   background: var(--wk-bg-hover);
 }
 
+/* ── 大文件提示（强制源码模式） ── */
+.wk-file-preview-markdown-renderer__large-file-notice {
+  padding: var(--wk-sp-2) var(--wk-sp-4);
+  margin: 0 0 var(--wk-sp-2) 0;
+  background: var(--wk-bg-hover);
+  border-bottom: 1px solid var(--wk-border-subtle);
+  color: var(--wk-text-secondary);
+  font-size: var(--wk-text-size-sm);
+  text-align: center;
+}
+
 /* ── 空状态 ── */
 .wk-file-preview-markdown-renderer--empty {
   display: flex;
@@ -86,6 +109,25 @@
   justify-content: center;
   color: var(--wk-text-tertiary);
   font-size: var(--wk-text-size-md);
+}
+
+/* ── 滚动条样式 ── */
+.wk-file-preview-markdown-renderer__content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.wk-file-preview-markdown-renderer__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wk-file-preview-markdown-renderer__content::-webkit-scrollbar-thumb {
+  background: var(--wk-border-subtle);
+  border-radius: var(--wk-r-xs);
+}
+
+.wk-file-preview-markdown-renderer__content::-webkit-scrollbar-thumb:hover {
+  background: var(--wk-border-default);
 }
 
 /* ── 暗色模式适配 ── */
@@ -118,4 +160,20 @@ body[theme-mode="dark"] .wk-file-preview-markdown-renderer__retry:hover {
 
 body[theme-mode="dark"] .wk-file-preview-markdown-renderer--empty {
   color: var(--wk-text-tertiary);
+}
+
+body[theme-mode="dark"]
+  .wk-file-preview-markdown-renderer__content::-webkit-scrollbar-thumb {
+  background: var(--wk-border-subtle);
+}
+
+body[theme-mode="dark"]
+  .wk-file-preview-markdown-renderer__content::-webkit-scrollbar-thumb:hover {
+  background: var(--wk-border-default);
+}
+
+body[theme-mode="dark"] .wk-file-preview-markdown-renderer__large-file-notice {
+  background: var(--wk-bg-hover);
+  border-bottom-color: var(--wk-border-subtle);
+  color: var(--wk-text-secondary);
 }

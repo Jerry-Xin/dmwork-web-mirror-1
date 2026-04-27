@@ -11,21 +11,28 @@ export interface JsonRendererProps extends BaseRendererProps {}
  * 支持代码视图（格式化 JSON）
  *
  * 文件大小分级处理：
- * - < 30KB: 语法高亮渲染
- * - 30KB ~ 100KB: 纯文本渲染
- * - > 100KB: 不渲染，提示下载
+ * - < 100KB: 语法高亮渲染
+ * - 100KB ~ 1MB: 纯文本渲染
+ * - > 20MB: 不渲染，提示下载
  */
 const JsonRenderer: React.FC<JsonRendererProps> = ({ file, onError }) => {
-  const { loading, error, reload, renderMode, formattedContent, fileSize, contentSize } =
-    useCodeRenderer(file, {
-      language: "json",
-      enableHighlight: true,
-      formatter: (rawContent: string) => {
-        const jsonData = safeJsonParse(rawContent, null);
-        if (jsonData === null) return rawContent;
-        return JSON.stringify(jsonData, null, 2);
-      },
-    });
+  const {
+    loading,
+    error,
+    reload,
+    renderMode,
+    formattedContent,
+    fileSize,
+    contentSize,
+  } = useCodeRenderer(file, {
+    language: "json",
+    enableHighlight: true,
+    formatter: (rawContent: string) => {
+      const jsonData = safeJsonParse(rawContent, null);
+      if (jsonData === null) return rawContent;
+      return JSON.stringify(jsonData, null, 2);
+    },
+  });
 
   return (
     <CodeRendererBase

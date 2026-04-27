@@ -1,0 +1,155 @@
+/* ============================================
+   FileListPanel - 侧边文件列表面板样式
+   类名前缀: wk-file-list-panel
+   ============================================ */
+
+.wk-file-list-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--wk-bg-surface);
+  border-right: 1px solid var(--wk-border-default);
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+.wk-file-list-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2);
+  padding: var(--wk-sp-3);
+  border-bottom: 1px solid var(--wk-border-default);
+  flex-shrink: 0;
+}
+
+.wk-file-list-panel__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.wk-file-list-panel__count {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--wk-text-tertiary);
+  background: var(--wk-bg-hover);
+  padding: 1px 6px;
+  border-radius: var(--wk-r-full);
+}
+
+.wk-file-list-panel__close-btn {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: var(--wk-r-sm);
+  cursor: pointer;
+  color: var(--wk-text-tertiary);
+  transition: background 0.15s, color 0.15s;
+}
+
+.wk-file-list-panel__close-btn:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+/* ============================================
+   文件列表
+   ============================================ */
+
+.wk-file-list-panel__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--wk-sp-2) 0;
+}
+
+.wk-file-list-panel__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: var(--wk-text-tertiary);
+  font-size: 13px;
+}
+
+/* ============================================
+   文件项
+   ============================================ */
+
+.wk-file-list-panel__item {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2);
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.wk-file-list-panel__item:hover {
+  background: var(--wk-bg-hover);
+}
+
+.wk-file-list-panel__item--active {
+  background: var(--wk-bg-active);
+}
+
+.wk-file-list-panel__item--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: var(--wk-color-primary);
+  border-radius: 0 2px 2px 0;
+}
+
+/* 来源标记 */
+.wk-file-list-panel__item-badge {
+  font-size: 12px;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+
+/* 文件图标 */
+.wk-file-list-panel__item-icon {
+  flex-shrink: 0;
+  color: var(--wk-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 文件信息 */
+.wk-file-list-panel__item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wk-file-list-panel__item-name {
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wk-file-list-panel__item--active .wk-file-list-panel__item-name {
+  font-weight: 500;
+}
+
+.wk-file-list-panel__item-size {
+  font-size: 11px;
+  color: var(--wk-text-tertiary);
+}

@@ -139,4 +139,17 @@ export default interface ConversationContext {
      * @param threadName 子区名称
      */
     openThreadPanel?(threadChannelId: string, threadName: string): void
+
+    /**
+     * 获取当前正在预览的文件消息 ID
+     * 用于文件卡片显示激活态
+     */
+    getActivePreviewMessageId?(): string | null
+
+    /**
+     * 通过消息 ID 回复消息
+     * 用于文件预览面板的回复功能
+     * @param messageId 消息 ID
+     */
+    replyToMessageId?(messageId: string): void
 }

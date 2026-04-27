@@ -543,8 +543,10 @@ export default function CmdKApp() {
           type: EXTENSION_MESSAGE_TYPE.getActiveConversation,
         });
         activeTarget = resp?.target ?? null;
-      } catch {
+        console.log("[CmdK] getActiveConversation resp:", JSON.stringify(resp), "activeTarget:", JSON.stringify(activeTarget));
+      } catch (e) {
         activeTarget = null;
+        console.warn("[CmdK] getActiveConversation failed:", e);
       }
 
       const nextThreads = [...channelList, ...privateChatList];
@@ -558,10 +560,12 @@ export default function CmdKApp() {
               item.channelId === prev.id && item.channelType === prev.type
           )
         ) {
+          console.log("[CmdK] setSelected: keeping prev:", JSON.stringify(prev));
           return prev;
         }
 
         if (!activeTarget) {
+          console.log("[CmdK] setSelected: no activeTarget, setting null. prev was:", JSON.stringify(prev));
           return null;
         }
 
@@ -570,12 +574,14 @@ export default function CmdKApp() {
             item.channelId === activeTarget!.channelId &&
             item.channelType === activeTarget!.channelType
         );
-        return matched
+        const result = matched
           ? {
               id: matched.channelId,
               type: matched.channelType,
             }
           : null;
+        console.log("[CmdK] setSelected: activeTarget:", JSON.stringify(activeTarget), "matched:", !!matched, "result:", JSON.stringify(result));
+        return result;
       });
     } catch (fetchError: any) {
       setError(fetchError?.message || "获取会话失败");

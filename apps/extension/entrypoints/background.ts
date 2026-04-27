@@ -366,6 +366,21 @@ async function dispatchConversationOpen(notificationId: string): Promise<void> {
 }
 
 
+const BACKGROUND_HANDLED_TYPES = new Set([
+  EXTENSION_MESSAGE_TYPE.offscreenReady,
+  EXTENSION_MESSAGE_TYPE.authChanged,
+  EXTENSION_MESSAGE_TYPE.authCleared,
+  EXTENSION_MESSAGE_TYPE.offscreenSyncResult,
+  EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync,
+  EXTENSION_MESSAGE_TYPE.sidepanelState,
+  EXTENSION_MESSAGE_TYPE.requestOpenConversation,
+  EXTENSION_MESSAGE_TYPE.offscreenNewMessage,
+]);
+
+function isBackgroundHandledMessage(type: string): boolean {
+  return BACKGROUND_HANDLED_TYPES.has(type as any);
+}
+
 async function handleRuntimeMessage(
   message: ExtensionRuntimeMessage,
   sender?: Browser.runtime.MessageSender,
@@ -470,6 +485,9 @@ export default defineBackground(async () => {
   console.log("Hello background!", { id: browser.runtime.id });
 
   browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage, sender: Browser.runtime.MessageSender) => {
+    if (!isBackgroundHandledMessage(message.type)) {
+      return false;
+    }
     return handleRuntimeMessage(message, sender);
   });
 

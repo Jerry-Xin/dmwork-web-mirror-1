@@ -228,11 +228,11 @@ browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
 
   if (message.type === EXTENSION_MESSAGE_TYPE.getActiveConversation) {
     const channel = WKApp.shared.openChannel;
-    return Promise.resolve({
-      target: channel
-        ? { channelId: channel.channelID, channelType: channel.channelType }
-        : null,
-    });
+    const target = channel
+      ? { channelId: channel.channelID, channelType: channel.channelType }
+      : null;
+    console.log("[Sidepanel] getActiveConversation: openChannel=", channel?.channelID, "type=", channel?.channelType, "returning:", JSON.stringify(target));
+    return Promise.resolve({ target });
   }
 });
 

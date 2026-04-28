@@ -19,6 +19,7 @@ export interface AttachmentAttributes {
   size: number;
   type: string;
   previewUrl?: string; // 图片预览 URL
+  source?: "paste" | "upload"; // 附件来源：粘贴 or 上传按钮
 }
 
 function isImageType(type: string, name: string): boolean {
@@ -190,6 +191,9 @@ export const AttachmentNode = Node.create({
       },
       previewUrl: {
         default: null,
+      },
+      source: {
+        default: "upload",
       },
     };
   },

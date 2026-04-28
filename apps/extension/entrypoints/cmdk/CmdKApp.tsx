@@ -115,16 +115,24 @@ function buildCmdkMessageText(text: string, context: PanelContext | null) {
   const parts: string[] = [];
   const quotedText = context?.selectedText;
 
-  if (quotedText) {
+  if (context?.pageUrl) {
+    const label = context.pageTitle || context.pageUrl;
+    const sourceLine = `来自 🌐 [${label}](${context.pageUrl})`;
+    if (quotedText) {
+      const quote =
+        quotedText.length > QUOTE_MAX_LENGTH
+          ? `${quotedText.slice(0, QUOTE_MAX_LENGTH)}…`
+          : quotedText;
+      parts.push(`> ${sourceLine}\n> \n> ${quote.split("\n").join("\n> ")}`);
+    } else {
+      parts.push(`> ${sourceLine}`);
+    }
+  } else if (quotedText) {
     const quote =
       quotedText.length > QUOTE_MAX_LENGTH
         ? `${quotedText.slice(0, QUOTE_MAX_LENGTH)}…`
         : quotedText;
     parts.push(`> ${quote.split("\n").join("\n> ")}`);
-  }
-
-  if (context?.pageUrl) {
-    parts.push(`🔗 ${context.pageTitle || context.pageUrl}`);
   }
 
   parts.push(text.trim());

@@ -132,14 +132,6 @@
   overflow: hidden;
 }
 
-.wk-file-preview-header__dropdown-title {
-  padding: var(--wk-sp-2) var(--wk-sp-3);
-  font-size: var(--wk-text-size-xs);
-  font-weight: 500;
-  color: var(--wk-text-tertiary);
-  border-bottom: 1px solid var(--wk-border-subtle);
-}
-
 .wk-file-preview-header__dropdown-list {
   max-height: 280px;
   overflow-y: auto;

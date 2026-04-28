@@ -415,9 +415,6 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
               onMouseEnter={() => clearHoverTimeout()}
               onMouseLeave={handleMouseLeave}
             >
-              <div className="wk-file-preview-header__dropdown-title">
-                对话内文件 · 点击展开列表
-              </div>
               <div
                 className="wk-file-preview-header__dropdown-list"
                 ref={dropdownListRef}

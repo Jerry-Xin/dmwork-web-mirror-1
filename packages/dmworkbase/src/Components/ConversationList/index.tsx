@@ -261,10 +261,25 @@ export default class ConversationList extends Component<
   channelListener!: ChannelInfoListener;
   contextMenusContext!: ContextMenusContext;
   typingListener!: TypingListener;
+  private _storageKey(): string {
+    const uid = WKApp.loginInfo?.uid || 'unknown';
+    const spaceId = WKApp.shared?.currentSpaceId || 'default';
+    return `wk-thread-expanded-groups_${uid}_${spaceId}`;
+  }
+
   constructor(props: ConversationListProps) {
     super(props);
 
-    this.state = { expandedGroupIds: new Set() };
+    // 从 localStorage 恢复上次的展开状态
+    let restoredIds: Set<string>;
+    try {
+      const raw = localStorage.getItem(this._storageKey());
+      const parsed = raw ? JSON.parse(raw) : null;
+      restoredIds = Array.isArray(parsed) ? new Set<string>(parsed) : new Set();
+    } catch {
+      restoredIds = new Set();
+    }
+    this.state = { expandedGroupIds: restoredIds };
   }
 
   componentDidMount() {
@@ -289,13 +304,27 @@ export default class ConversationList extends Component<
   };
 
   _toggleGroupExpand = (groupId: string) => {
-    this.setState((s) => {
-      const next = new Set(s.expandedGroupIds);
-      if (next.has(groupId)) next.delete(groupId);
-      else next.add(groupId);
-      return { expandedGroupIds: next };
-    });
+    this.setState(
+      (s) => {
+        const next = new Set(s.expandedGroupIds);
+        if (next.has(groupId)) next.delete(groupId);
+        else next.add(groupId);
+        return { expandedGroupIds: next };
+      },
+      () => {
+        // setState 回调中执行副作用，避免在 updater 纯函数内写 localStorage
+        try {
+          localStorage.setItem(
+            this._storageKey(),
+            JSON.stringify([...this.state.expandedGroupIds])
+          );
+        } catch {
+          // localStorage 不可用时静默忽略
+        }
+      }
+    );
   };
+
   _handleContextMenu(
     conversationWrap: ConversationWrap,
     event: React.MouseEvent

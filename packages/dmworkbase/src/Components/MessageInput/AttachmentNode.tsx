@@ -3,7 +3,17 @@ import { NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
 import React from "react";
 import { X } from "lucide-react";
 
-// 文件类型图标
+// 文件类型图标（导出供复用）
+export { default as defaultIcon } from "../../assets/files/default.svg";
+export { default as docIcon } from "../../assets/files/doc.svg";
+export { default as excelIcon } from "../../assets/files/excel.svg";
+export { default as gifIcon } from "../../assets/files/gif.svg";
+export { default as pdfIcon } from "../../assets/files/pdf.svg";
+export { default as videoIcon } from "../../assets/files/video.svg";
+export { default as zipIcon } from "../../assets/files/zip.svg";
+export { default as videoPlayIcon } from "../../assets/files/video2.svg";
+
+// 内部使用的图标引用
 import defaultIcon from "../../assets/files/default.svg";
 import docIcon from "../../assets/files/doc.svg";
 import excelIcon from "../../assets/files/excel.svg";
@@ -36,7 +46,8 @@ function isVideoType(type: string, name: string): boolean {
   return ["mp4", "avi", "mov", "mkv", "webm"].includes(ext);
 }
 
-function getFileIcon(name: string, type: string): string {
+/** 根据文件名和类型获取文件图标（导出供复用） */
+export function getFileIcon(name: string, type: string): string {
   const dotIdx = name.lastIndexOf(".");
   const ext = dotIdx > 0 ? name.substring(dotIdx + 1).toLowerCase() : "";
 
@@ -65,7 +76,8 @@ function getFileIcon(name: string, type: string): string {
   return defaultIcon;
 }
 
-function formatFileSize(bytes: number): string {
+/** 格式化文件大小（导出供复用） */
+export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;

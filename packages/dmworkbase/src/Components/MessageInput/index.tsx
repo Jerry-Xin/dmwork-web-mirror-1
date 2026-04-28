@@ -24,17 +24,13 @@ import { ChatContextResult } from "../Conversation/chatContext";
 import { Maximize2, Minimize2 } from "lucide-react";
 import IconClick from "../IconClick";
 import mentionAllIcon from "./mention.png";
-import { AttachmentNode, AttachmentAttributes } from "./AttachmentNode";
-
-// 文件类型图标
-import defaultIcon from "../../assets/files/default.svg";
-import docIcon from "../../assets/files/doc.svg";
-import excelIcon from "../../assets/files/excel.svg";
-import gifIcon from "../../assets/files/gif.svg";
-import pdfIcon from "../../assets/files/pdf.svg";
-import videoIcon from "../../assets/files/video.svg";
-import zipIcon from "../../assets/files/zip.svg";
-import videoPlayIcon from "../../assets/files/video2.svg";
+import {
+  AttachmentNode,
+  AttachmentAttributes,
+  getFileIcon,
+  formatFileSize,
+  videoPlayIcon,
+} from "./AttachmentNode";
 
 const MAX_MESSAGE_LENGTH = 5000;
 
@@ -298,43 +294,6 @@ function isVideoFileType(file: File): boolean {
   if (file.type.startsWith("video/")) return true;
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
   return ["mp4", "avi", "mov", "mkv", "webm"].includes(ext);
-}
-
-// 根据文件名和类型获取文件图标
-function getFileIcon(name: string, type: string): string {
-  const dotIdx = name.lastIndexOf(".");
-  const ext = dotIdx > 0 ? name.substring(dotIdx + 1).toLowerCase() : "";
-
-  if (
-    type.startsWith("video/") ||
-    ["mp4", "avi", "mov", "mkv", "webm"].includes(ext)
-  ) {
-    return videoIcon;
-  }
-  if (ext === "gif") {
-    return gifIcon;
-  }
-  if (ext === "pdf") {
-    return pdfIcon;
-  }
-  if (["doc", "docx"].includes(ext)) {
-    return docIcon;
-  }
-  if (["xls", "xlsx"].includes(ext)) {
-    return excelIcon;
-  }
-  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
-    return zipIcon;
-  }
-
-  return defaultIcon;
-}
-
-// 格式化文件大小
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 const MessageInput: React.FC<MessageInputProps> = (props) => {

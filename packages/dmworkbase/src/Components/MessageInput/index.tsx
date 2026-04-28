@@ -163,6 +163,7 @@ export interface MessageInputContext {
   addAttachment: (files: File[]) => void;
   getAttachmentFiles: () => File[];
   text: () => string | undefined;
+  focus: () => void;
 }
 
 interface MemberInfo {
@@ -560,6 +561,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
         addAttachment,
         getAttachmentFiles,
         text: () => (editor ? extractMentionsFromEditor(editor) : undefined),
+        focus: () => editor?.commands.focus(),
       });
     }
   }, [

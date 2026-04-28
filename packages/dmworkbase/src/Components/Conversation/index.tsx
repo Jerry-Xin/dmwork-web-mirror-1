@@ -394,6 +394,8 @@ export class Conversation
     }
     this.vm.currentHandlerType = handlerType;
     this.vm.currentReplyMessage = message;
+    // 自动聚焦输入框
+    this._messageInputContext?.focus();
   }
 
   setDragFileCallback(f: (file: File) => void): void {

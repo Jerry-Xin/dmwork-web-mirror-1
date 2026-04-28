@@ -1013,7 +1013,20 @@ export default class ConversationList extends Component<
               menus.push(...extraMenus);
             }
 
-            // 4. 免打扰 / 关闭免打扰（子区不显示，勿扰状态继承父群组）
+            // 4. 置顶 / 取消置顶（子区不显示）
+            if (channel?.channelType !== ChannelTypeCommunityTopic) {
+              menus.push({
+                title: channelInfo?.top ? "取消置顶" : "置顶聊天",
+                icon: channelInfo?.top
+                  ? "M19 9l-7 7-7-7"
+                  : "M12 2l0 13 M5 9l7-7 7 7 M19 21H5",
+                onClick: () => {
+                  if (channelInfo) this.onTop(channelInfo);
+                },
+              });
+            }
+
+            // 5. 免打扰 / 关闭免打扰（子区不显示，勿扰状态继承父群组）
             if (channel?.channelType !== ChannelTypeCommunityTopic) {
               menus.push({
                 title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
@@ -1024,7 +1037,7 @@ export default class ConversationList extends Component<
               });
             }
 
-            // 5. 展开/收起子区（compact 模式下、群组且有子区时显示）
+            // 6. 展开/收起子区（compact 模式下、群组且有子区时显示）
             if (
               compact &&
               channel &&
@@ -1041,10 +1054,10 @@ export default class ConversationList extends Component<
               });
             }
 
-            // 6. 分隔线
+            // 7. 分隔线
             menus.push({ separator: true } as ContextMenusData);
 
-            // 7. 清空聊天记录 / 关闭并清空
+            // 8. 清空聊天记录 / 关闭并清空
             // 子区：直接展开到顶层（免打扰已去掉，菜单项够少）
             // 群组：保留在「更多」子菜单里
             const clearItems = [

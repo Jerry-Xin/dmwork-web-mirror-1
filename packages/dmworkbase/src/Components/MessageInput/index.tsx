@@ -433,14 +433,18 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
         setSlashActiveIndex(0);
       }
 
-      // 检测是否多行（检查是否有换行符或多个段落，或有附件节点）
+      // 检测是否多行（检查是否有换行符或多个段落，或有附件节点，或文本较长）
       const json = editor.getJSON();
       const paragraphs = json.content || [];
       const hasMultipleParagraphs = paragraphs.length > 1;
       const hasNewline = text.includes("\n");
       // 检查编辑器内是否有附件节点
       const hasAttachments = extractAttachmentsFromEditor(editor).length > 0;
-      setIsMultiLine(hasMultipleParagraphs || hasNewline || hasAttachments);
+      // 文本较长时也需要垂直排列（阈值：超过 50 个字符）
+      const isLongText = text.length > 50;
+      setIsMultiLine(
+        hasMultipleParagraphs || hasNewline || hasAttachments || isLongText
+      );
     },
   });
 
@@ -586,8 +590,13 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
       const hasNewline = text.includes("\n");
       const hasEditorAttachments =
         extractAttachmentsFromEditor(editor).length > 0;
+      // 文本较长时也需要垂直排列（阈值：超过 50 个字符）
+      const isLongText = text.length > 50;
       setIsMultiLine(
-        hasMultipleParagraphs || hasNewline || hasEditorAttachments
+        hasMultipleParagraphs ||
+          hasNewline ||
+          hasEditorAttachments ||
+          isLongText
       );
     }
   }, [topAttachments.length, editor]);
@@ -1015,10 +1024,37 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
 
             {/* 语音输入 */}
             <VoiceInputIndicator
-              onTranscribed={(text: string, shouldReplace: boolean) => {
+              onTranscribed={(
+                text: string,
+                replaceMode: "all" | "selection" | "insert",
+                savedSelectedText?: string,
+                savedSelectionRange?: { from: number; to: number }
+              ) => {
                 if (!editor) return;
 
                 const hasMention = /@\S+?(?=\s|$)/.test(text);
+
+                // 根据保存的选中文本内容查找当前文档中的位置
+                // 使用 ProseMirror doc.descendants 遍历，正确处理 mention 等原子节点
+                const findSelectionRange = (
+                  searchText: string
+                ): { from: number; to: number } | null => {
+                  let found: { from: number; to: number } | null = null;
+                  editor.state.doc.descendants((node, pos) => {
+                    if (found) return false; // 已找到，停止遍历
+                    if (node.isText && node.text) {
+                      const idx = node.text.indexOf(searchText);
+                      if (idx !== -1) {
+                        found = {
+                          from: pos + idx,
+                          to: pos + idx + searchText.length,
+                        };
+                        return false; // 停止遍历
+                      }
+                    }
+                  });
+                  return found;
+                };
 
                 if (hasMention && props.members && props.members.length > 0) {
                   const memberInfos: MemberInfo[] = props.members.map((s) => ({
@@ -1033,18 +1069,55 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
 
                   const content = parseMentionMarkers(text, memberInfos);
 
-                  if (shouldReplace) {
+                  if (replaceMode === "all") {
+                    // 替换全部内容
                     editor.commands.setContent({
                       type: "doc",
                       content: [{ type: "paragraph", content }],
                     });
+                  } else if (replaceMode === "selection" && savedSelectedText) {
+                    // 替换选中部分：优先使用保存的位置，文本匹配作为兜底
+                    const range =
+                      savedSelectionRange ||
+                      findSelectionRange(savedSelectedText);
+                    if (range) {
+                      editor
+                        .chain()
+                        .setTextSelection(range)
+                        .insertContent(content)
+                        .run();
+                    } else {
+                      // 找不到原文本，回退到替换全部
+                      editor.commands.setContent({
+                        type: "doc",
+                        content: [{ type: "paragraph", content }],
+                      });
+                    }
                   } else {
+                    // 插入到光标处
                     editor.commands.insertContent(content);
                   }
                 } else {
-                  if (shouldReplace) {
+                  if (replaceMode === "all") {
+                    // 替换全部内容
                     editor.commands.setContent(text);
+                  } else if (replaceMode === "selection" && savedSelectedText) {
+                    // 替换选中部分：优先使用保存的位置，文本匹配作为兜底
+                    const range =
+                      savedSelectionRange ||
+                      findSelectionRange(savedSelectedText);
+                    if (range) {
+                      editor
+                        .chain()
+                        .setTextSelection(range)
+                        .insertContent(text)
+                        .run();
+                    } else {
+                      // 找不到原文本，回退到替换全部
+                      editor.commands.setContent(text);
+                    }
                   } else {
+                    // 插入到光标处
                     editor.commands.insertContent(text);
                   }
                 }
@@ -1052,6 +1125,18 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
                 editor.commands.focus();
               }}
               getCurrentText={() => editor?.getText() || ""}
+              getSelectedText={() => {
+                if (!editor) return undefined;
+                const { from, to } = editor.state.selection;
+                if (from === to) return undefined; // 没有选中文字
+                return editor.state.doc.textBetween(from, to, " ");
+              }}
+              getSelectionRange={() => {
+                if (!editor) return undefined;
+                const { from, to } = editor.state.selection;
+                if (from === to) return undefined; // 没有选中文字
+                return { from, to };
+              }}
               getChatContext={props.getChatContext}
             />
 

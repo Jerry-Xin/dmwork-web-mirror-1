@@ -420,6 +420,10 @@ export class FileCell extends MessageCell<any, FileCellState> {
       sourceChannelType: message.channel.channelType,
       // 消息 ID（用于标记激活态）
       messageId: message.messageID,
+      // 回复功能所需字段
+      messageSeq: message.messageSeq,
+      fromUID: message.fromUID,
+      conversationDigest: message.content.conversationDigest,
     };
     WKApp.mittBus.emit("wk:file-preview", previewData);
   };

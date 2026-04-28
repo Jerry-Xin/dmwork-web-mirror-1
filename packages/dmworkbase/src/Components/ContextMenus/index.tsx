@@ -13,6 +13,7 @@ export interface ContextMenusProps {
 export interface ContextMenusState {
     contextOrigin: number
     showContextMenus: boolean
+    flipSubmenu: boolean
 }
 
 export interface ContextMenusContext {
@@ -56,6 +57,7 @@ function ArrowIcon() {
 
 export default class ContextMenus extends Component<ContextMenusProps, ContextMenusState> implements ContextMenusContext {
     private static _instances: Set<ContextMenus> = new Set()
+    private _rafId?: number
 
     static hideAll() {
         ContextMenus._instances.forEach((instance) => {
@@ -71,6 +73,7 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
         this.state = {
             contextOrigin: 0,
             showContextMenus: false,
+            flipSubmenu: false,
         }
         this._gHandleClick = this._handleClick.bind(this)
     }
@@ -98,25 +101,40 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
 
         const clickX = event.clientX;
         const clickY = event.clientY;
-        const screenW = window.innerWidth;
-        const screenH = window.innerHeight;
-        const rootW = this.contextMenusRef.offsetWidth || 200;
-        const rootH = this.contextMenusRef.offsetHeight || 0;
 
-        const showLeft = (screenW - clickX) <= rootW
-        const showBottom = (screenH - clickY) <= rootH
+        // 第一帧：将菜单放到视口外使其可见，以便量取真实尺寸
+        this.contextMenusRef.style.top = '-9999px'
+        this.contextMenusRef.style.left = '-9999px'
+        this.contextMenusRef.style.visibility = 'hidden'
+        this.contextMenusRef.style.display = 'block'
 
-        this.contextMenusRef.style.left = showLeft
-            ? `${clickX - rootW}px`
-            : `${clickX + 5}px`
+        // 第二帧：读取真实尺寸后计算最终位置
+        this._rafId = requestAnimationFrame(() => {
+            if (!this.contextMenusRef) return
 
-        if (showBottom) {
-            this.contextMenusRef.style.top = `${clickY - rootH}px`
-            this.setState({ contextOrigin: rootH, showContextMenus: true })
-        } else {
-            this.contextMenusRef.style.top = `${clickY}px`
-            this.setState({ contextOrigin: 0, showContextMenus: true })
-        }
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            const rootW = this.contextMenusRef.offsetWidth || 200;
+            const rootH = this.contextMenusRef.offsetHeight || 0;
+            const MARGIN = 8; // 距视口边缘最小间距
+
+            const showLeft = (screenW - clickX) < rootW + MARGIN
+            const showBottom = (screenH - clickY) < rootH + MARGIN
+
+            const left = showLeft ? Math.max(MARGIN, clickX - rootW) : Math.min(clickX + 5, screenW - rootW - MARGIN)
+            const top = showBottom ? Math.max(MARGIN, clickY - rootH) : Math.min(clickY, screenH - rootH - MARGIN)
+
+            this.contextMenusRef.style.left = `${left}px`
+            this.contextMenusRef.style.top = `${top}px`
+            this.contextMenusRef.style.visibility = ''
+            this.contextMenusRef.style.display = ''
+
+            const contextOrigin = showBottom ? rootH : 0
+            // 子菜单宽度估算 160px（min-width），靠近右侧时翻转
+            const SUBMENU_W = 160
+            const flipSubmenu = (screenW - left - rootW) < SUBMENU_W + MARGIN
+            this.setState({ contextOrigin, showContextMenus: true, flipSubmenu })
+        })
     }
 
     contextMenusRef!: HTMLDivElement | null
@@ -128,6 +146,9 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
 
     componentWillUnmount() {
         ContextMenus._instances.delete(this)
+        if (this._rafId !== undefined) {
+            cancelAnimationFrame(this._rafId)
+        }
     }
 
     _renderItem(m: ContextMenusData, i: number): ReactNode {
@@ -191,12 +212,12 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
     }
 
     render(): ReactNode {
-        const { showContextMenus, contextOrigin } = this.state
+        const { showContextMenus, contextOrigin, flipSubmenu } = this.state
         const { menus } = this.props
         return (
             <>
                 <div
-                    className={classNames("wk-contextmenus", showContextMenus && "wk-contextmenus-open")}
+                    className={classNames("wk-contextmenus", showContextMenus && "wk-contextmenus-open", flipSubmenu && "wk-contextmenus-flip-submenu")}
                     ref={ref => { this.contextMenusRef = ref }}
                     style={{ transformOrigin: `-3px ${contextOrigin}px` }}
                 >

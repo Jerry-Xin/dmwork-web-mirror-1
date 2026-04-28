@@ -101,6 +101,7 @@ body[theme-mode=dark] .wk-contextmenus li:hover {
 .wk-ctx-submenu {
     position: absolute;
     left: calc(100% + 4px);
+    right: auto;
     top: 0;
     background: #FFFFFF;
     border: 1px solid #E5E6EB;
@@ -119,6 +120,12 @@ body[theme-mode=dark] .wk-ctx-submenu {
 
 .wk-contextmenus li:hover > .wk-ctx-submenu {
     display: block;
+}
+
+/* 子菜单向左展开（靠近右侧视口边缘时） */
+.wk-contextmenus-flip-submenu li:hover > .wk-ctx-submenu {
+    left: auto;
+    right: calc(100% + 4px);
 }
 
 .wk-ctx-submenu li {

@@ -337,7 +337,11 @@ export default function VoiceInputIndicator({
       ) {
         shiftRecordingRef.current = false;
         e.preventDefault();
-        const contextText = getCurrentText?.();
+        // 语音输入模式不需要传 context_text
+        const contextText =
+          recordingModeRef.current === "edit_only"
+            ? getCurrentText?.()
+            : undefined;
         stopRecordingRef.current(contextText);
         return;
       }
@@ -348,7 +352,11 @@ export default function VoiceInputIndicator({
         // Don't stop if this was a long-press ShiftLeft release handled above
         if (shiftRecordingRef.current) return;
         e.preventDefault();
-        const contextText = getCurrentText?.();
+        // 语音输入模式不需要传 context_text
+        const contextText =
+          recordingModeRef.current === "edit_only"
+            ? getCurrentText?.()
+            : undefined;
         stopRecordingRef.current(contextText);
       }
     };
@@ -373,7 +381,11 @@ export default function VoiceInputIndicator({
   useEffect(() => {
     if (!isRecording) return;
     const handleBlur = () => {
-      const contextText = getCurrentText?.();
+      // 语音输入模式不需要传 context_text
+      const contextText =
+        recordingModeRef.current === "edit_only"
+          ? getCurrentText?.()
+          : undefined;
       stopRecordingAndTranscribe(contextText);
     };
     window.addEventListener("blur", handleBlur);
@@ -422,14 +434,12 @@ export default function VoiceInputIndicator({
 
   // Handle stop recording click/keyboard
   const handleStopClick = () => {
-    // 语音编辑模式：优先使用选中文字，否则使用全部内容
-    // 语音输入模式：使用全部内容作为上下文
+    // 语音编辑模式：传递上下文（优先选中文字，否则全部内容）
+    // 语音输入模式：不需要传 context_text
     let contextText: string | undefined;
     if (currentMode === "edit_only") {
       const selectedText = getSelectedText?.();
       contextText = selectedText || getCurrentText?.();
-    } else {
-      contextText = getCurrentText?.();
     }
     stopRecordingAndTranscribe(contextText);
   };

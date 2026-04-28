@@ -17,8 +17,15 @@ export class APIClientConfig {
     private _apiURL: string =""
     private _token:string = ""
     tokenCallback?:()=>string|undefined
+    /**
+     * 返回当前 space_id 的回调。
+     * 当返回非空字符串时，APIClient 会在每次请求自动注入 `X-Space-Id` header。
+     * 通过回调注入（而非直接 import WKApp）是为了避免 APIClient ↔ App 循环依赖。
+     * GH dmwork-org/dmwork-web#1038
+     */
+    spaceIdCallback?:()=>string|undefined
     // private _apiURL: string = "/api/v1/" // 正式打包用此地址
-    
+
 
     set apiURL(apiURL:string) {
         this._apiURL = apiURL;
@@ -46,6 +53,15 @@ export default class APIClient {
             }
             if (token && token !== "") {
                 config.headers!["token"] = token;
+            }
+            // 统一注入 X-Space-Id header（GH dmwork-org/dmwork-web#1038）。
+            // 仅当回调返回非空字符串时写入，避免把 "" 作为合法 space_id 传给后端。
+            // 与 URL query 里的 space_id= 拼接共存，后端按优先级双读，前端渐进迁移。
+            if (self.config.spaceIdCallback) {
+                const spaceId = self.config.spaceIdCallback()
+                if (spaceId && spaceId !== "") {
+                    config.headers!["X-Space-Id"] = spaceId;
+                }
             }
             return config;
         });

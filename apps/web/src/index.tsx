@@ -37,6 +37,11 @@ if((window as any).__TAURI_IPC__ || (window as any)?.__POWERED_ELECTRON__) {
 WKApp.apiClient.config.tokenCallback = ()=> {
   return WKApp.loginInfo.token
 }
+// 由 APIClient request interceptor 读取当前 space_id，注入 X-Space-Id header。
+// 通过回调注入（而非在 APIClient 内 import WKApp）以避免循环依赖。GH #1038
+WKApp.apiClient.config.spaceIdCallback = () => {
+  return WKApp.shared.currentSpaceId
+}
 WKApp.config.appVersion = import.meta.env.VITE_VERSION || pkgVersion
 WKApp.config.appName = "Octo"
 

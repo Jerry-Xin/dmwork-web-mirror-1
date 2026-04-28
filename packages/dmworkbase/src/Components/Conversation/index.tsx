@@ -64,6 +64,16 @@ import Download from "yet-another-react-lightbox/plugins/download";
 import { buildChatContext, ChatContextChannelInfo } from "./chatContext";
 import FoldSessionExpandedList from "./FoldSessionExpandedList";
 
+/**
+ * 取消息的有效内容：如果消息被编辑过，返回编辑后的 contentEdit；否则返回原始 content
+ */
+function getEffectiveContent(message: Message): MessageContent {
+  if (message.remoteExtra?.isEdit && message.remoteExtra?.contentEdit) {
+    return message.remoteExtra.contentEdit
+  }
+  return message.content
+}
+
 const foldSessionAvatarIcon = new URL(
   "./fold-session-avatar.svg",
   import.meta.url
@@ -148,9 +158,10 @@ export class Conversation
   private _cachedSelectedText: string | null = null;
   private _beforeUnloadHandler: () => void;
   private _guardId: symbol = Symbol("pendingAttachmentGuard");
-  private _addAttachmentFn?: (files: File[]) => void;
-  // 附件队列变更订阅者：addPendingAttachments / removePendingAttachment /
-  // clearPendingAttachments 变更时通知，避免上游消费方再去 monkey-patch 这些方法
+  private _addAttachmentFn?: (
+    files: File[],
+    source?: "paste" | "upload"
+  ) => void;
   private pendingAttachmentsListeners = new Set<() => void>();
   private onOpenThreadPanel?: (
     threadChannelId: string,
@@ -202,7 +213,7 @@ export class Conversation
 
   fowardMessageUI(message: Message): void {
     WKApp.shared.baseContext.showConversationSelect((channels: Channel[]) => {
-      let cloneContent = message.content; // TODO:这里理论上需要clone一份 但是不clone也没发现问题
+      const cloneContent = getEffectiveContent(message);
       for (const channel of channels) {
         this.sendMessage(cloneContent, channel);
       }
@@ -412,6 +423,8 @@ export class Conversation
     }
     this.vm.currentHandlerType = handlerType;
     this.vm.currentReplyMessage = message;
+    // 自动聚焦输入框
+    this._messageInputContext?.focus();
   }
 
   setDragFileCallback(f: (file: File) => void): void {
@@ -427,7 +440,10 @@ export class Conversation
     return this._messageInputContext?.getAttachmentFiles?.() || [];
   }
 
-  addPendingAttachments(files: File[]): string | null {
+  addPendingAttachments(
+    files: File[],
+    source: "paste" | "upload" = "upload"
+  ): string | null {
     const BLOCKED_EXTENSIONS = [
       "exe",
       "bat",
@@ -458,7 +474,7 @@ export class Conversation
 
     // 调用编辑器的 addAttachment 方法插入附件节点
     if (this._addAttachmentFn) {
-      this._addAttachmentFn(incoming);
+      this._addAttachmentFn(incoming, source);
     } else if (this._messageInputContext?.addAttachment) {
       this._messageInputContext.addAttachment(incoming);
     }
@@ -515,7 +531,10 @@ export class Conversation
       if (text.length > 0) {
         const range = selection.getRangeAt(0);
         const target = event.target as HTMLElement;
-        const bubble = target.closest(".wk-message-base-bubble");
+        // 兼容旧气泡（.wk-message-base-bubble）和新 MessageRow 组件（.wk-msg-row-body）
+        const bubble =
+          target.closest(".wk-message-base-bubble") ??
+          target.closest(".wk-msg-row-body");
         if (bubble && bubble.contains(range.commonAncestorContainer)) {
           this._cachedSelectedText = text;
         }
@@ -1552,7 +1571,7 @@ export class Conversation
                       WKApp.shared.baseContext.showConversationSelect(
                         (channels: Channel[]) => {
                           for (const message of messages) {
-                            let cloneContent = message.content; // TODO:这里理论上需要clone一份 但是不clone也没发现问题
+                            const cloneContent = getEffectiveContent(message.message);
                             for (const channel of channels) {
                               this.sendMessage(cloneContent, channel);
                             }

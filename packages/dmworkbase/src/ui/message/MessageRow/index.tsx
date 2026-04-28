@@ -32,6 +32,8 @@ export interface MessageRowProps {
   
   /** 发送者是否在线（可选） */
   isOnline?: boolean
+  /** 消息是否被编辑过（显示「已编辑」标签） */
+  isEdit?: boolean
   
   /** 选择状态变化回调 */
   onSelect?: (selected: boolean) => void
@@ -83,6 +85,7 @@ export default function MessageRow({
   timestamp,
   timeOnly,
   isOnline,
+  isEdit,
   onSelect,
   children,
   showCheckbox = false,
@@ -142,6 +145,7 @@ export default function MessageRow({
         {/* 连续消息：头像占位,hover 时显示时间戳 */}
         {!showAvatar && isContinue && (
           <div className="wk-msg-row-avatar-placeholder">
+            {isEdit && <span className="wk-msg-row-edited">已编辑</span>}
             <span className="wk-msg-row-timestamp-hover">{timeOnly ?? timestamp}</span>
           </div>
         )}
@@ -158,6 +162,7 @@ export default function MessageRow({
               onClick={onSenderNameClick}
             >{senderName}</span>
             {isBot && <AiBadge size="small" />}
+            {isEdit && <span className="wk-msg-row-edited">已编辑</span>}
             <span className="wk-msg-row-timestamp">{timestamp}</span>
           </div>
         )}

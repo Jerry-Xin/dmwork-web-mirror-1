@@ -107,6 +107,9 @@ export class ChatContentPage extends Component<
         name: file.name,
         extension: file.extension,
         size: file.size,
+        messageId: file.messageId,
+        sourceChannelId: file.sourceChannelId,
+        sourceChannelType: file.sourceChannelType,
       };
       // 关闭子区面板
       this.setState({
@@ -158,7 +161,6 @@ export class ChatContentPage extends Component<
       if (detail?.groupNo === this.props.channel.channelID) {
         this.setState({
           showThreadPanel: true,
-          showChannelSetting: false,
           activeThread: detail.thread || null,
           previewFile: null, // 关闭文件预览
           activePreviewMessageId: null,
@@ -196,7 +198,11 @@ export class ChatContentPage extends Component<
           name: pending.name,
           extension: pending.extension,
           size: pending.size,
+          messageId: pending.messageId,
+          sourceChannelId: pending.sourceChannelId,
+          sourceChannelType: pending.sourceChannelType,
         },
+        activePreviewMessageId: pending.messageId || null,
       });
     }
 
@@ -228,7 +234,6 @@ export class ChatContentPage extends Component<
         this.setState({
           showThreadPanel: true,
           activeThread: null,
-          showChannelSetting: false,
           previewFile: null, // 关闭文件预览（互斥）
           activePreviewMessageId: null,
         });
@@ -245,7 +250,11 @@ export class ChatContentPage extends Component<
             name: pending.name,
             extension: pending.extension,
             size: pending.size,
+            messageId: pending.messageId,
+            sourceChannelId: pending.sourceChannelId,
+            sourceChannelType: pending.sourceChannelType,
           },
+          activePreviewMessageId: pending.messageId || null,
         });
         return;
       }
@@ -338,7 +347,6 @@ export class ChatContentPage extends Component<
                 this.setState({
                   showThreadPanel: !this.state.showThreadPanel,
                   activeThread: null,
-                  showChannelSetting: false,
                   previewFile: null, // 关闭文件预览
                   activePreviewMessageId: null,
                 });
@@ -486,7 +494,6 @@ export class ChatContentPage extends Component<
                             this.setState({
                               showThreadPanel: true,
                               activeThread: null,
-                              showChannelSetting: false,
                               previewFile: null, // 关闭文件预览（互斥）
                               activePreviewMessageId: null,
                             });
@@ -502,7 +509,6 @@ export class ChatContentPage extends Component<
                         e.stopPropagation();
                         this.setState({
                           showChannelSetting: !this.state.showChannelSetting,
-                          showThreadPanel: false,
                           previewFile: null, // 关闭文件预览（互斥）
                           activePreviewMessageId: null,
                         });
@@ -550,7 +556,6 @@ export class ChatContentPage extends Component<
                   if (threadInfo) {
                     this.setState({
                       showThreadPanel: true,
-                      showChannelSetting: false,
                       previewFile: null, // 关闭文件预览（互斥）
                       activePreviewMessageId: null,
                       activeThread: buildThreadStub(
@@ -617,12 +622,15 @@ export class ChatContentPage extends Component<
                 });
               }}
               onReplyFile={(messageId) => {
-                // 关闭文件预览面板并回复消息
-                this.setState({
-                  previewFile: null,
-                  activePreviewMessageId: null,
-                });
+                // 触发回复功能，保持文件预览面板打开
                 this.conversationContext?.replyToMessageId?.(messageId);
+              }}
+              onFilePreviewChange={(file) => {
+                // 切换预览的文件
+                this.setState({
+                  previewFile: file,
+                  activePreviewMessageId: file.messageId || null,
+                });
               }}
             />
           )}
@@ -638,11 +646,15 @@ export class ChatContentPage extends Component<
               this.setState({ previewFile: null, activePreviewMessageId: null })
             }
             onReplyFile={(messageId) => {
-              this.setState({
-                previewFile: null,
-                activePreviewMessageId: null,
-              });
+              // 触发回复功能，保持文件预览面板打开
               this.conversationContext?.replyToMessageId?.(messageId);
+            }}
+            onFilePreviewChange={(file) => {
+              // 切换预览的文件
+              this.setState({
+                previewFile: file,
+                activePreviewMessageId: file.messageId || null,
+              });
             }}
           />
         )}

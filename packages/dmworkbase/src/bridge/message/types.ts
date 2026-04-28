@@ -54,6 +54,9 @@ export interface MessageRowUIProps {
   /** 发送者名称点击回调（@ 场景：点名字展示用户信息） */
   onSenderNameClick?: () => void
   
+  /** 消息是否被编辑过（显示「已编辑」标签） */
+  isEdit?: boolean
+
   /** 消息内容（子组件） */
   children: React.ReactNode
 }

@@ -5,16 +5,19 @@ import { toSimplized } from "../../Utils/t2s";
 import "./index.css";
 import { IconSearchStroked } from "@douyinfe/semi-icons";
 import { animateScroll, scroller } from "react-scroll";
+import AiBadge from "../AiBadge";
 
 export class IndexTableItem {
   id!: string;
   name!: string;
   avatar!: string;
+  robot?: boolean;
 
-  constructor(id: string, name: string, avatar: string) {
+  constructor(id: string, name: string, avatar: string, robot?: boolean) {
     this.id = id;
     this.name = name;
     this.avatar = avatar;
+    this.robot = robot;
   }
 }
 
@@ -169,7 +172,10 @@ export default class IndexTable extends Component<
                 <div className="wk-indextable-item-avatar">
                   <img src={item.avatar} alt=""></img>
                 </div>
-                <div className="wk-indextable-item-name">{item.name}</div>
+                <div className="wk-indextable-item-name">
+                  {item.name}
+                  {item.robot && <AiBadge size="small" className="wk-indextable-item-ai-badge" />}
+                </div>
               </div>
             );
           })}

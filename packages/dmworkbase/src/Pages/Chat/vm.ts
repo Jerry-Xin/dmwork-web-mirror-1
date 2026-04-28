@@ -202,7 +202,12 @@ export class ChatVM extends ProviderListener {
                 if (conversation.lastMessage?.content && conversation.lastMessage?.contentType === MessageContentType.text) {
                     conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage?.content.text)
                 }
-                this.conversations = [new ConversationWrap(conversation), ...this.conversations]
+                const existingConv = this.findConversation(conversation.channel)
+                if (existingConv) {
+                    existingConv.conversation = conversation
+                } else {
+                    this.conversations = [new ConversationWrap(conversation), ...this.conversations]
+                }
                 this.notifyListener()
             } else if (action === ConversationAction.update) {
                 // 缓存未命中时异步补写，避免 fail-close 误丢群聊
@@ -281,7 +286,10 @@ export class ChatVM extends ProviderListener {
                 }
                 const conv = pendingConv || WKSDK.shared().conversationManager.findConversation(channelInfo.channel)
                 if (conv && !shouldSkipChannelForSpace(channelInfo.channel)) {
-                    this.conversations = [new ConversationWrap(conv), ...this.conversations]
+                    const existingInListener = this.findConversation(channelInfo.channel)
+                    if (!existingInListener) {
+                        this.conversations = [new ConversationWrap(conv), ...this.conversations]
+                    }
                     this.sortConversations()
                     this.notifyListener()
                 }

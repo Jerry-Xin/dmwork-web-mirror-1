@@ -34,6 +34,9 @@ body[theme-mode=dark] .wk-indextable-item {
 
 .wk-indextable-item-name {
     margin-left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 body[theme-mode=dark]  .wk-indextable-item-name {

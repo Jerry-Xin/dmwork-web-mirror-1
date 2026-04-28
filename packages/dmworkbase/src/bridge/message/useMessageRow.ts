@@ -81,6 +81,7 @@ export function getMessageRow(
     timestamp,
     timeOnly,
     isOnline: channelInfo?.online,
+    isEdit: message.message?.remoteExtra?.isEdit ?? false,
     onSelect: selection?.onSelect,
     onAvatarClick,
     onSenderNameClick,

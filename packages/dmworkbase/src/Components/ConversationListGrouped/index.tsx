@@ -3,7 +3,6 @@ import { Modal } from "@douyinfe/semi-ui"
 import { flushSync } from "react-dom"
 import WKSDK, { ChannelTypeGroup, Channel } from "wukongimjssdk"
 import { parseThreadChannelId } from "../../Service/Thread"
-import { CategoryItem } from "../../Service/CategoryService"
 import { ConversationWrap } from "../../Service/Model"
 import ConversationList from "../ConversationList"
 import ConversationListWithCategory from "../ConversationListWithCategory"
@@ -22,14 +21,22 @@ import {
     verticalListSortingStrategy,
     arrayMove,
 } from "@dnd-kit/sortable"
+import {
+    VIRTUAL_DEFAULT_CATEGORY_ID,
+    computeEffectiveCategories,
+    isValidCategoryItem,
+    isVirtualCategory,
+    type ValidCategoryItem,
+} from "./categoriesFallback"
 
-
-// category_id 收窄为非 null
-export type ValidCategoryItem = CategoryItem & { category_id: string }
-
-/** 运行时类型守卫：确保 category_id 为非 null 字符串 */
-export function isValidCategoryItem(c: CategoryItem): c is ValidCategoryItem {
-    return c.category_id !== null
+// 兜底相关 helper 迁移至 ./categoriesFallback 独立模块，便于无依赖地单元测试。
+// 这里保留 re-export 以保持对外 API 不变（ConversationList.tsx / storybook 可直接从本模块引用）。
+export {
+    VIRTUAL_DEFAULT_CATEGORY_ID,
+    computeEffectiveCategories,
+    isValidCategoryItem,
+    isVirtualCategory,
+    type ValidCategoryItem,
 }
 
 export interface ConversationListGroupedProps {
@@ -123,11 +130,16 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             // over.id 可能是 useSortable 的 cat:: 或 useDroppable 的 drop::cat::
             if (overId.startsWith('drop::cat::')) {
                 const targetCategoryId = overId.replace('drop::cat::', '')
-                if (targetCategoryId) onMoveGroupToCategory(groupNo, targetCategoryId)
+                // 虚拟默认分组不能作为移动目标（id 非后端真实 UUID）
+                if (targetCategoryId && !isVirtualCategory(targetCategoryId)) {
+                    onMoveGroupToCategory(groupNo, targetCategoryId)
+                }
             } else if (overId.startsWith('cat::')) {
                 // useSortable 的 id，同样是分组目标
                 const targetCategoryId = overId.replace('cat::', '')
-                if (targetCategoryId) onMoveGroupToCategory(groupNo, targetCategoryId)
+                if (targetCategoryId && !isVirtualCategory(targetCategoryId)) {
+                    onMoveGroupToCategory(groupNo, targetCategoryId)
+                }
             }
         }
     }
@@ -170,6 +182,8 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     // 构建右键菜单：移出分组（有分组时，一级直接点击）+ 移到分组（一级，展开二级子菜单）
     const buildExtraContextMenus = (conv: ConversationWrap | undefined): ContextMenusData[] => {
         if (!conv || conv.channel.channelType !== ChannelTypeGroup) return []
+        // 注意：这里刻意使用原始 categories 而非 effectiveCategories，
+        // 虚拟「未分组」分组不参与右键「移到分组/移出分组」逻辑。
         if (categories.length === 0) return []
 
         const groupNo = conv.channel.channelID
@@ -243,7 +257,11 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
         }
     }
 
-    const categoriesForView = categories.map(cat => {
+    // 兜底：后端 categories 为空（GH dmwork-web#1044 旧账号场景）时，渲染一个
+    // 虚拟「默认」分组，避免 groupConversations 整列消失。真实 categories 走原逻辑。
+    const effectiveCategories = computeEffectiveCategories(categories)
+
+    const categoriesForView = effectiveCategories.map(cat => {
         let catConvs: ConversationWrap[]
 
         if (cat.is_default) {
@@ -310,6 +328,8 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
     })
 
     const buildCategoryContextMenus = (categoryId: string): ContextMenusData[] => {
+        // 虚拟默认分组没有真实 UUID，无法 rename / delete / sort / create-group，直接屏蔽菜单
+        if (isVirtualCategory(categoryId)) return []
         const idx = categories.findIndex(c => c.category_id === categoryId)
         const cat = categories[idx]
         if (!cat) return []
@@ -405,7 +425,7 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     onStartGroup={onStartGroup}
                     activeCategoryId={activeCategoryId}
                     renamingCategoryId={renamingCategoryId}
-                    categorySectionDraggable
+                    categorySectionDraggable={categories.length > 0}
                     onRenameConfirm={async (id, newName) => {
                         await onRenameCategory(id, newName)
                         setRenamingCategoryId(null)
@@ -413,6 +433,8 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
                     onRenameCancel={() => setRenamingCategoryId(null)}
                     onCategoryContextMenu={(categoryId, e) => {
                         e.preventDefault()
+                        // 虚拟默认分组不响应右键菜单（无可执行操作）
+                        if (isVirtualCategory(categoryId)) return
                         const menus = buildCategoryContextMenus(categoryId)
                         flushSync(() => {
                             setActiveCategoryId(categoryId)

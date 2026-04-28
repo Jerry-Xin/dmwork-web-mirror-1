@@ -12,9 +12,6 @@
   border-bottom: 1px solid var(--wk-border-default);
   background-color: var(--wk-bg-surface);
   gap: var(--wk-sp-2);
-  /* 启用 container query 支持响应式适配 */
-  container-type: inline-size;
-  container-name: file-preview-header;
 }
 
 /* ============================================
@@ -266,57 +263,9 @@
 }
 
 /* ============================================
-   响应式：小宽度面板适配
+   响应式：小屏幕隐藏部分按钮
    ============================================ */
 
-/* 文件选择器允许收缩，但不影响浮窗定位 */
-.wk-file-preview-header__dropdown {
-  min-width: 0;
-  flex-shrink: 1;
-}
-
-/* 文件名截断 */
-.wk-file-preview-header__dropdown-btn {
-  max-width: 240px;
-}
-
-/* 视图切换按钮不收缩 */
-.wk-file-preview-header__view-toggle {
-  flex-shrink: 0;
-}
-
-/* 面板宽度 < 500px 时的适配 */
-@container file-preview-header (max-width: 500px) {
-  .wk-file-preview-header__dropdown-btn {
-    max-width: 180px;
-  }
-
-  .wk-file-preview-header__view-toggle-btn {
-    padding: var(--wk-sp-1) var(--wk-sp-2);
-  }
-}
-
-/* 面板宽度 < 400px 时的适配 */
-@container file-preview-header (max-width: 400px) {
-  .wk-file-preview-header__dropdown-btn {
-    max-width: 120px;
-  }
-
-  .wk-file-preview-header__view-toggle {
-    display: none;
-  }
-
-  .wk-file-preview-header__sep {
-    display: none;
-  }
-
-  /* 隐藏部分低优先级按钮 */
-  .wk-file-preview-header__btn[title="全屏"] {
-    display: none;
-  }
-}
-
-/* 兼容不支持 container query 的浏览器 */
 @media (max-width: 480px) {
   .wk-file-preview-header__dropdown-text {
     max-width: 100px;

@@ -97,6 +97,27 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
         return "";
     }
 
+    /**
+     * 计算用于跳转的前端应用 basePath（不含尾斜杠）。
+     *
+     * 防御性处理：如果当前 pathname 落在后端 API 路径（/api 或 /api/vN）下，
+     * 直接用 `window.location.pathname` 作为 basePath 会把加入成功后的跳转
+     * 拼成 `/api/?sid=xxx`，从而命中后端 404 —— 这正是 #1006 的症状
+     * （邀请链接包含 /api/ 前缀时复现）。
+     *
+     * - pathname = "/"               → basePath = ""      → 跳 `/` ✓
+     * - pathname = "/api/"            → basePath = ""      → 跳 `/` ✓（修复点）
+     * - pathname = "/api/v1/..."     → basePath = ""      → 跳 `/` ✓（修复点）
+     * - pathname = "/web/"            → basePath = "/web" → 跳 `/web/` ✓（子路径部署兼容）
+     */
+    private getAppBasePath(): string {
+        const pathname = window.location.pathname || "/";
+        // 剥离可能被污染的后端 API 前缀
+        const stripped = pathname.replace(/^\/api(?:\/v\d+)?(?=\/|$)/, "");
+        // 去掉尾斜杠；返回 '' 表示根
+        return stripped.replace(/\/+$/, "");
+    }
+
     async handleJoin() {
         if (this.joinInProgress) return;
         this.joinInProgress = true;
@@ -132,7 +153,8 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             }
             // 跳转回主界面，带上正确的 sid
             const sid = this.findSid();
-            const basePath = window.location.pathname.replace(/\/+$/, '');
+            // 使用安全的 basePath，避免当 pathname 为 /api/ 时跳到后端 API 路径（#1006）
+            const basePath = this.getAppBasePath();
             window.location.href = `${window.location.origin}${basePath}/${sid ? `?sid=${sid}` : ''}`;
         } catch (e: any) {
             const msg = e?.message || "";
@@ -152,8 +174,9 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
         localStorage.setItem("pendingInviteCode", this.props.inviteCode);
         // 跳转到登录页，保留 invite 参数让登录页显示注册入口
         // 添加 action=login 参数让 Layout 跳过 InviteLanding 渲染
-        // 使用动态 basePath，避免硬编码 /web 导致部署路径不匹配
-        const basePath = window.location.pathname.replace(/\/+$/, '');
+        // 使用安全的 basePath，避免硬编码 /web 导致部署路径不匹配，
+        // 同时剥离 /api 前缀防止登录页被错误托管在后端 API 路径下（#1006）
+        const basePath = this.getAppBasePath();
         window.location.href = `${window.location.origin}${basePath}/?invite=${encodeURIComponent(this.props.inviteCode)}&action=login`;
     }
 

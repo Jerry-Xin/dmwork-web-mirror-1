@@ -574,6 +574,28 @@ export default class ThreadPanel extends Component<
     });
   };
 
+  /** 文件选择回调：切换预览的文件（从 ConversationFile 构造 FilePreviewInfo） */
+  private handleFileSelect = (file: ConversationFile) => {
+    const { filePreview, onFilePreviewChange } = this.props;
+    if (!onFilePreviewChange) {
+      console.warn(
+        "[ThreadPanel] handleFileSelect: onFilePreviewChange not provided"
+      );
+      return;
+    }
+    // 构造 FilePreviewInfo 并调用回调
+    const newPreview: FilePreviewInfo = {
+      url: file.url,
+      name: file.name,
+      extension: file.extension,
+      size: file.size,
+      sourceChannelId: filePreview?.sourceChannelId,
+      sourceChannelType: filePreview?.sourceChannelType,
+      messageId: file.id, // ConversationFile.id 就是 message_id
+    };
+    onFilePreviewChange(newPreview);
+  };
+
   private renderHeader() {
     const { onClose, filePreview, onFilePreviewClose } = this.props;
     const { view, vmState, showMoreMenu, fileViewMode, isTocOpen } = this.state;
@@ -628,32 +650,11 @@ export default class ThreadPanel extends Component<
         }
       };
 
-      // 文件选择回调：切换预览的文件
-      const handleFileSelect = (file: ConversationFile) => {
-        if (!this.props.onFilePreviewChange) {
-          console.warn(
-            "[ThreadPanel] handleFileSelect: onFilePreviewChange not provided"
-          );
-          return;
-        }
-        // 构造 FilePreviewInfo 并调用回调
-        const newPreview: FilePreviewInfo = {
-          url: file.url,
-          name: file.name,
-          extension: file.extension,
-          size: file.size,
-          sourceChannelId: filePreview.sourceChannelId,
-          sourceChannelType: filePreview.sourceChannelType,
-          messageId: file.id, // ConversationFile.id 就是 message_id
-        };
-        this.props.onFilePreviewChange(newPreview);
-      };
-
       return (
         <FilePreviewHeader
           file={filePreview}
           conversationFiles={this.state.conversationFiles}
-          onFileSelect={handleFileSelect}
+          onFileSelect={this.handleFileSelect}
           isFilePanelOpen={this.state.isFilePanelOpen}
           onFilePanelToggle={() =>
             this.setState({ isFilePanelOpen: !this.state.isFilePanelOpen })
@@ -998,27 +999,6 @@ export default class ThreadPanel extends Component<
           width: `${panelWidth}px`,
         };
 
-    // 文件选择回调：切换预览的文件
-    const handleFileSelect = (file: ConversationFile) => {
-      if (!this.props.onFilePreviewChange) {
-        console.warn(
-          "[ThreadPanel] handleFileSelect: onFilePreviewChange not provided"
-        );
-        return;
-      }
-      // 构造 FilePreviewInfo 并调用回调
-      const newPreview: FilePreviewInfo = {
-        url: file.url,
-        name: file.name,
-        extension: file.extension,
-        size: file.size,
-        sourceChannelId: this.props.filePreview?.sourceChannelId,
-        sourceChannelType: this.props.filePreview?.sourceChannelType,
-        messageId: file.id,
-      };
-      this.props.onFilePreviewChange(newPreview);
-    };
-
     return (
       <div className="wk-thread-panel" ref={this.panelRef} style={panelStyle}>
         {/* Left-edge splitter for resizing — hidden on small screens */}
@@ -1048,7 +1028,7 @@ export default class ThreadPanel extends Component<
               <FileListPanel
                 files={conversationFiles}
                 currentFileUrl={filePreview.url}
-                onFileSelect={handleFileSelect}
+                onFileSelect={this.handleFileSelect}
                 onClose={() => this.setState({ isFilePanelOpen: false })}
               />
             )}

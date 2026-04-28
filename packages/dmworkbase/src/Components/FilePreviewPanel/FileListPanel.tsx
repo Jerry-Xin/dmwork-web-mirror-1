@@ -87,7 +87,8 @@ function formatTime(timestamp?: number): string {
   const date = new Date(timestamp * 1000);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  // 使用 Math.max 防止时钟偏差导致负数
+  const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
 
   if (diffDays === 0) {
     // 今天：显示时间

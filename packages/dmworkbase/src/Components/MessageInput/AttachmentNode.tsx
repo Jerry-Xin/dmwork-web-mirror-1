@@ -3,17 +3,7 @@ import { NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
 import React from "react";
 import { X } from "lucide-react";
 
-// 文件类型图标（导出供复用）
-export { default as defaultIcon } from "../../assets/files/default.svg";
-export { default as docIcon } from "../../assets/files/doc.svg";
-export { default as excelIcon } from "../../assets/files/excel.svg";
-export { default as gifIcon } from "../../assets/files/gif.svg";
-export { default as pdfIcon } from "../../assets/files/pdf.svg";
-export { default as videoIcon } from "../../assets/files/video.svg";
-export { default as zipIcon } from "../../assets/files/zip.svg";
-export { default as videoPlayIcon } from "../../assets/files/video2.svg";
-
-// 内部使用的图标引用
+// 文件类型图标
 import defaultIcon from "../../assets/files/default.svg";
 import docIcon from "../../assets/files/doc.svg";
 import excelIcon from "../../assets/files/excel.svg";
@@ -22,6 +12,18 @@ import pdfIcon from "../../assets/files/pdf.svg";
 import videoIcon from "../../assets/files/video.svg";
 import zipIcon from "../../assets/files/zip.svg";
 import videoPlayIcon from "../../assets/files/video2.svg";
+
+// 导出图标供外部使用
+export {
+  defaultIcon,
+  docIcon,
+  excelIcon,
+  gifIcon,
+  pdfIcon,
+  videoIcon,
+  zipIcon,
+  videoPlayIcon,
+};
 
 export interface AttachmentAttributes {
   id: string;

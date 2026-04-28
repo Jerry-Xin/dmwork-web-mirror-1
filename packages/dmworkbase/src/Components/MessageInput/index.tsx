@@ -594,6 +594,18 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     }
   }, [topAttachments.length, editor]);
 
+  // 组件卸载时清理顶部附件区的预览 URL，避免内存泄漏
+  useEffect(() => {
+    return () => {
+      topAttachments.forEach((item) => {
+        if (item.previewUrl) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 动态更新 placeholder
   useEffect(() => {
     if (editor) {

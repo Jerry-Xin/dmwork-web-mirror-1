@@ -66,7 +66,7 @@ export class ContactsSelect extends Component<ContactsSelectProps> {
                         onSelect(items)
                     }
                 }} users={WKApp.dataSource.contactsList.filter((c)=>c.status !== ContactsStatus.Blacklist).map((contacts) => {
-                    return new IndexTableItem(contacts.uid, contacts.name, contacts.avatar)
+                    return new IndexTableItem(contacts.uid, contacts.name, contacts.avatar, contacts.robot)
                 })}></UserSelect>
             </div>
 

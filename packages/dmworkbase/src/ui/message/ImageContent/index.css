@@ -2,6 +2,12 @@
  * SingleImage 组件样式
  */
 
+/* 外层 wrap 撑满父容器宽度，用于 ResizeObserver 感知可用宽度 */
+.wk-msg-single-image-wrap {
+  width: 100%;
+  max-width: 660px;
+}
+
 .wk-msg-single-image {
   border-radius: var(--wk-r-lg);
   overflow: hidden;

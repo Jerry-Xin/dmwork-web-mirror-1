@@ -457,6 +457,9 @@ export default function VoiceInputIndicator({
       );
     }
 
+    // 语音编辑模式显示「编辑中」，语音输入模式显示「转写中」
+    const statusText = currentMode === "edit_only" ? "编辑中" : "转写中";
+
     const transcribingIndicator = (
       <div
         className="wk-voice-floating-indicator"
@@ -467,7 +470,7 @@ export default function VoiceInputIndicator({
         }}
       >
         <div className="wk-voice-floating-content">
-          <span className="wk-voice-floating-text">转写中</span>
+          <span className="wk-voice-floating-text">{statusText}</span>
         </div>
         <span className="wk-voice-floating-divider" />
         <div className="wk-voice-transcribing-spinner" />
@@ -480,7 +483,7 @@ export default function VoiceInputIndicator({
         <div className="wk-voice-button-group" ref={buttonGroupRef}>
           <div
             className="wk-voice-button wk-voice-button--recording"
-            title="转写中..."
+            title={currentMode === "edit_only" ? "编辑中..." : "转写中..."}
           >
             <Mic size={18} color="currentColor" />
             <svg

@@ -101,6 +101,11 @@ jobs:
   storybook-test:
     name: 🧪 Storybook 渲染 & A11y 测试
     runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 15
+    container:
+      # 对齐 pnpm-lock.yaml 解析的 @playwright/test 1.59.1，避免容器预装浏览器被 pnpm playwright install 重下载
+      image: mcr.microsoft.com/playwright:v1.59.1-jammy
+      options: --ipc=host
 
     steps:
       - uses: actions/checkout@v4
@@ -118,8 +123,6 @@ jobs:
       - name: 📦 Install
         run: pnpm install --frozen-lockfile
 
-      - name: 🎭 Install Playwright Chromium
-        run: pnpm playwright install chromium --with-deps
-
+      # 容器镜像已预装匹配版本的 Chromium，无需再次下载
       - name: 🧪 Run Storybook Tests
         run: pnpm --filter @dmwork/web test:storybook

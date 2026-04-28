@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, memo } from "react";
 import {
   ChevronDown,
   FileText,
@@ -89,6 +89,62 @@ export interface FilePreviewHeaderProps {
   /** 返回按钮点击回调 */
   onBack?: () => void;
 }
+
+/** 判断是否为图片类型 */
+function isImageCategory(category?: string): boolean {
+  return category === "image";
+}
+
+/** Hover 下拉列表项组件 */
+const DropdownFileItem = memo(
+  ({
+    fileItem,
+    isActive,
+    onClick,
+  }: {
+    fileItem: ConversationFile;
+    isActive: boolean;
+    onClick: () => void;
+  }) => {
+    const [thumbError, setThumbError] = useState(false);
+    const isImage = isImageCategory(fileItem.category);
+    const showThumbnail = isImage && fileItem.url && !thumbError;
+
+    return (
+      <div
+        className={`wk-file-preview-header__dropdown-item ${
+          isActive ? "wk-file-preview-header__dropdown-item--active" : ""
+        }`}
+        onClick={onClick}
+      >
+        <span
+          className={`wk-file-preview-header__dropdown-item-icon ${
+            showThumbnail
+              ? "wk-file-preview-header__dropdown-item-icon--thumbnail"
+              : ""
+          }`}
+        >
+          {showThumbnail ? (
+            <img
+              src={fileItem.url}
+              alt=""
+              className="wk-file-preview-header__dropdown-item-thumbnail"
+              onError={() => setThumbError(true)}
+            />
+          ) : (
+            getFileIcon(fileItem.extension)
+          )}
+        </span>
+        <span
+          className="wk-file-preview-header__dropdown-item-name"
+          title={fileItem.name}
+        >
+          {fileItem.name}
+        </span>
+      </div>
+    );
+  }
+);
 
 /** 根据扩展名获取文件图标 */
 function getFileIcon(extension: string): React.ReactNode {
@@ -336,25 +392,12 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
                 ref={dropdownListRef}
               >
                 {fileList.map((fileItem) => (
-                  <div
+                  <DropdownFileItem
                     key={fileItem.id}
-                    className={`wk-file-preview-header__dropdown-item ${
-                      fileItem.url === file.url
-                        ? "wk-file-preview-header__dropdown-item--active"
-                        : ""
-                    }`}
+                    fileItem={fileItem}
+                    isActive={fileItem.url === file.url}
                     onClick={() => handleFileClick(fileItem)}
-                  >
-                    <span className="wk-file-preview-header__dropdown-item-icon">
-                      {getFileIcon(fileItem.extension)}
-                    </span>
-                    <span
-                      className="wk-file-preview-header__dropdown-item-name"
-                      title={fileItem.name}
-                    >
-                      {fileItem.name}
-                    </span>
-                  </div>
+                  />
                 ))}
               </div>
             </div>

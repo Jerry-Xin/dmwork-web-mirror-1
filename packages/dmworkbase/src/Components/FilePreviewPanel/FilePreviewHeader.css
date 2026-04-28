@@ -218,12 +218,12 @@
 }
 
 .wk-file-preview-header__view-toggle-btn {
-  padding: var(--wk-sp-1) var(--wk-sp-2-5);
+  padding: 4px 10px;
   border: none;
   background: transparent;
   border-radius: calc(var(--wk-r-sm) - 2px);
   cursor: pointer;
-  font-size: var(--wk-text-size-sm);
+  font-size: 12px;
   font-weight: 500;
   color: var(--wk-text-secondary);
   transition: background 0.15s, color 0.15s;

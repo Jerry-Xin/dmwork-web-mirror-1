@@ -36,6 +36,10 @@ export default function VoiceInputIndicator({
   // Voice mode state
   const [voiceMode, setVoiceMode] = useState<VoiceMode>("smart");
   const [showModeMenu, setShowModeMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -392,11 +396,6 @@ export default function VoiceInputIndicator({
 
   // Hover handlers - show menu on hover, hide on leave
   // 计算菜单位置
-  const [menuPosition, setMenuPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-
   const updateMenuPosition = useCallback(() => {
     if (buttonGroupRef.current) {
       const rect = buttonGroupRef.current.getBoundingClientRect();

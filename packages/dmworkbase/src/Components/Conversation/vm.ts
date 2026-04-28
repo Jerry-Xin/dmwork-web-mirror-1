@@ -524,7 +524,14 @@ export default class ConversationVM extends ProviderListener {
         let users = new Array<any>();
 
         let checkedMessages = this.getCheckedMessages().map((messageWrap: MessageWrap) => {
-            return messageWrap.message
+            const msg = messageWrap.message
+            // 如果消息被编辑过，用编辑后内容替换 content，保证合并转发预览和内容正确
+            if (msg.remoteExtra?.isEdit && msg.remoteExtra?.contentEdit) {
+                return Object.assign(Object.create(Object.getPrototypeOf(msg)), msg, {
+                    content: msg.remoteExtra.contentEdit
+                })
+            }
+            return msg
         })
         if (checkedMessages && checkedMessages.length > 0) {
             const addedUIDs = new Set<string>()

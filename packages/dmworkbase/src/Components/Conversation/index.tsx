@@ -64,6 +64,16 @@ import Download from "yet-another-react-lightbox/plugins/download";
 import { buildChatContext, ChatContextChannelInfo } from "./chatContext";
 import FoldSessionExpandedList from "./FoldSessionExpandedList";
 
+/**
+ * 取消息的有效内容：如果消息被编辑过，返回编辑后的 contentEdit；否则返回原始 content
+ */
+function getEffectiveContent(message: Message): MessageContent {
+  if (message.remoteExtra?.isEdit && message.remoteExtra?.contentEdit) {
+    return message.remoteExtra.contentEdit
+  }
+  return message.content
+}
+
 const foldSessionAvatarIcon = new URL(
   "./fold-session-avatar.svg",
   import.meta.url
@@ -190,7 +200,7 @@ export class Conversation
 
   fowardMessageUI(message: Message): void {
     WKApp.shared.baseContext.showConversationSelect((channels: Channel[]) => {
-      let cloneContent = message.content; // TODO:这里理论上需要clone一份 但是不clone也没发现问题
+      const cloneContent = getEffectiveContent(message);
       for (const channel of channels) {
         this.sendMessage(cloneContent, channel);
       }
@@ -1514,7 +1524,7 @@ export class Conversation
                       WKApp.shared.baseContext.showConversationSelect(
                         (channels: Channel[]) => {
                           for (const message of messages) {
-                            let cloneContent = message.content; // TODO:这里理论上需要clone一份 但是不clone也没发现问题
+                            const cloneContent = getEffectiveContent(message.message);
                             for (const channel of channels) {
                               this.sendMessage(cloneContent, channel);
                             }

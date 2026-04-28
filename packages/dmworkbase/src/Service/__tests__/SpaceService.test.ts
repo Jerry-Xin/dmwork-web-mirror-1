@@ -96,7 +96,7 @@ describe("shouldSkipChannelForSpace prefix logic", () => {
 //
 // When the group's orgData.space_id doesn't match currentSpaceId but the
 // logged-in user joined as an external member sourced from currentSpaceId
-// (subscriber.orgData.home_space_id === currentSpaceId), the group should
+// (subscriber.orgData.source_space_id === currentSpaceId), the group should
 // NOT be skipped — it must appear in the external joiner's own Space view.
 // ---------------------------------------------------------------------------
 
@@ -174,19 +174,19 @@ describe("shouldSkipChannelForSpace — external group (YUJ-72)", () => {
         const ch = new Channel("g1", ChannelTypeGroup)
         mockState.channelSpaceMap.set(`g1_${ChannelTypeGroup}`, SPACE_A)
         mockState.subscribesByChannel.set("g1", [
-            { uid: "u_owner", orgData: { home_space_id: SPACE_A } },
-            { uid: "u_external", orgData: { home_space_id: SPACE_B, home_space_name: "Space B" } },
+            { uid: "u_owner", orgData: { source_space_id: "" } },
+            { uid: "u_external", orgData: { is_external: 1, source_space_id: SPACE_B, source_space_name: "Space B" } },
         ])
         expect(shouldSkipChannelForSpace(ch)).toBe(false)
     })
 
-    it("still skips when my subscriber's home_space_id is a third Space (not currentSpaceId)", () => {
+    it("still skips when my subscriber's source_space_id is a third Space (not currentSpaceId)", () => {
         mockState.currentSpaceId = SPACE_B
         const otherSpace = "c".repeat(32)
         const ch = new Channel("g1", ChannelTypeGroup)
         mockState.channelSpaceMap.set(`g1_${ChannelTypeGroup}`, SPACE_A)
         mockState.subscribesByChannel.set("g1", [
-            { uid: "u_external", orgData: { home_space_id: otherSpace } },
+            { uid: "u_external", orgData: { is_external: 1, source_space_id: otherSpace } },
         ])
         expect(shouldSkipChannelForSpace(ch)).toBe(true)
     })
@@ -203,7 +203,7 @@ describe("shouldSkipChannelForSpace — external group (YUJ-72)", () => {
         const ch = new Channel("g2", ChannelTypeGroup)
         mockState.channelInfoByChannel.set("g2", { orgData: { space_id: SPACE_A } })
         mockState.subscribesByChannel.set("g2", [
-            { uid: "u_external", orgData: { home_space_id: SPACE_B } },
+            { uid: "u_external", orgData: { is_external: 1, source_space_id: SPACE_B } },
         ])
         expect(shouldSkipChannelForSpace(ch)).toBe(false)
     })
@@ -215,7 +215,7 @@ describe("shouldSkipChannelForSpace — external group (YUJ-72)", () => {
         expect(shouldSkipChannelForSpace(ch)).toBe(true)
     })
 
-    it("ignores legacy is_external=1 without home_space_id (no id to match against currentSpaceId)", () => {
+    it("ignores legacy is_external=1 without source_space_id (no id to match against currentSpaceId)", () => {
         mockState.currentSpaceId = SPACE_B
         const ch = new Channel("g4", ChannelTypeGroup)
         mockState.channelSpaceMap.set(`g4_${ChannelTypeGroup}`, SPACE_A)

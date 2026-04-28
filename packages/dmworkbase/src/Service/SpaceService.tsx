@@ -62,23 +62,30 @@ export function getSpaceFilteredLastMessage(conversation: Conversation): Message
 }
 
 /**
- * YUJ-72: 若登录用户作为"外部成员"加入该群，返回其在群内的归属 Space ID
- * （subscriber.orgData.home_space_id）。用于"群归属 Space 与当前查看 Space 不一致
- * 但我自己以当前 Space 身份加入"的场景下放行展示。
+ * YUJ-72 / GH dmworkim#1226: 若登录用户作为"外部成员"加入该群，返回其加入时的
+ * 来源 Space ID（subscriber.orgData.source_space_id）。用于"群归属 Space 与当前
+ * 查看 Space 不一致但我自己以当前 Space 身份加入"的场景下放行展示。
+ *
+ * 语义选择 source_space_id 而非 home_space_id：
+ *   - source_space_id 是加入者绝对属性：只有 is_external=1 的成员才有非空值，
+ *     内部成员永远为空串。正好对应"我是外部成员加入的吗"这一语义。
+ *   - home_space_id 对内部成员会回落到 group.space_id（视角相对渲染字段），
+ *     在"群不在当前 Space"分支虽然比较等价，但字段语义交叉容易误用；
+ *     与后端 DB 列名对齐使用 source_space_id 更直观。
  *
  * 依赖 channelManager 的订阅者缓存（getSubscribes）：
  *   - 未缓存或未找到自己 → 返回 undefined（调用方应退化到原有判定）
- *   - 后端缺省 home_space_id → 返回 undefined（不再做旧字段兜底，避免歧义）
+ *   - source_space_id 为空串（内部成员或历史数据）→ 返回 undefined
  */
-function getMyMembershipHomeSpaceId(channel: Channel): string | undefined {
+function getMyMembershipSourceSpaceId(channel: Channel): string | undefined {
     const myUid = WKApp.loginInfo?.uid
     if (!myUid) return undefined
     const subs = WKSDK.shared().channelManager.getSubscribes(channel)
     if (!subs || subs.length === 0) return undefined
     const mine = subs.find((s: any) => s?.uid === myUid) as any
     if (!mine) return undefined
-    const homeId = mine.orgData?.home_space_id
-    if (typeof homeId === "string" && homeId.length > 0) return homeId
+    const sourceId = mine.orgData?.source_space_id
+    if (typeof sourceId === "string" && sourceId.length > 0) return sourceId
     return undefined
 }
 
@@ -91,7 +98,7 @@ function getMyMembershipHomeSpaceId(channel: Channel): string | undefined {
  * - 都未命中 → fail-open（放行，等 channelInfo 回调后再检查）
  *
  * YUJ-72 外部群兼容：当群归属 Space 与当前 Space 不一致时，额外检查自己是否
- * 以"当前 Space"身份加入了该群（subscriber.orgData.home_space_id === currentSpaceId）。
+ * 以"当前 Space"身份加入了该群（subscriber.orgData.source_space_id === currentSpaceId）。
  * 命中则不过滤 —— 外部加入者在自己的 Space 视角下应该看到这个外部群。
  */
 export function shouldSkipChannelForSpace(channel: Channel): boolean {
@@ -116,7 +123,7 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
         if (cachedSpaceId) {
             if (cachedSpaceId === currentSpaceId) return false
             // 群归属其他 Space：检查自己是否以当前 Space 身份加入的外部成员
-            if (getMyMembershipHomeSpaceId(channel) === currentSpaceId) return false
+            if (getMyMembershipSourceSpaceId(channel) === currentSpaceId) return false
             return true
         }
         // 缓存未命中 → 尝试从已缓存的 channelInfo 获取 space_id
@@ -126,7 +133,7 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
             // 回填 channelSpaceMap 避免下次再查
             WKApp.shared.channelSpaceMap.set(key, infoSpaceId)
             if (infoSpaceId === currentSpaceId) return false
-            if (getMyMembershipHomeSpaceId(channel) === currentSpaceId) return false
+            if (getMyMembershipSourceSpaceId(channel) === currentSpaceId) return false
             return true
         }
         // channelInfo 也没有 → fail-open，等 channelInfo 回调后 channelListener 会二次检查

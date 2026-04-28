@@ -43,8 +43,6 @@ export interface ConversationFile {
   timestamp?: number;
   /** 文件分类（image/video/file 等） */
   category?: string;
-  /** 消息序号（用于回复功能） */
-  messageSeq?: number;
 }
 
 export interface FilePreviewHeaderProps {

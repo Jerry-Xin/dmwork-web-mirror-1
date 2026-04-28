@@ -1207,7 +1207,14 @@ export default class ConversationVM extends ProviderListener {
             this.messagesOfOrigin.push(...this.pendingMessages)
             this.pendingMessages = []
         }
-        this.messagesOfOrigin.push(messageWrap)
+        // 去重：避免实时消息与历史拉取竞态导致同一条消息重复出现
+        const msgKey = messageWrap.clientMsgNo || messageWrap.messageID?.toString()
+        const alreadyExists = msgKey
+            ? this.messagesOfOrigin.some(m => (m.clientMsgNo || m.messageID?.toString()) === msgKey)
+            : false
+        if (!alreadyExists) {
+            this.messagesOfOrigin.push(messageWrap)
+        }
 
         this.refreshMessages(this.messagesOfOrigin, () => {
             if (senderIsSelf) {
@@ -1423,6 +1430,22 @@ export default class ConversationVM extends ProviderListener {
         })
     }
 
+    // 按 clientMsgNo 去重，保留最后一次出现（实时消息优先于历史拉取）
+    // clientMsgNo 为空时用 messageID 作为 fallback，两者均空则直接保留（不去重）
+    static deduplicateMessages(messages: MessageWrap[]): MessageWrap[] {
+        const seen = new Map<string, MessageWrap>()
+        const noKey: MessageWrap[] = []
+        for (const msg of messages) {
+            const key = msg.clientMsgNo || msg.messageID?.toString()
+            if (!key) {
+                noKey.push(msg)
+                continue
+            }
+            seen.set(key, msg)
+        }
+        return [...Array.from(seen.values()), ...noKey]
+    }
+
     // 刷新消息列表并定位到某条消息
     refreshAndLocateMessages(messages: MessageWrap[], locateMessage?: MessageWrap, scrollBottom?: boolean, callback?: () => void) {
         this.refreshMessages(messages, () => {
@@ -1537,6 +1560,7 @@ export default class ConversationVM extends ProviderListener {
             this.pulldownFinished = true
         }
         this.messagesOfOrigin = [...this.toMessageWraps(newMessages), ...this.messagesOfOrigin]
+        this.messagesOfOrigin = ConversationVM.deduplicateMessages(this.messagesOfOrigin)
         this.messagesOfOrigin = this.sortMessages(this.messagesOfOrigin)
         this.refreshMessages(this.messagesOfOrigin, () => {
             const nextViewport = document.getElementById(this.messageContainerId) as HTMLElement | null
@@ -1584,6 +1608,7 @@ export default class ConversationVM extends ProviderListener {
             this.messagesOfOrigin.push(...this.pendingMessages)
             this.pendingMessages = []
         }
+        this.messagesOfOrigin = ConversationVM.deduplicateMessages(this.messagesOfOrigin)
         this.refreshAndLocateMessages(this.messagesOfOrigin, undefined, false, () => {
             this.loading = false
         })

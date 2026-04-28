@@ -95,6 +95,8 @@ export interface FilePreviewHeaderProps {
   loadingMoreFiles?: boolean;
   /** 加载更多文件回调 */
   onLoadMoreFiles?: () => void;
+  /** 当前文件列表页码（用于判断是否显示"没有更多了"） */
+  currentFilesPage?: number;
 }
 
 /** 判断是否为图片类型 */
@@ -252,6 +254,7 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
   hasMoreFiles = false,
   loadingMoreFiles = false,
   onLoadMoreFiles,
+  currentFilesPage = 1,
 }) => {
   const [hoverDropdownOpen, setHoverDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -433,12 +436,14 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
                     加载中...
                   </div>
                 )}
-                {/* 没有更多数据 */}
-                {!hasMoreFiles && fileList.length > 0 && (
-                  <div className="wk-file-preview-header__dropdown-no-more">
-                    没有更多了
-                  </div>
-                )}
+                {/* 没有更多数据（仅在加载过至少一页后显示） */}
+                {!hasMoreFiles &&
+                  fileList.length > 0 &&
+                  (currentFilesPage ?? 1) >= 1 && (
+                    <div className="wk-file-preview-header__dropdown-no-more">
+                      没有更多了
+                    </div>
+                  )}
               </div>
             </div>
           )}

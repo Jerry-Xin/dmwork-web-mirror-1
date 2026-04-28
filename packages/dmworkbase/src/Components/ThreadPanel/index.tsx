@@ -89,8 +89,10 @@ interface ThreadPanelComponentState {
   conversationFiles: ConversationFile[];
   /** 文件列表侧边面板是否打开 */
   isFilePanelOpen: boolean;
-  /** 文件列表是否加载中 */
+  /** 文件列表初始加载中 */
   conversationFilesLoading: boolean;
+  /** 文件列表加载更多中 */
+  conversationFilesLoadingMore: boolean;
   /** 文件列表当前页码 */
   conversationFilesPage: number;
   /** 文件列表是否还有更多 */
@@ -108,6 +110,8 @@ export default class ThreadPanel extends Component<
   private lastPanelWidth = THREAD_DEFAULT_WIDTH;
   private cachedWindowWidth = 1920; // cached on drag start
   private cachedLeftPanelWidth = 300; // cached on drag start
+  /** 同步标志，防止 loadMore 竞态条件 */
+  private _loadingMore = false;
 
   constructor(props: ThreadPanelProps) {
     super(props);
@@ -142,6 +146,7 @@ export default class ThreadPanel extends Component<
       conversationFiles: [],
       isFilePanelOpen: false,
       conversationFilesLoading: false,
+      conversationFilesLoadingMore: false,
       conversationFilesPage: 1,
       conversationFilesHasMore: false,
     };
@@ -367,19 +372,19 @@ export default class ThreadPanel extends Component<
 
   /** 加载更多文件（触底加载） */
   private loadMoreConversationFiles = async () => {
-    const {
-      conversationFilesLoading,
-      conversationFilesHasMore,
-      conversationFilesPage,
-    } = this.state;
+    const { conversationFilesHasMore, conversationFilesPage } = this.state;
 
-    // 如果正在加载或没有更多数据，直接返回
-    if (conversationFilesLoading || !conversationFilesHasMore) return;
+    // 使用同步标志防止竞态条件（setState 是异步的）
+    if (this._loadingMore || !conversationFilesHasMore) return;
+    this._loadingMore = true;
 
     const channelInfo = this.getFileChannelInfo();
-    if (!channelInfo) return;
+    if (!channelInfo) {
+      this._loadingMore = false;
+      return;
+    }
 
-    this.setState({ conversationFilesLoading: true });
+    this.setState({ conversationFilesLoadingMore: true });
     try {
       const nextPage = conversationFilesPage + 1;
       const resp = await WKApp.dataSource.channelDataSource.channelFiles(
@@ -394,13 +399,15 @@ export default class ThreadPanel extends Component<
 
       this.setState((prevState) => ({
         conversationFiles: [...prevState.conversationFiles, ...newFiles],
-        conversationFilesLoading: false,
+        conversationFilesLoadingMore: false,
         conversationFilesPage: resp.page,
         conversationFilesHasMore: resp.has_more,
       }));
     } catch (err) {
       console.error("[ThreadPanel] loadMoreConversationFiles failed:", err);
-      this.setState({ conversationFilesLoading: false });
+      this.setState({ conversationFilesLoadingMore: false });
+    } finally {
+      this._loadingMore = false;
     }
   };
 
@@ -747,8 +754,9 @@ export default class ThreadPanel extends Component<
           onTocToggle={() => this.setState({ isTocOpen: !isTocOpen })}
           showOpenExternal={isHtml}
           hasMoreFiles={this.state.conversationFilesHasMore}
-          loadingMoreFiles={this.state.conversationFilesLoading}
+          loadingMoreFiles={this.state.conversationFilesLoadingMore}
           onLoadMoreFiles={this.loadMoreConversationFiles}
+          currentFilesPage={this.state.conversationFilesPage}
         />
       );
     }
@@ -1120,8 +1128,9 @@ export default class ThreadPanel extends Component<
                 onFileSelect={this.handleFileSelect}
                 onClose={() => this.setState({ isFilePanelOpen: false })}
                 hasMore={this.state.conversationFilesHasMore}
-                loadingMore={this.state.conversationFilesLoading}
+                loadingMore={this.state.conversationFilesLoadingMore}
                 onLoadMore={this.loadMoreConversationFiles}
+                currentPage={this.state.conversationFilesPage}
               />
             )}
             {/* 文件预览内容 */}

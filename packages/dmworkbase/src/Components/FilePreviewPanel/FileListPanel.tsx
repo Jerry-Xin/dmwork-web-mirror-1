@@ -31,6 +31,8 @@ export interface FileListPanelProps {
   loadingMore?: boolean;
   /** 加载更多回调 */
   onLoadMore?: () => void;
+  /** 当前页码（用于判断是否显示"没有更多了"） */
+  currentPage?: number;
 }
 
 /** 判断是否为图片类型 */
@@ -194,6 +196,7 @@ const FileListPanel: React.FC<FileListPanelProps> = ({
   hasMore = false,
   loadingMore = false,
   onLoadMore,
+  currentPage = 1,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -266,8 +269,8 @@ const FileListPanel: React.FC<FileListPanelProps> = ({
             {loadingMore && (
               <div className="wk-file-list-panel__loading">加载中...</div>
             )}
-            {/* 没有更多数据 */}
-            {!hasMore && files.length > 0 && (
+            {/* 没有更多数据（仅在加载过至少一页后显示） */}
+            {!hasMore && files.length > 0 && currentPage >= 1 && (
               <div className="wk-file-list-panel__no-more">没有更多了</div>
             )}
           </>

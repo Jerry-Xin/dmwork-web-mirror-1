@@ -726,12 +726,11 @@ export default class ThreadPanel extends Component<
       const showTocButton =
         isMarkdown && fileViewMode === "preview" && this.state.isTocAvailable;
 
-      // 回复回调：仅当有完整回复信息和 onReplyFile 时才启用
+      // 回复回调：仅当有必要字段和 onReplyFile 时才启用（conversationDigest 可为空）
       const handleReply =
         filePreview.messageId &&
         filePreview.messageSeq !== undefined &&
         filePreview.fromUID &&
-        filePreview.conversationDigest &&
         filePreview.sourceChannelId &&
         filePreview.sourceChannelType !== undefined &&
         this.props.onReplyFile
@@ -740,7 +739,7 @@ export default class ThreadPanel extends Component<
                 messageId: filePreview.messageId!,
                 messageSeq: filePreview.messageSeq!,
                 fromUID: filePreview.fromUID!,
-                conversationDigest: filePreview.conversationDigest!,
+                conversationDigest: filePreview.conversationDigest || "",
                 channelId: filePreview.sourceChannelId!,
                 channelType: filePreview.sourceChannelType!,
               })

@@ -346,10 +346,8 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
               icon: WKApp.shared.avatarChannel(
                 new Channel(member.uid, ChannelTypePerson)
               ),
-              isBot:
-                WKSDK.shared().channelManager.getChannelInfo(
-                  new Channel(member.uid, ChannelTypePerson)
-                )?.orgData?.robot === 1,
+              // 直接从 Subscriber.orgData 取，不依赖 channelInfo 缓存是否已热
+              isBot: member.orgData?.robot === 1,
             }));
 
             items.unshift({

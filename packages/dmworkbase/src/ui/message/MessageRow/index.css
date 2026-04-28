@@ -159,6 +159,8 @@
   flex-direction: column;
 }
 
+
+
 /* 多选模式：整行可点 */
 .wk-msg-row--selecting {
   cursor: pointer;

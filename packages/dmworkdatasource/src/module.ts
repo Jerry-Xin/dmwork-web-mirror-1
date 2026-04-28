@@ -109,7 +109,20 @@ export default class DataSourceModule implements IModule {
             channelInfo.orgData.displayName = data.remark && data.remark !== "" ? data.remark : channelInfo.title;
 
             channelInfo.orgData.receipt = data.receipt;
-            channelInfo.orgData.robot = data.robot;
+            // channels 接口可能不返回 robot 字段，从群成员缓存兜底
+            if (data.robot != null) {
+                channelInfo.orgData.robot = data.robot;
+            } else if (channel.channelType === ChannelTypePerson) {
+                // 遍历所有群的成员缓存，查找该 uid 是否标记为 robot
+                const allSubscribers = WKSDK.shared().channelManager.subscribeCacheMap
+                for (const subscribers of allSubscribers.values()) {
+                    const matched = subscribers.find(s => s.uid === channel.channelID && s.orgData?.robot === 1)
+                    if (matched) {
+                        channelInfo.orgData.robot = 1
+                        break
+                    }
+                }
+            }
             channelInfo.orgData.status = data.status;
             channelInfo.orgData.follow = data.follow;
             channelInfo.orgData.category = data.category;
@@ -177,6 +190,20 @@ export default class DataSourceModule implements IModule {
                 const roleB = b.role === GroupRole.owner ? 999 : b.role;
                 return roleB - roleA;
             })
+
+            // 将 robot 字段同步到 person channelInfo 缓存，确保消息列表能正确显示 AI 标识
+            for (const member of members) {
+                if (member.orgData?.robot === 1) {
+                    const personChannel = new Channel(member.uid, ChannelTypePerson)
+                    const existing = WKSDK.shared().channelManager.getChannelInfo(personChannel)
+                    if (existing) {
+                        existing.orgData = existing.orgData || {}
+                        existing.orgData.robot = 1
+                        WKSDK.shared().channelManager.setChannleInfoForCache(existing)
+                    }
+                }
+            }
+
             return members;
         }
     }

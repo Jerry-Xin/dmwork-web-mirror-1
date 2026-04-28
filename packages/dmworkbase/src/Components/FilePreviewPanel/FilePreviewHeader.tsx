@@ -7,6 +7,7 @@ import {
   Maximize2,
   Reply,
   X,
+  ArrowLeft,
   File,
   FileImage,
   FileCode,
@@ -377,6 +378,16 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
     <div className="wk-file-preview-header">
       {/* 左侧：文件选择器 */}
       <div className="wk-file-preview-header__left">
+        {/* 返回按钮（从子区进入文件预览时显示） */}
+        {showBackButton && onBack && (
+          <button
+            className="wk-file-preview-header__btn wk-file-preview-header__btn--back"
+            onClick={onBack}
+            title="返回子区"
+          >
+            <ArrowLeft size={16} />
+          </button>
+        )}
         {/* 文件下拉选择器 */}
         <div
           className="wk-file-preview-header__dropdown"

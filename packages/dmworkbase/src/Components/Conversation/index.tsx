@@ -208,6 +208,53 @@ export class Conversation
       this.reply(messageWrap.message, 1);
     }
   }
+  replyToFileMessage(info: {
+    messageId: string;
+    messageSeq: number;
+    fromUID: string;
+    conversationDigest: string;
+    channelId: string;
+    channelType: number;
+  }): void {
+    // 首先尝试从当前消息列表中查找（如果找到则使用完整信息）
+    const messageWrap = this.vm.findMessageWithMessageID(info.messageId);
+    if (messageWrap) {
+      this.reply(messageWrap.message, 1);
+      return;
+    }
+
+    // 消息不在当前列表中，使用传入的信息构造一个最小化的 Message 对象
+    // 用于设置回复状态
+    const channel = new Channel(info.channelId, info.channelType);
+    const fakeMessage = {
+      messageID: info.messageId,
+      messageSeq: info.messageSeq,
+      fromUID: info.fromUID,
+      channel: channel,
+      content: {
+        conversationDigest: info.conversationDigest,
+      },
+      remoteExtra: undefined,
+    } as unknown as Message;
+
+    // 添加 @提及（如果不是自己发的消息）
+    if (info.fromUID !== WKApp.loginInfo.uid) {
+      const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
+        new Channel(info.fromUID, ChannelTypePerson)
+      );
+      let name = "";
+      if (channelInfo) {
+        name = channelInfo.title;
+      }
+      this._messageInputContext?.addMention(info.fromUID, name);
+    }
+
+    // 设置回复状态
+    this.vm.currentHandlerType = 1;
+    this.vm.currentReplyMessage = fakeMessage;
+    // 自动聚焦输入框
+    this._messageInputContext?.focus();
+  }
   async resendMessage(message: Message): Promise<Message> {
     await this.vm.deleteMessagesFromLocal([message]);
     const newMessage = await this.vm.sendMessage(

@@ -63,8 +63,15 @@ export interface ThreadPanelProps {
   filePreview?: FilePreviewInfo | null;
   /** 关闭文件预览的回调 */
   onFilePreviewClose?: () => void;
-  /** 回复文件消息的回调，传入消息 ID */
-  onReplyFile?: (messageId: string) => void;
+  /** 回复文件消息的回调，传入回复所需的完整信息 */
+  onReplyFile?: (info: {
+    messageId: string;
+    messageSeq: number;
+    fromUID: string;
+    conversationDigest: string;
+    channelId: string;
+    channelType: number;
+  }) => void;
   /** 切换预览文件的回调（从文件列表选择其他文件时触发） */
   onFilePreviewChange?: (file: FilePreviewInfo) => void;
 }
@@ -719,10 +726,24 @@ export default class ThreadPanel extends Component<
       const showTocButton =
         isMarkdown && fileViewMode === "preview" && this.state.isTocAvailable;
 
-      // 回复回调：仅当有 messageId 和 onReplyFile 时才启用
+      // 回复回调：仅当有完整回复信息和 onReplyFile 时才启用
       const handleReply =
-        filePreview.messageId && this.props.onReplyFile
-          ? () => this.props.onReplyFile!(filePreview.messageId!)
+        filePreview.messageId &&
+        filePreview.messageSeq !== undefined &&
+        filePreview.fromUID &&
+        filePreview.conversationDigest &&
+        filePreview.sourceChannelId &&
+        filePreview.sourceChannelType !== undefined &&
+        this.props.onReplyFile
+          ? () =>
+              this.props.onReplyFile!({
+                messageId: filePreview.messageId!,
+                messageSeq: filePreview.messageSeq!,
+                fromUID: filePreview.fromUID!,
+                conversationDigest: filePreview.conversationDigest!,
+                channelId: filePreview.sourceChannelId!,
+                channelType: filePreview.sourceChannelType!,
+              })
           : undefined;
 
       // 视图模式变更：切换到源码模式时关闭 TOC

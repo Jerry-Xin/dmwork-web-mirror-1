@@ -21,6 +21,12 @@ export type MittEvents = {
     sourceChannelType?: number;
     /** 消息 ID（用于标记激活态） */
     messageId?: string;
+    /** 消息序号（用于回复） */
+    messageSeq?: number;
+    /** 发送者 UID（用于回复时 @提及） */
+    fromUID?: string;
+    /** 消息摘要（用于回复时显示） */
+    conversationDigest?: string;
   } | null;
 };
 import { EndpointCommon } from "./EndpointCommon";
@@ -295,6 +301,12 @@ export default class WKApp extends ProviderListener {
     messageId?: string;
     sourceChannelId?: string;
     sourceChannelType?: number;
+    /** 消息序号（用于回复） */
+    messageSeq?: number;
+    /** 发送者 UID（用于回复时 @提及） */
+    fromUID?: string;
+    /** 消息摘要（用于回复时显示） */
+    conversationDigest?: string;
   };
 
   baseContext!: WKBaseContext; // DMWork基础上下文

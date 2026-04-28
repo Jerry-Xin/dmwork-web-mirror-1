@@ -37,7 +37,7 @@ export default function VoiceInputIndicator({
   const [voiceMode, setVoiceMode] = useState<VoiceMode>("smart");
   const [showModeMenu, setShowModeMenu] = useState(false);
   const modeMenuRef = useRef<HTMLDivElement>(null);
-  const dropdownArrowRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Long-press ShiftLeft state
   const shiftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -202,8 +202,8 @@ export default function VoiceInputIndicator({
       if (
         modeMenuRef.current &&
         !modeMenuRef.current.contains(e.target as Node) &&
-        dropdownArrowRef.current &&
-        !dropdownArrowRef.current.contains(e.target as Node)
+        buttonGroupRef.current &&
+        !buttonGroupRef.current.contains(e.target as Node)
       ) {
         setShowModeMenu(false);
       }
@@ -212,6 +212,15 @@ export default function VoiceInputIndicator({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showModeMenu]);
+
+  // Clear hover timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Keyboard shortcut: Shift + Cmd/Ctrl + Space, and long-press ShiftLeft
   useEffect(() => {
@@ -371,19 +380,41 @@ export default function VoiceInputIndicator({
     setShowModeMenu(false);
   };
 
-  // Toggle mode menu
-  const handleDropdownClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isOnline) {
-      Toast.warning("网络不可用，无法使用语音功能");
-      return;
-    }
-    setShowModeMenu(!showModeMenu);
-  };
-
   // Get current mode label
   const currentModeLabel =
     VOICE_MODES.find((m) => m.value === voiceMode)?.label || "语音输入";
+
+  // Hover handlers - show menu on hover, hide on leave
+  const handleMouseEnter = () => {
+    if (!isOnline) return;
+    // Clear any pending hide timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setShowModeMenu(true);
+  };
+
+  const handleMouseLeave = () => {
+    // Delay hiding menu to allow moving to it
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowModeMenu(false);
+    }, 150);
+  };
+
+  // Menu hover handlers
+  const handleMenuMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleMenuMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowModeMenu(false);
+    }, 150);
+  };
 
   // Handle click/keyboard for voice button
   const handleVoiceClick = () => {
@@ -535,13 +566,22 @@ export default function VoiceInputIndicator({
     );
   }
 
-  // 默认状态：显示麦克风按钮和下拉箭头
+  // 默认状态：显示麦克风按钮和下拉箭头（一体交互）
+  // hover 整个按钮 → 箭头向上 + 弹出选择框
+  // 直接点击 icon → 开始语音输入
   // PRD: 无网络时话筒 icon 置灰，点击时 Toast「网络不可用，无法使用语音功能」
-  // 激活态：菜单打开时，麦克风和箭头都显示激活样式（淡紫色背景 + 紫色图标）
   const isActive = showModeMenu;
 
   return (
-    <div className="wk-voice-button-group" ref={buttonGroupRef}>
+    <div
+      className={`wk-voice-button-group ${
+        isActive ? "wk-voice-button-group--active" : ""
+      }`}
+      ref={buttonGroupRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* 麦克风按钮 - 点击开始录音 */}
       <div
         className={`wk-voice-button ${
           !isOnline
@@ -558,9 +598,8 @@ export default function VoiceInputIndicator({
       >
         <Mic size={18} color="currentColor" />
       </div>
-      {/* 下拉箭头 - 实心三角形 */}
+      {/* 下拉箭头 - hover 时向上，否则向下 */}
       <div
-        ref={dropdownArrowRef}
         className={`wk-voice-dropdown-arrow ${
           !isOnline
             ? "wk-voice-dropdown-arrow--disabled"
@@ -568,19 +607,28 @@ export default function VoiceInputIndicator({
             ? "wk-voice-dropdown-arrow--active"
             : ""
         }`}
-        onClick={handleDropdownClick}
-        role="button"
-        tabIndex={isOnline ? 0 : -1}
-        title="选择语音模式"
       >
-        {/* 实心向下三角形 SVG */}
-        <svg width="6" height="4" viewBox="0 0 6 4" fill="currentColor">
+        {/* 实心三角形 SVG - hover 时旋转向上 */}
+        <svg
+          width="6"
+          height="4"
+          viewBox="0 0 6 4"
+          fill="currentColor"
+          className={`wk-voice-dropdown-arrow-icon ${
+            isActive ? "wk-voice-dropdown-arrow-icon--up" : ""
+          }`}
+        >
           <path d="M0.5 0.5L3 3.5L5.5 0.5H0.5Z" />
         </svg>
       </div>
       {/* 模式选择弹窗 */}
       {showModeMenu && (
-        <div className="wk-voice-mode-menu" ref={modeMenuRef}>
+        <div
+          className="wk-voice-mode-menu"
+          ref={modeMenuRef}
+          onMouseEnter={handleMenuMouseEnter}
+          onMouseLeave={handleMenuMouseLeave}
+        >
           {VOICE_MODES.map((mode) => (
             <div
               key={mode.value}

@@ -1,9 +1,21 @@
-/* 语音按钮组 - 联合按钮风格 */
+/* 语音按钮组 - 一体化按钮风格 */
 .wk-voice-button-group {
   position: relative;
   display: flex;
   align-items: center;
   height: 24px;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+/* hover 整个按钮组时显示激活态 */
+.wk-voice-button-group:hover {
+  background-color: var(--wk-bg-hover);
+}
+
+.wk-voice-button-group--active,
+.wk-voice-button-group--active:hover {
+  background-color: rgba(127, 59, 245, 0.05);
 }
 
 /* 语音按钮 - 左侧麦克风部分 */
@@ -15,28 +27,27 @@
   height: 24px;
   cursor: pointer;
   border-radius: 4px 0 0 4px;
-  transition: background-color 0.15s, color 0.15s;
+  transition: color 0.15s;
   color: var(--wk-icon-muted);
 }
 
-.wk-voice-button:hover {
+/* hover 时颜色变化（背景由父元素控制） */
+.wk-voice-button-group:hover .wk-voice-button {
   color: var(--wk-text-primary);
-  background-color: var(--wk-bg-hover);
 }
 
 .wk-voice-button:active {
   opacity: 0.7;
 }
 
-/* 激活态 - 淡紫色背景 + 紫色图标 */
+/* 激活态 - 紫色图标（背景由父元素控制） */
 .wk-voice-button--active {
-  background-color: rgba(127, 59, 245, 0.05);
   color: rgba(127, 59, 245, 0.8);
 }
 
-.wk-voice-button--active:hover {
-  background-color: rgba(127, 59, 245, 0.1);
-  color: rgba(127, 59, 245, 0.9);
+.wk-voice-button-group:hover .wk-voice-button--active,
+.wk-voice-button-group--active .wk-voice-button {
+  color: rgba(127, 59, 245, 0.8);
 }
 
 .wk-voice-button--recording {
@@ -228,37 +239,35 @@
   justify-content: center;
   width: 12px;
   height: 24px;
-  cursor: pointer;
   color: var(--wk-icon-muted);
   border-radius: 0 4px 4px 0;
-  transition: color 0.15s, background-color 0.15s;
+  transition: color 0.15s;
 }
 
-.wk-voice-dropdown-arrow:hover {
+/* hover 时颜色变化（背景由父元素控制） */
+.wk-voice-button-group:hover .wk-voice-dropdown-arrow {
   color: var(--wk-text-primary);
-  background-color: var(--wk-bg-hover);
 }
 
-/* 激活态 - 淡紫色背景 + 紫色图标 */
-.wk-voice-dropdown-arrow--active {
-  background-color: rgba(127, 59, 245, 0.05);
+/* 激活态 - 紫色图标 */
+.wk-voice-dropdown-arrow--active,
+.wk-voice-button-group:hover .wk-voice-dropdown-arrow--active,
+.wk-voice-button-group--active .wk-voice-dropdown-arrow {
   color: rgba(127, 59, 245, 0.8);
-}
-
-.wk-voice-dropdown-arrow--active:hover {
-  background-color: rgba(127, 59, 245, 0.1);
-  color: rgba(127, 59, 245, 0.9);
 }
 
 .wk-voice-dropdown-arrow--disabled {
   color: var(--wk-icon-muted);
-  cursor: not-allowed;
   opacity: 0.4;
 }
 
-.wk-voice-dropdown-arrow--disabled:hover {
-  color: var(--wk-icon-muted);
-  background-color: transparent;
+/* 箭头图标旋转动画 */
+.wk-voice-dropdown-arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.wk-voice-dropdown-arrow-icon--up {
+  transform: rotate(180deg);
 }
 
 /* 模式选择弹窗 - 匹配 Figma 设计 */

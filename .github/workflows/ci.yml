@@ -10,13 +10,19 @@ jobs:
   lint-and-build:
     name: Lint & Build
     runs-on: [self-hosted, linux, x64]
+    container:
+      image: node:20-bookworm
+      options: --ipc=host
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/cache@v4
         with:
-          node-version: 20
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-
 
       - uses: pnpm/action-setup@v4
       - name: 🔧 Fix git SSH → HTTPS
@@ -36,15 +42,21 @@ jobs:
   stylelint:
     name: 🎨 CSS 硬编码颜色检查
     runs-on: [self-hosted, linux, x64]
+    container:
+      image: node:20-bookworm
+      options: --ipc=host
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/cache@v4
         with:
-          node-version: 20
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-
 
       - uses: pnpm/action-setup@v4
       - name: 📦 Install
@@ -67,13 +79,20 @@ jobs:
   story-coverage:
     name: 📖 Story 覆盖检查
     runs-on: [self-hosted, linux, x64]
+    container:
+      image: alpine:3.20
+      options: --ipc=host
 
     steps:
+      - name: Install bash + git
+        run: apk add --no-cache bash git
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: 📖 检查新增组件是否有 Story
+        shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
         run: |
@@ -110,9 +129,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/cache@v4
         with:
-          node-version: 20
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-
 
       - uses: pnpm/action-setup@v4
       - name: 🔧 Fix git SSH → HTTPS

@@ -214,6 +214,26 @@
   white-space: nowrap;
 }
 
+/* 加载更多 */
+.wk-file-preview-header__dropdown-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wk-sp-2);
+  color: var(--wk-text-tertiary);
+  font-size: var(--wk-text-size-sm);
+}
+
+/* 没有更多数据 */
+.wk-file-preview-header__dropdown-no-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wk-sp-2);
+  color: var(--wk-text-quaternary);
+  font-size: var(--wk-text-size-xs);
+}
+
 /* ============================================
    分隔符
    ============================================ */

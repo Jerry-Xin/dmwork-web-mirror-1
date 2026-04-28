@@ -734,6 +734,9 @@ export default class ThreadPanel extends Component<
           isTocOpen={isTocOpen}
           onTocToggle={() => this.setState({ isTocOpen: !isTocOpen })}
           showOpenExternal={isHtml}
+          hasMoreFiles={this.state.conversationFilesHasMore}
+          loadingMoreFiles={this.state.conversationFilesLoading}
+          onLoadMoreFiles={this.loadMoreConversationFiles}
         />
       );
     }

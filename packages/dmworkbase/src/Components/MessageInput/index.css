@@ -627,6 +627,7 @@
 
 /* ============================================
    顶部附件区样式（非图片文件 + 上传的图片）
+   复用 .wk-attachment-node 样式
    ============================================ */
 
 .wk-messageinput-top-attachments {
@@ -659,73 +660,17 @@
   border-radius: 2px;
 }
 
-.wk-messageinput-top-attachment {
-  position: relative;
+/* 顶部附件区的附件项不需要 inline 布局 */
+.wk-messageinput-top-attachments-scroll > .wk-attachment-node {
+  display: flex;
   flex-shrink: 0;
-  border-radius: var(--wk-r-sm);
-  overflow: hidden;
-  background: var(--wk-bg-elevated);
-  border: 1px solid var(--wk-border-subtle);
-}
-
-.wk-messageinput-top-attachment:hover .wk-messageinput-top-attachment-remove {
-  opacity: 1;
-}
-
-.wk-messageinput-top-attachment-preview {
-  display: block;
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-}
-
-.wk-messageinput-top-attachment-video {
   position: relative;
-  width: 64px;
-  height: 64px;
 }
 
-.wk-messageinput-top-attachment-video .wk-messageinput-top-attachment-preview {
-  width: 100%;
-  height: 100%;
-}
-
-.wk-messageinput-top-attachment-video-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 10px;
-}
-
-.wk-messageinput-top-attachment-file {
-  width: 120px;
-  height: 64px;
-  padding: var(--wk-sp-2);
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.wk-messageinput-top-attachment-name {
-  font-size: var(--wk-text-size-sm);
-  color: var(--wk-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.4;
-}
-
-.wk-messageinput-top-attachment-remove {
+/* 图片类型的删除按钮（覆盖在图片上） */
+.wk-messageinput-top-attachments-scroll
+  > .wk-attachment-node--image
+  .wk-messageinput-top-attachment-remove {
   position: absolute;
   top: 2px;
   right: 2px;
@@ -744,6 +689,14 @@
   padding: 0;
 }
 
-.wk-messageinput-top-attachment-remove:hover {
+.wk-messageinput-top-attachments-scroll
+  > .wk-attachment-node--image:hover
+  .wk-messageinput-top-attachment-remove {
+  opacity: 1;
+}
+
+.wk-messageinput-top-attachments-scroll
+  > .wk-attachment-node--image
+  .wk-messageinput-top-attachment-remove:hover {
   background: rgba(0, 0, 0, 0.8);
 }

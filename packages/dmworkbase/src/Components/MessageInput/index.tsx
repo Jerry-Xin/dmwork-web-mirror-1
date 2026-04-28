@@ -26,6 +26,16 @@ import IconClick from "../IconClick";
 import mentionAllIcon from "./mention.png";
 import { AttachmentNode, AttachmentAttributes } from "./AttachmentNode";
 
+// 文件类型图标
+import defaultIcon from "../../assets/files/default.svg";
+import docIcon from "../../assets/files/doc.svg";
+import excelIcon from "../../assets/files/excel.svg";
+import gifIcon from "../../assets/files/gif.svg";
+import pdfIcon from "../../assets/files/pdf.svg";
+import videoIcon from "../../assets/files/video.svg";
+import zipIcon from "../../assets/files/zip.svg";
+import videoPlayIcon from "../../assets/files/video2.svg";
+
 const MAX_MESSAGE_LENGTH = 5000;
 
 // 从编辑器中提取附件节点（纯函数，避免闭包问题）
@@ -288,6 +298,43 @@ function isVideoFileType(file: File): boolean {
   if (file.type.startsWith("video/")) return true;
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
   return ["mp4", "avi", "mov", "mkv", "webm"].includes(ext);
+}
+
+// 根据文件名和类型获取文件图标
+function getFileIcon(name: string, type: string): string {
+  const dotIdx = name.lastIndexOf(".");
+  const ext = dotIdx > 0 ? name.substring(dotIdx + 1).toLowerCase() : "";
+
+  if (
+    type.startsWith("video/") ||
+    ["mp4", "avi", "mov", "mkv", "webm"].includes(ext)
+  ) {
+    return videoIcon;
+  }
+  if (ext === "gif") {
+    return gifIcon;
+  }
+  if (ext === "pdf") {
+    return pdfIcon;
+  }
+  if (["doc", "docx"].includes(ext)) {
+    return docIcon;
+  }
+  if (["xls", "xlsx"].includes(ext)) {
+    return excelIcon;
+  }
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
+    return zipIcon;
+  }
+
+  return defaultIcon;
+}
+
+// 格式化文件大小
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 const MessageInput: React.FC<MessageInputProps> = (props) => {
@@ -880,50 +927,85 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
         {topAttachments.length > 0 && (
           <div className="wk-messageinput-top-attachments">
             <div className="wk-messageinput-top-attachments-scroll">
-              {topAttachments.map((item) => (
-                <div key={item.id} className="wk-messageinput-top-attachment">
-                  {item.previewUrl && isImageFileType(item.file) ? (
-                    // 图片预览
-                    <img
-                      src={item.previewUrl}
-                      alt={item.name}
-                      className="wk-messageinput-top-attachment-preview"
-                      draggable={false}
-                    />
-                  ) : item.previewUrl && isVideoFileType(item.file) ? (
-                    // 视频封面预览
-                    <div className="wk-messageinput-top-attachment-video">
+              {topAttachments.map((item) => {
+                const isImage = isImageFileType(item.file);
+                const isVideo = isVideoFileType(item.file);
+                const icon = getFileIcon(item.name, item.type);
+
+                // 图片类型：使用和编辑器内一样的图片预览样式
+                if (isImage && item.previewUrl) {
+                  return (
+                    <div
+                      key={item.id}
+                      className="wk-attachment-node wk-attachment-node--image"
+                    >
                       <img
                         src={item.previewUrl}
                         alt={item.name}
-                        className="wk-messageinput-top-attachment-preview"
+                        className="wk-attachment-node-image"
                         draggable={false}
                       />
-                      <div className="wk-messageinput-top-attachment-video-icon">
-                        ▶
-                      </div>
-                    </div>
-                  ) : (
-                    // 文件卡片
-                    <div className="wk-messageinput-top-attachment-file">
-                      <div
-                        className="wk-messageinput-top-attachment-name"
-                        title={item.name}
+                      <button
+                        className="wk-messageinput-top-attachment-remove"
+                        onClick={() => removeTopAttachment(item.id)}
+                        type="button"
+                        title="移除"
                       >
-                        {item.name}
+                        <X size={14} />
+                      </button>
+                    </div>
+                  );
+                }
+
+                // 非图片类型：使用和编辑器内一样的文件卡片样式
+                return (
+                  <div key={item.id} className="wk-attachment-node">
+                    <div className="wk-attachment-node-card">
+                      <div className="wk-attachment-node-icon">
+                        {isVideo && item.previewUrl ? (
+                          <div className="wk-attachment-node-video-cover-wrapper">
+                            <img
+                              src={item.previewUrl}
+                              alt="video cover"
+                              draggable={false}
+                              className="wk-attachment-node-video-cover"
+                            />
+                            <img
+                              src={videoPlayIcon}
+                              alt="play"
+                              className="wk-attachment-node-video-play-icon"
+                              draggable={false}
+                            />
+                          </div>
+                        ) : (
+                          <img src={icon} alt="file" draggable={false} />
+                        )}
+                      </div>
+                      <div className="wk-attachment-node-info">
+                        <div className="wk-attachment-node-name-row">
+                          <div
+                            className="wk-attachment-node-name"
+                            title={item.name}
+                          >
+                            {item.name}
+                          </div>
+                          <button
+                            className="wk-attachment-node-remove"
+                            onClick={() => removeTopAttachment(item.id)}
+                            type="button"
+                            title="移除"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                        <div className="wk-attachment-node-size">
+                          {formatFileSize(item.size)}
+                        </div>
                       </div>
                     </div>
-                  )}
-                  <button
-                    className="wk-messageinput-top-attachment-remove"
-                    onClick={() => removeTopAttachment(item.id)}
-                    type="button"
-                    title="移除"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

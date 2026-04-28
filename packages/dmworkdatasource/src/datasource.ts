@@ -1,4 +1,4 @@
-import { ChannelQrcodeResp, Contacts, IChannelDataSource, ICommonDataSource, WKApp, RequestConfig, GroupRole, hasSpacePrefix, Thread, ChannelTypeCommunityTopic, buildThreadChannelId } from "@dmwork/base";
+import { ChannelQrcodeResp, Contacts, IChannelDataSource, ICommonDataSource, WKApp, RequestConfig, GroupRole, hasSpacePrefix, Thread, ChannelTypeCommunityTopic, buildThreadChannelId, ChannelFilesResp } from "@dmwork/base";
 import { Channel, ChannelInfo, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageContentType,ConversationExtra,Subscriber } from "wukongimjssdk";
 
 const MAX_GROUP_LIST_LIMIT = 100000;
@@ -304,28 +304,7 @@ export class ChannelDataSource implements IChannelDataSource {
         keyword?: string
         page?: number
         limit?: number
-    }): Promise<{
-        total: number
-        page: number
-        limit: number
-        has_more: boolean
-        files: Array<{
-            message_id: number
-            message_seq: number
-            from_uid: string
-            from_name: string
-            channel_id: string
-            channel_type: number
-            category: string
-            name: string
-            url: string
-            size: number
-            width?: number
-            height?: number
-            duration?: number
-            timestamp: number
-        }>
-    }> {
+    }): Promise<ChannelFilesResp> {
         const body: any = {
             channel_id: channelId,
             channel_type: channelType,

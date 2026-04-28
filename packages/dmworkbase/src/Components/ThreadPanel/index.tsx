@@ -49,6 +49,8 @@ export interface ThreadPanelProps {
   onFilePreviewClose?: () => void;
   /** 回复文件消息的回调，传入消息 ID */
   onReplyFile?: (messageId: string) => void;
+  /** 切换预览文件的回调（从文件列表选择其他文件时触发） */
+  onFilePreviewChange?: (file: FilePreviewInfo) => void;
 }
 
 interface ThreadPanelComponentState {
@@ -245,10 +247,15 @@ export default class ThreadPanel extends Component<
         this.loadThreads();
       }
     }
-    // 文件预览变化时重新加载文件列表
+    // 文件预览变化时处理文件列表
     if (this.props.filePreview !== prevProps.filePreview) {
       if (this.props.filePreview) {
-        this.loadConversationFiles();
+        // 只有当频道变化时才重新加载文件列表
+        const prevChannelId = prevProps.filePreview?.sourceChannelId || prevProps.groupNo;
+        const currChannelId = this.props.filePreview.sourceChannelId || this.props.groupNo;
+        if (prevChannelId !== currChannelId || !prevProps.filePreview) {
+          this.loadConversationFiles();
+        }
       } else {
         // 退出文件预览模式时清空文件列表
         this.setState({ conversationFiles: [], isFilePanelOpen: false });
@@ -603,9 +610,21 @@ export default class ThreadPanel extends Component<
 
       // 文件选择回调：切换预览的文件
       const handleFileSelect = (file: ConversationFile) => {
-        // TODO: 需要父组件提供切换文件预览的回调
-        // 目前先通过 console 确认流程
-        console.log('[ThreadPanel] handleFileSelect:', file);
+        if (!this.props.onFilePreviewChange) {
+          console.warn('[ThreadPanel] handleFileSelect: onFilePreviewChange not provided');
+          return;
+        }
+        // 构造 FilePreviewInfo 并调用回调
+        const newPreview: FilePreviewInfo = {
+          url: file.url,
+          name: file.name,
+          extension: file.extension,
+          size: file.size,
+          sourceChannelId: filePreview.sourceChannelId,
+          sourceChannelType: filePreview.sourceChannelType,
+          messageId: file.id, // ConversationFile.id 就是 message_id
+        };
+        this.props.onFilePreviewChange(newPreview);
       };
 
       return (

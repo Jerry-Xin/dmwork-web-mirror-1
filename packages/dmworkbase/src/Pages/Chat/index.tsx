@@ -624,6 +624,13 @@ export class ChatContentPage extends Component<
                 });
                 this.conversationContext?.replyToMessageId?.(messageId);
               }}
+              onFilePreviewChange={(file) => {
+                // 切换预览的文件
+                this.setState({
+                  previewFile: file,
+                  activePreviewMessageId: file.messageId || null,
+                });
+              }}
             />
           )}
 
@@ -643,6 +650,13 @@ export class ChatContentPage extends Component<
                 activePreviewMessageId: null,
               });
               this.conversationContext?.replyToMessageId?.(messageId);
+            }}
+            onFilePreviewChange={(file) => {
+              // 切换预览的文件
+              this.setState({
+                previewFile: file,
+                activePreviewMessageId: file.messageId || null,
+              });
             }}
           />
         )}

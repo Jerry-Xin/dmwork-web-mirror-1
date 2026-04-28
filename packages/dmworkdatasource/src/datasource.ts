@@ -298,6 +298,59 @@ export class ChannelDataSource implements IChannelDataSource {
             last_message_at: data.last_message_at,
         }
     }
+
+    async channelFiles(channelId: string, channelType: number, options?: {
+        category?: 'all' | 'document' | 'image' | 'video' | 'archive' | 'code'
+        keyword?: string
+        page?: number
+        limit?: number
+    }): Promise<{
+        total: number
+        page: number
+        limit: number
+        has_more: boolean
+        files: Array<{
+            message_id: number
+            message_seq: number
+            from_uid: string
+            from_name: string
+            channel_id: string
+            channel_type: number
+            category: string
+            name: string
+            url: string
+            size: number
+            width?: number
+            height?: number
+            duration?: number
+            timestamp: number
+        }>
+    }> {
+        const body: any = {
+            channel_id: channelId,
+            channel_type: channelType,
+        }
+        if (options?.category) {
+            body.category = options.category
+        }
+        if (options?.keyword) {
+            body.keyword = options.keyword
+        }
+        if (options?.page) {
+            body.page = options.page
+        }
+        if (options?.limit) {
+            body.limit = options.limit
+        }
+        const resp = await WKApp.apiClient.post('message/channel/files', body)
+        return {
+            total: resp?.total ?? 0,
+            page: resp?.page ?? 1,
+            limit: resp?.limit ?? 20,
+            has_more: resp?.has_more ?? false,
+            files: resp?.files ?? [],
+        }
+    }
 }
 
 export class CommonDataSource implements ICommonDataSource {

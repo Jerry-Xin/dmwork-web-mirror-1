@@ -23,7 +23,7 @@ import { formatRelativeTime } from "../../Utils/time";
 import { FilePreviewInfo } from "../FilePreviewPanel/types";
 import { fileRendererRegistry } from "../FilePreviewPanel/registry";
 import { getExtension } from "../FilePreviewPanel/types";
-import FilePreviewHeader from "../FilePreviewPanel/FilePreviewHeader";
+import FilePreviewHeader, { ConversationFile } from "../FilePreviewPanel/FilePreviewHeader";
 import { MarkdownRenderer } from "../FilePreviewPanel/renderers/MarkdownRenderer";
 import { HtmlRenderer } from "../FilePreviewPanel/renderers/HtmlRenderer";
 import {
@@ -67,6 +67,12 @@ interface ThreadPanelComponentState {
   isTocOpen: boolean;
   /** Markdown TOC 是否可用（h2 ≥ 3） */
   isTocAvailable: boolean;
+  /** 对话内文件列表 */
+  conversationFiles: ConversationFile[];
+  /** 文件列表侧边面板是否打开 */
+  isFilePanelOpen: boolean;
+  /** 文件列表是否加载中 */
+  conversationFilesLoading: boolean;
 }
 
 export default class ThreadPanel extends Component<
@@ -111,6 +117,9 @@ export default class ThreadPanel extends Component<
       fileViewMode: "preview",
       isTocOpen: false,
       isTocAvailable: false,
+      conversationFiles: [],
+      isFilePanelOpen: false,
+      conversationFilesLoading: false,
     };
   }
 
@@ -121,6 +130,10 @@ export default class ThreadPanel extends Component<
       if (this.props.thread) {
         this.initVM(this.props.thread.short_id);
       }
+    }
+    // 文件预览模式时加载对话内文件列表
+    if (this.props.filePreview) {
+      this.loadConversationFiles();
     }
     // Set CSS variable on mount so chat area calc has the correct width
     this.syncCssVariable(this.state.panelWidth);
@@ -232,6 +245,15 @@ export default class ThreadPanel extends Component<
         this.loadThreads();
       }
     }
+    // 文件预览变化时重新加载文件列表
+    if (this.props.filePreview !== prevProps.filePreview) {
+      if (this.props.filePreview) {
+        this.loadConversationFiles();
+      } else {
+        // 退出文件预览模式时清空文件列表
+        this.setState({ conversationFiles: [], isFilePanelOpen: false });
+      }
+    }
   }
 
   private initVM(threadShortId: string) {
@@ -243,6 +265,44 @@ export default class ThreadPanel extends Component<
     });
     this.vm = vm;
     vm.load();
+  }
+
+  /** 加载对话内文件列表 */
+  private async loadConversationFiles() {
+    const { filePreview, groupNo } = this.props;
+    if (!filePreview) return;
+
+    // 优先使用 filePreview 中的 sourceChannelId/sourceChannelType
+    // 其次使用 groupNo（如果在群聊/子区中）
+    let channelId = filePreview.sourceChannelId || groupNo || '';
+    let channelType = filePreview.sourceChannelType ?? (groupNo ? ChannelTypeGroup : ChannelTypePerson);
+
+    if (!channelId) {
+      console.warn('[ThreadPanel] loadConversationFiles: no channelId available');
+      return;
+    }
+
+    this.setState({ conversationFilesLoading: true });
+    try {
+      const resp = await WKApp.dataSource.channelDataSource.channelFiles(
+        channelId,
+        channelType,
+        { limit: 100 }
+      );
+      const files: ConversationFile[] = resp.files.map((f) => ({
+        id: String(f.message_id),
+        name: f.name,
+        extension: f.name.includes('.') ? f.name.split('.').pop() || '' : '',
+        url: f.url,
+        size: f.size,
+        isAiGenerated: false, // TODO: 后端暂无此字段
+        senderUid: f.from_uid,
+      }));
+      this.setState({ conversationFiles: files, conversationFilesLoading: false });
+    } catch (err) {
+      console.error('[ThreadPanel] loadConversationFiles failed:', err);
+      this.setState({ conversationFilesLoading: false });
+    }
   }
 
   private async loadThreads() {
@@ -541,9 +601,20 @@ export default class ThreadPanel extends Component<
         }
       };
 
+      // 文件选择回调：切换预览的文件
+      const handleFileSelect = (file: ConversationFile) => {
+        // TODO: 需要父组件提供切换文件预览的回调
+        // 目前先通过 console 确认流程
+        console.log('[ThreadPanel] handleFileSelect:', file);
+      };
+
       return (
         <FilePreviewHeader
           file={filePreview}
+          conversationFiles={this.state.conversationFiles}
+          onFileSelect={handleFileSelect}
+          isFilePanelOpen={this.state.isFilePanelOpen}
+          onFilePanelToggle={() => this.setState({ isFilePanelOpen: !this.state.isFilePanelOpen })}
           showBackButton={canReturnToThread}
           onBack={onFilePreviewClose}
           onClose={onClose}

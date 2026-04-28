@@ -1018,8 +1018,8 @@ export default class ConversationList extends Component<
               menus.push({
                 title: channelInfo?.top ? "取消置顶" : "置顶聊天",
                 icon: channelInfo?.top
-                  ? "M19 9l-7 7-7-7"
-                  : "M12 2l0 13 M5 9l7-7 7 7 M19 21H5",
+                  ? "M12 17v5 M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89 M2 2l20 20 M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11"
+                  : "M12 17v5 M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z",
                 onClick: () => {
                   if (channelInfo) this.onTop(channelInfo);
                 },

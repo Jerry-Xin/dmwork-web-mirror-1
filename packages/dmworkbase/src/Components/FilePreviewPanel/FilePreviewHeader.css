@@ -269,10 +269,10 @@
    响应式：小宽度面板适配
    ============================================ */
 
-/* 左侧区域允许收缩 */
+/* 左侧区域允许收缩但不撑满 */
 .wk-file-preview-header__left {
   min-width: 0;
-  flex: 1;
+  flex-shrink: 1;
   overflow: hidden;
 }
 

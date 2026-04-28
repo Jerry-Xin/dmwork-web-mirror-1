@@ -55,8 +55,6 @@ export interface FilePreviewHeaderProps {
   onDownload?: () => void;
   /** 新标签打开回调 */
   onOpenExternal?: () => void;
-  /** 是否显示新标签打开按钮（默认 false，仅 HTML 文件显示） */
-  showOpenExternal?: boolean;
   /** 全屏预览回调 */
   onFullscreen?: () => void;
   /** 回复消息回调 */
@@ -166,7 +164,6 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
   onClose,
   onDownload,
   onOpenExternal,
-  showOpenExternal = false,
   onFullscreen,
   onReply,
   viewMode = "preview",
@@ -418,16 +415,14 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
           </button>
         )}
 
-        {/* 新标签打开（仅 HTML 文件显示） */}
-        {showOpenExternal && (
-          <button
-            className="wk-file-preview-header__btn"
-            onClick={handleOpenExternal}
-            title="新标签打开"
-          >
-            <ExternalLink size={16} />
-          </button>
-        )}
+        {/* 新标签打开 */}
+        <button
+          className="wk-file-preview-header__btn"
+          onClick={handleOpenExternal}
+          title="新标签打开"
+        >
+          <ExternalLink size={16} />
+        </button>
 
         {/* 回复 */}
         {onReply && (

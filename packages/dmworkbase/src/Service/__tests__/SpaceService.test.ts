@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import { hasSpacePrefix } from "../SpacePrefix"
 
 // A valid 32-char hex spaceId for testing
@@ -88,6 +88,141 @@ describe("shouldSkipChannelForSpace prefix logic", () => {
     it("filters Space-prefixed ID when Space does not match", () => {
         expect(wouldFilterByPrefix(`s${otherSpaceId}_alice`)).toBe(true)
         expect(wouldFilterByPrefix(`s${otherSpaceId}_group1`)).toBe(true)
+    })
+})
+
+// ---------------------------------------------------------------------------
+// YUJ-72: shouldSkipChannelForSpace external-group escape hatch
+//
+// When the group's orgData.space_id doesn't match currentSpaceId but the
+// logged-in user joined as an external member sourced from currentSpaceId
+// (subscriber.orgData.home_space_id === currentSpaceId), the group should
+// NOT be skipped — it must appear in the external joiner's own Space view.
+// ---------------------------------------------------------------------------
+
+const mockState = vi.hoisted(() => ({
+    channelSpaceMap: new Map<string, string>(),
+    subscribesByChannel: new Map<string, any[]>(),
+    channelInfoByChannel: new Map<string, any>(),
+    currentSpaceId: "",
+    loginUid: "",
+}))
+
+vi.mock("../../App", () => ({
+    default: {
+        shared: {
+            get currentSpaceId() {
+                return mockState.currentSpaceId
+            },
+            set currentSpaceId(v: string) {
+                mockState.currentSpaceId = v
+            },
+            channelSpaceMap: mockState.channelSpaceMap,
+        },
+        loginInfo: {
+            get uid() {
+                return mockState.loginUid
+            },
+            set uid(v: string) {
+                mockState.loginUid = v
+            },
+        },
+    },
+}))
+
+vi.mock("wukongimjssdk", async () => {
+    const actual: any = await vi.importActual("wukongimjssdk")
+    return {
+        ...actual,
+        WKSDK: {
+            shared: () => ({
+                channelManager: {
+                    getSubscribes: (ch: any) =>
+                        mockState.subscribesByChannel.get(ch.channelID) || [],
+                    getChannelInfo: (ch: any) =>
+                        mockState.channelInfoByChannel.get(ch.channelID),
+                },
+            }),
+        },
+    }
+})
+
+import { shouldSkipChannelForSpace } from "../SpaceService"
+import { Channel, ChannelTypeGroup } from "wukongimjssdk"
+
+const SPACE_A = "a".repeat(32)
+const SPACE_B = "b".repeat(32)
+
+describe("shouldSkipChannelForSpace — external group (YUJ-72)", () => {
+    beforeEach(() => {
+        mockState.channelSpaceMap.clear()
+        mockState.subscribesByChannel.clear()
+        mockState.channelInfoByChannel.clear()
+        mockState.currentSpaceId = ""
+        mockState.loginUid = "u_external"
+    })
+
+    it("skips a group owned by Space A when viewing Space B and I am not a member", () => {
+        mockState.currentSpaceId = SPACE_B
+        const ch = new Channel("g1", ChannelTypeGroup)
+        mockState.channelSpaceMap.set(`g1_${ChannelTypeGroup}`, SPACE_A)
+        expect(shouldSkipChannelForSpace(ch)).toBe(true)
+    })
+
+    it("does NOT skip a group owned by Space A when I joined as an external member sourced from Space B (currentSpaceId)", () => {
+        mockState.currentSpaceId = SPACE_B
+        const ch = new Channel("g1", ChannelTypeGroup)
+        mockState.channelSpaceMap.set(`g1_${ChannelTypeGroup}`, SPACE_A)
+        mockState.subscribesByChannel.set("g1", [
+            { uid: "u_owner", orgData: { home_space_id: SPACE_A } },
+            { uid: "u_external", orgData: { home_space_id: SPACE_B, home_space_name: "Space B" } },
+        ])
+        expect(shouldSkipChannelForSpace(ch)).toBe(false)
+    })
+
+    it("still skips when my subscriber's home_space_id is a third Space (not currentSpaceId)", () => {
+        mockState.currentSpaceId = SPACE_B
+        const otherSpace = "c".repeat(32)
+        const ch = new Channel("g1", ChannelTypeGroup)
+        mockState.channelSpaceMap.set(`g1_${ChannelTypeGroup}`, SPACE_A)
+        mockState.subscribesByChannel.set("g1", [
+            { uid: "u_external", orgData: { home_space_id: otherSpace } },
+        ])
+        expect(shouldSkipChannelForSpace(ch)).toBe(true)
+    })
+
+    it("does NOT skip a group whose orgData.space_id matches currentSpaceId (unchanged)", () => {
+        mockState.currentSpaceId = SPACE_A
+        const ch = new Channel("g1", ChannelTypeGroup)
+        mockState.channelSpaceMap.set(`g1_${ChannelTypeGroup}`, SPACE_A)
+        expect(shouldSkipChannelForSpace(ch)).toBe(false)
+    })
+
+    it("uses channelInfo.orgData.space_id fallback and still honors external member (subscriber) check", () => {
+        mockState.currentSpaceId = SPACE_B
+        const ch = new Channel("g2", ChannelTypeGroup)
+        mockState.channelInfoByChannel.set("g2", { orgData: { space_id: SPACE_A } })
+        mockState.subscribesByChannel.set("g2", [
+            { uid: "u_external", orgData: { home_space_id: SPACE_B } },
+        ])
+        expect(shouldSkipChannelForSpace(ch)).toBe(false)
+    })
+
+    it("falls back to skipping when subscribers cache empty and group is clearly from another Space", () => {
+        mockState.currentSpaceId = SPACE_B
+        const ch = new Channel("g3", ChannelTypeGroup)
+        mockState.channelInfoByChannel.set("g3", { orgData: { space_id: SPACE_A } })
+        expect(shouldSkipChannelForSpace(ch)).toBe(true)
+    })
+
+    it("ignores legacy is_external=1 without home_space_id (no id to match against currentSpaceId)", () => {
+        mockState.currentSpaceId = SPACE_B
+        const ch = new Channel("g4", ChannelTypeGroup)
+        mockState.channelSpaceMap.set(`g4_${ChannelTypeGroup}`, SPACE_A)
+        mockState.subscribesByChannel.set("g4", [
+            { uid: "u_external", orgData: { is_external: 1, source_space_name: "Space B" } },
+        ])
+        expect(shouldSkipChannelForSpace(ch)).toBe(true)
     })
 })
 

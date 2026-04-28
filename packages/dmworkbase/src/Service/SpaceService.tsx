@@ -62,12 +62,37 @@ export function getSpaceFilteredLastMessage(conversation: Conversation): Message
 }
 
 /**
+ * YUJ-72: 若登录用户作为"外部成员"加入该群，返回其在群内的归属 Space ID
+ * （subscriber.orgData.home_space_id）。用于"群归属 Space 与当前查看 Space 不一致
+ * 但我自己以当前 Space 身份加入"的场景下放行展示。
+ *
+ * 依赖 channelManager 的订阅者缓存（getSubscribes）：
+ *   - 未缓存或未找到自己 → 返回 undefined（调用方应退化到原有判定）
+ *   - 后端缺省 home_space_id → 返回 undefined（不再做旧字段兜底，避免歧义）
+ */
+function getMyMembershipHomeSpaceId(channel: Channel): string | undefined {
+    const myUid = WKApp.loginInfo?.uid
+    if (!myUid) return undefined
+    const subs = WKSDK.shared().channelManager.getSubscribes(channel)
+    if (!subs || subs.length === 0) return undefined
+    const mine = subs.find((s: any) => s?.uid === myUid) as any
+    if (!mine) return undefined
+    const homeId = mine.orgData?.home_space_id
+    if (typeof homeId === "string" && homeId.length > 0) return homeId
+    return undefined
+}
+
+/**
  * 判断一个 channel 是否不属于当前 Space，应从展示/计数中跳过。
  * - 无 currentSpaceId → 不过滤
  * - Person channel（私聊）→ 永远不过滤
  * - 有 Space 前缀（s{spaceId}_）的 channel → 前缀匹配
  * - 群聊（无前缀）→ 查 channelSpaceMap 缓存 → channelInfo.orgData.space_id
  * - 都未命中 → fail-open（放行，等 channelInfo 回调后再检查）
+ *
+ * YUJ-72 外部群兼容：当群归属 Space 与当前 Space 不一致时，额外检查自己是否
+ * 以"当前 Space"身份加入了该群（subscriber.orgData.home_space_id === currentSpaceId）。
+ * 命中则不过滤 —— 外部加入者在自己的 Space 视角下应该看到这个外部群。
  */
 export function shouldSkipChannelForSpace(channel: Channel): boolean {
     const currentSpaceId = WKApp.shared.currentSpaceId
@@ -89,7 +114,10 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
         const key = `${cid}_${channel.channelType}`
         const cachedSpaceId = WKApp.shared.channelSpaceMap.get(key)
         if (cachedSpaceId) {
-            return cachedSpaceId !== currentSpaceId
+            if (cachedSpaceId === currentSpaceId) return false
+            // 群归属其他 Space：检查自己是否以当前 Space 身份加入的外部成员
+            if (getMyMembershipHomeSpaceId(channel) === currentSpaceId) return false
+            return true
         }
         // 缓存未命中 → 尝试从已缓存的 channelInfo 获取 space_id
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
@@ -97,7 +125,9 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
         if (infoSpaceId) {
             // 回填 channelSpaceMap 避免下次再查
             WKApp.shared.channelSpaceMap.set(key, infoSpaceId)
-            return infoSpaceId !== currentSpaceId
+            if (infoSpaceId === currentSpaceId) return false
+            if (getMyMembershipHomeSpaceId(channel) === currentSpaceId) return false
+            return true
         }
         // channelInfo 也没有 → fail-open，等 channelInfo 回调后 channelListener 会二次检查
     }

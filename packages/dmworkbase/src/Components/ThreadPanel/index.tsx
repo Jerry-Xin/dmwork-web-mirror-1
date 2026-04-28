@@ -604,6 +604,9 @@ export default class ThreadPanel extends Component<
       // 判断是否为 Markdown 文件
       const isMarkdown = ["md", "markdown"].includes(ext);
 
+      // 判断是否为 HTML 文件（仅 HTML 文件显示"在新标签页打开"按钮）
+      const isHtml = ["html", "htm"].includes(ext);
+
       // 判断是否显示 TOC 按钮（仅 Markdown 预览模式且 h2 ≥ 3）
       const showTocButton =
         isMarkdown && fileViewMode === "preview" && this.state.isTocAvailable;
@@ -662,6 +665,7 @@ export default class ThreadPanel extends Component<
           showTocButton={showTocButton}
           isTocOpen={isTocOpen}
           onTocToggle={() => this.setState({ isTocOpen: !isTocOpen })}
+          showOpenExternal={isHtml}
         />
       );
     }

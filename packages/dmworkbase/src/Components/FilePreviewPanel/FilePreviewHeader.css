@@ -12,6 +12,9 @@
   border-bottom: 1px solid var(--wk-border-default);
   background-color: var(--wk-bg-surface);
   gap: var(--wk-sp-2);
+  /* 启用 container query 支持响应式适配 */
+  container-type: inline-size;
+  container-name: file-preview-header;
 }
 
 /* ============================================
@@ -72,17 +75,18 @@
 .wk-file-preview-header__dropdown-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
+  gap: var(--wk-sp-1-5);
+  padding: var(--wk-sp-1) var(--wk-sp-2);
   border: none;
   background: transparent;
   border-radius: var(--wk-r-sm);
   cursor: default;
   color: var(--wk-text-primary);
-  font-size: 13px;
+  font-size: var(--wk-text-size-base);
   font-weight: 500;
   transition: background 0.15s;
   max-width: 240px;
+  min-width: 0;
 }
 
 /* 有文件列表时显示可点击状态 */
@@ -132,8 +136,8 @@
 }
 
 .wk-file-preview-header__dropdown-title {
-  padding: 8px 12px;
-  font-size: 11px;
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  font-size: var(--wk-text-size-xs);
   font-weight: 500;
   color: var(--wk-text-tertiary);
   border-bottom: 1px solid var(--wk-border-subtle);
@@ -142,14 +146,14 @@
 .wk-file-preview-header__dropdown-list {
   max-height: 280px;
   overflow-y: auto;
-  padding: 4px 0;
+  padding: var(--wk-sp-1) 0;
 }
 
 .wk-file-preview-header__dropdown-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--wk-sp-2);
+  padding: var(--wk-sp-2) var(--wk-sp-3);
   cursor: pointer;
   transition: background 0.15s;
   position: relative;
@@ -175,7 +179,7 @@
 }
 
 .wk-file-preview-header__dropdown-item-badge {
-  font-size: 11px;
+  font-size: var(--wk-text-size-xs);
   flex-shrink: 0;
 }
 
@@ -186,7 +190,7 @@
 
 .wk-file-preview-header__dropdown-item-name {
   flex: 1;
-  font-size: 13px;
+  font-size: var(--wk-text-size-base);
   color: var(--wk-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -201,7 +205,7 @@
   width: 1px;
   height: 16px;
   background: var(--wk-border-default);
-  margin: 0 4px;
+  margin: 0 var(--wk-sp-1);
 }
 
 /* ============================================
@@ -217,12 +221,12 @@
 }
 
 .wk-file-preview-header__view-toggle-btn {
-  padding: 4px 10px;
+  padding: var(--wk-sp-1) var(--wk-sp-2-5);
   border: none;
   background: transparent;
   border-radius: calc(var(--wk-r-sm) - 2px);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--wk-text-size-sm);
   font-weight: 500;
   color: var(--wk-text-secondary);
   transition: background 0.15s, color 0.15s;
@@ -257,14 +261,63 @@
 .wk-file-preview-header__actions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--wk-sp-0-5);
   flex-shrink: 0;
 }
 
 /* ============================================
-   响应式：小屏幕隐藏部分按钮
+   响应式：小宽度面板适配
    ============================================ */
 
+/* 左侧区域允许收缩 */
+.wk-file-preview-header__left {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 文件名根据空间自适应 */
+.wk-file-preview-header__dropdown {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.wk-file-preview-header__dropdown-btn {
+  max-width: 100%;
+}
+
+/* 面板宽度 < 500px 时的适配 */
+@container file-preview-header (max-width: 500px) {
+  .wk-file-preview-header__dropdown-btn {
+    max-width: 180px;
+  }
+
+  .wk-file-preview-header__view-toggle-btn {
+    padding: var(--wk-sp-1) var(--wk-sp-2);
+  }
+}
+
+/* 面板宽度 < 400px 时的适配 */
+@container file-preview-header (max-width: 400px) {
+  .wk-file-preview-header__dropdown-btn {
+    max-width: 120px;
+  }
+
+  .wk-file-preview-header__view-toggle {
+    display: none;
+  }
+
+  .wk-file-preview-header__sep {
+    display: none;
+  }
+
+  /* 隐藏部分低优先级按钮 */
+  .wk-file-preview-header__btn[title="全屏"] {
+    display: none;
+  }
+}
+
+/* 兼容不支持 container query 的浏览器 */
 @media (max-width: 480px) {
   .wk-file-preview-header__dropdown-text {
     max-width: 100px;

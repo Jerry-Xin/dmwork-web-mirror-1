@@ -36,6 +36,10 @@ export interface ConversationFile {
   isAiGenerated?: boolean;
   /** 发送者 UID */
   senderUid?: string;
+  /** 发送者名称 */
+  senderName?: string;
+  /** 发送时间戳（秒） */
+  timestamp?: number;
 }
 
 export interface FilePreviewHeaderProps {
@@ -179,6 +183,7 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
 }) => {
   const [hoverDropdownOpen, setHoverDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownListRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<number | null>(null);
 
   const fileList = conversationFiles;
@@ -201,6 +206,19 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
       }, 200); // 200ms 延迟，避免快速划过触发
     }
   }, [isFilePanelOpen, hasFiles, clearHoverTimeout]);
+
+  // 浮窗显示后，自动滚动到当前选中的文件
+  useEffect(() => {
+    if (hoverDropdownOpen && dropdownListRef.current) {
+      const activeItem = dropdownListRef.current.querySelector(
+        ".wk-file-preview-header__dropdown-item--active"
+      ) as HTMLElement | null;
+      if (activeItem) {
+        // 使用 scrollIntoView 让当前文件可见，block: 'nearest' 避免不必要的滚动
+        activeItem.scrollIntoView({ block: "nearest", behavior: "instant" });
+      }
+    }
+  }, [hoverDropdownOpen]);
 
   // 鼠标离开：关闭浮窗
   const handleMouseLeave = useCallback(() => {
@@ -308,7 +326,10 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
               <div className="wk-file-preview-header__dropdown-title">
                 对话内文件 · 点击展开列表
               </div>
-              <div className="wk-file-preview-header__dropdown-list">
+              <div
+                className="wk-file-preview-header__dropdown-list"
+                ref={dropdownListRef}
+              >
                 {fileList.map((fileItem) => (
                   <div
                     key={fileItem.id}

@@ -111,14 +111,6 @@
   border-radius: 0 2px 2px 0;
 }
 
-/* 来源标记 */
-.wk-file-list-panel__item-badge {
-  font-size: 12px;
-  flex-shrink: 0;
-  width: 18px;
-  text-align: center;
-}
-
 /* 文件图标 */
 .wk-file-list-panel__item-icon {
   flex-shrink: 0;
@@ -149,7 +141,33 @@
   font-weight: 500;
 }
 
-.wk-file-list-panel__item-size {
+/* 元信息行 */
+.wk-file-list-panel__item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2);
   font-size: 11px;
   color: var(--wk-text-tertiary);
+}
+
+.wk-file-list-panel__item-sender {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wk-file-list-panel__item-size {
+  flex-shrink: 0;
+}
+
+.wk-file-list-panel__item-time {
+  flex-shrink: 0;
+}
+
+/* 分隔符 */
+.wk-file-list-panel__item-meta > span:not(:last-child)::after {
+  content: "·";
+  margin-left: var(--wk-sp-2);
+  color: var(--wk-text-quaternary);
 }

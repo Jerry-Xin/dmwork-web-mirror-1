@@ -1131,6 +1131,7 @@ export default class ThreadPanel extends Component<
                 loadingMore={this.state.conversationFilesLoadingMore}
                 onLoadMore={this.loadMoreConversationFiles}
                 currentPage={this.state.conversationFilesPage}
+                initialLoading={this.state.conversationFilesLoading}
               />
             )}
             {/* 文件预览内容 */}

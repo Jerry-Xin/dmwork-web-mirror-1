@@ -33,6 +33,8 @@ export interface FileListPanelProps {
   onLoadMore?: () => void;
   /** 当前页码（用于判断是否显示"没有更多了"） */
   currentPage?: number;
+  /** 是否正在初始加载 */
+  initialLoading?: boolean;
 }
 
 /** 判断是否为图片类型 */
@@ -197,6 +199,7 @@ const FileListPanel: React.FC<FileListPanelProps> = ({
   loadingMore = false,
   onLoadMore,
   currentPage = 1,
+  initialLoading = false,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -250,7 +253,9 @@ const FileListPanel: React.FC<FileListPanelProps> = ({
 
       {/* 文件列表 */}
       <div className="wk-file-list-panel__list" ref={listRef}>
-        {files.length === 0 ? (
+        {initialLoading ? (
+          <div className="wk-file-list-panel__loading">加载中...</div>
+        ) : files.length === 0 ? (
           <div className="wk-file-list-panel__empty">
             <FolderOpen size={32} className="wk-file-list-panel__empty-icon" />
             <span className="wk-file-list-panel__empty-text">暂无文件</span>

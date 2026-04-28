@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import AiBadge from '../AiBadge'
 import './MentionList.css'
 
@@ -18,6 +18,7 @@ interface MentionListProps {
 
 export default forwardRef((props: MentionListProps, ref) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const selectItem = (index: number) => {
     const item = props.items[index]
@@ -42,6 +43,13 @@ export default forwardRef((props: MentionListProps, ref) => {
   }
 
   useEffect(() => setSelectedIndex(0), [props.items])
+
+  useEffect(() => {
+    itemRefs.current[selectedIndex]?.scrollIntoView({
+      block: 'nearest',
+      behavior: 'smooth',
+    })
+  }, [selectedIndex])
 
   useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }: any) => {
@@ -69,6 +77,9 @@ export default forwardRef((props: MentionListProps, ref) => {
       {props.items.length ? (
         props.items.map((item, index) => (
           <div
+            ref={(el) => {
+              itemRefs.current[index] = el
+            }}
             className={`mention-list-item ${index === selectedIndex ? 'is-selected' : ''}`}
             key={item.uid || item.id || index}
             role="option"

@@ -25,17 +25,17 @@
 }
 
 .wk-file-list-panel__title {
-  font-size: 13px;
+  font-size: var(--wk-text-size-base);
   font-weight: 600;
   color: var(--wk-text-primary);
 }
 
 .wk-file-list-panel__count {
-  font-size: 11px;
+  font-size: var(--wk-text-size-xs);
   font-weight: 500;
   color: var(--wk-text-tertiary);
   background: var(--wk-bg-hover);
-  padding: 1px 6px;
+  padding: var(--wk-sp-0-5) var(--wk-sp-1-5);
   border-radius: var(--wk-r-full);
 }
 
@@ -75,7 +75,7 @@
   justify-content: center;
   height: 100px;
   color: var(--wk-text-tertiary);
-  font-size: 13px;
+  font-size: var(--wk-text-size-base);
 }
 
 /* ============================================
@@ -126,11 +126,11 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--wk-sp-0-5);
 }
 
 .wk-file-list-panel__item-name {
-  font-size: 13px;
+  font-size: var(--wk-text-size-base);
   color: var(--wk-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -146,7 +146,7 @@
   display: flex;
   align-items: center;
   gap: var(--wk-sp-2);
-  font-size: 11px;
+  font-size: var(--wk-text-size-xs);
   color: var(--wk-text-tertiary);
 }
 

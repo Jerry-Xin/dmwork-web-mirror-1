@@ -11,12 +11,12 @@
 .wk-file-preview-fallback-renderer__card {
   display: flex;
   align-items: center;
-  width: 100%;
-  max-width: 400px;
-  padding: var(--wk-sp-5) var(--wk-sp-6);
+  display: flex;
+  align-items: center;
+  padding: var(--wk-sp-3) var(--wk-sp-5);
   background: var(--wk-bg-surface);
   border: 1px solid var(--wk-border-default);
-  border-radius: var(--wk-r-md);
+  border-radius: var(--wk-r-full);
   gap: var(--wk-sp-3);
 }
 

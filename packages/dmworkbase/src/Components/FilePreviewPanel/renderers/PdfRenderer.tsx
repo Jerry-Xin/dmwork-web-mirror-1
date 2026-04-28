@@ -71,6 +71,9 @@ const ZOOM_OPTIONS = [
  * 6. 默认适应宽度
  */
 const PdfRenderer: React.FC<PdfRendererProps> = ({ file, onError }) => {
+  // 文件大小检查（超过 20MB 不渲染）- 必须在所有 hooks 之前
+  const isTooLarge = file.size && isFileTooLarge(file.size);
+
   // 侧边栏状态
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<SidebarTab>("thumbnails");
@@ -131,7 +134,10 @@ const PdfRenderer: React.FC<PdfRendererProps> = ({ file, onError }) => {
 
     // 检查 PDF 是否包含书签
     e.doc.getOutline().then((outline) => {
-      setHasBookmarks(outline !== null && outline.length > 0);
+      setHasBookmarks(Array.isArray(outline) && outline.length > 0);
+    }).catch(() => {
+      // 获取书签失败时默认无书签
+      setHasBookmarks(false);
     });
   }, []);
 
@@ -260,12 +266,12 @@ const PdfRenderer: React.FC<PdfRendererProps> = ({ file, onError }) => {
   const workerUrl =
     "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
-  // 文件大小检查（超过 20MB 不渲染）- 移到 hooks 之后
-  if (file.size && isFileTooLarge(file.size)) {
+  // 文件大小检查（超过 20MB 不渲染）
+  if (isTooLarge) {
     return (
       <FileTooLarge
         fileName={file.name}
-        fileSize={file.size}
+        fileSize={file.size!}
         fileUrl={file.url}
       />
     );

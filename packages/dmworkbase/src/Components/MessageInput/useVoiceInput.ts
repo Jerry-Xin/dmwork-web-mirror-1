@@ -3,6 +3,7 @@ import { Toast } from "@douyinfe/semi-ui";
 import VoiceService, {
   VoiceConfig,
   VoiceContextResponse,
+  VoiceMode,
 } from "../../Service/VoiceService";
 import WKApp from "../../App";
 import { ChatContextResult } from "../Conversation/chatContext";
@@ -13,6 +14,7 @@ export interface UseVoiceInputOptions {
   onError?: (error: Error) => void;
   onRecordingFailed?: () => void;
   getChatContext?: () => ChatContextResult;
+  mode?: VoiceMode;
 }
 
 export interface UseVoiceInputReturn {
@@ -43,6 +45,7 @@ export default function useVoiceInput(
     onError,
     onRecordingFailed,
     getChatContext,
+    mode = "smart",
   } = options;
 
   const [isRecording, setIsRecording] = useState(false);
@@ -228,7 +231,8 @@ export default function useVoiceInput(
             contextTextRef.current,
             chatContext,
             personalContext,
-            memberContext
+            memberContext,
+            mode
           );
           if (result.text && onTranscribed) {
             // 转写结果始终替换输入框所有文本

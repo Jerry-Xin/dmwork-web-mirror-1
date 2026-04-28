@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Toast } from "@douyinfe/semi-ui";
-import { Mic } from "lucide-react";
+import { Mic, ChevronDown } from "lucide-react";
 import useVoiceInput from "./useVoiceInput";
 import "./voiceInput.css";
 import { ChatContextResult } from "../Conversation/chatContext";
+import { VoiceMode } from "../../Service/VoiceService";
 
 interface VoiceInputIndicatorProps {
   onTranscribed: (text: string, shouldReplace: boolean) => void;
@@ -20,11 +21,25 @@ const INDICATOR_HEIGHT = 48;
 const PREPARING_DELAY_MS = 300;
 const RECORDING_DELAY_MS = 500;
 
+// 模式配置
+const VOICE_MODES: { value: VoiceMode; label: string; description: string }[] =
+  [
+    { value: "smart", label: "语音输入", description: "智能识别追加或编辑" },
+    { value: "append_only", label: "追加模式", description: "仅追加文字" },
+    { value: "edit_only", label: "编辑模式", description: "仅编辑现有文字" },
+  ];
+
 export default function VoiceInputIndicator({
   onTranscribed,
   getCurrentText,
   getChatContext,
 }: VoiceInputIndicatorProps) {
+  // Voice mode state
+  const [voiceMode, setVoiceMode] = useState<VoiceMode>("smart");
+  const [showModeMenu, setShowModeMenu] = useState(false);
+  const modeMenuRef = useRef<HTMLDivElement>(null);
+  const dropdownArrowRef = useRef<HTMLDivElement>(null);
+
   // Long-press ShiftLeft state
   const shiftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const preparingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -67,6 +82,7 @@ export default function VoiceInputIndicator({
   } = useVoiceInput({
     onTranscribed,
     getChatContext,
+    mode: voiceMode,
     onError: (error) => {
       // 麦克风权限被拒绝时显示中文提示
       if (
@@ -178,6 +194,25 @@ export default function VoiceInputIndicator({
       }
     };
   }, [isRecording, isTranscribing, updateFloatingPosition]);
+
+  // Close mode menu when clicking outside
+  useEffect(() => {
+    if (!showModeMenu) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        modeMenuRef.current &&
+        !modeMenuRef.current.contains(e.target as Node) &&
+        dropdownArrowRef.current &&
+        !dropdownArrowRef.current.contains(e.target as Node)
+      ) {
+        setShowModeMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showModeMenu]);
 
   // Keyboard shortcut: Shift + Cmd/Ctrl + Space, and long-press ShiftLeft
   useEffect(() => {
@@ -331,6 +366,26 @@ export default function VoiceInputIndicator({
 
   if (!isVoiceEnabled) return null;
 
+  // Handle mode selection
+  const handleModeSelect = (mode: VoiceMode) => {
+    setVoiceMode(mode);
+    setShowModeMenu(false);
+  };
+
+  // Toggle mode menu
+  const handleDropdownClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isOnline) {
+      Toast.warning("网络不可用，无法使用语音功能");
+      return;
+    }
+    setShowModeMenu(!showModeMenu);
+  };
+
+  // Get current mode label
+  const currentModeLabel =
+    VOICE_MODES.find((m) => m.value === voiceMode)?.label || "语音输入";
+
   // Handle click/keyboard for voice button
   const handleVoiceClick = () => {
     if (!isOnline) {
@@ -481,7 +536,7 @@ export default function VoiceInputIndicator({
     );
   }
 
-  // 默认状态：显示麦克风按钮
+  // 默认状态：显示麦克风按钮和下拉箭头
   // PRD: 无网络时话筒 icon 置灰，点击时 Toast「网络不可用，无法使用语音功能」
   return (
     <div className="wk-voice-button-group" ref={buttonGroupRef}>
@@ -489,7 +544,7 @@ export default function VoiceInputIndicator({
         className={`wk-voice-button ${
           !isOnline ? "wk-voice-button--disabled" : ""
         }`}
-        title={isOnline ? "语音输入 (长按 Shift)" : "网络不可用"}
+        title={isOnline ? `${currentModeLabel} (长按 Shift)` : "网络不可用"}
         onClick={handleVoiceClick}
         onKeyDown={handleVoiceKeyDown}
         role="button"
@@ -497,6 +552,37 @@ export default function VoiceInputIndicator({
       >
         <Mic size={18} color="currentColor" />
       </div>
+      {/* 下拉箭头 */}
+      <div
+        ref={dropdownArrowRef}
+        className={`wk-voice-dropdown-arrow ${
+          !isOnline ? "wk-voice-dropdown-arrow--disabled" : ""
+        } ${showModeMenu ? "wk-voice-dropdown-arrow--active" : ""}`}
+        onClick={handleDropdownClick}
+        role="button"
+        tabIndex={isOnline ? 0 : -1}
+        title="选择语音模式"
+      >
+        <ChevronDown size={12} />
+      </div>
+      {/* 模式选择弹窗 */}
+      {showModeMenu && (
+        <div className="wk-voice-mode-menu" ref={modeMenuRef}>
+          {VOICE_MODES.map((mode) => (
+            <div
+              key={mode.value}
+              className={`wk-voice-mode-item ${
+                voiceMode === mode.value ? "wk-voice-mode-item--active" : ""
+              }`}
+              onClick={() => handleModeSelect(mode.value)}
+              role="menuitem"
+            >
+              <span className="wk-voice-mode-label">{mode.label}</span>
+              <span className="wk-voice-mode-desc">{mode.description}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

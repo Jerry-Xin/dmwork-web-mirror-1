@@ -82,6 +82,20 @@ body[theme-mode=dark]  .wk-userInfo-footer {
     height: 40px;
 }
 
+/* YUJ-67: 外部群成员只能在群内交流的底部静态提示，替代"发送消息"按钮。 */
+.wk-userinfo-footer-external-hint {
+    width: 100%;
+    height: 100%;
+    padding: 10px 15px 15px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--wk-text-size-sm);
+    color: var(--semi-color-text-2);
+    text-align: center;
+    box-sizing: border-box;
+}
+
 
 .wk-userinfo-sections{
     margin-top: 20px;

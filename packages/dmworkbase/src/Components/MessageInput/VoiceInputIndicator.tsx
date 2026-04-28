@@ -375,7 +375,13 @@ export default function VoiceInputIndicator({
   if (!isVoiceEnabled) return null;
 
   // Handle mode selection
-  const handleModeSelect = (mode: VoiceMode) => {
+  const handleModeSelect = (mode: VoiceMode, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Clear any pending timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
     setVoiceMode(mode);
     setShowModeMenu(false);
   };
@@ -635,7 +641,7 @@ export default function VoiceInputIndicator({
               className={`wk-voice-mode-item ${
                 voiceMode === mode.value ? "wk-voice-mode-item--active" : ""
               }`}
-              onClick={() => handleModeSelect(mode.value)}
+              onClick={(e) => handleModeSelect(mode.value, e)}
               role="menuitem"
             >
               <span className="wk-voice-mode-label">{mode.label}</span>

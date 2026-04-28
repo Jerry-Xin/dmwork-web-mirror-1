@@ -618,9 +618,11 @@ export class ChatContentPage extends Component<
               }}
               onReplyFile={(messageId) => {
                 // 关闭文件预览面板并回复消息
+                // 同时关闭 ThreadPanel，避免面板切换到子区列表
                 this.setState({
                   previewFile: null,
                   activePreviewMessageId: null,
+                  showThreadPanel: false,
                 });
                 this.conversationContext?.replyToMessageId?.(messageId);
               }}
@@ -645,6 +647,7 @@ export class ChatContentPage extends Component<
               this.setState({ previewFile: null, activePreviewMessageId: null })
             }
             onReplyFile={(messageId) => {
+              // 子区频道内的文件预览，关闭后不需要处理 showThreadPanel
               this.setState({
                 previewFile: null,
                 activePreviewMessageId: null,

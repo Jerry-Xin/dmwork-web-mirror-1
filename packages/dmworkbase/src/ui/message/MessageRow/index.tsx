@@ -2,6 +2,7 @@ import React from 'react'
 import classNames from 'classnames'
 import Avatar from '../Avatar'
 import Timestamp from '../Timestamp'
+import AiBadge from '../../../Components/AiBadge'
 import './index.css'
 
 export interface MessageRowProps {
@@ -55,6 +56,9 @@ export interface MessageRowProps {
 
   /** 发送者名称点击回调（@ 场景：点名字展示用户信息） */
   onSenderNameClick?: () => void
+
+  /** 发送者是否为 bot（AI），名称后显示 AI 标识 */
+  isBot?: boolean
 }
 
 /**
@@ -75,6 +79,7 @@ export default function MessageRow({
   showAvatar,
   avatarUrl,
   senderName,
+  isBot,
   timestamp,
   timeOnly,
   isOnline,
@@ -152,6 +157,7 @@ export default function MessageRow({
               style={{ cursor: onSenderNameClick ? 'pointer' : undefined }}
               onClick={onSenderNameClick}
             >{senderName}</span>
+            {isBot && <AiBadge size="small" />}
             <span className="wk-msg-row-timestamp">{timestamp}</span>
           </div>
         )}

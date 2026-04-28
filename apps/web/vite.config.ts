@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import commonjs from 'vite-plugin-commonjs'
 
+
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   const apiUrl = env.VITE_API_URL
@@ -26,6 +28,22 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [
+      // 在 HTML <head> 注入 <meta name="app-version">，供构建后验证版本号是否正确写入
+      {
+        name: 'inject-app-version-meta',
+        transformIndexHtml() {
+          return [
+            {
+              tag: 'meta',
+              injectTo: 'head',
+              attrs: {
+                name: 'app-version',
+                content: process.env.VITE_APP_VERSION ?? 'dev',
+              },
+            },
+          ]
+        },
+      },
       // TODO: remove after all require() calls are migrated to import (chore/migrate-require-to-import)
       commonjs(),
       react(),
@@ -91,6 +109,11 @@ export default defineConfig(({ mode }) => {
           target: apiOrigin,
           changeOrigin: true,
           secure: false, // 开发环境允许自签名证书
+        },
+        '/version.json': {
+          target: apiOrigin,
+          changeOrigin: true,
+          secure: false,
         },
       },
     },

@@ -1,4 +1,4 @@
-import { WKApp, Menus, ProviderListener } from "@dmwork/base";
+import { WKApp, Menus, ProviderListener, startVersionCheck } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
 
 export default class MainVM extends ProviderListener {
@@ -54,6 +54,7 @@ export default class MainVM extends ProviderListener {
   }
 
   private ipcListeners: { event: string; handler: (...args: any[]) => void }[] = [];
+  private stopVersionCheck?: () => void;
 
   didMount(): void {
     let found = false;
@@ -74,23 +75,24 @@ export default class MainVM extends ProviderListener {
     if ((window as any).__POWERED_ELECTRON__) {
       this.appUpdateInit();
     } else {
-      this.requestVersionCheck().then((data) => {
-        const version = data.app_version;
-        if (!version) {
-          this.hasNewVersion = false;
-        } else {
-          this.lastVersionInfo = {
-            appVersion: version,
-            updateDesc: data.update_desc,
-          };
-          const lastReadVersion = localStorage.getItem(this.versionReadKey);
-          if (version !== WKApp.config.appVersion && version !== lastReadVersion) {
-            this.hasNewVersion = true;
-          } else {
-            this.hasNewVersion = false;
+      // 轮询 /version.json 检测 Web 端新版本，有新版本时亮设置按钮气泡
+      this.stopVersionCheck = startVersionCheck({
+        onNewVersion: (force, serverVersion) => {
+          if (force) {
+            // circuit breaker：防止 CDN 缓存旧 HTML 导致无限刷新
+            const key = 'wk_version_reload_count';
+            const count = Number(sessionStorage.getItem(key) || 0);
+            if (count < 3) {
+              sessionStorage.setItem(key, String(count + 1));
+              window.location.reload();
+              return;
+            }
+            // breaker 触发（连刷 3 次仍是旧版），降级为气泡提示
           }
-        }
-        this.notifyListener();
+          // 先设置 lastVersionInfo，再触发 hasNewVersion setter（setter 会 notifyListener，渲染时 lastVersionInfo 已就绪）
+          this.lastVersionInfo = { appVersion: serverVersion, updateDesc: '' };
+          this.hasNewVersion = true;
+        },
       });
     }
   }
@@ -147,6 +149,7 @@ export default class MainVM extends ProviderListener {
       (window as any).ipc?.removeListener(event, handler);
     }
     this.ipcListeners = [];
+    this.stopVersionCheck?.();
   }
   // 标记当前新版本已读，清除红点
   markVersionRead() {
@@ -159,13 +162,6 @@ export default class MainVM extends ProviderListener {
   // 安装更新
   installUpdate() {
     (window as any).ipc.send("install-update");
-  }
-
-  //检测最新版本
-  requestVersionCheck() {
-    return WKApp.apiClient.get(
-      `common/appversion/web/${WKApp.config.appVersion}`
-    );
   }
 
   get menusList() {

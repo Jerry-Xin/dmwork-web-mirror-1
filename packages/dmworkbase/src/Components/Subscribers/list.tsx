@@ -13,6 +13,7 @@ import { Checkbox } from "@douyinfe/semi-ui/lib/es/checkbox";
 import { Tag } from "@douyinfe/semi-ui";
 import { GroupRole } from "../../Service/Const";
 import { debounce, throttle } from "../../Utils/rateLimit";
+import { resolveExternalForViewer } from "../../Utils/externalViewer";
 
 export interface SubscriberListProps {
   channel: Channel;
@@ -207,6 +208,15 @@ export class SubscriberList extends Component<
                 {vm.subscribers.map((item) => {
                   const itemIsBot = isBot(item.uid);
                   const isBotAdmin = item.orgData?.bot_admin === 1;
+                  // YUJ-64: 外部 Tag 与来源按当前查看 Space 相对渲染。
+                  // 优先新字段 home_space_id / home_space_name，缺失时回落旧字段。
+                  const { isExternal: isExternalToViewer, sourceSpaceName: viewerSourceSpaceName } =
+                    resolveExternalForViewer({
+                      homeSpaceId: item.orgData?.home_space_id,
+                      homeSpaceName: item.orgData?.home_space_name,
+                      isExternalLegacy: item.orgData?.is_external,
+                      sourceSpaceNameLegacy: item.orgData?.source_space_name,
+                    });
                   return (
                     <div
                       className="wk-subscrierlist-list-item"
@@ -238,9 +248,26 @@ export class SubscriberList extends Component<
                               Bot 管理员
                             </Tag>
                           )}
+                          {isExternalToViewer && (
+                            <>
+                              <Tag size="small" color="purple" style={{ marginLeft: 4 }}>
+                                外部
+                              </Tag>
+                              {viewerSourceSpaceName && (
+                                <span className="wk-subscrierlist-item-source">
+                                  来自 {viewerSourceSpaceName}
+                                </span>
+                              )}
+                            </>
+                          )}
                         </div>
                         <div className="wk-subscrierlist-item-desc">
                           {this.getRoleName(item)}
+                          {isExternalToViewer && viewerSourceSpaceName && (
+                            <span style={{ marginLeft: 6, color: "var(--semi-color-text-2)" }}>
+                              来自 {viewerSourceSpaceName}
+                            </span>
+                          )}
                         </div>
                       </div>
 

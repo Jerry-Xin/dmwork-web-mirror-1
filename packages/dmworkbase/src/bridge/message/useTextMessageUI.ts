@@ -1,9 +1,13 @@
-import { useMemo } from 'react'
-import WKApp from '../../App'
-import { MessageWrap, Part, PartType } from '../../Service/Model'
-import { TextContentUIProps } from './types'
-import { MentionInfo, EmojiInfo } from '../../Messages/Text/MarkdownContent'
-import { useMessageRow, getMessageRow, MessageRowSelectionState } from './useMessageRow'
+import { useMemo } from "react";
+import WKApp from "../../App";
+import { MessageWrap, Part, PartType } from "../../Service/Model";
+import { TextContentUIProps } from "./types";
+import { MentionInfo, EmojiInfo } from "../../Messages/Text/MarkdownContent";
+import {
+  useMessageRow,
+  getMessageRow,
+  MessageRowSelectionState,
+} from "./useMessageRow";
 
 /**
  * getTextMessageUI - 纯函数版本
@@ -14,8 +18,11 @@ import { useMessageRow, getMessageRow, MessageRowSelectionState } from './useMes
  * @param selection - 多选状态（从 context 传入）
  * @returns TextContent 组件的 Props
  */
-export function getTextMessageUI(message: MessageWrap, selection?: MessageRowSelectionState) {
-  const rowProps = getMessageRow(message, selection)
+export function getTextMessageUI(
+  message: MessageWrap,
+  selection?: MessageRowSelectionState
+) {
+  const rowProps = getMessageRow(message, selection);
 
   // 流式消息：使用 fullStreamContent，不处理 mentions/emojis/isLargeEmoji
   if (message.streamOn) {
@@ -29,10 +36,10 @@ export function getTextMessageUI(message: MessageWrap, selection?: MessageRowSel
         isLargeEmoji: false,
         isStreaming: message.isStreaming,
       },
-    }
+    };
   }
 
-  const parts = message.parts || []
+  const parts = message.parts || [];
 
   // 提取 @ 提及列表
   const mentions: MentionInfo[] = parts
@@ -40,31 +47,37 @@ export function getTextMessageUI(message: MessageWrap, selection?: MessageRowSel
     .map((p: Part) => ({
       name: p.text,
       uid: p.data.uid,
-    }))
+    }));
 
   // 提取 emoji 列表（过滤掉无效 URL）
   const emojis: EmojiInfo[] = parts
     .filter((p: Part) => p.type === PartType.emoji)
     .reduce((acc: EmojiInfo[], p: Part) => {
-      const url = WKApp.emojiService.getImage(p.text)
+      const url = WKApp.emojiService.getImage(p.text);
       if (url && !acc.find((e) => e.key === p.text)) {
-        acc.push({ key: p.text, url })
+        acc.push({ key: p.text, url });
       }
-      return acc
-    }, [])
+      return acc;
+    }, []);
 
   // 判断是否为大表情（仅有一个 emoji part，无其他内容，且是 custom_ 图片）
-  const emojiParts = parts.filter((p: Part) => p.type === PartType.emoji)
-  const nonEmojiParts = parts.filter((p: Part) => p.type !== PartType.emoji)
+  const emojiParts = parts.filter((p: Part) => p.type === PartType.emoji);
+  const nonEmojiParts = parts.filter((p: Part) => p.type !== PartType.emoji);
   const isLargeEmoji =
     emojiParts.length === 1 &&
     nonEmojiParts.length === 0 &&
     emojis.length === 1 &&
-    emojis[0].url.includes('/emoji/custom_')
+    emojis[0].url.includes("/emoji/custom_");
 
-  // 获取纯文本内容
-  const rawContent = message.content as any
-  const plainText = rawContent?.text || parts.map((p: Part) => p.text).join('') || ''
+  // 获取纯文本内容（优先使用编辑后的内容）
+  const rawContent = message.content as any;
+  const remoteExtra = (message.message as any)?.remoteExtra;
+  const effectiveContent =
+    remoteExtra?.isEdit && remoteExtra?.contentEdit
+      ? (remoteExtra.contentEdit as any)
+      : rawContent;
+  const plainText =
+    effectiveContent?.text || parts.map((p: Part) => p.text).join("") || "";
 
   return {
     row: rowProps,
@@ -75,7 +88,7 @@ export function getTextMessageUI(message: MessageWrap, selection?: MessageRowSel
       emojis,
       isLargeEmoji,
     },
-  }
+  };
 }
 
 /**
@@ -87,10 +100,10 @@ export function getTextMessageUI(message: MessageWrap, selection?: MessageRowSel
  * @returns TextContent 组件的 Props
  */
 export function useTextMessageUI(message: MessageWrap) {
-  const rowProps = useMessageRow(message)
+  const rowProps = useMessageRow(message);
 
   const contentProps = useMemo((): TextContentUIProps => {
-    const parts = message.parts || []
+    const parts = message.parts || [];
 
     // 提取 @ 提及列表
     const mentions: MentionInfo[] = parts
@@ -98,31 +111,37 @@ export function useTextMessageUI(message: MessageWrap) {
       .map((p: Part) => ({
         name: p.text,
         uid: p.data.uid,
-      }))
+      }));
 
     // 提取 emoji 列表（过滤掉无效 URL）
     const emojis: EmojiInfo[] = parts
       .filter((p: Part) => p.type === PartType.emoji)
       .reduce((acc: EmojiInfo[], p: Part) => {
-        const url = WKApp.emojiService.getImage(p.text)
+        const url = WKApp.emojiService.getImage(p.text);
         if (url && !acc.find((e) => e.key === p.text)) {
-          acc.push({ key: p.text, url })
+          acc.push({ key: p.text, url });
         }
-        return acc
-      }, [])
+        return acc;
+      }, []);
 
     // 判断是否为大表情（仅有一个 emoji part，无其他内容，且是 custom_ 图片）
-    const emojiParts = parts.filter((p: Part) => p.type === PartType.emoji)
-    const nonEmojiParts = parts.filter((p: Part) => p.type !== PartType.emoji)
+    const emojiParts = parts.filter((p: Part) => p.type === PartType.emoji);
+    const nonEmojiParts = parts.filter((p: Part) => p.type !== PartType.emoji);
     const isLargeEmoji =
       emojiParts.length === 1 &&
       nonEmojiParts.length === 0 &&
       emojis.length === 1 &&
-      emojis[0].url.includes('/emoji/custom_')
+      emojis[0].url.includes("/emoji/custom_");
 
-    // 获取纯文本内容
-    const rawContent = message.content as any
-    const plainText = rawContent?.text || parts.map((p: Part) => p.text).join('') || ''
+    // 获取纯文本内容（优先使用编辑后的内容）
+    const rawContent = message.content as any;
+    const remoteExtra = (message.message as any)?.remoteExtra;
+    const effectiveContent =
+      remoteExtra?.isEdit && remoteExtra?.contentEdit
+        ? (remoteExtra.contentEdit as any)
+        : rawContent;
+    const plainText =
+      effectiveContent?.text || parts.map((p: Part) => p.text).join("") || "";
 
     return {
       content: plainText,
@@ -130,11 +149,11 @@ export function useTextMessageUI(message: MessageWrap) {
       mentions,
       emojis,
       isLargeEmoji,
-    }
-  }, [message])
+    };
+  }, [message]);
 
   return {
     row: rowProps,
     content: contentProps,
-  }
+  };
 }

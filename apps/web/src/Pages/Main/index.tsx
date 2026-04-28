@@ -163,6 +163,7 @@ export class MainPage extends Component<{}, MainPageState> {
                                     }}
                                     onInstallUpdate={() => vm.installUpdate()}
                                     onNotifyListener={() => vm.notifyListener()}
+                                    onDismissNewVersion={() => { vm.markVersionRead(); }}
                                 />
                             )}
                             contentLeft={<MainContentLeft vm={vm} />}

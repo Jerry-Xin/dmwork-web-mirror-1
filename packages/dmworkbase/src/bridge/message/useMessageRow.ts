@@ -77,6 +77,7 @@ export function getMessageRow(
     showAvatar: !isContinue,
     avatarUrl: WKApp.shared.avatarUser(message.fromUID),
     senderName: getSenderName(channelInfo, message.fromUID),
+    isBot: channelInfo?.orgData?.robot === 1,
     timestamp,
     timeOnly,
     isOnline: channelInfo?.online,

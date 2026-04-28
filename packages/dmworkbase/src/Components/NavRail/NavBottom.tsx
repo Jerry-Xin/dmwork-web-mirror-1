@@ -1,17 +1,23 @@
-import React from "react";
-import { Badge } from "@douyinfe/semi-ui";
+import React, { Component } from "react";
 import { Space } from "wukongimjssdk";
 import NavSpaceSwitcher from "./NavSpaceSwitcher";
 
 export interface NavBottomProps {
-    hasNewVersion?: boolean;
     settingSelected?: boolean;
     onSettingsClick?: () => void;
+    /** 外部通知有新版本，触发气泡首次弹出 */
+    hasNewVersion?: boolean;
+    /** 用户关闭气泡时通知外层（可用于清除 vm.hasNewVersion） */
+    onDismissNewVersion?: () => void;
     // Space switcher
     spaces: Space[];
     currentSpaceId?: string;
     onSpaceSelect: (spaceId: string) => void;
     onJoinSpace?: () => void;
+}
+
+interface NavBottomState {
+    bubbleVisible: boolean;
 }
 
 function IconSettings() {
@@ -22,42 +28,83 @@ function IconSettings() {
     );
 }
 
-export default function NavBottom({
-    hasNewVersion,
-    onSettingsClick,
-    spaces,
-    currentSpaceId,
-    onSpaceSelect,
-    onJoinSpace,
-}: NavBottomProps) {
-    return (
-        <div className="wk-navrail__bottom">
-            {/* 设置上方分割线 */}
-            <div className="wk-navrail__sep" />
+export default class NavBottom extends Component<NavBottomProps, NavBottomState> {
+    state: NavBottomState = {
+        bubbleVisible: false,
+    };
 
-            {/* 设置 */}
-            <button
-                type="button"
-                className="wk-navrail__item"
-                title="设置"
-                aria-label="设置"
-                onClick={onSettingsClick}
-            >
-                <IconSettings />
-                {hasNewVersion && (
-                    <span className="wk-navrail__settings-badge">
-                        <Badge dot type="danger" />
-                    </span>
-                )}
-            </button>
+    componentDidUpdate(prevProps: NavBottomProps) {
+        // 外部第一次通知有新版本时弹出气泡
+        if (this.props.hasNewVersion && !prevProps.hasNewVersion) {
+            this.setState({ bubbleVisible: true });
+        }
+    }
 
-            {/* Space 切换器（底部，向上弹出） */}
-            <NavSpaceSwitcher
-                spaces={spaces}
-                currentSpaceId={currentSpaceId}
-                onSpaceSelect={onSpaceSelect}
-                onJoinSpace={onJoinSpace}
-            />
-        </div>
-    );
+    render() {
+        const { onSettingsClick, hasNewVersion, onDismissNewVersion, spaces, currentSpaceId, onSpaceSelect, onJoinSpace } = this.props;
+        const { bubbleVisible } = this.state;
+
+        return (
+            <div className="wk-navrail__bottom">
+                {/* 设置上方分割线 */}
+                <div className="wk-navrail__sep" />
+
+                {/* 设置按钮 + 气泡 */}
+                <div className="wk-navrail__settings-wrap">
+                    <button
+                        type="button"
+                        className="wk-navrail__item"
+                        title="设置"
+                        aria-label="设置"
+                        onClick={onSettingsClick}
+                    >
+                        <IconSettings />
+                    </button>
+
+                    {/* 版本更新气泡 */}
+                    {hasNewVersion && bubbleVisible && (
+                        <div className="wk-navrail__version-bubble">
+                            <span className="wk-navrail__version-bubble-text">
+                                发现新版本，点击刷新
+                            </span>
+                            <button
+                                className="wk-navrail__version-bubble-refresh"
+                                onClick={() => {
+                                    const key = 'wk_version_reload_count';
+                                    const count = Number(sessionStorage.getItem(key) || 0);
+                                    if (count < 3) {
+                                        sessionStorage.setItem(key, String(count + 1));
+                                        window.location.reload();
+                                    } else {
+                                        alert('页面已多次刷新仍检测到新版本，请按 Ctrl+Shift+R（Mac: Cmd+Shift+R）强制刷新并清除缓存。');
+                                    }
+                                }}
+                            >
+                                刷新
+                            </button>
+                            <button
+                                className="wk-navrail__version-bubble-close"
+                                aria-label="关闭"
+                                onClick={() => {
+                                    this.setState({ bubbleVisible: false });
+                                    onDismissNewVersion?.();
+                                }}
+                            >
+                                ×
+                            </button>
+                            <span className="wk-navrail__version-bubble-arrow" />
+                        </div>
+                    )}
+                </div>
+
+                {/* Space 切换器（底部，向上弹出） */}
+                <NavSpaceSwitcher
+                    spaces={spaces}
+                    currentSpaceId={currentSpaceId}
+                    onSpaceSelect={onSpaceSelect}
+                    onJoinSpace={onJoinSpace}
+                />
+            </div>
+        );
+    }
 }

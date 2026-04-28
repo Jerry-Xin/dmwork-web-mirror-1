@@ -221,8 +221,14 @@ export default class ConversationVM extends ProviderListener {
         })
     }
 
+    /** 当前 channel 是否支持 AI 消息折叠（群聊或子区） */
+    private get supportsFolding(): boolean {
+        return this.channel.channelType === ChannelTypeGroup
+            || this.channel.channelType === ChannelTypeCommunityTopic
+    }
+
     isBotMessage(message: MessageWrap): boolean {
-        if (this.channel.channelType !== ChannelTypeGroup) {
+        if (!this.supportsFolding) {
             return false
         }
         if (message.revoke || message.send) {
@@ -420,6 +426,30 @@ export default class ConversationVM extends ProviderListener {
 
     rebuildRenderItems(allowFoldAnimation: boolean = false) {
         this.renderItems = this.buildRenderItems(this.messages, allowFoldAnimation)
+    }
+
+    // loading 完成后主动确保 bot channelInfo 已加载，避免 loading 期间 channelInfoListener 被跳过
+    private ensureBotChannelInfos() {
+        if (this.channel.channelType !== ChannelTypeGroup) return
+        const seenUIDs = new Set<string>()
+        const botUIDs = new Set<string>()
+        for (const msg of this.messagesOfOrigin) {
+            if (!msg.send && msg.fromUID && !seenUIDs.has(msg.fromUID)) {
+                seenUIDs.add(msg.fromUID)
+                const ci = WKSDK.shared().channelManager.getChannelInfo(new Channel(msg.fromUID, ChannelTypePerson))
+                if (!ci) {
+                    // channelInfo 还没缓存，fetch 后触发 channelInfoListener 自然 rebuild
+                    WKSDK.shared().channelManager.fetchChannelInfo(new Channel(msg.fromUID, ChannelTypePerson))
+                } else if (ci.orgData?.robot === 1) {
+                    botUIDs.add(msg.fromUID)
+                }
+            }
+        }
+        // 已缓存且 robot===1，直接 rebuild 确保头部正确渲染
+        if (botUIDs.size > 0) {
+            this.rebuildRenderItems()
+            this.notifyListener()
+        }
     }
 
     findFoldSessionByMessageSeq(messageSeq: number): FoldSessionViewModel | undefined {
@@ -707,7 +737,7 @@ export default class ConversationVM extends ProviderListener {
             if (this.loading) {
                 return
             }
-            if (this.channel.channelType !== ChannelTypeGroup) {
+            if (!this.supportsFolding) {
                 return
             }
             if (channelInfo.channel.channelType !== ChannelTypePerson) {
@@ -743,7 +773,7 @@ export default class ConversationVM extends ProviderListener {
             }
         }, {})
 
-        if (this.channel.channelType === ChannelTypeGroup || this.channel.channelType === ChannelTypeCommunityTopic) {
+        if (this.supportsFolding) {
 
             // 加载频道信息
             this.channelInfo = WKSDK.shared().channelManager.getChannelInfo(this.channel)
@@ -1375,6 +1405,9 @@ export default class ConversationVM extends ProviderListener {
             if (stateCallback) {
                 stateCallback()
             }
+            // loading 完成后，主动确保 bot 消息的 channelInfo 已载入
+            // 修复：loading 期间 channelInfoListener 会被跳过，导致 AI 标识不显示
+            this.ensureBotChannelInfos()
         })
     }
     sortMessages(messages: MessageWrap[]) {

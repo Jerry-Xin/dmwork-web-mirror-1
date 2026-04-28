@@ -3,7 +3,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(90deg, #40C9FF 0%, #7A5CFF 100%); /* Figma: 青蓝→紫渐变 */
+    background: linear-gradient(90deg, #7B89F4 0%, #9D78F5 100%); /* 对齐折叠卡片 AI助手 tag */
     color: var(--wk-color-white);           /* Figma: 白色文字 */
     font-weight: 600;                       /* Figma: 600 */
     font-family: var(--wk-font-sans);       /* Figma: PingFang SC */

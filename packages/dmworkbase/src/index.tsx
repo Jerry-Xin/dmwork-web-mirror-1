@@ -35,6 +35,7 @@ export { default as FileHelper } from './Utils/filehelper'
 export *  from './Utils/filehelper'
 export { NotificationUtil, notificationUtil } from './Utils/NotificationUtil'
 export * from './Utils/NotificationUtil'
+export * from './Utils/clipboard'
 
 export { default as MessageBase } from "./Messages/Base"
 export  * from "./Messages/Image"
@@ -80,3 +81,4 @@ export { default as BotStore } from "./Pages/BotStore"
 export { default as GroupCard } from "./Components/GroupCard"
 export { default as NavRail } from "./Components/NavRail"
 export type { NavRailProps, NavRailItem } from "./Components/NavRail"
+export { startVersionCheck, checkVersionOnce } from "./Utils/versionChecker"

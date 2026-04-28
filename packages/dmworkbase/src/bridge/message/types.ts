@@ -29,6 +29,9 @@ export interface MessageRowUIProps {
   
   /** 发送者名称 */
   senderName: string
+
+  /** 发送者是否为 bot（用于显示 AI 标识） */
+  isBot?: boolean
   
   /** 时间戳（格式化后的字符串，如 "10:30" 或 "2026-03-28 10:30:12"） */
   timestamp: string

@@ -158,4 +158,17 @@ export default interface ConversationContext {
 
     /** 当前阅读模式（消息版 / CLI），供 MessageCell 感知布局差异 */
     getReadingMode?(): "message" | "cli"
+
+    /**
+     * 获取当前正在预览的文件消息 ID
+     * 用于文件卡片显示激活态
+     */
+    getActivePreviewMessageId?(): string | null
+
+    /**
+     * 通过消息 ID 回复消息
+     * 用于文件预览面板的回复功能
+     * @param messageId 消息 ID
+     */
+    replyToMessageId?(messageId: string): void
 }

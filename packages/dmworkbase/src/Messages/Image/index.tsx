@@ -152,9 +152,7 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
         const { message } = this.props
         const content = message.content as ImageContent
         let scaleSize = this.imageScale(content.width, content.height);
-        // data-has-lightbox: 告知扩展 sidepanel 的全局 image click 拦截器（OctoSidepanelLayout.handleImageClick）
-        // 该图片已有自己的 lightbox 逻辑，不要再叠一层
-        return <img alt="" src={this.getImageSrc(content)} data-has-lightbox style={{ borderRadius: '8px', width: scaleSize.width, height: scaleSize.height }} />
+        return <img alt="" src={this.getImageSrc(content)} data-has-lightbox style={{ borderRadius: '8px', width: scaleSize.width, height: scaleSize.height, maxWidth: '100%' }} />
     }
 
     render() {
@@ -233,7 +231,7 @@ export class ImageCell extends MessageCell<any, ImageCellState> {
 
         return <MessageBase context={context} message={message}>
             <div style={{ cursor: isUploading ? "default" : "pointer" }}>
-                <div style={{ position: "relative", width: scaleSize.width, height: scaleSize.height }}
+                <div style={{ position: "relative", width: scaleSize.width, height: scaleSize.height, maxWidth: '100%' }}
                     onClick={() => { if (!isUploading) this.setState({ showPreview: !showPreview }) }}>
                     {this.getImageElement()}
                     {/* 上传进度覆盖层 */}

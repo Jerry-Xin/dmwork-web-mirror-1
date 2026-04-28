@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, memo } from "react";
 import {
   ChevronDown,
   FileText,
@@ -40,6 +40,8 @@ export interface ConversationFile {
   senderName?: string;
   /** 发送时间戳（秒） */
   timestamp?: number;
+  /** 文件分类（image/video/file 等） */
+  category?: string;
 }
 
 export interface FilePreviewHeaderProps {
@@ -86,7 +88,72 @@ export interface FilePreviewHeaderProps {
   showBackButton?: boolean;
   /** 返回按钮点击回调 */
   onBack?: () => void;
+
+  /** 文件列表是否还有更多数据 */
+  hasMoreFiles?: boolean;
+  /** 文件列表是否正在加载更多 */
+  loadingMoreFiles?: boolean;
+  /** 加载更多文件回调 */
+  onLoadMoreFiles?: () => void;
+  /** 当前文件列表页码（用于判断是否显示"没有更多了"） */
+  currentFilesPage?: number;
 }
+
+/** 判断是否为图片类型 */
+function isImageCategory(category?: string): boolean {
+  return category === "image";
+}
+
+/** Hover 下拉列表项组件 */
+const DropdownFileItem = memo(
+  ({
+    fileItem,
+    isActive,
+    onClick,
+  }: {
+    fileItem: ConversationFile;
+    isActive: boolean;
+    onClick: () => void;
+  }) => {
+    const [thumbError, setThumbError] = useState(false);
+    const isImage = isImageCategory(fileItem.category);
+    const showThumbnail = isImage && fileItem.url && !thumbError;
+
+    return (
+      <div
+        className={`wk-file-preview-header__dropdown-item ${
+          isActive ? "wk-file-preview-header__dropdown-item--active" : ""
+        }`}
+        onClick={onClick}
+      >
+        <span
+          className={`wk-file-preview-header__dropdown-item-icon ${
+            showThumbnail
+              ? "wk-file-preview-header__dropdown-item-icon--thumbnail"
+              : ""
+          }`}
+        >
+          {showThumbnail ? (
+            <img
+              src={fileItem.url}
+              alt=""
+              className="wk-file-preview-header__dropdown-item-thumbnail"
+              onError={() => setThumbError(true)}
+            />
+          ) : (
+            getFileIcon(fileItem.extension)
+          )}
+        </span>
+        <span
+          className="wk-file-preview-header__dropdown-item-name"
+          title={fileItem.name}
+        >
+          {fileItem.name}
+        </span>
+      </div>
+    );
+  }
+);
 
 /** 根据扩展名获取文件图标 */
 function getFileIcon(extension: string): React.ReactNode {
@@ -183,6 +250,11 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
 
   showBackButton = false,
   onBack,
+
+  hasMoreFiles = false,
+  loadingMoreFiles = false,
+  onLoadMoreFiles,
+  currentFilesPage = 1,
 }) => {
   const [hoverDropdownOpen, setHoverDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -211,6 +283,7 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
   }, [isFilePanelOpen, hasFiles, clearHoverTimeout]);
 
   // 浮窗显示后，自动滚动到当前选中的文件
+  // 组件挂载或当前文件变化时，自动滚动到当前选中的文件
   useEffect(() => {
     if (hoverDropdownOpen && dropdownListRef.current) {
       const activeItem = dropdownListRef.current.querySelector(
@@ -222,6 +295,25 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
       }
     }
   }, [hoverDropdownOpen]);
+
+  // hover 下拉列表触底加载
+  useEffect(() => {
+    const listEl = dropdownListRef.current;
+    if (!listEl || !onLoadMoreFiles || !hoverDropdownOpen) return;
+
+    const handleScroll = () => {
+      if (loadingMoreFiles || !hasMoreFiles) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = listEl;
+      // 距离底部 50px 时触发加载
+      if (scrollHeight - scrollTop - clientHeight < 50) {
+        onLoadMoreFiles();
+      }
+    };
+
+    listEl.addEventListener("scroll", handleScroll);
+    return () => listEl.removeEventListener("scroll", handleScroll);
+  }, [hoverDropdownOpen, hasMoreFiles, loadingMoreFiles, onLoadMoreFiles]);
 
   // 鼠标离开：关闭浮窗
   const handleMouseLeave = useCallback(() => {
@@ -326,34 +418,32 @@ const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
               onMouseEnter={() => clearHoverTimeout()}
               onMouseLeave={handleMouseLeave}
             >
-              <div className="wk-file-preview-header__dropdown-title">
-                对话内文件 · 点击展开列表
-              </div>
               <div
                 className="wk-file-preview-header__dropdown-list"
                 ref={dropdownListRef}
               >
                 {fileList.map((fileItem) => (
-                  <div
+                  <DropdownFileItem
                     key={fileItem.id}
-                    className={`wk-file-preview-header__dropdown-item ${
-                      fileItem.url === file.url
-                        ? "wk-file-preview-header__dropdown-item--active"
-                        : ""
-                    }`}
+                    fileItem={fileItem}
+                    isActive={fileItem.url === file.url}
                     onClick={() => handleFileClick(fileItem)}
-                  >
-                    <span className="wk-file-preview-header__dropdown-item-icon">
-                      {getFileIcon(fileItem.extension)}
-                    </span>
-                    <span
-                      className="wk-file-preview-header__dropdown-item-name"
-                      title={fileItem.name}
-                    >
-                      {fileItem.name}
-                    </span>
-                  </div>
+                  />
                 ))}
+                {/* 加载更多状态 */}
+                {loadingMoreFiles && (
+                  <div className="wk-file-preview-header__dropdown-loading">
+                    加载中...
+                  </div>
+                )}
+                {/* 没有更多数据（仅在加载过至少一页后显示） */}
+                {!hasMoreFiles &&
+                  fileList.length > 0 &&
+                  (currentFilesPage ?? 1) >= 1 && (
+                    <div className="wk-file-preview-header__dropdown-no-more">
+                      没有更多了
+                    </div>
+                  )}
               </div>
             </div>
           )}

@@ -11,11 +11,10 @@
 .wk-file-preview-fallback-renderer__card {
   display: flex;
   align-items: center;
-  width: 100%;
-  max-width: 400px;
-  padding: var(--wk-sp-5) var(--wk-sp-6);
-  background: var(--wk-bg-base);
-  border-radius: var(--wk-r-md);
+  padding: var(--wk-sp-3) var(--wk-sp-5);
+  background: var(--wk-bg-surface);
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-full);
   gap: var(--wk-sp-3);
 }
 
@@ -107,9 +106,4 @@
   margin-top: var(--wk-sp-4);
   color: var(--wk-text-tertiary);
   font-size: var(--wk-text-size-sm);
-}
-
-/* 暗色模式 */
-body[theme-mode="dark"] .wk-file-preview-fallback-renderer__card {
-  background: #1f1f1f;
 }

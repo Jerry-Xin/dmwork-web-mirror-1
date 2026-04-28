@@ -1,15 +1,22 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Toast } from "@douyinfe/semi-ui";
+import { Toast, Dropdown } from "@douyinfe/semi-ui";
 import { Mic } from "lucide-react";
 import useVoiceInput from "./useVoiceInput";
 import "./voiceInput.css";
 import { ChatContextResult } from "../Conversation/chatContext";
 import { VoiceMode } from "../../Service/VoiceService";
 
+type ReplaceMode = "all" | "selection" | "insert";
+
 interface VoiceInputIndicatorProps {
-  onTranscribed: (text: string, shouldReplace: boolean) => void;
+  onTranscribed: (
+    text: string,
+    replaceMode: ReplaceMode,
+    savedSelectedText?: string
+  ) => void;
   getCurrentText?: () => string | undefined;
+  getSelectedText?: () => string | undefined;
   getChatContext?: () => ChatContextResult;
 }
 
@@ -24,24 +31,18 @@ const RECORDING_DELAY_MS = 500;
 // 模式配置 - 匹配 Figma 设计：语音输入 / 语音编辑
 const VOICE_MODES: { value: VoiceMode; label: string; description: string }[] =
   [
-    { value: "smart", label: "语音输入", description: "" },
+    { value: "append_only", label: "语音输入", description: "" },
     { value: "edit_only", label: "语音编辑", description: "" },
   ];
 
 export default function VoiceInputIndicator({
   onTranscribed,
   getCurrentText,
+  getSelectedText,
   getChatContext,
 }: VoiceInputIndicatorProps) {
-  // Voice mode state
-  const [voiceMode, setVoiceMode] = useState<VoiceMode>("smart");
+  // Voice mode menu state (不保存选中的模式，每次都是临时选择)
   const [showModeMenu, setShowModeMenu] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const modeMenuRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Long-press ShiftLeft state
   const shiftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,6 +76,13 @@ export default function VoiceInputIndicator({
     };
   }, []);
 
+  // 记录开始录音时是否有选中文本，用于决定替换模式
+  const hadSelectionRef = useRef(false);
+  // 记录开始录音时选中的文本内容（用于后续定位替换）
+  const savedSelectedTextRef = useRef<string | undefined>(undefined);
+  // 记录当前录音使用的模式（用于 onTranscribed 回调）
+  const recordingModeRef = useRef<VoiceMode>("append_only");
+
   const {
     isRecording,
     isTranscribing,
@@ -82,10 +90,24 @@ export default function VoiceInputIndicator({
     stopRecordingAndTranscribe,
     cancelRecording,
     isVoiceEnabled,
+    currentMode,
   } = useVoiceInput({
-    onTranscribed,
+    onTranscribed: (text: string) => {
+      // 根据模式和是否有选中文本决定替换方式
+      const mode = recordingModeRef.current;
+      if (mode === "edit_only") {
+        if (hadSelectionRef.current && savedSelectedTextRef.current) {
+          onTranscribed(text, "selection", savedSelectedTextRef.current);
+        } else {
+          onTranscribed(text, "all");
+        }
+      } else {
+        // 语音输入模式：插入到光标处
+        onTranscribed(text, "insert");
+      }
+    },
     getChatContext,
-    mode: voiceMode,
+    mode: recordingModeRef.current,
     onError: (error) => {
       // 麦克风权限被拒绝时显示中文提示
       if (
@@ -166,17 +188,6 @@ export default function VoiceInputIndicator({
     });
   }, []);
 
-  // 计算菜单位置
-  const updateMenuPosition = useCallback(() => {
-    if (buttonGroupRef.current) {
-      const rect = buttonGroupRef.current.getBoundingClientRect();
-      setMenuPosition({
-        top: rect.top - 8, // 8px gap above button
-        left: rect.right - 160, // align right edge, menu width is 160px
-      });
-    }
-  }, []);
-
   // Update position when recording or transcribing, and on window resize/scroll
   useEffect(() => {
     if (!isRecording && !isTranscribing) {
@@ -208,34 +219,6 @@ export default function VoiceInputIndicator({
       }
     };
   }, [isRecording, isTranscribing, updateFloatingPosition]);
-
-  // Close mode menu when clicking outside
-  useEffect(() => {
-    if (!showModeMenu) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        modeMenuRef.current &&
-        !modeMenuRef.current.contains(e.target as Node) &&
-        buttonGroupRef.current &&
-        !buttonGroupRef.current.contains(e.target as Node)
-      ) {
-        setShowModeMenu(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showModeMenu]);
-
-  // Clear hover timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Keyboard shortcut: Shift + Cmd/Ctrl + Space, and long-press ShiftLeft
   useEffect(() => {
@@ -389,62 +372,35 @@ export default function VoiceInputIndicator({
 
   if (!isVoiceEnabled) return null;
 
-  // Handle mode selection
-  const handleModeSelect = (mode: VoiceMode, e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Clear any pending timeout
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    setVoiceMode(mode);
+  // Handle mode selection - 点击菜单选项直接用该模式开始录音（不保存状态）
+  const handleModeSelect = (selectedMode: VoiceMode) => {
     setShowModeMenu(false);
-  };
 
-  // Get current mode label
-  const currentModeLabel =
-    VOICE_MODES.find((m) => m.value === voiceMode)?.label || "语音输入";
-
-  // Hover handlers - show menu on hover, hide on leave
-  const handleMouseEnter = () => {
-    if (!isOnline) return;
-    // Clear any pending hide timeout
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
+    // 直接用选中的模式开始录音（不保存到 state）
+    if (isOnline) {
+      // 记录开始录音时是否有选中文本、选中文本内容和使用的模式
+      const selectedText = getSelectedText?.();
+      hadSelectionRef.current = !!selectedText;
+      savedSelectedTextRef.current = selectedText;
+      recordingModeRef.current = selectedMode;
+      startRecording(selectedMode);
     }
-    updateMenuPosition();
-    setShowModeMenu(true);
-  };
-
-  const handleMouseLeave = () => {
-    // Delay hiding menu to allow moving to it
-    hoverTimeoutRef.current = setTimeout(() => {
-      setShowModeMenu(false);
-    }, 300); // 增加延迟时间
-  };
-
-  // Menu hover handlers
-  const handleMenuMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-  };
-
-  const handleMenuMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
-      setShowModeMenu(false);
-    }, 300); // 增加延迟时间
   };
 
   // Handle click/keyboard for voice button
   const handleVoiceClick = () => {
+    setShowModeMenu(false);
+
     if (!isOnline) {
       Toast.warning("网络不可用，无法使用语音功能");
       return;
     }
-    startRecording();
+    // 点击麦克风 icon 固定使用语音输入模式
+    const selectedText = getSelectedText?.();
+    hadSelectionRef.current = !!selectedText;
+    savedSelectedTextRef.current = selectedText;
+    recordingModeRef.current = "append_only";
+    startRecording("append_only");
   };
 
   const handleVoiceKeyDown = (e: React.KeyboardEvent) => {
@@ -456,7 +412,15 @@ export default function VoiceInputIndicator({
 
   // Handle stop recording click/keyboard
   const handleStopClick = () => {
-    const contextText = getCurrentText?.();
+    // 语音编辑模式：优先使用选中文字，否则使用全部内容
+    // 语音输入模式：使用全部内容作为上下文
+    let contextText: string | undefined;
+    if (currentMode === "edit_only") {
+      const selectedText = getSelectedText?.();
+      contextText = selectedText || getCurrentText?.();
+    } else {
+      contextText = getCurrentText?.();
+    }
     stopRecordingAndTranscribe(contextText);
   };
 
@@ -508,6 +472,15 @@ export default function VoiceInputIndicator({
             title="转写中..."
           >
             <Mic size={18} color="currentColor" />
+            <svg
+              width="6"
+              height="4"
+              viewBox="0 0 6 4"
+              fill="currentColor"
+              className="wk-voice-arrow"
+            >
+              <path d="M0.5 0.5L3 3.5L5.5 0.5H0.5Z" />
+            </svg>
           </div>
         </div>
       </>
@@ -518,17 +491,29 @@ export default function VoiceInputIndicator({
     // If no position yet, still show the button in recording state
     if (!floatingPosition) {
       return (
-        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+        <div
+          className="wk-voice-button-group"
+          ref={buttonGroupRef}
+          onClick={handleStopClick}
+          onKeyDown={handleStopKeyDown}
+          style={{ cursor: "pointer" }}
+        >
           <div
             className="wk-voice-button wk-voice-button--recording"
             title="点击停止录音"
-            onClick={handleStopClick}
-            onKeyDown={handleStopKeyDown}
             role="button"
             tabIndex={0}
-            style={{ cursor: "pointer" }}
           >
             <Mic size={18} color="currentColor" />
+            <svg
+              width="6"
+              height="4"
+              viewBox="0 0 6 4"
+              fill="currentColor"
+              className="wk-voice-arrow"
+            >
+              <path d="M0.5 0.5L3 3.5L5.5 0.5H0.5Z" />
+            </svg>
           </div>
         </div>
       );
@@ -544,7 +529,9 @@ export default function VoiceInputIndicator({
         }}
       >
         <div className="wk-voice-floating-content">
-          <span className="wk-voice-floating-text">语音输入</span>
+          <span className="wk-voice-floating-text">
+            {currentMode === "edit_only" ? "语音编辑" : "语音输入"}
+          </span>
         </div>
         <span className="wk-voice-floating-divider" />
         <div className="wk-voice-wave-container">
@@ -558,17 +545,29 @@ export default function VoiceInputIndicator({
     return (
       <>
         {createPortal(floatingIndicator, document.body)}
-        <div className="wk-voice-button-group" ref={buttonGroupRef}>
+        <div
+          className="wk-voice-button-group"
+          ref={buttonGroupRef}
+          onClick={handleStopClick}
+          onKeyDown={handleStopKeyDown}
+          style={{ cursor: "pointer" }}
+        >
           <div
             className="wk-voice-button wk-voice-button--recording"
             title="点击停止录音"
-            onClick={handleStopClick}
-            onKeyDown={handleStopKeyDown}
             role="button"
             tabIndex={0}
-            style={{ cursor: "pointer" }}
           >
             <Mic size={18} color="currentColor" />
+            <svg
+              width="6"
+              height="4"
+              viewBox="0 0 6 4"
+              fill="currentColor"
+              className="wk-voice-arrow"
+            >
+              <path d="M0.5 0.5L3 3.5L5.5 0.5H0.5Z" />
+            </svg>
           </div>
         </div>
       </>
@@ -583,6 +582,15 @@ export default function VoiceInputIndicator({
           title="准备中..."
         >
           <Mic size={18} color="currentColor" />
+          <svg
+            width="6"
+            height="4"
+            viewBox="0 0 6 4"
+            fill="currentColor"
+            className="wk-voice-arrow"
+          >
+            <path d="M0.5 0.5L3 3.5L5.5 0.5H0.5Z" />
+          </svg>
         </div>
       </div>
     );
@@ -594,87 +602,64 @@ export default function VoiceInputIndicator({
   // PRD: 无网络时话筒 icon 置灰，点击时 Toast「网络不可用，无法使用语音功能」
   const isActive = showModeMenu;
 
+  const dropdownMenu = (
+    <Dropdown.Menu style={{ width: 160 }}>
+      {VOICE_MODES.map((mode) => (
+        <Dropdown.Item
+          key={mode.value}
+          onClick={() => handleModeSelect(mode.value)}
+        >
+          {mode.label}
+        </Dropdown.Item>
+      ))}
+    </Dropdown.Menu>
+  );
+
   return (
-    <div
-      className={`wk-voice-button-group ${
-        isActive ? "wk-voice-button-group--active" : ""
-      }`}
-      ref={buttonGroupRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+    <Dropdown
+      trigger="hover"
+      position="topRight"
+      render={dropdownMenu}
+      visible={isOnline ? showModeMenu : false}
+      onVisibleChange={setShowModeMenu}
+      spacing={4}
     >
-      {/* 麦克风按钮 - 点击开始录音 */}
       <div
-        className={`wk-voice-button ${
-          !isOnline
-            ? "wk-voice-button--disabled"
-            : isActive
-            ? "wk-voice-button--active"
-            : ""
+        className={`wk-voice-button-group ${
+          isActive ? "wk-voice-button-group--active" : ""
         }`}
-        title={isOnline ? `${currentModeLabel} (长按 Shift)` : "网络不可用"}
+        ref={buttonGroupRef}
         onClick={handleVoiceClick}
         onKeyDown={handleVoiceKeyDown}
-        role="button"
-        tabIndex={isOnline ? 0 : -1}
+        style={{
+          cursor: isOnline ? "pointer" : "not-allowed",
+        }}
       >
-        <Mic size={18} color="currentColor" />
-      </div>
-      {/* 下拉箭头 - hover 时向上，否则向下 */}
-      <div
-        className={`wk-voice-dropdown-arrow ${
-          !isOnline
-            ? "wk-voice-dropdown-arrow--disabled"
-            : isActive
-            ? "wk-voice-dropdown-arrow--active"
-            : ""
-        }`}
-      >
-        {/* 实心三角形 SVG - hover 时旋转向上 */}
-        <svg
-          width="6"
-          height="4"
-          viewBox="0 0 6 4"
-          fill="currentColor"
-          className={`wk-voice-dropdown-arrow-icon ${
-            isActive ? "wk-voice-dropdown-arrow-icon--up" : ""
+        {/* 麦克风 + 箭头一体，点击整个区域开始录音 */}
+        <div
+          className={`wk-voice-button ${
+            !isOnline
+              ? "wk-voice-button--disabled"
+              : isActive
+              ? "wk-voice-button--active"
+              : ""
           }`}
+          title={isOnline ? "语音输入 (长按 Shift)" : "网络不可用"}
+          role="button"
+          tabIndex={isOnline ? 0 : -1}
         >
-          <path d="M0.5 0.5L3 3.5L5.5 0.5H0.5Z" />
-        </svg>
-      </div>
-      {/* 模式选择弹窗 - 使用 Portal 渲染到 body */}
-      {showModeMenu &&
-        menuPosition &&
-        createPortal(
-          <div
-            className="wk-voice-mode-menu"
-            ref={modeMenuRef}
-            style={{
-              position: "fixed",
-              top: menuPosition.top,
-              left: menuPosition.left,
-              transform: "translateY(-100%)",
-            }}
-            onMouseEnter={handleMenuMouseEnter}
-            onMouseLeave={handleMenuMouseLeave}
+          <Mic size={18} color="currentColor" />
+          <svg
+            width="6"
+            height="4"
+            viewBox="0 0 6 4"
+            fill="currentColor"
+            className={`wk-voice-arrow ${isActive ? "wk-voice-arrow--up" : ""}`}
           >
-            {VOICE_MODES.map((mode) => (
-              <div
-                key={mode.value}
-                className={`wk-voice-mode-item ${
-                  voiceMode === mode.value ? "wk-voice-mode-item--active" : ""
-                }`}
-                onClick={(e) => handleModeSelect(mode.value, e)}
-                role="menuitem"
-              >
-                <span className="wk-voice-mode-label">{mode.label}</span>
-                <span className="wk-voice-mode-desc">{mode.description}</span>
-              </div>
-            ))}
-          </div>,
-          document.body
-        )}
-    </div>
+            <path d="M0.5 0.5L3 3.5L5.5 0.5H0.5Z" />
+          </svg>
+        </div>
+      </div>
+    </Dropdown>
   );
 }

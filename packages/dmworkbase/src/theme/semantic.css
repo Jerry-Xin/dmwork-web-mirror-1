@@ -177,6 +177,7 @@
   --wk-bg-elevated: var(--wk-neutral-100); /* Figma: #F2F3F4 Tag/系统消息 */
   --wk-bg-hover: var(--wk-neutral-150); /* Figma: #DFE0E2 */
   --wk-bg-active: var(--wk-neutral-200); /* Figma: #D9D9D9 */
+  --wk-bg-selected: var(--wk-purple-alpha-06); /* 选中态背景 */
   --wk-bg-navrail: var(--wk-neutral-50); /* Figma: 侧边栏与列表同色 #F5F6F7 */
   --wk-bg-selection-header: #faf9ff;
 
@@ -258,6 +259,7 @@ body[theme-mode="dark"] {
   --wk-bg-elevated: var(--wk-neutral-700);
   --wk-bg-hover: var(--wk-neutral-600);
   --wk-bg-active: var(--wk-neutral-500);
+  --wk-bg-selected: var(--wk-purple-alpha-12); /* 选中态背景 */
   --wk-bg-navrail: var(--wk-bg-deep); /* NavRail 暗色背景跟随主背景 */
   --wk-bg-selection-header: color-mix(
     in srgb,

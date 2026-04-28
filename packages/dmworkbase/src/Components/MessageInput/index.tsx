@@ -433,14 +433,18 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
         setSlashActiveIndex(0);
       }
 
-      // 检测是否多行（检查是否有换行符或多个段落，或有附件节点）
+      // 检测是否多行（检查是否有换行符或多个段落，或有附件节点，或文本较长）
       const json = editor.getJSON();
       const paragraphs = json.content || [];
       const hasMultipleParagraphs = paragraphs.length > 1;
       const hasNewline = text.includes("\n");
       // 检查编辑器内是否有附件节点
       const hasAttachments = extractAttachmentsFromEditor(editor).length > 0;
-      setIsMultiLine(hasMultipleParagraphs || hasNewline || hasAttachments);
+      // 文本较长时也需要垂直排列（阈值：超过 50 个字符）
+      const isLongText = text.length > 50;
+      setIsMultiLine(
+        hasMultipleParagraphs || hasNewline || hasAttachments || isLongText
+      );
     },
   });
 
@@ -586,8 +590,13 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
       const hasNewline = text.includes("\n");
       const hasEditorAttachments =
         extractAttachmentsFromEditor(editor).length > 0;
+      // 文本较长时也需要垂直排列（阈值：超过 50 个字符）
+      const isLongText = text.length > 50;
       setIsMultiLine(
-        hasMultipleParagraphs || hasNewline || hasEditorAttachments
+        hasMultipleParagraphs ||
+          hasNewline ||
+          hasEditorAttachments ||
+          isLongText
       );
     }
   }, [topAttachments.length, editor]);
@@ -1015,10 +1024,25 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
 
             {/* 语音输入 */}
             <VoiceInputIndicator
-              onTranscribed={(text: string, shouldReplace: boolean) => {
+              onTranscribed={(
+                text: string,
+                replaceMode: "all" | "selection" | "insert",
+                savedSelectedText?: string
+              ) => {
                 if (!editor) return;
 
                 const hasMention = /@\S+?(?=\s|$)/.test(text);
+
+                // 根据保存的选中文本内容查找当前文档中的位置
+                const findSelectionRange = (
+                  searchText: string
+                ): { from: number; to: number } | null => {
+                  const docText = editor.getText();
+                  const index = docText.indexOf(searchText);
+                  if (index === -1) return null;
+                  // ProseMirror 的位置需要 +1（因为 doc 节点占位）
+                  return { from: index + 1, to: index + 1 + searchText.length };
+                };
 
                 if (hasMention && props.members && props.members.length > 0) {
                   const memberInfos: MemberInfo[] = props.members.map((s) => ({
@@ -1033,18 +1057,51 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
 
                   const content = parseMentionMarkers(text, memberInfos);
 
-                  if (shouldReplace) {
+                  if (replaceMode === "all") {
+                    // 替换全部内容
                     editor.commands.setContent({
                       type: "doc",
                       content: [{ type: "paragraph", content }],
                     });
+                  } else if (replaceMode === "selection" && savedSelectedText) {
+                    // 替换选中部分：根据保存的文本内容查找位置
+                    const range = findSelectionRange(savedSelectedText);
+                    if (range) {
+                      editor
+                        .chain()
+                        .setTextSelection(range)
+                        .insertContent(content)
+                        .run();
+                    } else {
+                      // 找不到原文本，回退到替换全部
+                      editor.commands.setContent({
+                        type: "doc",
+                        content: [{ type: "paragraph", content }],
+                      });
+                    }
                   } else {
+                    // 插入到光标处
                     editor.commands.insertContent(content);
                   }
                 } else {
-                  if (shouldReplace) {
+                  if (replaceMode === "all") {
+                    // 替换全部内容
                     editor.commands.setContent(text);
+                  } else if (replaceMode === "selection" && savedSelectedText) {
+                    // 替换选中部分：根据保存的文本内容查找位置
+                    const range = findSelectionRange(savedSelectedText);
+                    if (range) {
+                      editor
+                        .chain()
+                        .setTextSelection(range)
+                        .insertContent(text)
+                        .run();
+                    } else {
+                      // 找不到原文本，回退到替换全部
+                      editor.commands.setContent(text);
+                    }
                   } else {
+                    // 插入到光标处
                     editor.commands.insertContent(text);
                   }
                 }
@@ -1052,6 +1109,12 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
                 editor.commands.focus();
               }}
               getCurrentText={() => editor?.getText() || ""}
+              getSelectedText={() => {
+                if (!editor) return undefined;
+                const { from, to } = editor.state.selection;
+                if (from === to) return undefined; // 没有选中文字
+                return editor.state.doc.textBetween(from, to, " ");
+              }}
               getChatContext={props.getChatContext}
             />
 

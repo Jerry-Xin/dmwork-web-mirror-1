@@ -244,6 +244,8 @@ export class Conversation
     // 使用 MessageText 作为 content，它有正确的 encode() 方法
     // SDK 在序列化 reply.content 时会调用 content.encode()，普通对象没有这个方法会导致回复内容丢失
     // MessageText 的 conversationDigest getter 返回的就是 text，所以传入 conversationDigest 作为 text 即可
+    // 注意：MessageText 的 contentType 是文本类型，与原始消息类型可能不同，但 ReplyView 只读取 conversationDigest，所以不影响显示
+    // Message 构造函数会将 remoteExtra 默认初始化为空的 MessageExtra，不会导致 isEdit 为 truthy
     const fakeMessage = new Message();
     fakeMessage.messageID = info.messageId;
     fakeMessage.messageSeq = info.messageSeq;

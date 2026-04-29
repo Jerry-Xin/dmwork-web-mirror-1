@@ -2055,21 +2055,6 @@ export default class ConversationVM extends ProviderListener {
     if (channelInfo?.orgData.receipt === 1) {
       setting.receiptEnabled = true;
     }
-    console.log(
-      "[sendMessage] content:",
-      JSON.stringify(content.encodeJSON()),
-      "channel:",
-      JSON.stringify(channel),
-      "reply:",
-      content.reply
-        ? JSON.stringify({
-            messageID: content.reply.messageID,
-            messageSeq: content.reply.messageSeq,
-            fromUID: content.reply.fromUID,
-            fromName: content.reply.fromName,
-          })
-        : "none"
-    );
     const message = await WKSDK.shared().chatManager.send(
       content,
       channel,

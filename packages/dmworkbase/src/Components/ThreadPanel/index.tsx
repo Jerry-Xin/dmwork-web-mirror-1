@@ -43,6 +43,7 @@ import "./index.css";
 /** API 返回的文件数据结构 */
 interface ChannelFileResponse {
   message_id: string | number;
+  message_seq?: number;
   name: string;
   url: string;
   size?: number;
@@ -337,6 +338,7 @@ export default class ThreadPanel extends Component<
   private mapFileToConversationFile(f: ChannelFileResponse): ConversationFile {
     return {
       id: String(f.message_id),
+      messageSeq: f.message_seq,
       name: f.name,
       extension: f.name.includes(".") ? f.name.split(".").pop() || "" : "",
       url: f.url,
@@ -672,6 +674,16 @@ export default class ThreadPanel extends Component<
       );
       return;
     }
+    // 根据文件类型生成回复摘要
+    let digest = file.name;
+    if (file.category === "image") {
+      digest = "[图片]";
+    } else if (file.category === "video") {
+      digest = "[视频]";
+    } else if (file.category) {
+      digest = `[文件] ${file.name}`;
+    }
+
     // 构造 FilePreviewInfo 并调用回调
     const newPreview: FilePreviewInfo = {
       url: file.url,
@@ -681,6 +693,9 @@ export default class ThreadPanel extends Component<
       sourceChannelId: filePreview?.sourceChannelId,
       sourceChannelType: filePreview?.sourceChannelType,
       messageId: file.id, // ConversationFile.id 就是 message_id
+      messageSeq: file.messageSeq,
+      fromUID: file.senderUid,
+      conversationDigest: digest,
       category: file.category,
     };
     onFilePreviewChange(newPreview);

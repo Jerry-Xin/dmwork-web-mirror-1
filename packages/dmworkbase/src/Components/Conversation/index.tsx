@@ -1870,15 +1870,12 @@ export class Conversation
                         mention?: MentionModel,
                         attachments?: { id: string; file: File }[]
                       ) => {
-                        // ── Send as To-do (event-based, non-blocking) ───────
-                        if (this.state.sendAsTodo && text && text.trim() !== '') {
-                          WKApp.mittBus.emit('wk:send-as-todo', {
-                            title: text.trim(),
-                            source_channel_id: this.props.channel.channelID,
-                            source_channel_type: this.props.channel.channelType,
-                          });
-                          this.setState({ sendAsTodo: false });
-                        }
+                        // ── Send as To-do: capture intent, emit AFTER send ─
+                        const todoPayload = (this.state.sendAsTodo && text?.trim()) ? {
+                          title: text.trim(),
+                          source_channel_id: this.props.channel.channelID,
+                          source_channel_type: this.props.channel.channelType,
+                        } : null;
                         // ────────────────────────────────────────────────────
 
                         const content = new MessageText(text);
@@ -2016,6 +2013,12 @@ export class Conversation
                         // 文字（有内容才发，await 保证在附件全部发完后才发）
                         if (text && text.trim() !== "") {
                           await this.sendMessage(content);
+                        }
+
+                        // Emit todo event AFTER message sent successfully
+                        if (todoPayload) {
+                          WKApp.mittBus.emit('wk:send-as-todo', todoPayload);
+                          this.setState({ sendAsTodo: false });
                         }
                       }}
                     ></MessageInput>

@@ -82,3 +82,4 @@ export { default as GroupCard } from "./Components/GroupCard"
 export { default as NavRail } from "./Components/NavRail"
 export type { NavRailProps, NavRailItem } from "./Components/NavRail"
 export { startVersionCheck, checkVersionOnce } from "./Utils/versionChecker"
+export { isSafeUrl } from './Utils/security'

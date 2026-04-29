@@ -67,6 +67,10 @@ export default function ChatTodoPanel({
   // Single effect owns both interval and visibility listener to prevent
   // orphaned intervals from dual-effect race. (#1042 review round 7)
   useEffect(() => {
+    // Explicitly clear any prior interval to prevent stale closure overlap
+    // when loadTodos identity changes without unmount.
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+
     loadTodos();
     pollRef.current = setInterval(loadTodos, 30000);
 

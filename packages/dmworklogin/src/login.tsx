@@ -27,7 +27,8 @@ const SSOSection: React.FC<{ vm: LoginVM }> = ({ vm }) => {
                     loading={vm.oidcLoading}
                     disabled={vm.oidcLoading || vm.oidcResuming}
                     onClick={() => {
-                        vm.startOidcLogin(provider.id).catch(() => {
+                        vm.startOidcLogin(provider.id).catch((err: unknown) => {
+                            console.error('OIDC login start failed:', err)
                             Toast.error('无法启动 ' + provider.name + ' 登录')
                         })
                     }}
@@ -70,11 +71,12 @@ const OidcResumeEffect: React.FC<{ vm: LoginVM }> = ({ vm }) => {
 
 const OidcResumingOverlay: React.FC<{ vm: LoginVM }> = ({ vm }) => {
     if (!vm.oidcResuming) return null
+    const providerName = vm.oidcResumingProviderName || 'SSO'
     return (
         <div className="wk-login-content-oidc-overlay">
             <Spin />
             <div className="wk-login-content-oidc-overlay-text">
-                正在完成 Aegis 登录…
+                {`正在完成 ${providerName} 登录…`}
             </div>
             <Button
                 onClick={() => vm.cancelOidcLogin()}

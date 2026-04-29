@@ -20,6 +20,7 @@ export type {
   AuthcodeResponse,
   AuthStatusResponse,
   OidcHttpClient,
+  OidcRequestInit,
 } from './api'
 
 export {

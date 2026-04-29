@@ -8,6 +8,11 @@ export interface PollAuthStatusOptions {
   maxAttempts: number
   sleep: (ms: number) => Promise<void>
   isCancelled?: () => boolean
+  // Aborts the in-flight fetch when fired so cancel propagates without
+  // waiting for the current request RTT. Note: the inter-poll `sleep` is not
+  // interruptible, so a cancel during sleep is still felt one tick later.
+  // Wired by LoginVM.cancelOidcLogin.
+  signal?: AbortSignal
   // Tolerated consecutive transient network errors before giving up.
   // Defaults to 10 to mirror the QR-code poller in login_vm.tsx.
   maxConsecutiveErrors?: number
@@ -36,6 +41,12 @@ export class OidcPollNetworkError extends Error {
   }
 }
 
+function isCancelled(opts: PollAuthStatusOptions): boolean {
+  if (opts.isCancelled?.()) return true
+  if (opts.signal?.aborted) return true
+  return false
+}
+
 export async function pollAuthStatus(
   opts: PollAuthStatusOptions,
 ): Promise<AuthStatusResponse> {
@@ -43,9 +54,11 @@ export async function pollAuthStatus(
   let consecutiveErrors = 0
   let lastError: unknown
   for (let attempt = 0; attempt < opts.maxAttempts; attempt++) {
-    if (opts.isCancelled?.()) throw new OidcPollCancelledError()
+    if (isCancelled(opts)) throw new OidcPollCancelledError()
     try {
-      const resp = await fetchAuthStatus(opts.client, opts.authcode)
+      const resp = await fetchAuthStatus(opts.client, opts.authcode, {
+        signal: opts.signal,
+      })
       consecutiveErrors = 0
       if (
         resp.status === OIDC_AUTH_STATUS.SUCCESS ||
@@ -54,6 +67,9 @@ export async function pollAuthStatus(
         return resp
       }
     } catch (err) {
+      // An aborted fetch from the cancellation signal must not pollute the
+      // network-error counter — surface it as cancelled instead.
+      if (isCancelled(opts)) throw new OidcPollCancelledError()
       consecutiveErrors++
       lastError = err
       if (consecutiveErrors >= maxErrors) {

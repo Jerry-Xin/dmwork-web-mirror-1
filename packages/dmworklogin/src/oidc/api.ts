@@ -15,15 +15,22 @@ export interface AuthStatusResponse {
   msg?: string
 }
 
+export interface OidcRequestInit {
+  signal?: AbortSignal
+}
+
 export interface OidcHttpClient {
-  get<T>(url: string): Promise<T>
+  get<T>(url: string, init?: OidcRequestInit): Promise<T>
 }
 
 const AUTHCODE_PATH = '/v1/user/thirdlogin/authcode'
 const AUTHSTATUS_PATH = '/v1/user/thirdlogin/authstatus'
 
-export async function fetchAuthcode(client: OidcHttpClient): Promise<string> {
-  const resp = await client.get<AuthcodeResponse>(AUTHCODE_PATH)
+export async function fetchAuthcode(
+  client: OidcHttpClient,
+  init?: OidcRequestInit,
+): Promise<string> {
+  const resp = await client.get<AuthcodeResponse>(AUTHCODE_PATH, init)
   if (!resp || typeof resp.authcode !== 'string' || resp.authcode === '') {
     throw new Error('Invalid authcode response')
   }
@@ -33,9 +40,10 @@ export async function fetchAuthcode(client: OidcHttpClient): Promise<string> {
 export async function fetchAuthStatus(
   client: OidcHttpClient,
   authcode: string,
+  init?: OidcRequestInit,
 ): Promise<AuthStatusResponse> {
   const qs = new URLSearchParams({ authcode }).toString()
-  const resp = await client.get<unknown>(`${AUTHSTATUS_PATH}?${qs}`)
+  const resp = await client.get<unknown>(`${AUTHSTATUS_PATH}?${qs}`, init)
   if (!resp || typeof resp !== 'object') {
     throw new Error('Invalid authstatus response')
   }

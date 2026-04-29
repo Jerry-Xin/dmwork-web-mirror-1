@@ -155,6 +155,54 @@ describe('pollAuthStatus', () => {
     expect(result.status).toBe(1)
   })
 
+  it('passes signal through to client and aborts in-flight fetch on cancel', async () => {
+    const ac = new AbortController()
+    const client: OidcHttpClient = {
+      get: vi.fn(async (_url: string, init?: { signal?: AbortSignal }) => {
+        // Simulate a long-running fetch that listens for abort.
+        return await new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('aborted', 'AbortError')),
+          )
+        }) as never
+      }),
+    }
+    const promise = pollAuthStatus({
+      client,
+      authcode: 'x',
+      intervalMs: 1,
+      maxAttempts: 5,
+      sleep: noSleep,
+      signal: ac.signal,
+    })
+    // Abort almost immediately — fetch rejects, poller sees signal.aborted, throws Cancelled.
+    queueMicrotask(() => ac.abort())
+    await expect(promise).rejects.toBeInstanceOf(OidcPollCancelledError)
+  })
+
+  it('does not count an aborted fetch toward consecutive errors', async () => {
+    const ac = new AbortController()
+    const client: OidcHttpClient = {
+      get: vi.fn(async () => {
+        throw new DOMException('aborted', 'AbortError')
+      }),
+    }
+    ac.abort()
+    await expect(
+      pollAuthStatus({
+        client,
+        authcode: 'x',
+        intervalMs: 1,
+        maxAttempts: 10,
+        sleep: noSleep,
+        signal: ac.signal,
+        // If aborts were counted as network errors this would throw NetworkError
+        // after maxConsecutiveErrors. Instead Cancelled should win.
+        maxConsecutiveErrors: 3,
+      }),
+    ).rejects.toBeInstanceOf(OidcPollCancelledError)
+  })
+
   it('throws OidcPollCancelledError when isCancelled returns true', async () => {
     const { client } = makeClient([{ status: 0 }, { status: 0 }])
     let cancelled = false

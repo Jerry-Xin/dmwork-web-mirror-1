@@ -12,7 +12,7 @@ describe('fetchAuthcode', () => {
     const client = makeClient(get)
     const result = await fetchAuthcode(client)
     expect(result).toBe('abc-uuid')
-    expect(get).toHaveBeenCalledWith('/v1/user/thirdlogin/authcode')
+    expect(get).toHaveBeenCalledWith('/v1/user/thirdlogin/authcode', undefined)
   })
 
   it('rejects when authcode field is missing', async () => {
@@ -30,6 +30,7 @@ describe('fetchAuthStatus', () => {
     expect(result.result?.uid).toBe('u1')
     expect(get).toHaveBeenCalledWith(
       '/v1/user/thirdlogin/authstatus?authcode=abc-uuid',
+      undefined,
     )
   })
 
@@ -39,6 +40,7 @@ describe('fetchAuthStatus', () => {
     await fetchAuthStatus(client, 'a b&c')
     expect(get).toHaveBeenCalledWith(
       '/v1/user/thirdlogin/authstatus?authcode=a+b%26c',
+      undefined,
     )
   })
 

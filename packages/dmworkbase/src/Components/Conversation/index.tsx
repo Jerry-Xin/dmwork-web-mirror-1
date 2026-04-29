@@ -27,7 +27,10 @@ import MarkdownContent from "../../Messages/Text/MarkdownContent";
 import { MessageWrap, Part, PartType } from "../../Service/Model";
 import WKApp from "../../App";
 import { RevokeCell } from "../../Messages/Revoke";
-import { MessageContentTypeConst, ChannelTypeCommunityTopic } from "../../Service/Const";
+import {
+  MessageContentTypeConst,
+  ChannelTypeCommunityTopic,
+} from "../../Service/Const";
 import ConversationContext from "./context";
 import MessageInput, {
   MentionModel,
@@ -70,9 +73,9 @@ import FoldSessionExpandedList from "./FoldSessionExpandedList";
  */
 function getEffectiveContent(message: Message): MessageContent {
   if (message.remoteExtra?.isEdit && message.remoteExtra?.contentEdit) {
-    return message.remoteExtra.contentEdit
+    return message.remoteExtra.contentEdit;
   }
-  return message.content
+  return message.content;
 }
 
 const foldSessionAvatarIcon = new URL(
@@ -235,19 +238,18 @@ export class Conversation
       return;
     }
 
-    // 消息不在当前列表中，使用传入的信息构造一个最小化的 Message 对象
+    // 消息不在当前列表中，使用传入的信息构造 Message 对象
     // 用于设置回复状态
     const channel = new Channel(info.channelId, info.channelType);
-    const fakeMessage = {
-      messageID: info.messageId,
-      messageSeq: info.messageSeq,
-      fromUID: info.fromUID,
-      channel: channel,
-      content: {
-        conversationDigest: info.conversationDigest,
-      },
-      remoteExtra: undefined,
-    } as unknown as Message;
+    // 使用 MessageText 作为 content，它有正确的 encode() 方法
+    // SDK 在序列化 reply.content 时会调用 content.encode()，普通对象没有这个方法会导致回复内容丢失
+    // MessageText 的 conversationDigest getter 返回的就是 text，所以传入 conversationDigest 作为 text 即可
+    const fakeMessage = new Message();
+    fakeMessage.messageID = info.messageId;
+    fakeMessage.messageSeq = info.messageSeq;
+    fakeMessage.fromUID = info.fromUID;
+    fakeMessage.channel = channel;
+    fakeMessage.content = new MessageText(info.conversationDigest);
 
     // 添加 @提及（如果不是自己发的消息）
     if (info.fromUID !== WKApp.loginInfo.uid) {
@@ -1573,7 +1575,9 @@ export class Conversation
                       WKApp.shared.baseContext.showConversationSelect(
                         (channels: Channel[]) => {
                           for (const message of messages) {
-                            const cloneContent = getEffectiveContent(message.message);
+                            const cloneContent = getEffectiveContent(
+                              message.message
+                            );
                             for (const channel of channels) {
                               this.sendMessage(cloneContent, channel);
                             }
@@ -1782,45 +1786,47 @@ export class Conversation
                         this._addAttachmentFn = addFn;
                       }}
                       extraActions={
-                        (this.props.channel.channelType === ChannelTypeGroup || this.props.channel.channelType === ChannelTypeCommunityTopic) ? (
-                        <label
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            cursor: 'pointer',
-                            userSelect: 'none',
-                            marginRight: 4,
-                            flexShrink: 0,
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={this.state.sendAsTodo}
-                            onChange={(e) =>
-                              this.setState({ sendAsTodo: e.target.checked })
-                            }
+                        this.props.channel.channelType === ChannelTypeGroup ||
+                        this.props.channel.channelType ===
+                          ChannelTypeCommunityTopic ? (
+                          <label
                             style={{
-                              accentColor: 'var(--wk-brand-primary, #7C5CFC)',
-                              cursor: 'pointer',
-                              width: 14,
-                              height: 14,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                              cursor: "pointer",
+                              userSelect: "none",
+                              marginRight: 4,
                               flexShrink: 0,
                             }}
-                          />
-                          <span
-                            style={{
-                              fontSize: 12,
-                              color: this.state.sendAsTodo
-                                ? 'var(--wk-brand-primary, #7C5CFC)'
-                                : 'var(--wk-text-tertiary, rgba(0,0,0,0.45))',
-                              fontWeight: this.state.sendAsTodo ? 500 : 400,
-                              whiteSpace: 'nowrap',
-                            }}
                           >
-                            Also create Todo
-                          </span>
-                        </label>
+                            <input
+                              type="checkbox"
+                              checked={this.state.sendAsTodo}
+                              onChange={(e) =>
+                                this.setState({ sendAsTodo: e.target.checked })
+                              }
+                              style={{
+                                accentColor: "var(--wk-brand-primary, #7C5CFC)",
+                                cursor: "pointer",
+                                width: 14,
+                                height: 14,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span
+                              style={{
+                                fontSize: 12,
+                                color: this.state.sendAsTodo
+                                  ? "var(--wk-brand-primary, #7C5CFC)"
+                                  : "var(--wk-text-tertiary, rgba(0,0,0,0.45))",
+                                fontWeight: this.state.sendAsTodo ? 500 : 400,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              Also create Todo
+                            </span>
+                          </label>
                         ) : undefined
                       }
                       members={this.vm.subscribers.filter(
@@ -1871,8 +1877,12 @@ export class Conversation
                         attachments?: { id: string; file: File }[]
                       ) => {
                         // ── Send as To-do (event-based, non-blocking) ───────
-                        if (this.state.sendAsTodo && text && text.trim() !== '') {
-                          WKApp.mittBus.emit('wk:send-as-todo', {
+                        if (
+                          this.state.sendAsTodo &&
+                          text &&
+                          text.trim() !== ""
+                        ) {
+                          WKApp.mittBus.emit("wk:send-as-todo", {
                             title: text.trim(),
                             source_channel_id: this.props.channel.channelID,
                             source_channel_type: this.props.channel.channelType,

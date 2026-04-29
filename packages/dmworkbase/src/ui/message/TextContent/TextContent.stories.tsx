@@ -1,3 +1,4 @@
+import React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import TextContent from './index'
 import type { MentionInfo, EmojiInfo } from '../../../Messages/Text/MarkdownContent'

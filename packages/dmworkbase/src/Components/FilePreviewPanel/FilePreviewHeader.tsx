@@ -23,8 +23,10 @@ import "./FilePreviewHeader.css";
 
 /** 对话内文件项 */
 export interface ConversationFile {
-  /** 文件唯一标识 */
+  /** 文件唯一标识（message_id） */
   id: string;
+  /** 消息序号（用于回复定位） */
+  messageSeq?: number;
   /** 文件名 */
   name: string;
   /** 扩展名 */

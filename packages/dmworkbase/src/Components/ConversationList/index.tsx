@@ -208,16 +208,9 @@ const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
           </svg>
         </span>
       )}
-      {totalUnread > 0 && (
+      {totalUnread > 0 && !effectiveMute && (
         <span className="wk-conv-compact-badges">
-          <span
-            className="wk-conv-compact-badge"
-            style={
-              effectiveMute
-                ? { backgroundColor: "var(--semi-color-text-2)", color: "#fff" }
-                : undefined
-            }
-          >
+          <span className="wk-conv-compact-badge">
             {totalUnread > 99 ? "99+" : totalUnread}
           </span>
         </span>
@@ -654,19 +647,9 @@ export default class ConversationList extends Component<
                   : this.lastContent(conversationWrap)}
               </div>
               <div className="wk-conversationlist-item-reddot">
-                {conversationWrap.unread > 0 ? (
+                {conversationWrap.unread > 0 && !channelInfo?.mute ? (
                   <span className="wk-conv-compact-badges">
-                    <span
-                      className="wk-conv-compact-badge"
-                      style={
-                        channelInfo?.mute
-                          ? {
-                              backgroundColor: "var(--semi-color-text-2)",
-                              color: "#fff",
-                            }
-                          : undefined
-                      }
-                    >
+                    <span className="wk-conv-compact-badge">
                       {conversationWrap.unread > 99
                         ? "99+"
                         : conversationWrap.unread}

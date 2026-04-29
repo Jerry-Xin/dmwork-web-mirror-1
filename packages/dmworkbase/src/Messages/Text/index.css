@@ -40,8 +40,9 @@ body[theme-mode=dark] .wk-message-text-recv {
 }
 
 .wk-message-text-richemoji img {
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
+    vertical-align: sub;
 }
 
 .wk-message-text-richemoji--large img {

@@ -55,6 +55,10 @@ export default class DataSourceModule implements IModule {
                     channelInfo.channel = channel;
                     channelInfo.title = thread.name;
                     channelInfo.logo = `groups/${parsed.groupNo}/avatar`; // 使用父群头像
+                    // channelInfo.mute 供 SDK listener 触发组件重渲染：
+                    // 显式 mute=1 → true；其余（null 或 0）→ false
+                    // effectiveMute 逻辑从 orgData.thread.mute 读 tri-state 原始值
+                    channelInfo.mute = thread.mute === 1
                     channelInfo.orgData = {
                         displayName: thread.name,
                         thread: thread,

@@ -74,7 +74,10 @@ const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
   const isThread =
     conversationWrap.channel.channelType === ChannelTypeCommunityTopic;
 
-  // 子区继承父群聊 mute 状态
+  // effectiveMute 对齐后端 allowPush 降级逻辑：
+  // - 子区有显式设置（thread.mute != null）→ 只看子区自身
+  // - 子区未设置（thread.mute == null）→ 继承父群组 mute
+  // - 群组：只看自身 mute
   const parentGroupNo = isThread
     ? (channelInfo?.orgData?.parentGroupNo as string | undefined)
     : undefined;
@@ -83,7 +86,14 @@ const CompactGroupItem: React.FC<CompactGroupItemProps> = ({
         new Channel(parentGroupNo, ChannelTypeGroup)
       )
     : undefined;
-  const effectiveMute = !!(channelInfo?.mute || parentChannelInfo?.mute);
+  const threadRawMute = isThread
+    ? (channelInfo?.orgData?.thread as any)?.mute as number | null | undefined
+    : undefined;
+  const effectiveMute = isThread
+    ? threadRawMute != null
+      ? threadRawMute === 1          // 显式设置：只看子区自身
+      : !!(parentChannelInfo?.mute)  // 未设置：继承父群
+    : !!(channelInfo?.mute);         // 群组：只看自身
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -679,7 +689,16 @@ export default class ConversationList extends Component<
   }
 
   onMute(channelInfo: ChannelInfo) {
-    ChannelSettingManager.shared.mute(!channelInfo.mute, channelInfo.channel);
+    this.onMuteWithValue(!channelInfo.mute, channelInfo)
+  }
+
+  onMuteWithValue(value: boolean, channelInfo: ChannelInfo) {
+    ChannelSettingManager.shared.mute(value, channelInfo.channel)
+      .then(() => {
+        // 直接重拉（不删缓存），新数据覆盖旧缓存，避免删除期间出现 loading 骨架
+        WKSDK.shared().channelManager.fetchChannelInfo(channelInfo.channel)
+          .then(() => this.setState({}))
+      })
   }
 
   onCloseChat(channel: Channel) {
@@ -945,8 +964,16 @@ export default class ConversationList extends Component<
         const isExpanded = expandedGroupIds.has(conv.channel.channelID);
         if (isExpanded) return 0;
         const threads = threadsByParent.get(conv.channel.channelID) ?? [];
-        // 子区勿扰继承父群组，父群组勿扰时整行不显示未读，这里只需汇总子区未读
-        return threads.reduce((sum, t) => sum + t.unread, 0);
+        // 子区有独立免打扰设置，汇总时过滤掉已开启免打扰的子区未读
+        return threads.reduce((sum, t) => {
+          // 对齐 effectiveMute 逻辑：显式设置看自身，未设置继承父群
+          const rawMute = (t.channelInfo?.orgData?.thread as any)?.mute as number | null | undefined
+          const parentInfo = WKSDK.shared().channelManager.getChannelInfo(
+            new Channel(conv.channel.channelID, ChannelTypeGroup)
+          )
+          const tMute = rawMute != null ? rawMute === 1 : !!(parentInfo?.mute)
+          return sum + (tMute ? 0 : t.unread)
+        }, 0);
       })();
       return this.conversationItem(conv, hasThreads, threadUnread);
     };
@@ -1026,16 +1053,30 @@ export default class ConversationList extends Component<
               });
             }
 
-            // 5. 免打扰 / 关闭免打扰（子区不显示，勿扰状态继承父群组）
-            if (channel?.channelType !== ChannelTypeCommunityTopic) {
-              menus.push({
-                title: channelInfo?.mute ? "关闭免打扰" : "开启免打扰",
-                icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
-                onClick: () => {
-                  if (channelInfo) this.onMute(channelInfo);
-                },
-              });
-            }
+            // 5. 免打扰 / 关闭免打扰
+            // 菜单标题跟 effectiveMute（用户看到的静音状态）保持一致：
+            // 子区：有显式设置看自身；未设置继承父群
+            // 群组：只看自身
+            const menuIsThread = channel?.channelType === ChannelTypeCommunityTopic
+            const menuParentGroupNo = menuIsThread
+              ? (channelInfo?.orgData?.parentGroupNo as string | undefined)
+              : undefined
+            const menuParentChannelInfo = menuParentGroupNo
+              ? WKSDK.shared().channelManager.getChannelInfo(new Channel(menuParentGroupNo, ChannelTypeGroup))
+              : undefined
+            const menuRawMute = menuIsThread
+              ? (channelInfo?.orgData?.thread as any)?.mute as number | null | undefined
+              : undefined
+            const menuEffectiveMute = menuIsThread
+              ? menuRawMute != null ? menuRawMute === 1 : !!(menuParentChannelInfo?.mute)
+              : !!(channelInfo?.mute)
+            menus.push({
+              title: menuEffectiveMute ? "关闭免打扰" : "开启免打扰",
+              icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
+              onClick: () => {
+                if (channelInfo) this.onMuteWithValue(!menuEffectiveMute, channelInfo);
+              },
+            });
 
             // 6. 展开/收起子区（compact 模式下、群组且有子区时显示）
             if (
@@ -1058,7 +1099,7 @@ export default class ConversationList extends Component<
             menus.push({ separator: true } as ContextMenusData);
 
             // 8. 清空聊天记录 / 关闭并清空
-            // 子区：直接展开到顶层（免打扰已去掉，菜单项够少）
+            // 子区：直接展开到顶层
             // 群组：保留在「更多」子菜单里
             const clearItems = [
               {

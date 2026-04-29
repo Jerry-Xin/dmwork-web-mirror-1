@@ -218,6 +218,7 @@
 
 /* ---- Right form panel ---- */
 .wk-login-panel {
+    position: relative;
     width: 45%;
     min-height: 100vh;
     display: flex;
@@ -806,4 +807,80 @@
 
 @keyframes wk-spin {
     to { transform: rotate(360deg); }
+}
+
+/* ---- OIDC SSO section ---- */
+.wk-login-content-sso {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.wk-login-content-sso-divider {
+    position: relative;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.4);
+    font-size: 12px;
+    margin: 8px 0 4px;
+}
+.wk-login-content-sso-divider::before,
+.wk-login-content-sso-divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 30%;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.08);
+}
+.wk-login-content-sso-divider::before { left: 0; }
+.wk-login-content-sso-divider::after { right: 0; }
+.wk-login-content-sso-divider span { background: #fff; padding: 0 8px; }
+.wk-login-panel .wk-login-content-sso-btn.semi-button {
+    width: 100%;
+    height: 46px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border: 1px solid #5b5be5;
+    background: #5b5be5;
+    color: #fff;
+}
+.wk-login-panel .wk-login-content-sso-btn.semi-button:hover,
+.wk-login-panel .wk-login-content-sso-btn.semi-button:focus {
+    background: #4848d4;
+    border-color: #4848d4;
+    color: #fff;
+}
+.wk-login-panel .wk-login-content-sso-btn.semi-button .semi-button-content,
+.wk-login-panel .wk-login-content-sso-btn.semi-button span {
+    color: #fff;
+}
+.wk-login-content-sso-btn-icon {
+    margin-right: 8px;
+    font-size: 16px;
+    color: #fff;
+}
+@media (max-width: 480px) {
+    .wk-login-content-sso-btn.semi-button {
+        height: 48px !important;
+    }
+}
+.wk-login-content-oidc-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.92);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+.wk-login-content-oidc-overlay-text {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.7);
+}
+.wk-login-content-oidc-overlay-cancel {
+    margin-top: 4px;
 }

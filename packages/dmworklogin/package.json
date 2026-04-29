@@ -13,6 +13,12 @@
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
-    "@types/zxcvbn": "^4.4.5"
+    "@types/zxcvbn": "^4.4.5",
+    "vitest": "^4.1.2",
+    "jsdom": "^29.0.1"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
   }
 }

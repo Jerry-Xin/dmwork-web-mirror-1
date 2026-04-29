@@ -110,6 +110,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false, // 开发环境允许自签名证书
         },
+        // OIDC SSO endpoints (backend mounts these at /v1/ directly, no /api prefix)
+        '/v1/': {
+          target: apiOrigin,
+          changeOrigin: true,
+          secure: false,
+        },
         '/version.json': {
           target: apiOrigin,
           changeOrigin: true,

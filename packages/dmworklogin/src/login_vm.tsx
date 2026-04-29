@@ -1,4 +1,20 @@
 import { WKApp, ProviderListener } from "@dmwork/base";
+import {
+    buildAuthorizeURL,
+    clearPendingOidcLogin,
+    fetchAuthcode,
+    fetchHttpClient,
+    getPendingOidcLogin,
+    getProviderById,
+    isPendingExpired,
+    OidcPollCancelledError,
+    OidcPollNetworkError,
+    OidcPollTimeoutError,
+    OIDC_AUTH_STATUS,
+    parseOidcUrlState,
+    pollAuthStatus,
+    savePendingOidcLogin,
+} from "./oidc";
 
 
 export class LoginStatus {
@@ -454,5 +470,97 @@ export class LoginVM extends ProviderListener {
     }
     showAvatar() {
         return this.loginStatus === LoginStatus.scanned && this.uid
+    }
+
+    // ---------- OIDC SSO ----------
+    oidcLoading: boolean = false
+    oidcResuming: boolean = false
+    private _oidcCancelled: boolean = false
+
+    async startOidcLogin(providerId: string): Promise<void> {
+        const provider = getProviderById(providerId)
+        if (!provider) {
+            console.warn('Unknown OIDC provider:', providerId)
+            return
+        }
+        if (this.oidcLoading) return
+        this.oidcLoading = true
+        this.notifyListener()
+        try {
+            const authcode = await fetchAuthcode(fetchHttpClient)
+            savePendingOidcLogin({
+                providerId,
+                authcode,
+                savedAt: Date.now(),
+            })
+            const returnTo = `${window.location.origin}/login`
+            window.location.href = buildAuthorizeURL(provider, authcode, returnTo)
+        } catch (e) {
+            this.oidcLoading = false
+            this.notifyListener()
+            throw e
+        }
+    }
+
+    async resumeOidcLoginIfPending(search: string = window.location.search): Promise<{
+        handled: boolean
+        success?: boolean
+        error?: string
+    }> {
+        const urlState = parseOidcUrlState(search)
+        const pending = getPendingOidcLogin()
+        // Only trust ?oidc_error=1 when there's a matching pending session.
+        // Otherwise an external link could clear another flow or fake-toast a user.
+        if (urlState.error && pending) {
+            clearPendingOidcLogin()
+            return { handled: true, success: false, error: 'Aegis 登录失败，请重试' }
+        }
+        if (!pending) return { handled: false }
+        if (isPendingExpired(pending)) {
+            clearPendingOidcLogin()
+            return { handled: true, success: false, error: '登录超时，请重新发起' }
+        }
+        this.oidcResuming = true
+        this._oidcCancelled = false
+        this.notifyListener()
+        try {
+            const result = await pollAuthStatus({
+                client: fetchHttpClient,
+                authcode: pending.authcode,
+                intervalMs: 2000,
+                maxAttempts: 150,
+                sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+                isCancelled: () => this._oidcCancelled,
+            })
+            if (result.status === OIDC_AUTH_STATUS.SUCCESS && result.result) {
+                clearPendingOidcLogin()
+                this.oidcResuming = false
+                this.notifyListener()
+                this.loginSuccess(result.result)
+                return { handled: true, success: true }
+            }
+            clearPendingOidcLogin()
+            this.oidcResuming = false
+            this.notifyListener()
+            return { handled: true, success: false, error: result.msg || 'Aegis 登录失败' }
+        } catch (e) {
+            clearPendingOidcLogin()
+            this.oidcResuming = false
+            this.notifyListener()
+            if (e instanceof OidcPollTimeoutError) {
+                return { handled: true, success: false, error: '登录超时，请重新发起' }
+            }
+            if (e instanceof OidcPollCancelledError) {
+                return { handled: true, success: false, error: '已取消登录' }
+            }
+            if (e instanceof OidcPollNetworkError) {
+                return { handled: true, success: false, error: '网络异常，请检查网络后重试' }
+            }
+            return { handled: true, success: false, error: '登录失败，请重试' }
+        }
+    }
+
+    cancelOidcLogin(): void {
+        this._oidcCancelled = true
     }
 }

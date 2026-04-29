@@ -3,6 +3,7 @@ import { Channel, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageCo
 import React from "react"
 import MergeforwardMessageList from "../../Components/MergeforwardMessageList"
 import { MessageContentTypeConst } from "../../Service/Const"
+import { applyMsgLevelExternalFields } from "../../Service/Convert"
 import MessageBase from "../Base"
 import MessageTrail from "../Base/tail"
 import { MessageCell } from "../MessageCell"
@@ -104,6 +105,11 @@ export default class MergeforwardContent extends MessageContent {
         const payloadData = new TextEncoder().encode(JSON.stringify(payloadObj))
         messageContent.decode(payloadData)
         message.content = messageContent
+
+        // dmwork-web#1069：合并转发内嵌消息同样需要透传外部来源字段，
+        // 否则转发历史中的外部成员发言会丢失 @SpaceName 头部标记。
+        applyMsgLevelExternalFields(message, messageMap)
+
         return message
     }
 

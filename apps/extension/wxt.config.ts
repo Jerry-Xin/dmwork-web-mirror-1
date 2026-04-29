@@ -33,7 +33,7 @@ export default defineConfig({
       page: "entrypoints/options/index.html",
       open_in_tab: true,
     },
-    permissions: ["notifications", "storage", "offscreen", "sidePanel", "contextMenus"],
+    permissions: ["notifications", "storage", "offscreen", "sidePanel", "contextMenus", "scripting"],
     host_permissions: ["<all_urls>"],
     web_accessible_resources: [
       {

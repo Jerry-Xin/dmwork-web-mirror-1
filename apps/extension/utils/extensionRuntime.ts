@@ -29,6 +29,8 @@ export const EXTENSION_MESSAGE_TYPE = {
   sidepanelBadgeSync: "SIDEPANEL_BADGE_SYNC",
   sidepanelState: "SIDEPANEL_STATE",
   getActiveConversation: "GET_ACTIVE_CONVERSATION",
+  cocraftDispatch: "COCRAFT_DISPATCH",
+  cocraftResult: "COCRAFT_RESULT",
 } as const;
 
 export interface ExtensionAuthState {
@@ -99,6 +101,23 @@ export interface GetActiveConversationMessage {
   type: typeof EXTENSION_MESSAGE_TYPE.getActiveConversation;
 }
 
+export interface CocraftDispatchMessage {
+  type: typeof EXTENSION_MESSAGE_TYPE.cocraftDispatch;
+  channelId: string;
+  channelType: number;
+  uagt: string;
+  rawMessage: string;
+}
+
+export interface CocraftResultMessage {
+  type: typeof EXTENSION_MESSAGE_TYPE.cocraftResult;
+  channelId: string;
+  channelType: number;
+  success: boolean;
+  toolResultMessage?: string;
+  error?: string;
+}
+
 export type ExtensionRuntimeMessage =
   | AuthChangedMessage
   | AuthClearedMessage
@@ -109,7 +128,9 @@ export type ExtensionRuntimeMessage =
   | RequestOpenConversationMessage
   | SidepanelBadgeSyncMessage
   | SidepanelStateMessage
-  | GetActiveConversationMessage;
+  | GetActiveConversationMessage
+  | CocraftDispatchMessage
+  | CocraftResultMessage;
 
 export interface ExtensionAuthResponse {
   auth: ExtensionAuthState | null;

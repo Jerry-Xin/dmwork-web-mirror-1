@@ -10,6 +10,11 @@ import {
   WKSDK,
 } from "wukongimjssdk";
 import {
+  parseCocraftMessage,
+  isCocraftToolResultMessage,
+  cocraftLog,
+} from "../../utils/cocraft";
+import {
   EXTENSION_MESSAGE_TYPE,
   buildNotificationId,
   normalizeApiURL,
@@ -335,6 +340,17 @@ async function updateBadgeFromConversations(): Promise<void> {
 }
 
 function getMessageBody(message: Message): string {
+  const rawText: string = (message.content as any)?.text || message.content?.contentObj?.content || '';
+  if (isCocraftToolResultMessage(rawText)) {
+    cocraftLog.step('offscreen', '通知过滤', 'tool_results 消息 → 跳过通知');
+    return '';
+  }
+  const cocraftParsed = parseCocraftMessage(rawText);
+  if (cocraftParsed) {
+    cocraftLog.step('offscreen', '通知过滤', `<cocraft> 消息 → 通知显示: "${cocraftParsed.content.substring(0, 50)}"`);
+    return cocraftParsed.content || '[CoCraft 消息]';
+  }
+
   const digest =
     message.remoteExtra?.contentEdit?.conversationDigest ||
     message.content?.conversationDigest;
@@ -404,8 +420,9 @@ async function handleIncomingMessage(message: Message): Promise<void> {
     return;
   }
 
-  const title = await resolveNotificationTitle(message);
   const body = getMessageBody(message);
+  if (!body) return;
+  const title = await resolveNotificationTitle(message);
   await sendNewMessage(message, title, body);
 }
 

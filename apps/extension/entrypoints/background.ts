@@ -6,6 +6,12 @@ import {
   type ExtensionRuntimeMessage,
 } from "../utils/extensionRuntime";
 import {
+  getActiveTab,
+  extractProjectId,
+  executeOnCocraftTab,
+  cocraftLog,
+} from "../utils/cocraft";
+import {
   clearPendingConversation,
   getExtensionAuthState,
   getExtensionPreferences,
@@ -375,6 +381,7 @@ const BACKGROUND_HANDLED_TYPES = new Set([
   EXTENSION_MESSAGE_TYPE.sidepanelState,
   EXTENSION_MESSAGE_TYPE.requestOpenConversation,
   EXTENSION_MESSAGE_TYPE.offscreenNewMessage,
+  EXTENSION_MESSAGE_TYPE.cocraftDispatch,
 ]);
 
 function isBackgroundHandledMessage(type: string): boolean {
@@ -475,6 +482,66 @@ async function handleRuntimeMessage(
         });
       });
       return;
+
+    case EXTENSION_MESSAGE_TYPE.cocraftDispatch: {
+      cocraftLog.divider('background', '收到 COCRAFT_DISPATCH');
+      cocraftLog.step('background', 'DISPATCH', '来自 sidepanel 的转发请求', {
+        channelId: message.channelId,
+        uagt: message.uagt,
+        rawMsgLen: message.rawMessage?.length,
+      });
+
+      const tab = await getActiveTab();
+      cocraftLog.step('background', 'TAB', `当前激活 tab`, { tabId: tab?.id, url: tab?.url });
+
+      const sendResult = (result: { success: boolean; toolResultMessage?: string; error?: string }) => {
+        cocraftLog.step('background', 'RESULT', `回传 COCRAFT_RESULT → sidepanel`, {
+          success: result.success,
+          error: result.error,
+          toolResultMsgLen: result.toolResultMessage?.length,
+        });
+        void browser.runtime.sendMessage({
+          type: EXTENSION_MESSAGE_TYPE.cocraftResult,
+          channelId: message.channelId,
+          channelType: message.channelType,
+          ...result,
+        } satisfies ExtensionRuntimeMessage).catch((err: unknown) => {
+          cocraftLog.err('background', 'RESULT', 'runtime.sendMessage 失败', err);
+        });
+      };
+
+      if (!tab?.id) {
+        cocraftLog.err('background', 'TAB', '未找到活跃的浏览器标签页');
+        sendResult({ success: false, error: "未找到活跃的浏览器标签页" });
+        return;
+      }
+
+      const projectId = extractProjectId(tab.url || "");
+      cocraftLog.step('background', 'TAB', `提取 projectId = ${projectId || '(空)'}`);
+
+      cocraftLog.step('background', 'EXECUTE', `调用 executeOnCocraftTab(tabId=${tab.id})...`);
+      const result = await executeOnCocraftTab(tab.id, {
+        agentToken: message.uagt,
+        projectId: projectId || "",
+        message: message.rawMessage,
+      });
+
+      if (result.success) {
+        cocraftLog.ok('background', 'EXECUTE', 'CoCraft tab 执行成功', {
+          toolResultMsgLen: result.toolResultMessage?.length,
+          toolResultMessage: result.toolResultMessage,
+        });
+      } else {
+        cocraftLog.err('background', 'EXECUTE', `CoCraft tab 执行失败: ${result.error}`);
+        if (!result.toolResultMessage && result.error) {
+          result.toolResultMessage = `<cocraft uagt="${message.uagt}"><tool_results><result><error>${result.error}</error></result></tool_results></cocraft>`;
+          cocraftLog.step('background', 'EXECUTE', '已用 error 构造 toolResultMessage 回传给 Agent');
+        }
+      }
+
+      sendResult(result);
+      return;
+    }
 
     default:
       return;

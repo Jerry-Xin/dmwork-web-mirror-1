@@ -13,6 +13,8 @@ import { DataSourceModule } from '@dmwork/datasource';
 import { ContactsModule } from '@dmwork/contacts';
 import { version as pkgVersion } from '../../../web/package.json';
 import { Channel, ChannelTypePerson, WKSDK } from 'wukongimjssdk';
+import { FileContent } from '@dmwork/base/src/Messages/File/FileContent';
+import ConversationVM from '@dmwork/base/src/Components/Conversation/vm';
 import App from '../../../web/src/App';
 import OctoSidepanelLayout from './OctoSidepanelLayout';
 import OctoShell from './OctoShell';
@@ -24,7 +26,13 @@ import {
   normalizeApiURL,
   type ConversationTarget,
   type ExtensionRuntimeMessage,
+  type CocraftDispatchMessage,
 } from '../../utils/extensionRuntime';
+import {
+  parseCocraftMessage,
+  isCocraftToolResultMessage,
+  cocraftLog,
+} from '../../utils/cocraft';
 import {
   clearPendingConversation,
   getPendingConversation,
@@ -134,6 +142,94 @@ WKApp.shared.registerModule(new ContactsModule());
 
 WKApp.shared.startup();
 
+// --- CoCraft 消息过滤 & 转发 hook ---
+
+cocraftLog.divider('sidepanel', '初始化 CoCraft 消息拦截');
+
+function dispatchCocraftToBackground(channel: { channelID: string; channelType: number }, parsed: { uagt: string; rawMessage: string }) {
+  cocraftLog.step('sidepanel', 'DISPATCH', `发送 COCRAFT_DISPATCH → background`, {
+    channelId: channel.channelID,
+    channelType: channel.channelType,
+    uagt: parsed.uagt,
+    rawMsgLen: parsed.rawMessage.length,
+  });
+  void browser.runtime.sendMessage({
+    type: EXTENSION_MESSAGE_TYPE.cocraftDispatch,
+    channelId: channel.channelID,
+    channelType: channel.channelType,
+    uagt: parsed.uagt,
+    rawMessage: parsed.rawMessage,
+  } satisfies CocraftDispatchMessage).catch((err: unknown) => {
+    cocraftLog.err('sidepanel', 'DISPATCH', 'runtime.sendMessage 失败', err);
+  });
+}
+
+const origAddMessageListener = WKSDK.shared().chatManager.addMessageListener.bind(WKSDK.shared().chatManager);
+cocraftLog.ok('sidepanel', 'HOOK', 'addMessageListener 已包装');
+WKSDK.shared().chatManager.addMessageListener = (listener: (msg: any) => void) => {
+  cocraftLog.step('sidepanel', 'HOOK', '有组件注册了 messageListener');
+  return origAddMessageListener((message: any) => {
+    const text: string = message.content?.text || '';
+    cocraftLog.step('sidepanel', '收到消息', `contentType=${message.contentType} textLen=${text.length}`, text);
+    if (isCocraftToolResultMessage(text)) {
+      cocraftLog.warn('sidepanel', '过滤', '检测到 tool_results → 隐藏此消息，不渲染');
+      return;
+    }
+    if (message.contentType === 8 && message.content?.name?.startsWith('cocraft-result-')) {
+      cocraftLog.warn('sidepanel', '过滤', `检测到 cocraft 附件 ${message.content.name} → 隐藏`);
+      return;
+    }
+    const parsed = parseCocraftMessage(text);
+    if (parsed) {
+      cocraftLog.ok('sidepanel', '解析', `<cocraft> 解析成功`, {
+        uagt: parsed.uagt,
+        displayContent: parsed.content,
+        hasActions: parsed.hasActions,
+      });
+      if (message.content) message.content.text = parsed.content;
+      if (parsed.hasActions) {
+        cocraftLog.step('sidepanel', 'ACTIONS', '包含 actions → 转发给 background 处理');
+        dispatchCocraftToBackground(message.channel, parsed);
+      }
+    }
+    listener(message);
+  });
+};
+
+const origRefreshMessages = ConversationVM.prototype.refreshMessages;
+cocraftLog.ok('sidepanel', 'HOOK', 'refreshMessages 已包装');
+(ConversationVM.prototype as any).refreshMessages = function(messages: any[], callback?: () => void, options?: any) {
+  cocraftLog.step('sidepanel', '历史消息', `refreshMessages 调用, 消息数=${messages.length}`);
+  let toolResultCount = 0;
+  let cocraftCount = 0;
+  const filtered = messages.filter((m: any) => {
+    const text: string = m.content?.text || '';
+    if (isCocraftToolResultMessage(text)) {
+      toolResultCount++;
+      return false;
+    }
+    if (m.contentType === 8 && m.content?.name?.startsWith('cocraft-result-')) {
+      toolResultCount++;
+      return false;
+    }
+    return true;
+  });
+  for (const m of filtered) {
+    const text: string = m.content?.text || '';
+    const parsed = parseCocraftMessage(text);
+    if (parsed && m.content) {
+      cocraftCount++;
+      m.content.text = parsed.content;
+    }
+  }
+  if (toolResultCount > 0 || cocraftCount > 0) {
+    cocraftLog.ok('sidepanel', '历史消息', `处理完成: 过滤 ${toolResultCount} 条 tool_results, 替换 ${cocraftCount} 条 <cocraft> 显示文本`);
+  }
+  return origRefreshMessages.call(this, filtered, callback, options);
+};
+
+// --- end CoCraft hook ---
+
 // 注册扩展专用主页布局（替代 MainPage）
 WKApp.shared.extensionMainPage = OctoSidepanelLayout as any;
 
@@ -233,6 +329,29 @@ browser.runtime.onMessage.addListener((message: ExtensionRuntimeMessage) => {
       : null;
     console.log("[Sidepanel] getActiveConversation: openChannel=", channel?.channelID, "type=", channel?.channelType, "returning:", JSON.stringify(target));
     return Promise.resolve({ target });
+  }
+
+  if (message.type === EXTENSION_MESSAGE_TYPE.cocraftResult) {
+    cocraftLog.divider('sidepanel', '收到 COCRAFT_RESULT');
+    cocraftLog.step('sidepanel', 'RESULT', `success=${message.success}`, {
+      channelId: message.channelId,
+      channelType: message.channelType,
+      error: message.error,
+      toolResultMsgLen: message.toolResultMessage?.length,
+    });
+    if (message.toolResultMessage && message.channelId) {
+      cocraftLog.step('sidepanel', '回传', `发送 toolResultMessage 到 IM (len=${message.toolResultMessage.length})`, message.toolResultMessage);
+      const fileName = `cocraft-result-${Date.now()}.md`;
+      const blob = new Blob([message.toolResultMessage], { type: 'text/markdown' });
+      const file = new File([blob], fileName, { type: 'text/markdown' });
+      const content = new FileContent(file, fileName, 'md', file.size);
+      const channel = new Channel(message.channelId, message.channelType);
+      WKSDK.shared().chatManager.send(content, channel);
+      cocraftLog.ok('sidepanel', '回传', `chatManager.send() 已调用 → tool_results 以 .md 附件发往 IM 后端 (${fileName})`);
+    }
+    if (!message.success && message.error) {
+      cocraftLog.err('sidepanel', 'RESULT', `CoCraft action 执行失败: ${message.error}`);
+    }
   }
 });
 

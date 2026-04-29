@@ -1,3 +1,82 @@
+/**
+ * 复制图片到剪贴板。
+ *
+ * 实现策略：
+ * 1. 优先用 Clipboard API（navigator.clipboard.write）— 需 HTTPS / localhost
+ * 2. 图片通过带 crossOrigin 的 <img> 加载后 canvas 转 PNG
+ * 3. GIF 自动取静态帧（canvas drawImage 只取第一帧）
+ * 4. crossOrigin 加载失败时，降级 fetch 重试（处理网络瞬时失败）
+ * 5. 不支持时抛出带用户可读文案的 Error，调用方负责 Toast 展示
+ */
+export async function copyImageToClipboard(src: string): Promise<void> {
+    if (!navigator.clipboard?.write) {
+        throw new Error('当前浏览器不支持复制图片，请长按图片另存')
+    }
+
+    const pngBlob = await loadImageAndConvertToPng(src)
+    await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': pngBlob })
+    ])
+}
+
+/** 将已加载的 HTMLImageElement 绘制到 canvas 并转为 PNG Blob。
+ *  超过 16MP 时等比缩放，避免内存峰值。
+ */
+function drawImageToBlob(img: HTMLImageElement): Promise<Blob> {
+    const MAX_PIXELS = 16 * 1024 * 1024
+    const naturalPixels = img.naturalWidth * img.naturalHeight
+    let drawWidth = img.naturalWidth
+    let drawHeight = img.naturalHeight
+    if (naturalPixels > MAX_PIXELS) {
+        const scale = Math.sqrt(MAX_PIXELS / naturalPixels)
+        drawWidth = Math.floor(img.naturalWidth * scale)
+        drawHeight = Math.floor(img.naturalHeight * scale)
+    }
+    const canvas = document.createElement('canvas')
+    canvas.width = drawWidth
+    canvas.height = drawHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return Promise.reject(new Error('canvas 不可用'))
+    ctx.drawImage(img, 0, 0, drawWidth, drawHeight)
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('图片转换失败')), 'image/png')
+    })
+}
+
+function loadImageAndConvertToPng(src: string): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'  // 避免 canvas 被污染（需服务端返回 CORS 头）
+        img.onload = () => drawImageToBlob(img).then(resolve).catch(reject)
+        img.onerror = () => {
+            // crossOrigin 加载失败时降级 fetch 重试（处理网络瞬时失败）
+            fallbackFetchAndConvert(src).then(resolve).catch(reject)
+        }
+        img.src = src
+    })
+}
+
+async function fallbackFetchAndConvert(src: string): Promise<Blob> {
+    const resp = await fetch(src, { mode: 'cors' })
+    if (!resp.ok) throw new Error('图片加载失败，请右键另存')
+    const blob = await resp.blob()
+    // fallback 路径需将文件全量 fetch 到内存，额外限制 5MB 防止内存峰值
+    // 主路径通过 <img> 加载无此限制（浏览器自行管理解码内存）
+    if (blob.size > 5 * 1024 * 1024) {
+        throw new Error('图片超过 5MB，请右键下载后使用')
+    }
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(blob)
+        const img = new Image()
+        img.onload = () => {
+            URL.revokeObjectURL(url)
+            drawImageToBlob(img).then(resolve).catch(reject)
+        }
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('图片解码失败')) }
+        img.src = url
+    })
+}
+
 // 复制文本到剪贴板。优先使用 navigator.clipboard，不可用时降级到 textarea + execCommand("copy")，
 // 适配 iOS Safari、非 HTTPS 等不支持 Clipboard API 的环境。返回是否复制成功。
 export async function copyToClipboard(text: string): Promise<boolean> {

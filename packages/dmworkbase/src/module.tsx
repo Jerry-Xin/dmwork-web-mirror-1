@@ -97,6 +97,7 @@ import { handleGlobalSearchClick } from "./Pages/Chat/vm";
 import { ApproveGroupMemberCell } from "./Messages/ApproveGroupMember";
 import { notificationUtil } from "./Utils/NotificationUtil";
 import { resolveExternalForViewer } from "./Utils/externalViewer";
+import { copyImageToClipboard } from "./Utils/clipboard";
 import { shouldSkipMessageForSpace } from "./Service/SpaceService";
 import {
   ThreadCreatedCell,
@@ -634,6 +635,31 @@ export default class BaseModule implements IModule {
         };
       },
       1000
+    );
+
+    // 图片消息：复制图片到剪贴板
+    WKApp.endpoints.registerMessageContextMenus(
+      "contextmenus.copyImage",
+      (message) => {
+        if (message.contentType !== MessageContentType.image) {
+          return null;
+        }
+        const content = message.content as ImageContent;
+        const rawSrc = content.url || content.remoteUrl || "";
+        if (!rawSrc) return null;
+        // 经过 datasource URL 处理，与渲染路径保持一致（补全 base URL、路径改写等）
+        const src = WKApp.dataSource.commonDataSource.getImageURL(rawSrc, { width: content.width || 0, height: content.height || 0 });
+
+        return {
+          title: "复制图片",
+          onClick: () => {
+            copyImageToClipboard(src)
+              .then(() => Toast.success("已复制图片"))
+              .catch((err: Error) => Toast.warning(err.message || "复制失败"));
+          },
+        };
+      },
+      1100
     );
 
     WKApp.endpoints.registerMessageContextMenus(

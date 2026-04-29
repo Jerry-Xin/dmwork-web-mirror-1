@@ -1060,6 +1060,8 @@ export default class ConversationVM extends ProviderListener {
             message.message.messageID = ackPacket.messageID.toString()
             message.message.messageSeq = ackPacket.messageSeq
             if (ackPacket.reasonCode === 1) {
+                // 发送成功后同步更新 order，确保 sortMessages 能正确排序
+                message.order = ackPacket.messageSeq * OrderFactor
                 this.updateLastMessageIfNeed(message)
                 message.status = MessageStatus.Normal
                 this.removeSendingMessageIfNeed(ackPacket.clientSeq, this.channel)
@@ -1208,10 +1210,13 @@ export default class ConversationVM extends ProviderListener {
             this.pendingMessages = []
         }
         // 去重：避免实时消息与历史拉取竞态导致同一条消息重复出现
+        // clientMsgNo/messageID 为主键，messageSeq > 0 时额外用 seq 兜底（防止不同 clientMsgNo 的同一条消息重复）
         const msgKey = messageWrap.clientMsgNo || messageWrap.messageID?.toString()
-        const alreadyExists = msgKey
-            ? this.messagesOfOrigin.some(m => (m.clientMsgNo || m.messageID?.toString()) === msgKey)
-            : false
+        const alreadyExists = this.messagesOfOrigin.some(m => {
+            if (msgKey && (m.clientMsgNo || m.messageID?.toString()) === msgKey) return true
+            if (messageWrap.messageSeq > 0 && m.messageSeq === messageWrap.messageSeq) return true
+            return false
+        })
         if (!alreadyExists) {
             this.messagesOfOrigin.push(messageWrap)
         }
@@ -1506,6 +1511,8 @@ export default class ConversationVM extends ProviderListener {
     // 刷新消息列表
     refreshMessages(messages: MessageWrap[], callback?: () => void, options?: { allowFoldAnimation?: boolean }) {
         let newMessages = messages
+        // 渲染前先按 order（seq）排序，防止延迟推送/重连补推导致消息位置错乱
+        newMessages = this.sortMessages(newMessages)
         this.distinctMessages(newMessages)
         newMessages = this.filterPersonMessagesBySpace(newMessages)
         newMessages = this.deduplicateSystemTips(newMessages)

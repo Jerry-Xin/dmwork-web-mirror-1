@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import WKSDK, { Channel, ChannelInfo, ChannelInfoListener, ChannelTypePerson } from 'wukongimjssdk'
+import WKSDK, { Channel, ChannelInfo, ChannelInfoListener, ChannelTypePerson, ChannelTypeGroup } from 'wukongimjssdk'
 import WKApp from '../../App'
 import { MessageWrap } from '../../Service/Model'
 import { MessageContentTypeConst } from '../../Service/Const'
 import { MessageRowUIProps } from './types'
+import { resolveExternalForViewer } from '../../Utils/externalViewer'
 import moment from 'moment'
 
 export interface MessageRowSelectionState {
@@ -69,6 +70,34 @@ export function getMessageRow(
     ? () => interaction.onSenderNameClick!(uid)
     : undefined
 
+  // YUJ-98 R7: 外部成员来源 Space 后缀（@SpaceName），相对当前查看 Space 解析。
+  // 与新组件 wk-msg-head 保持同一套 resolve 规则（msg-level 新字段优先，
+  // legacy from_* 降级），群聊时允许用 channelInfo.orgData 做最后兜底。
+  const viewerSpaceId = WKApp.shared.currentSpaceId
+  const msgRes = resolveExternalForViewer({
+    homeSpaceId: message.fromHomeSpaceId,
+    homeSpaceName: message.fromHomeSpaceName,
+    isExternalLegacy: message.fromIsExternal ? 1 : 0,
+    sourceSpaceNameLegacy: message.fromSourceSpaceName,
+    viewerSpaceId,
+  })
+  const hasMsgLevel = !!message.fromHomeSpaceId ||
+    (message.fromIsExternal && !!message.fromSourceSpaceName)
+  const isGroupMsg = message.channel?.channelType === ChannelTypeGroup
+  const orgHomeSpaceId = channelInfo?.orgData?.home_space_id as string | undefined
+  const orgHomeSpaceName = channelInfo?.orgData?.home_space_name as string | undefined
+  const orgRes = isGroupMsg
+    ? resolveExternalForViewer({
+        homeSpaceId: orgHomeSpaceId,
+        homeSpaceName: orgHomeSpaceName,
+        isExternalLegacy: channelInfo?.orgData?.is_external,
+        sourceSpaceNameLegacy: channelInfo?.orgData?.source_space_name,
+        viewerSpaceId,
+      })
+    : { isExternal: false, sourceSpaceName: '' }
+  const isExternal = hasMsgLevel ? msgRes.isExternal : orgRes.isExternal
+  const sourceSpaceName = hasMsgLevel ? msgRes.sourceSpaceName : orgRes.sourceSpaceName
+
   return {
     isSend: message.send,
     isContinue,
@@ -82,6 +111,8 @@ export function getMessageRow(
     timeOnly,
     isOnline: channelInfo?.online,
     isEdit: message.message?.remoteExtra?.isEdit ?? false,
+    isExternal,
+    sourceSpaceName,
     onSelect: selection?.onSelect,
     onAvatarClick,
     onSenderNameClick,

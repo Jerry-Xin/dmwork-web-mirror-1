@@ -13,6 +13,9 @@ function channelInfoToForwardItem(channelInfo: ChannelInfo): ForwardItem {
     displayName: channelInfo.orgData.displayName || channelInfo.channel.channelID,
     isAI: channelInfo.orgData?.robot === 1,
     isThread: channelInfo.channel.channelType === ChannelTypeCommunityTopic,
+    isExternal:
+      channelInfo.channel.channelType === ChannelTypeGroup &&
+      channelInfo.orgData?.is_external_group === 1,
   }
 }
 
@@ -32,6 +35,9 @@ function conversationWrapToForwardItem(wrap: ConversationWrap, parentChannelID?:
     isThread,
     hasThreads: hasThreads ?? false,
     parentChannelID,
+    isExternal:
+      wrap.channel.channelType === ChannelTypeGroup &&
+      channelInfo?.orgData?.is_external_group === 1,
   }
 }
 
@@ -238,12 +244,18 @@ export function useForwardModal(
           const chType = c.chat_type === "direct" ? 1 : ChannelTypeGroup
           const ch = new Channel(c.chat_id, chType)
           channelMapRef.current.set(c.chat_id, ch)
+          // 若本地已缓存 channelInfo，尝试继承外部群标记
+          const cachedInfo = WKSDK.shared().channelManager.getChannelInfo(ch)
+          const isExternal =
+            chType === ChannelTypeGroup &&
+            cachedInfo?.orgData?.is_external_group === 1
           return {
             channelID: c.chat_id,
             channelType: chType,
             displayName: c.name || c.chat_id,
             isAI: false,
             isThread: false,
+            isExternal,
           } as ForwardItem
         })
         setSearchGroupItems(groups)

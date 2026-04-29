@@ -1,38 +1,68 @@
 import BigNumber from "bignumber.js";
 import { Setting } from "wukongimjssdk";
-import { WKSDK, ChannelInfo, Channel, Conversation, Message, MessageStatus, ChannelTypePerson, ChannelTypeGroup,ConversationExtra,Reminder, MessageExtra } from "wukongimjssdk";
+import { WKSDK, ChannelInfo, Channel, Conversation, Message, MessageStatus, ChannelTypePerson, ChannelTypeGroup,ConversationExtra,Reminder, MessageExtra, Reply } from "wukongimjssdk";
 
 
 /**
- * 将服务端 msg-level 外部来源字段从原始 JSON map 透传到 SDK Message 实例上。
+ * 将服务端 msg-level 外部来源字段从原始 JSON map 透传到目标对象上。
  * 覆盖字段：from_is_external / from_source_space_name / from_home_space_id /
  * from_home_space_name。消费方（MessageWrap getter）按 snake_case 属性读取。
  *
- * 用于所有「从服务端 JSON 反序列化得到 Message」的路径：
+ * 用于所有「从服务端 JSON 反序列化得到 Message/Reply」的路径：
  *   - Convert.toMessage（conversation/sync 的 recents / message/channel/sync）
  *   - MergeforwardContent.mapToMessage（合并转发内嵌消息）
+ *   - Reply.prototype.decode（引用消息预览，见 patchSdkDecodeForExternalFields）
  *   - 未来任何新的 decode 入口应同样调用此方法
+ *
+ * target 使用 any 以便同时兼容 SDK 的 Message 与 Reply 实例；两者都没有
+ * 对应字段的声明，消费方统一通过 snake_case 属性读取。
  *
  * 硬约束：仅做字段拷贝；不修改 resolver 或渲染逻辑。
  */
-export function applyMsgLevelExternalFields(message: Message, msgMap: any): void {
-    if (!msgMap) return
+export function applyMsgLevelExternalFields(target: any, msgMap: any): void {
+    if (!target || !msgMap) return
 
     const fromIsExternal = msgMap["from_is_external"]
     if (fromIsExternal !== undefined && fromIsExternal !== null) {
-        (message as any).from_is_external = fromIsExternal === 1 ? 1 : 0
+        target.from_is_external = fromIsExternal === 1 ? 1 : 0
     }
     const fromSourceSpaceName = msgMap["from_source_space_name"]
     if (fromSourceSpaceName !== undefined && fromSourceSpaceName !== null) {
-        (message as any).from_source_space_name = fromSourceSpaceName
+        target.from_source_space_name = fromSourceSpaceName
     }
     const fromHomeSpaceId = msgMap["from_home_space_id"]
     if (fromHomeSpaceId !== undefined && fromHomeSpaceId !== null) {
-        (message as any).from_home_space_id = fromHomeSpaceId
+        target.from_home_space_id = fromHomeSpaceId
     }
     const fromHomeSpaceName = msgMap["from_home_space_name"]
     if (fromHomeSpaceName !== undefined && fromHomeSpaceName !== null) {
-        (message as any).from_home_space_name = fromHomeSpaceName
+        target.from_home_space_name = fromHomeSpaceName
+    }
+}
+
+let sdkDecodePatched = false
+
+/**
+ * Monkey-patch WKSDK 内部的 JSON decode 方法，使其在反序列化时也透传
+ * msg-level 外部来源字段。目前覆盖：
+ *   - Reply.prototype.decode：引用消息预览（bundle @175818 反编译路径）。
+ *     PR#1071 已在 Convert.toMessage / MergeforwardContent.mapToMessage
+ *     两条入口补齐字段；本 patch 覆盖 SDK 内部第三条入口，
+ *     避免外部成员发言被回复/引用时预览层丢失 @SpaceName。
+ *
+ * 幂等：多次调用只 patch 一次。
+ * 硬约束：仅追加字段拷贝，不改变原 decode 语义。
+ *
+ * 参见 dmwork-web#1069 round 2。
+ */
+export function patchSdkDecodeForExternalFields(): void {
+    if (sdkDecodePatched) return
+    sdkDecodePatched = true
+
+    const originalReplyDecode = Reply.prototype.decode
+    Reply.prototype.decode = function (data: any) {
+        originalReplyDecode.call(this, data)
+        applyMsgLevelExternalFields(this, data)
     }
 }
 

@@ -84,6 +84,7 @@ import { UserInfoRouteData } from "./Components/UserInfo/vm";
 import { IconAlertCircle } from "@douyinfe/semi-icons";
 import { TypingManager } from "./Service/TypingManager";
 import APIClient from "./Service/APIClient";
+import { patchSdkDecodeForExternalFields } from "./Service/Convert";
 import ConversationVM from "./Components/Conversation/vm";
 import { ChannelAvatar } from "./Components/ChannelAvatar";
 import { ScreenshotCell, ScreenshotContent } from "./Messages/Screenshot";
@@ -129,6 +130,11 @@ export default class BaseModule implements IModule {
     return "base";
   }
   init(): void {
+    // dmwork-web#1069 round 2：补齐 WKSDK 内部 Reply.prototype.decode 的
+    // from_home_space_* 字段透传，使引用消息预览与 Convert.toMessage /
+    // MergeforwardContent.mapToMessage 行为一致。幂等。
+    patchSdkDecodeForExternalFields();
+
     APIClient.shared.logoutCallback = () => {
       WKApp.shared.logout();
     };

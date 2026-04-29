@@ -12,7 +12,36 @@ import MessageRow from "../../ui/message/MessageRow"
 import ReplyBlock from "../../ui/message/ReplyBlock";
 import TextContent from "../../ui/message/TextContent";
 import { getTextMessageUI } from "../../bridge/message/useTextMessageUI";
+import { resolveExternalForViewer } from "../../Utils/externalViewer";
 import "./index.css"
+
+/**
+ * 根据当前查看 Space 解析被引用消息发送者的「外部来源 Space 名」。
+ *
+ * 被引用消息 (`message.content.reply`) 的 msg-level 来源字段由
+ * `Convert.toMessage` / `MergeforwardContent.mapToMessage` /
+ * `patchSdkDecodeForExternalFields()`（SDK 内部 Reply.prototype.decode）
+ * 以 snake_case 透传到 `Reply` 实例上。此处直接按 snake_case 读取，
+ * 与消息头 `MessageBase` 的 resolve 调用保持一致。
+ *
+ * 返回空串表示：不展示 `@SpaceName` 后缀。
+ */
+function resolveReplySourceSpaceName(reply: any): string {
+    if (!reply) return ""
+    const { isExternal, sourceSpaceName } = resolveExternalForViewer({
+        homeSpaceId: reply.from_home_space_id as string | undefined,
+        homeSpaceName: reply.from_home_space_name as string | undefined,
+        isExternalLegacy:
+            reply.from_is_external === 1 || reply.from_is_external === true
+                ? 1
+                : 0,
+        sourceSpaceNameLegacy: reply.from_source_space_name as
+            | string
+            | undefined,
+        viewerSpaceId: WKApp.shared.currentSpaceId,
+    })
+    return isExternal && sourceSpaceName ? sourceSpaceName : ""
+}
 
 
 // 文本消息
@@ -166,6 +195,7 @@ export class TextCell extends MessageCell {
                             <ReplyBlock
                                 fromName={message.content.reply.fromName || ''}
                                 digest={message.content.reply.content?.conversationDigest || ''}
+                                sourceSpaceName={resolveReplySourceSpaceName(message.content.reply)}
                                 onClick={() => context.locateMessage(message.content.reply.messageSeq)}
                             />
                         )}
@@ -194,6 +224,12 @@ export class TextCell extends MessageCell {
                         </div>
                         <div className="wk-message-text-reply-authorname">
                             {message.content.reply.fromName}
+                            {/* dmwork-web#1069：外部成员的引用预览显示「@SpaceName」后缀，
+                                与新 UI 的 ReplyBlock 保持一致（按当前查看 Space 相对渲染）。 */}
+                            {(() => {
+                                const src = resolveReplySourceSpaceName(message.content.reply)
+                                return src ? <span className="wk-message-text-reply-space" title={`@${src}`}>@{src}</span> : null
+                            })()}
                         </div>
                     </div>
                     <div className="wk-message-text-reply-content">

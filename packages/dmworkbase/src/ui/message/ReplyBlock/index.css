@@ -33,6 +33,15 @@
   flex: 1;
 }
 
+.wk-reply-block__name-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
 .wk-reply-block__name {
   font-size: 12px;
   font-weight: 400;
@@ -41,6 +50,20 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 外部成员来源 Space 后缀（dmwork-web#1069 / YUJ-66）：
+   与消息头 .wk-msg-head-space 等价，放在引用块的昵称行中。 */
+.wk-reply-block__space {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(28, 28, 35, 0.45);
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+  flex-shrink: 1;
 }
 
 .wk-reply-block__digest {

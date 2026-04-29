@@ -67,6 +67,18 @@ body[theme-mode=dark] .wk-message-text-recv {
     margin-right: 4px;
 }
 
+/* dmwork-web#1069：legacy 引用预览的外部成员「@SpaceName」后缀，与
+   新 UI 的 .wk-reply-block__space 等价。 */
+.wk-message-text-reply-space {
+    margin-left: 4px;
+    font-size: 12px;
+    color: var(--wk-text-tertiary, rgba(9, 30, 66, 0.54));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}
+
 .wk-message-text-reply-content { 
     width:100%;
 	word-break:break-all;

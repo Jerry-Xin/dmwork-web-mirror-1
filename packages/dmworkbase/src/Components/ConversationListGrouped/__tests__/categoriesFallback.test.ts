@@ -6,6 +6,69 @@ import {
     type ValidCategoryItem,
 } from "../categoriesFallback"
 
+// ─────────────────────────────────────────────────────────────────
+// 回归测试：新用户被邀请入群后群聊 tab 显示空状态（PR #1057 修复）
+//
+// 根因：ConversationListGrouped 向 ConversationListWithCategory 传入
+// categories prop 时，computeEffectiveCategories([]) 总会注入虚拟默认分组，
+// 导致 categories.length === 0 分支永远不触发，hasNoGroups 被绕过。
+//
+// 修复：categories=[] && groupConversations=[] 时传 []（触发空状态）；
+//       categories=[] 但有群聊时传 categoriesForView（虚拟兜底，正常渲染）。
+// ─────────────────────────────────────────────────────────────────
+describe("ConversationListGrouped categories prop 条件分支（回归 PR #1057）", () => {
+    it("categories=[] 且 groupConversations=[] → 应传 [] 以触发空状态", () => {
+        const categories: ValidCategoryItem[] = []
+        const groupConversations: unknown[] = []
+
+        // 模拟 ConversationListGrouped 的条件：
+        const categoriesForView = computeEffectiveCategories(categories)
+        const passedCategories =
+            categories.length === 0 && groupConversations.length === 0
+                ? []
+                : categoriesForView
+
+        // 必须传 []，让 ConversationListWithCategory 进入 hasNoGroups 分支
+        expect(passedCategories).toHaveLength(0)
+    })
+
+    it("categories=[] 但 groupConversations 有数据 → 应传虚拟默认分组，正常渲染群聊", () => {
+        const categories: ValidCategoryItem[] = []
+        const groupConversations = [{ channel: { channelID: "g1" } }] // 被邀请入的群
+
+        const categoriesForView = computeEffectiveCategories(categories)
+        const passedCategories =
+            categories.length === 0 && groupConversations.length === 0
+                ? []
+                : categoriesForView
+
+        // 必须传虚拟默认分组，让群聊正常渲染而非空状态
+        expect(passedCategories).toHaveLength(1)
+        expect(isVirtualCategory(passedCategories[0].category_id)).toBe(true)
+    })
+
+    it("categories 有数据 → 直接走原 categoriesForView，与 groupConversations 无关", () => {
+        const categories: ValidCategoryItem[] = [{
+            category_id: "real-uuid-1234",
+            name: "工作",
+            sort: 0,
+            groups: [{ group_no: "g1", name: "A", category_sort: 0 }],
+            is_default: false,
+        }]
+        const groupConversations = [{ channel: { channelID: "g1" } }]
+
+        const categoriesForView = computeEffectiveCategories(categories)
+        const passedCategories =
+            categories.length === 0 && groupConversations.length === 0
+                ? []
+                : categoriesForView
+
+        expect(passedCategories).toBe(categoriesForView)
+        expect(passedCategories).toHaveLength(1)
+        expect(isVirtualCategory(passedCategories[0].category_id)).toBe(false)
+    })
+})
+
 describe("isVirtualCategory", () => {
     it("识别虚拟默认分组的 category_id 前缀", () => {
         expect(isVirtualCategory(VIRTUAL_DEFAULT_CATEGORY_ID)).toBe(true)

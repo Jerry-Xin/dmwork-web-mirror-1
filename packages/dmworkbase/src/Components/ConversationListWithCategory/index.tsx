@@ -94,7 +94,7 @@ const ConversationListWithCategory: React.FC<ConversationListWithCategoryProps> 
             // 有群聊但无自定义分组 → 直接显示未分组区，不走分组 UI
             return (
                 <div className="wk-conv-with-category__body">
-                    {ungroupedConversations}
+                    {allConversations}
                 </div>
             )
         }

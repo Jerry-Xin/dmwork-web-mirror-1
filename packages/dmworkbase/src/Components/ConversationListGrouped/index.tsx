@@ -415,13 +415,20 @@ const ConversationListGrouped: React.FC<ConversationListGroupedProps> = ({
             <SortableContext items={categoryIds} strategy={verticalListSortingStrategy}>
                 <ConversationListWithCategory
                     key={isLoading ? "loading" : categories.map(c => c.category_id).join(",")}
-                    categories={categoriesForView}
+                    categories={
+                        // categories 为空且无群聊时，传 [] 让 ConversationListWithCategory
+                        // 走 categories.length===0 分支，触发 hasNoGroups 空状态判断。
+                        // categories 为空但有群聊时，传虚拟默认分组（computeEffectiveCategories 兜底）正常渲染。
+                        categories.length === 0 && groupConversations.length === 0
+                            ? []
+                            : categoriesForView
+                    }
                     isLoading={isLoading}
                     error={error}
                     onRetry={onRetry}
                     allConversations={ConvListWithMenu(conversations)}
                     onCreateCategory={onOpenCreateCategory}
-                    hasNoGroups={categories.length === 0}
+                    hasNoGroups={categories.length === 0 && groupConversations.length === 0}
                     onStartGroup={onStartGroup}
                     activeCategoryId={activeCategoryId}
                     renamingCategoryId={renamingCategoryId}

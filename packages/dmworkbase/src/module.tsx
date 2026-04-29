@@ -103,6 +103,8 @@ import {
   ThreadCreatedCell,
   ThreadCreatedContent,
 } from "./Messages/ThreadCreated";
+import { SummaryCardContent } from "./Messages/SummaryCard/SummaryCardContent";
+import { SummaryCardCell } from "./Messages/SummaryCard";
 import { parseThreadChannelId } from "./Service/Thread";
 
 /** execCommand 降级复制，用于 navigator.clipboard 不可用的场景 */
@@ -175,6 +177,8 @@ export default class BaseModule implements IModule {
           case MessageContentType.signalMessage: // 端对端加密错误消息
           case MessageContentTypeConst.approveGroupMember: // 审批群成员
             return ApproveGroupMemberCell;
+          case 15: // 智能总结卡片
+            return SummaryCardCell;
           case 98:
             return SignalMessageCell;
           default:
@@ -238,6 +242,8 @@ export default class BaseModule implements IModule {
       MessageContentTypeConst.threadCreated,
       () => new ThreadCreatedContent()
     );
+    // 智能总结卡片
+    WKSDK.shared().register(15, () => new SummaryCardContent());
 
     // 未知消息
     WKApp.messageManager.registerCell(

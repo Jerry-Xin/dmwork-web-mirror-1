@@ -1,0 +1,80 @@
+.wk-message-summary-card {
+    background-color: white;
+    width: 300px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+body[theme-mode=dark] .wk-message-summary-card {
+    background-color: var(--wk-color-secondary);
+}
+
+.wk-message-summary-card-body {
+    padding: 12px;
+}
+
+.wk-message-summary-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--wk-text-item);
+    margin-bottom: 10px;
+}
+
+.wk-message-summary-card-title {
+    font-size: 14px;
+    color: var(--wk-text-item);
+    margin-bottom: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wk-message-summary-card-meta {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 4px;
+}
+
+.wk-message-summary-card-action {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+body[theme-mode=dark] .wk-message-summary-card-action {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.wk-message-summary-card-action-btn {
+    font-size: 13px;
+    color: var(--wk-color-primary, #4e83fd);
+    cursor: pointer;
+}
+
+.wk-message-summary-card-action-btn:hover {
+    opacity: 0.8;
+}
+
+.wk-message-summary-card-bottom {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0px 12px 6px 12px;
+}
+
+.wk-message-summary-card-bottom-flag {
+    font-size: 12px;
+    color: #999;
+}
+
+.wk-message-summary-card-bottom-time {
+    position: absolute;
+    right: 10px;
+    top: -5px;
+    color: #999 !important;
+}

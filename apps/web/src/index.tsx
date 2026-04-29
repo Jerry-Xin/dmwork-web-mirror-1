@@ -9,6 +9,7 @@ import  { LoginModule } from '@dmwork/login';
 import  { DataSourceModule } from '@dmwork/datasource';
 import {ContactsModule} from '@dmwork/contacts';
 import { TodoModule } from '@dmwork/todo';
+import { SummaryModule } from '@dmwork/summary';
 import { version as pkgVersion } from '../package.json';
 
 // VITE_API_URL 只填 origin（协议+域名+端口），不要带路径
@@ -53,6 +54,7 @@ WKApp.shared.registerModule(new DataSourceModule()) // 数据源模块
 WKApp.shared.registerModule(new LoginModule()); // 登录模块
 WKApp.shared.registerModule(new ContactsModule()); // 联系模块
 WKApp.shared.registerModule(new TodoModule()); // Todo module
+WKApp.shared.registerModule(new SummaryModule()); // 智能总结模块
 
 WKApp.shared.startup() // app启动
 

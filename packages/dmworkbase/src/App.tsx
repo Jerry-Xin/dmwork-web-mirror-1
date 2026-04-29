@@ -10,6 +10,7 @@ export type MittEvents = {
     thread: import("./Service/Thread").Thread | null;
   };
   "wk:close-thread-panel": undefined;
+  "wk:switch-sidebar-tab": string;
   "wk:file-preview": {
     url: string;
     name: string;
@@ -30,6 +31,7 @@ export type MittEvents = {
   } | null;
   'wk:send-as-todo': { title: string; source_channel_id: string; source_channel_type: number };
   'wk:create-todo-from-chat': { title: string; source_channel_id: string; source_channel_type: number };
+  "summary-space-changed": undefined;
 };
 import { EndpointCommon } from "./EndpointCommon";
 import APIClient from "./Service/APIClient";
@@ -258,6 +260,12 @@ export default class WKApp extends ProviderListener {
   static routeLeft = new ContextRouteManager(); // 左边页面路由
   static routeRight = new ContextRouteManager(); // 右边（main）页面路由
   static menus = MenusManager.shared; // 菜单
+  // Callback to switch the active sidebar menu by id (set by Main page)
+  static switchToMenuById?: (menuId: string) => void;
+  static openSummaryDetail?: (taskId: number) => void;
+  static searchChatCandidates?: (params: { keyword?: string; chat_type?: string; space_id?: string }) => Promise<any[]>;
+  // Id of the currently active sidebar menu (kept in sync by Main page)
+  static currentMenuId?: string;
   static apiClient = APIClient.shared; // api客户端
   static config: WKConfig = new WKConfig(); // app配置
   static remoteConfig: WKRemoteConfig = new WKRemoteConfig(); // 远程配置

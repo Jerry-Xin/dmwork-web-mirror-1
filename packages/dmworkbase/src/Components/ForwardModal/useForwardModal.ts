@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import { WKSDK, Channel, ChannelInfo, ChannelInfoListener } from "wukongimjssdk"
+import { WKSDK, Channel, ChannelInfo, ChannelInfoListener, ChannelTypeGroup } from "wukongimjssdk"
 import { ConversationWrap } from "../../Service/Model"
 import { ChannelTypeCommunityTopic } from "../../Service/Const"
+import { shouldSkipChannelForSpace, shouldSkipPersonConversationForSpace } from "../../Service/SpaceService"
 import WKApp from "../../App"
 import { ForwardItem } from "./ForwardModal"
 
@@ -68,11 +69,13 @@ export function useForwardModal(
 ): UseForwardModalResult {
   const [conversationItems, setConversationItems] = useState<ForwardItem[]>([])
   const [friendItems, setFriendItems] = useState<ForwardItem[]>([])
+  const [searchGroupItems, setSearchGroupItems] = useState<ForwardItem[]>([])
   const [selectedIDs, setSelectedIDs] = useState<string[]>([])
   const [inputValue, setInputValueState] = useState("")
   const [keyword, setKeyword] = useState("")
   const [loading, setLoading] = useState(true)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchRequestRef = useRef(0)
 
   const setInputValue = useCallback((val: string) => {
     setInputValueState(val)
@@ -99,7 +102,15 @@ export function useForwardModal(
     // 分离：群聊（非子区）和子区
     const groupWraps: ConversationWrap[] = []
     const threadWraps: ConversationWrap[] = []
+    const spaceId = WKApp.shared.currentSpaceId
     for (const wrap of wrapsRef.current) {
+      if (spaceId && wrap.channel.channelType === ChannelTypeGroup) {
+        const groupSpaceId = wrap.channelInfo?.orgData?.space_id
+        // 严格模式：没有 space_id 或不匹配当前 Space 的群聊都跳过
+        if (!groupSpaceId || groupSpaceId !== spaceId) {
+          continue
+        }
+      }
       channelMapRef.current.set(wrap.channel.channelID, wrap.channel)
       if (wrap.channel.channelType === ChannelTypeCommunityTopic) {
         threadWraps.push(wrap)
@@ -148,6 +159,8 @@ export function useForwardModal(
         const conversations = WKSDK.shared().conversationManager.conversations ?? []
         const wraps: ConversationWrap[] = []
         for (const conv of conversations) {
+          if (shouldSkipChannelForSpace(conv.channel)) continue
+          if (shouldSkipPersonConversationForSpace(conv)) continue
           const info = WKSDK.shared().channelManager.getChannelInfo(conv.channel)
           if (!info) {
             WKSDK.shared().channelManager.fetchChannelInfo(conv.channel)
@@ -156,6 +169,25 @@ export function useForwardModal(
         }
         wrapsRef.current = sortConversations(wraps)
         rebuildConvItems()
+
+        // 补全：获取用户加入的全部群聊（已支持 space_id 过滤）
+        const allGroups = await WKApp.dataSource.channelDataSource.groupSaveList()
+        const existingGroupIDs = new Set<string>()
+        for (const wrap of wrapsRef.current) {
+          if (wrap.channel.channelType === ChannelTypeGroup) {
+            existingGroupIDs.add(wrap.channel.channelID)
+          }
+        }
+        const extraGroupItems: ForwardItem[] = []
+        for (const groupInfo of allGroups) {
+          if (!existingGroupIDs.has(groupInfo.channel.channelID)) {
+            channelMapRef.current.set(groupInfo.channel.channelID, groupInfo.channel)
+            extraGroupItems.push(channelInfoToForwardItem(groupInfo))
+          }
+        }
+        if (extraGroupItems.length > 0) {
+          setConversationItems((prev: ForwardItem[]) => [...prev, ...extraGroupItems])
+        }
 
         // 好友
         const friends = (await WKApp.dataSource.commonDataSource.searchFriends("")) ?? []
@@ -182,10 +214,51 @@ export function useForwardModal(
     }
   }, [rebuildConvItems])
 
-  // 合并去重：conversationItems 优先，friend 已在 conversation 里的跳过
+  // 搜索群组：keyword >= 2 时调用注册的 searchChatCandidates 获取群组结果
+  useEffect(() => {
+    if (keyword.length < 2) {
+      setSearchGroupItems([])
+      return
+    }
+    if (!WKApp.searchChatCandidates) {
+      setSearchGroupItems([])
+      return
+    }
+    const reqId = ++searchRequestRef.current
+    const searchParams: Record<string, string> = { keyword }
+    const currentSpaceId = WKApp.shared.currentSpaceId
+    if (currentSpaceId) {
+      searchParams.space_id = currentSpaceId
+    }
+    WKApp.searchChatCandidates(searchParams)
+      .then((candidates: any) => {
+        if (reqId !== searchRequestRef.current) return
+        const arr = Array.isArray(candidates) ? candidates : []
+        const groups: ForwardItem[] = arr.map((c: any) => {
+          const chType = c.chat_type === "direct" ? 1 : ChannelTypeGroup
+          const ch = new Channel(c.chat_id, chType)
+          channelMapRef.current.set(c.chat_id, ch)
+          return {
+            channelID: c.chat_id,
+            channelType: chType,
+            displayName: c.name || c.chat_id,
+            isAI: false,
+            isThread: false,
+          } as ForwardItem
+        })
+        setSearchGroupItems(groups)
+      })
+      .catch(() => {
+        if (reqId === searchRequestRef.current) setSearchGroupItems([])
+      })
+  }, [keyword])
+
+  // 合并去重：conversationItems 优先，friend 已在 conversation 里的跳过，搜索群组追加
   const convIDs = new Set(conversationItems.map((i: ForwardItem) => i.channelID))
   const uniqueFriends = friendItems.filter((f: ForwardItem) => !convIDs.has(f.channelID))
-  const allItems = [...conversationItems, ...uniqueFriends]
+  const localIDs = new Set([...convIDs, ...uniqueFriends.map((f) => f.channelID)])
+  const uniqueSearchGroups = searchGroupItems.filter((g: ForwardItem) => !localIDs.has(g.channelID))
+  const allItems = [...conversationItems, ...uniqueFriends, ...uniqueSearchGroups]
 
   // 关键字过滤（方案 A：命中子区时带出父群；命中父群不自动展开子区）
   const filtered = keyword

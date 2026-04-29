@@ -718,6 +718,7 @@ export default class ChatPage extends Component<any, ChatPageState> {
   };
 
   private _onSpaceChanged?: (space: any) => void;
+  private _onSwitchTab?: (tab: string) => void;
 
   componentDidMount() {
     // 监听 space-changed，同步 spacename 到 state
@@ -728,6 +729,13 @@ export default class ChatPage extends Component<any, ChatPageState> {
       });
     };
     WKApp.mittBus.on("space-changed", this._onSpaceChanged);
+
+    this._onSwitchTab = (tab: string) => {
+      if (tab === "group" || tab === "dm") {
+        this._handleTabChange(tab as SidebarTab);
+      }
+    };
+    WKApp.mittBus.on("wk:switch-sidebar-tab", this._onSwitchTab);
 
     // 初始化：主动拉当前 Space 名称（首次渲染时 space-changed 还没触发）
     const currentSpaceId = WKApp.shared.currentSpaceId;
@@ -747,6 +755,9 @@ export default class ChatPage extends Component<any, ChatPageState> {
   componentWillUnmount() {
     if (this._onSpaceChanged) {
       WKApp.mittBus.off("space-changed", this._onSpaceChanged);
+    }
+    if (this._onSwitchTab) {
+      WKApp.mittBus.off("wk:switch-sidebar-tab", this._onSwitchTab);
     }
   }
 

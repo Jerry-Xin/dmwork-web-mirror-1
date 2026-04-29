@@ -1,4 +1,4 @@
-import { Channel, WKSDK, Message } from "wukongimjssdk";
+import { Channel, ChannelTypePerson, WKSDK, Message } from "wukongimjssdk";
 import WKApp from "./App";
 import React, { Component, ReactNode } from "react";
 import { ChatContentPage } from "./Pages/Chat";
@@ -69,11 +69,26 @@ export class EndpointCommon {
 
   showConversation(channel: Channel, opts?: ShowConversationOptions) {
     WKApp.shared.openChannel = channel;
-    EndpointManager.shared.invoke(EndpointID.showConversation, {
-      channel: channel,
-      opts: opts,
-    });
-    WKApp.shared.notifyListener();
+
+    const dispatch = () => {
+      EndpointManager.shared.invoke(EndpointID.showConversation, {
+        channel: channel,
+        opts: opts,
+      });
+      WKApp.shared.notifyListener();
+    };
+
+    // If not already on the chat tab, switch to it first and wait one tick
+    // for the chat subtree to mount before dispatching the conversation
+    // event. Without this delay the UI can end up in a broken state when
+    // the user later switches back to another tab.
+    if (WKApp.switchToMenuById && WKApp.currentMenuId !== "chat") {
+      WKApp.switchToMenuById("chat");
+      setTimeout(dispatch, 50);
+      return;
+    }
+
+    dispatch();
   }
 
   registerContactsHeader(
@@ -105,6 +120,9 @@ export class EndpointCommon {
         if (param.opts) {
           opts = param.opts
         }
+
+        const targetTab = channel.channelType === ChannelTypePerson ? "dm" : "group";
+        WKApp.mittBus.emit("wk:switch-sidebar-tab", targetTab);
 
         let initLocateMessageSeq = 0;
         if (opts && opts.initLocateMessageSeq && opts.initLocateMessageSeq > 0) {

@@ -18,6 +18,7 @@ import { SuperGroup } from "../../Utils/const";
 import { SystemContent } from "wukongimjssdk";
 import { getFoldSessionExpandedMessages } from "./foldSessionSummary";
 import { getPulldownRestoredScrollTop } from "./historyScroll";
+import { applyMsgLevelExternalFieldsWithFallback } from "../../Service/Convert";
 
 export interface FoldSessionParticipant {
     uid: string
@@ -670,6 +671,11 @@ export default class ConversationVM extends ProviderListener {
             if (!message.channel.isEqual(this.channel)) {
                 return
             }
+            // dmwork-web#1069 R5：WebSocket 推送的 Message 是 SDK 内部
+            // `new Message(recvPacket)` 产物，wire 不携带 msg-level 的
+            // from_home_space_* 等字段。在业务层收尾用群成员列表 / Person cache
+            // 兜底补齐；已有值不覆盖、失败静默。此处是 WS 推送 bubble 的唯一入口。
+            applyMsgLevelExternalFieldsWithFallback(message, undefined)
             if (message.contentType == MessageContentTypeConst.rtcData) {
                 return
             }
@@ -1793,6 +1799,10 @@ export default class ConversationVM extends ProviderListener {
             setting.receiptEnabled = true
         }
         const message = await WKSDK.shared().chatManager.send(content, channel, setting)
+        // dmwork-web#1069 R5：SDK 内部 `Message.fromSendPacket` 产物的 Message，
+        // wire 不携带 from_home_space_* 等字段；在业务层收尾统一补一次，避免自发送
+        // bubble 丢外部来源标识。已有值不覆盖、失败静默。
+        applyMsgLevelExternalFieldsWithFallback(message, undefined)
         const messageWrap = new MessageWrap(message)
 
         this.addSendMessageToQueue(messageWrap)

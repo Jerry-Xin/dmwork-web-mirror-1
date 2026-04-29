@@ -41,48 +41,114 @@ export function applyMsgLevelExternalFields(target: any, msgMap: any): void {
 }
 
 /**
- * dmwork-web#1069 round 4：
+ * 内部工具：判定 home_space_id / name 是否需要兜底（空/未设置算需要）。
+ */
+function needsHomeSpaceFields(target: any): { needId: boolean; needName: boolean } {
+    const needId = target.from_home_space_id === undefined || target.from_home_space_id === null || target.from_home_space_id === ""
+    const needName = target.from_home_space_name === undefined || target.from_home_space_name === null || target.from_home_space_name === ""
+    return { needId, needName }
+}
+
+/**
+ * 内部工具：如果 org 中有对应字段，则按需写入 target，空字符串不写入。
+ */
+function fillHomeSpaceFromOrg(target: any, org: any, need: { needId: boolean; needName: boolean }): void {
+    if (!org) return
+    if (need.needId) {
+        const hsId = org.home_space_id
+        if (typeof hsId === "string" && hsId.length > 0) {
+            target.from_home_space_id = hsId
+        }
+    }
+    if (need.needName) {
+        const hsName = org.home_space_name
+        if (typeof hsName === "string" && hsName.length > 0) {
+            target.from_home_space_name = hsName
+        }
+    }
+}
+
+/**
+ * 内部工具：从 target（Message 实例）或 msgMap（SendPacket / RecvPacket 样式）
+ * 中还原出 msg 所在的群 Channel，便于查询群成员列表。
+ * 仅当推断出 ChannelTypeGroup 时返回 Channel；否则返回 undefined。
+ */
+function resolveGroupChannel(target: any, msgMap: any): Channel | undefined {
+    const ch: any = target?.channel
+    if (ch && ch.channelType === ChannelTypeGroup && typeof ch.channelID === "string" && ch.channelID.length > 0) {
+        return ch as Channel
+    }
+    if (msgMap) {
+        const cid = msgMap.channelID ?? msgMap.channel_id
+        const ctype = msgMap.channelType ?? msgMap.channel_type
+        if (typeof cid === "string" && cid.length > 0 && ctype === ChannelTypeGroup) {
+            return new Channel(cid, ChannelTypeGroup)
+        }
+    }
+    return undefined
+}
+
+/**
+ * dmwork-web#1069 round 4 / 5：
  * 通过 WebSocket 推送（含 Message 构造 / Message.fromSendPacket）投递的消息，
  * 二进制 wire protocol 不携带 msg-level 外部来源字段——SendPacket / RecvPacket
  * 仅含 payload / channelID / fromUID / ... 没有 from_home_space_* 或 from_is_external。
- * 对这条路径仅靠原地字段拷贝不够，需要以 fromUID 反查 channelInfo.orgData
- * 兜底出 home_space_id / home_space_name。
+ * 对这条路径仅靠原地字段拷贝不够，需要以 fromUID 反查**本地同步 cache** 补齐
+ * 发送者的 home_space_id / home_space_name。
  *
- * 调用顺序保证字段优先级：
- *   wire/REST 自带字段（msgMap）> channelInfo.orgData 兜底
- * 已有值绝不覆盖。
+ * 兜底数据源优先级（R5 调整，修 R4 在群聊场景命中率为 0）：
+ *   1) wire/REST 自带字段（msgMap / target 现场值）— 优先
+ *   2) 群成员列表 `channelManager.getSubscribes(groupChannel)`
+ *      → `Subscriber.orgData.home_space_id/home_space_name`
+ *      后端 dmworkim#1233 已 enrich 群成员列表，发送者级别 home_space 就在这里；
+ *      群员 cache 是「只要你打开过这个群」就会热起来的聚合数据源。
+ *   3) Person 频道 `channelManager.getChannelInfo(Person(fromUID)).orgData`
+ *      最后一道防线：仅在双方真跟对方私聊（1v1）开过时才有值；
+ *      R4 把它当主兜底源是错的（未开 1v1 时 cache miss），现在降级为兜底的兜底。
+ * 已有值绝不覆盖；空字符串视为未设置，允许继续向下兜底。
  *
- * 硬约束：只读 channelInfo（同步 getChannelInfo，不触发网络请求），
- * 失败（未缓存 / 异常）静默放过——此处回落与 MessageWrap 原有 orgRes 兜底对齐。
+ * 调用位置（R5：不再 monkey-patch SDK prototype）：
+ *   - Convert.toMessage（REST / conversation sync）— 本文件收尾
+ *   - ConversationVM.didMount messageListener（WebSocket 推送）— 业务层入口
+ *   - ConversationVM.sendMessage 收尾（自己发送 / send-ack 回放）— 业务层入口
+ *   - 将来任何新的 Message 入口都应在业务层收尾补一次，不要再 patch SDK
+ *
+ * 硬约束：仅读本地 cache（不触发网络请求），失败（未缓存 / 异常）静默放过。
  */
 export function applyMsgLevelExternalFieldsWithFallback(target: any, msgMap: any): void {
     applyMsgLevelExternalFields(target, msgMap)
 
     if (!target) return
-    // 优先使用现场 JSON 携带的值；缺则走 channelInfo.orgData 兜底
-    const needHomeSpaceId = target.from_home_space_id === undefined || target.from_home_space_id === null || target.from_home_space_id === ""
-    const needHomeSpaceName = target.from_home_space_name === undefined || target.from_home_space_name === null || target.from_home_space_name === ""
-    if (!needHomeSpaceId && !needHomeSpaceName) return
+    // 优先使用现场 JSON 携带的值；缺则依次走群成员列表 → Person 频道兜底
+    let need = needsHomeSpaceFields(target)
+    if (!need.needId && !need.needName) return
 
     const fromUID: string | undefined = target.fromUID || (msgMap && msgMap.fromUID) || (msgMap && msgMap["from_uid"])
     if (!fromUID) return
 
+    // 2) 群成员列表兜底（R5 新增主路径）：仅在 msg 所在 channel 是群时有意义。
+    //    群成员 cache 里的 orgData 是**发送者级别**的 home_space_*（后端 enrich 过），
+    //    比 Person channel cache 对「仅在群里见过、没开 1v1」的用户命中率高得多。
+    const groupChannel = resolveGroupChannel(target, msgMap)
+    if (groupChannel) {
+        try {
+            const subs: any = WKSDK.shared().channelManager.getSubscribes(groupChannel)
+            if (subs && typeof subs.length === "number" && subs.length > 0) {
+                const member = subs.find((s: any) => s && s.uid === fromUID)
+                fillHomeSpaceFromOrg(target, member?.orgData, need)
+                need = needsHomeSpaceFields(target)
+                if (!need.needId && !need.needName) return
+            }
+        } catch (_e) {
+            // channelManager 未初始化 / cache 未加载：静默，让 Person 兜底接管
+        }
+    }
+
+    // 3) Person 频道兜底（R4 原逻辑，保留为最后防线）：仅当 fromUID 对应的
+    //    1v1 Channel 已缓存过才会有值（用户真的跟对方私聊过）。
     try {
         const info = WKSDK.shared().channelManager.getChannelInfo(new Channel(fromUID, ChannelTypePerson))
-        const org = info?.orgData
-        if (!org) return
-        if (needHomeSpaceId) {
-            const hsId = org.home_space_id
-            if (typeof hsId === "string" && hsId.length > 0) {
-                target.from_home_space_id = hsId
-            }
-        }
-        if (needHomeSpaceName) {
-            const hsName = org.home_space_name
-            if (typeof hsName === "string" && hsName.length > 0) {
-                target.from_home_space_name = hsName
-            }
-        }
+        fillHomeSpaceFromOrg(target, info?.orgData, need)
     } catch (_e) {
         // channelManager 未初始化或查询失败：静默兜底失败，上层保留既有字段
     }
@@ -91,23 +157,30 @@ export function applyMsgLevelExternalFieldsWithFallback(target: any, msgMap: any
 let sdkDecodePatched = false
 
 /**
- * Monkey-patch WKSDK 内部的 decode / 构造路径，确保 msg-level 外部来源字段在
- * 所有 Message 入口上都被透传或通过 channelInfo 兜底补齐。覆盖：
- *   - Reply.prototype.decode：引用消息预览（PR#1073, round 2）。
- *   - Message.fromSendPacket：当前用户发送 / send-ack 回放的 Message（round 4）。
- *     SendPacket 二进制 wire 不含 from_home_space_*，透传之后用 channelInfo 兜底。
- *   - ChatManager.prototype.notifyMessageListeners：WebSocket 推送路径
- *     `new Message(recvPacket)` 无法在构造处挂钩，改为在派发给 listener 前
- *     以 fromUID 从 channelInfo.orgData 兜底补齐 home_space_id / home_space_name。
+ * Monkey-patch WKSDK 内部 decode 路径，仅限补齐那些**纯二进制 decode 入口**
+ * 并且不存在业务层收尾点的场景。
  *
- * PR#1071 已在 Convert.toMessage / MergeforwardContent.mapToMessage 两条入口
- * 通过 applyMsgLevelExternalFields 补齐字段；本 patch 覆盖剩余 3 条 SDK 内部入口，
- * 避免 WebSocket 推送 / send-ack 回放 / 引用消息预览的 Message 对象丢字段。
+ * 当前仅保留一个 patch：
+ *   - `Reply.prototype.decode`：引用消息预览（PR#1073, round 2/3）。
+ *     Reply 由 SDK 在各种消息内容里反序列化，业务层没有集中的"刚 new 出来的
+ *     Reply"收尾点；必须 patch decode 本身才能拿到这些字段。
  *
- * 幂等：多次调用只 patch 一次。
- * 硬约束：仅追加字段拷贝，不改变原 decode / 构造 / 通知语义；失败静默放过。
+ * R5（本次）撤掉 R4 叠加上去的两个无效 patch：
+ *   - `Message.fromSendPacket` wrapper：wire protocol 不携带 home_space_*，
+ *     原始 patch 仅做"空拷贝"（没东西可拷），既无效又吃 SDK prototype。
+ *     自发送 / send-ack 路径改在业务层 `ConversationVM.sendMessage` 收尾处
+ *     统一用 `applyMsgLevelExternalFieldsWithFallback` 补字段。
+ *   - `ChatManager.prototype.notifyMessageListeners` wrapper：R4 配套的
+ *     Person-channel fallback 对"仅在群见过的外部成员"100% cache miss
+ *     （im-test 2026-04-29 实测）。WebSocket 推送路径改在业务层
+ *     `ConversationVM.didMount` 的 messageListener 里补字段。
  *
- * 参见 dmwork-web#1069 round 2 / 4。
+ * 维护纪律：不要再往这里堆 SDK prototype patch。新增 Message 入口时，
+ * 把 `applyMsgLevelExternalFieldsWithFallback` 调用放在业务层收尾处。
+ *
+ * 幂等：多次调用只 patch 一次。失败静默。
+ *
+ * 参见 dmwork-web#1069 round 2 / 4 / 5。
  */
 export function patchSdkDecodeForExternalFields(): void {
     if (sdkDecodePatched) return
@@ -117,37 +190,6 @@ export function patchSdkDecodeForExternalFields(): void {
     Reply.prototype.decode = function (data: any) {
         originalReplyDecode.call(this, data)
         applyMsgLevelExternalFields(this, data)
-    }
-
-    // Message.fromSendPacket：当前用户发送的消息 / send-ack 回放。SendPacket 二进制
-    // wire 不含 from_home_space_*，但发送者 == 当前用户，channelInfo 理应已缓存
-    // 自身的 home_space_id / home_space_name；以 fallback 补齐，保持 UI 一致。
-    const MessageCtor = Message as any
-    const originalFromSendPacket = MessageCtor.fromSendPacket
-    if (typeof originalFromSendPacket === "function") {
-        MessageCtor.fromSendPacket = function (sendPacket: any, content?: any): Message {
-            const msg: any = originalFromSendPacket.call(MessageCtor, sendPacket, content)
-            applyMsgLevelExternalFieldsWithFallback(msg, sendPacket)
-            return msg
-        }
-    }
-
-    // ChatManager.prototype.notifyMessageListeners：WebSocket 推送路径（`new Message(recvPacket)`）
-    // 无法在 SDK 内部构造函数处挂钩——直接 patch class 构造器会破坏 instanceof。
-    // 改为在派发给业务 listener 前对消息应用 channelInfo 兜底。
-    try {
-        const chatManager: any = WKSDK.shared().chatManager
-        const ChatManagerProto: any = chatManager && Object.getPrototypeOf(chatManager)
-        if (ChatManagerProto && typeof ChatManagerProto.notifyMessageListeners === "function") {
-            const originalNotify = ChatManagerProto.notifyMessageListeners
-            ChatManagerProto.notifyMessageListeners = function (message: any): void {
-                // 仅补 home_space_* 兜底；is_external / source_space_name 老路径不在 wire 层出现
-                applyMsgLevelExternalFieldsWithFallback(message, undefined)
-                return originalNotify.call(this, message)
-            }
-        }
-    } catch (_e) {
-        // 没拿到 ChatManager 单例（init 顺序异常）时静默：Convert.toMessage 仍是主路径。
     }
 }
 
@@ -251,9 +293,10 @@ export class Convert {
         // 外部群成员消息来源字段（YUJ-50 / YUJ-53 / YUJ-64 / dmwork-web#1069）：
         // /message/channel/sync 和 conversation/sync 响应在 msg-level 携带
         // from_is_external / from_source_space_name / from_home_space_id /
-        // from_home_space_name。统一通过 applyMsgLevelExternalFields 透传，
-        // 保证所有 decode 入口行为一致。
-        applyMsgLevelExternalFields(message, msgMap)
+        // from_home_space_name。优先透传 wire 值；若个别字段缺失则通过
+        // 群成员列表 / Person 频道 cache 兜底（round 5）。
+        // 注意：REST 路径 wire 通常已携带字段，fallback 会因短路检查 no-op。
+        applyMsgLevelExternalFieldsWithFallback(message, msgMap)
 
         return message
     }

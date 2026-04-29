@@ -49,6 +49,7 @@ debug-storybook.log
 .gstack/
 dm__test
 .ftre/snapshot
+.omc/
 AGENTS.config.local.json
 package-lock.json
 

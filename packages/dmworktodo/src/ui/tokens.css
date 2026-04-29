@@ -1,0 +1,24 @@
+/* Todo module design tokens — status colors mapped to semantic layer */
+.wk-todo {
+  --todo-status-open: var(--wk-color-success);
+  --todo-status-closed: var(--wk-text-tertiary);
+}
+
+/* ─── Responsive: small screens ─────────────────────────── */
+
+@media (max-width: 768px) {
+  .wk-todo-chat-panel {
+    width: 100%;
+    min-width: unset;
+    border-left: none;
+    border-top: 1px solid var(--wk-border-default, #e5e5e5);
+  }
+
+  .wk-todo-filter-bar {
+    flex-wrap: wrap;
+  }
+
+  .wk-todo-filter-bar__search {
+    min-width: 120px;
+  }
+}

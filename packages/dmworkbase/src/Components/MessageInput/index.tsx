@@ -88,6 +88,8 @@ interface MessageInputProps {
   ) => void;
   hideMention?: boolean;
   toolbar?: JSX.Element;
+  /** Extra action nodes rendered inside the actionbox, before voice input */
+  extraActions?: React.ReactNode;
   onContext?: (ctx: MessageInputContext) => void;
   topView?: JSX.Element;
   botCommands?: BotCommand[];
@@ -1035,6 +1037,7 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
           {/* 工具栏在右下角 */}
           <div className="wk-messageinput-actionbox">
             {toolbar}
+            {props.extraActions}
 
             {/* 语音输入 */}
             <VoiceInputIndicator

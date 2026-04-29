@@ -17,6 +17,7 @@ import {
   MessageTask,
 } from "wukongimjssdk";
 import React, { Component, HTMLProps } from "react";
+
 import moment from "moment";
 import Provider from "../../Service/Provider";
 import ConversationVM from "./vm";
@@ -26,7 +27,7 @@ import MarkdownContent from "../../Messages/Text/MarkdownContent";
 import { MessageWrap, Part, PartType } from "../../Service/Model";
 import WKApp from "../../App";
 import { RevokeCell } from "../../Messages/Revoke";
-import { MessageContentTypeConst } from "../../Service/Const";
+import { MessageContentTypeConst, ChannelTypeCommunityTopic } from "../../Service/Const";
 import ConversationContext from "./context";
 import MessageInput, {
   MentionModel,
@@ -161,6 +162,7 @@ export class Conversation
       inputExpanded: false,
       showDeleteConfirm: false,
       contextMenuMessageID: null as string | null,
+      sendAsTodo: false,
     };
     this.onOpenThreadPanel = props.onOpenThreadPanel;
     this._beforeUnloadHandler = () => {
@@ -1779,6 +1781,48 @@ export class Conversation
                         // 存储 addAttachment 方法，供外部调用
                         this._addAttachmentFn = addFn;
                       }}
+                      extraActions={
+                        (this.props.channel.channelType === ChannelTypeGroup || this.props.channel.channelType === ChannelTypeCommunityTopic) ? (
+                        <label
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            marginRight: 4,
+                            flexShrink: 0,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={this.state.sendAsTodo}
+                            onChange={(e) =>
+                              this.setState({ sendAsTodo: e.target.checked })
+                            }
+                            style={{
+                              accentColor: 'var(--wk-brand-primary, #7C5CFC)',
+                              cursor: 'pointer',
+                              width: 14,
+                              height: 14,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span
+                            style={{
+                              fontSize: 12,
+                              color: this.state.sendAsTodo
+                                ? 'var(--wk-brand-primary, #7C5CFC)'
+                                : 'var(--wk-text-tertiary, rgba(0,0,0,0.45))',
+                              fontWeight: this.state.sendAsTodo ? 500 : 400,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Also create Todo
+                          </span>
+                        </label>
+                        ) : undefined
+                      }
                       members={this.vm.subscribers.filter(
                         (s) => s.uid !== WKApp.loginInfo.uid
                       )}
@@ -1826,6 +1870,17 @@ export class Conversation
                         mention?: MentionModel,
                         attachments?: { id: string; file: File }[]
                       ) => {
+                        // ── Send as To-do (event-based, non-blocking) ───────
+                        if (this.state.sendAsTodo && text && text.trim() !== '') {
+                          WKApp.mittBus.emit('wk:send-as-todo', {
+                            title: text.trim(),
+                            source_channel_id: this.props.channel.channelID,
+                            source_channel_type: this.props.channel.channelType,
+                          });
+                          this.setState({ sendAsTodo: false });
+                        }
+                        // ────────────────────────────────────────────────────
+
                         const content = new MessageText(text);
                         if (mention) {
                           const mn = new Mention();

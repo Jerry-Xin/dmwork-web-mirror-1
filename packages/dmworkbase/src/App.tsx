@@ -28,6 +28,8 @@ export type MittEvents = {
     /** 消息摘要（用于回复时显示） */
     conversationDigest?: string;
   } | null;
+  'wk:send-as-todo': { title: string; source_channel_id: string; source_channel_type: number };
+  'wk:create-todo-from-chat': { title: string; source_channel_id: string; source_channel_type: number };
 };
 import { EndpointCommon } from "./EndpointCommon";
 import APIClient from "./Service/APIClient";

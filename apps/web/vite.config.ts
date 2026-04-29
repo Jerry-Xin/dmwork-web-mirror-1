@@ -105,10 +105,17 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: true,
       proxy: {
+        // Todo service API — must be before the general /api/ rule
+        '/todo/api/v1': {
+          target: env.VITE_TODO_API_URL || 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path: string) => path.replace(/^\/todo/, ''),
+        },
         '/api/': {
           target: apiOrigin,
           changeOrigin: true,
-          secure: false, // 开发环境允许自签名证书
+          secure: false,
         },
         // OIDC SSO endpoints (backend mounts these at /v1/ directly, no /api prefix)
         '/v1/': {

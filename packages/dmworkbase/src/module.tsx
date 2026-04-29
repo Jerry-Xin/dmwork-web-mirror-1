@@ -130,9 +130,11 @@ export default class BaseModule implements IModule {
     return "base";
   }
   init(): void {
-    // dmwork-web#1069 round 2：补齐 WKSDK 内部 Reply.prototype.decode 的
-    // from_home_space_* 字段透传，使引用消息预览与 Convert.toMessage /
-    // MergeforwardContent.mapToMessage 行为一致。幂等。
+    // dmwork-web#1069 round 2/4：补齐 WKSDK 内部 decode / 构造路径的
+    // msg-level 外部来源字段（Reply.prototype.decode / Message.fromSendPacket /
+    // ChatManager.notifyMessageListeners），使 WebSocket 推送、发送回放、
+    // 引用消息预览都与 Convert.toMessage / MergeforwardContent.mapToMessage
+    // 行为一致。幂等。
     patchSdkDecodeForExternalFields();
 
     APIClient.shared.logoutCallback = () => {

@@ -1,10 +1,14 @@
 import type { SSOProvider } from './types'
 
 const DEFAULT_RETURN_TO = '/login'
-// Backend `config.DeviceFlag` value: 0 = APP. The web build maps to APP for
-// the OIDC authorize call because the IdP only differentiates by device class
-// for token issuance, not by browser-vs-native.
-const DEFAULT_FLAG = '0'
+// `flag` is forwarded to the backend OIDC callback and recorded on the IM
+// device-token row that the WS CONNECT packet later looks up. WuKongIM JS SDK
+// hardcodes `deviceFlag = 1` (web), so the authorize call must also send 1 —
+// otherwise the IM server can't find the (uid, device_flag, token) tuple at
+// connect time and silently closes the socket without a CONNACK.
+// Values per WuKongIM: 0 = app, 1 = web, 2 = pc. Mirror the value normal
+// password login sends in `user/login` (login_vm.tsx → flag: 1).
+const DEFAULT_FLAG = '1'
 
 export function buildAuthorizeURL(
   provider: SSOProvider,

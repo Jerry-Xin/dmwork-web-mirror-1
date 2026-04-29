@@ -9,13 +9,16 @@ const aegis: SSOProvider = {
 }
 
 describe('buildAuthorizeURL', () => {
-  it('includes authcode and default return_to=/login and flag=0', () => {
+  it('includes authcode and default return_to=/login and flag=1 (web)', () => {
     const url = buildAuthorizeURL(aegis, 'abc123')
     expect(url.startsWith('/v1/auth/oidc/aegis/authorize?')).toBe(true)
     const qs = new URLSearchParams(url.split('?')[1])
     expect(qs.get('authcode')).toBe('abc123')
     expect(qs.get('return_to')).toBe('/login')
-    expect(qs.get('flag')).toBe('0')
+    // Must equal WKSDK's hardcoded deviceFlag (1 = web). If this drifts the
+    // backend signs the IM token under the wrong device slot and the WS
+    // CONNECT silently fails IM-side auth.
+    expect(qs.get('flag')).toBe('1')
   })
 
   it('uses custom return_to when provided', () => {

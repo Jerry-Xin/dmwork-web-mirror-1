@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { WKApp } from '@dmwork/base';
+import { WKApp, isSafeUrl } from '@dmwork/base';
 import type { TodoAssignee } from '../../bridge/types';
 import { useUserName } from '../../hooks/useUserName';
 import * as api from '../../api/todoApi';
@@ -65,7 +65,7 @@ function SearchResultItem({ result, onSelect }: { result: SearchResult; onSelect
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter') onSelect(result.uid); }}
     >
-      {result.avatar && (
+      {result.avatar && isSafeUrl(result.avatar) && (
         <img src={result.avatar} alt="" className="wk-assignee-search__avatar" />
       )}
       <span className="wk-assignee-search__name">{result.name}</span>

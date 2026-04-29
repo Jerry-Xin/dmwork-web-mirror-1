@@ -100,26 +100,35 @@ export function useUserNames(uids: string[]): Map<string, string> {
 
     WKSDK.shared().channelManager.addListener(listener);
 
-    // Fetch uncached; on failure set fallback
-    for (const ch of toFetch) {
-      WKSDK.shared().channelManager.fetchChannelInfo(ch).catch(() => {
-        if (aborted) return;
-        setNameMap((prev) => {
-          const next = new Map(prev);
-          if (!next.get(ch.channelID)) {
-            next.set(ch.channelID, ch.channelID);
-          }
-          return next;
-        });
-      });
-    }
+    // Fetch uncached in batches of 5 to avoid flooding the IM SDK
+    const BATCH_SIZE = 5;
+    (async () => {
+      for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
+        if (aborted) break;
+        const batch = toFetch.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((ch) =>
+            WKSDK.shared().channelManager.fetchChannelInfo(ch).catch(() => {
+              if (aborted) return;
+              setNameMap((prev) => {
+                const next = new Map(prev);
+                if (!next.get(ch.channelID)) {
+                  next.set(ch.channelID, ch.channelID);
+                }
+                return next;
+              });
+            })
+          )
+        );
+      }
+    })();
 
     return () => {
       aborted = true;
       WKSDK.shared().channelManager.removeListener(listener);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(uids)]);
+  }, [uids.join('\0')]);
 
   return nameMap;
 }

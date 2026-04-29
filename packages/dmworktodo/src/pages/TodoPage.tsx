@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { WKApp } from '@dmwork/base';
+import { WKApp, isSafeUrl } from '@dmwork/base';
 import * as api from '../api/todoApi';
 import type { Todo, TodoDetail, Goal, GoalStatus, TodoStatus, TodoListParams, TodoComment, TodoAttachment, CreateGoalReq } from '../bridge/types';
 import TodoCard from '../ui/TodoCard';
@@ -10,14 +10,6 @@ import UserName from '../ui/UserName';
 import { Toast } from '../utils/toast';
 import { registerCreateTodoHandler } from '../module';
 import './TodoPage.css';
-
-/** Validate URL protocol to prevent javascript:/data: XSS via malicious file_url. */
-function isSafeUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url, window.location.origin);
-    return ['http:', 'https:'].includes(parsed.protocol);
-  } catch { return false; }
-}
 
 // ─── Detail Side Panel ──────────────────────────────────
 
@@ -254,6 +246,7 @@ function DetailSidePanel({ todoId, onClose, onStatusChanged }: { todoId: string;
                       <span style={{ fontWeight: 600, color: 'var(--wk-text-primary, #1a1a1a)', fontSize: '12px' }}><UserName uid={c.user_id} /></span>
                       <span style={{ fontSize: '11px', color: 'var(--wk-text-tertiary, #999)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {new Date(c.created_at).toLocaleString()}
+                        {c.user_id === WKApp.loginInfo.uid && (
                         <button type="button" onClick={() => handleDeleteComment(c.id)}
                           style={{
                             border: 'none', background: 'none', color: 'var(--wk-text-disabled, #ccc)',
@@ -262,6 +255,7 @@ function DetailSidePanel({ todoId, onClose, onStatusChanged }: { todoId: string;
                           }}>
                           ✕
                         </button>
+                        )}
                       </span>
                     </div>
                     <div style={{ color: 'var(--wk-text-secondary, #555)', lineHeight: '1.5' }}>{c.content}</div>
@@ -663,7 +657,7 @@ export default function TodoPage() {
     api.listGoals().then(setGoals).catch(() => Toast.error('Failed to load goals'));
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     loadGoals();
     WKApp.routeRight.replaceToRoot(<TodoListView title="All Todos" onGoalsRefresh={loadGoals} />);
   }, [loadGoals]); // loadGoals is stable ([] deps) so this runs once

@@ -162,6 +162,9 @@ importers:
       '@types/react-syntax-highlighter':
         specifier: ^15.5.13
         version: 15.5.13
+      axios:
+        specifier: ^0.25.0
+        version: 0.25.0
       classnames:
         specifier: ^2.3.1
         version: 2.5.1
@@ -515,6 +518,9 @@ importers:
       '@dmwork/base':
         specifier: workspace:*
         version: link:../dmworkbase
+      '@douyinfe/semi-icons':
+        specifier: ^2.93.0
+        version: 2.93.0(react@17.0.2)
       '@douyinfe/semi-ui':
         specifier: ^2.93.0
         version: 2.93.0(@tiptap/suggestion@3.22.2(@tiptap/core@3.22.2(@tiptap/pm@3.22.2))(@tiptap/pm@3.22.2))(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
@@ -563,11 +569,11 @@ importers:
         specifier: ^18.3.28
         version: 18.3.28
       react:
-        specifier: ^18.3.1
-        version: 18.3.1
+        specifier: ^17.0.2
+        version: 17.0.2
       react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
+        specifier: ^17.0.2
+        version: 17.0.2(react@17.0.2)
 
   packages/eslint-config-custom:
     dependencies:

@@ -519,6 +519,15 @@ export default class BaseModule implements IModule {
     if (shouldSkipMessageForSpace(message)) {
       return false;
     }
+    // BotFather 消息额外检查：channelType=Person 绕过了上面的过滤，
+    // 需通过消息体 contentObj.space_id 判断是否属于当前 Space
+    if (message.channel?.channelID === "botfather") {
+      const curSpaceId = WKApp.shared.currentSpaceId;
+      const msgSpaceId = (message.content as any)?.contentObj?.space_id;
+      if (curSpaceId && msgSpaceId && msgSpaceId !== curSpaceId) {
+        return false;
+      }
+    }
 
     // 已屏蔽（免打扰）的 channel 不播提示音、不发通知
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(message.channel);

@@ -131,11 +131,17 @@ export class MainPage extends Component<{}, MainPageState> {
                                     menusList={vm.menusList}
                                     currentMenus={vm.currentMenus}
                                     onMenuClick={(menus) => {
+                                        const prevMenuId = vm.currentMenus?.id;
                                         vm.currentMenus = menus;
+                                        WKApp.currentMenuId = menus.id;
                                         if (menus.onPress) {
                                             menus.onPress();
                                         } else {
                                             WKApp.routeLeft.popToRoot();
+                                            const stayInChat = prevMenuId === "chat" && menus.id === "chat";
+                                            if (!stayInChat) {
+                                                WKApp.routeRight.popToRoot();
+                                            }
                                         }
                                     }}
                                     // 用户
@@ -178,6 +184,22 @@ export class MainPage extends Component<{}, MainPageState> {
                                 WKApp.routeLeft.setReplaceToRoot = (view) => { context.replaceToRoot(view); };
                                 WKApp.routeLeft.setPop = () => { context.pop(); };
                                 WKApp.routeLeft.setPopToRoot = () => { context.popToRoot(); };
+                                // Bind menu switch callback for showConversation
+                                WKApp.switchToMenuById = (menuId: string) => {
+                                    const target = vm.menusList.find((m: any) => m.id === menuId);
+                                    if (target && vm.currentMenus?.id !== menuId) {
+                                        vm.currentMenus = target;
+                                        WKApp.currentMenuId = menuId;
+                                        // NOTE: do NOT popToRoot() here. routeLeft is a shared
+                                        // stack across tabs; popping it would destroy the detail
+                                        // view (e.g. summary detail page) the user was on,
+                                        // breaking rendering when they later switch back.
+                                    }
+                                };
+                                // Keep currentMenuId in sync with initial / user-driven menu changes
+                                if (vm.currentMenus?.id && WKApp.currentMenuId !== vm.currentMenus.id) {
+                                    WKApp.currentMenuId = vm.currentMenus.id;
+                                }
                             }}
                             contentRight={<EmptyStateIllustration />}
                         />

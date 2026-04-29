@@ -8,6 +8,7 @@ import { WKSDK, ChannelTypePerson } from 'wukongimjssdk';
 import { setFaviconBadge, clearFaviconBadge } from '../utils/faviconBadge';
 import { ChatIcon } from '../Components/Icons/ChatIcon';
 import { ContactsIcon } from '../Components/Icons/ContactsIcon';
+import { SummaryIcon } from '../Components/Icons/SummaryIcon';
 function App() {
   registerMenus()
   return (
@@ -77,6 +78,18 @@ async function registerMenus() {
     m.badge = WKApp.shared.getFriendApplysUnreadCount();
     return m
   }, 4000)
+
+  WKApp.menus.register("summary", (_context) => {
+    const m = new Menus("summary", "/summary", "智能总结", <SummaryIcon />, <SummaryIcon />)
+    m.onPress = () => {
+      WKApp.routeLeft.popToRoot()
+      const page = WKApp.route.get("/summary/create")
+      if (page && React.isValidElement(page)) {
+        WKApp.routeRight.replaceToRoot(page)
+      }
+    }
+    return m
+  }, 5000)
 
   WKApp.route.register("/", () => {
     return <ChatPage></ChatPage>

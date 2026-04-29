@@ -527,11 +527,24 @@ export class CommonDataSource implements ICommonDataSource {
     async searchFriends(keyword?: string): Promise<ChannelInfo[]> {
         const spaceId = WKApp.shared.currentSpaceId
         let resp: any
+        let friendUids: Set<string> | undefined
         if (spaceId) {
-            // Space 模式：从 Space 成员搜索
-            resp = await WKApp.apiClient.get(`space/${spaceId}/members`, {
-                param: { page: "1", limit: "10000" },
-            })
+            // Space 模式：并行获取空间成员和好友列表
+            const [membersResp, friendsResp] = await Promise.all([
+                WKApp.apiClient.get(`space/${spaceId}/members`, {
+                    param: { page: "1", limit: "10000" },
+                }),
+                WKApp.apiClient.get('friend/sync', {
+                    param: { "keyword": "", "api_version": "1" }
+                }),
+            ])
+            resp = membersResp
+            friendUids = new Set<string>()
+            if (friendsResp) {
+                for (const f of friendsResp) {
+                    if (f.is_deleted !== 1) friendUids.add(f.uid)
+                }
+            }
         } else {
             resp = await WKApp.apiClient.get('friend/sync', {
                 param: {
@@ -548,6 +561,10 @@ export class CommonDataSource implements ICommonDataSource {
                 }
                 // 排除自己
                 if (data.uid === WKApp.loginInfo.uid) {
+                    continue
+                }
+                // Space 模式：人类成员全部显示，Bot 仅显示已加好友的
+                if (spaceId && friendUids && data.robot === 1 && !friendUids.has(data.uid)) {
                     continue
                 }
                 // Space 模式下本地 keyword 过滤

@@ -5,7 +5,7 @@ COPY . .
 RUN git config --global url."https://github.com/".insteadOf "git+ssh://git@github.com/" && git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
 RUN pnpm install --frozen-lockfile && pnpm turbo run build --filter=@dmwork/web
 
-FROM nginx:latest
+FROM nginx:alpine
 COPY --from=builder /app/docker-entrypoint.sh /docker-entrypoint2.sh 
 RUN sed -i 's/\r$//' /docker-entrypoint2.sh
 COPY --from=builder /app/nginx.conf.template /

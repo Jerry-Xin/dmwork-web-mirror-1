@@ -16,12 +16,27 @@ importers:
       '@babel/plugin-proposal-private-property-in-object':
         specifier: ^7.21.11
         version: 7.21.11(@babel/core@7.29.0)
+      '@types/react-syntax-highlighter':
+        specifier: ^15.5.13
+        version: 15.5.13
+      katex:
+        specifier: ^0.16.45
+        version: 0.16.45
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.5)
       pinyin-pro:
         specifier: ^3.28.0
         version: 3.28.0
+      react-syntax-highlighter:
+        specifier: ^15.6.6
+        version: 15.6.6(react@19.2.5)
+      rehype-katex:
+        specifier: ^7.0.1
+        version: 7.0.1
+      remark-math:
+        specifier: ^6.0.0
+        version: 6.0.0
       zxcvbn:
         specifier: ^4.4.2
         version: 4.4.2
@@ -135,6 +150,9 @@ importers:
       '@dmwork/login':
         specifier: workspace:*
         version: link:../../packages/dmworklogin
+      '@dmwork/summary':
+        specifier: workspace:*
+        version: link:../../packages/dmworksummary
       '@dmwork/todo':
         specifier: workspace:*
         version: link:../../packages/dmworktodo
@@ -445,6 +463,9 @@ importers:
       tippy.js:
         specifier: ^6.3.7
         version: 6.3.7
+      unist-util-visit:
+        specifier: ^5.1.0
+        version: 5.1.0
       wukongimjssdk:
         specifier: ^1.2.11
         version: 1.3.5
@@ -555,6 +576,52 @@ importers:
       vitest:
         specifier: ^4.1.2
         version: 4.1.3(@types/node@20.19.39)(@vitest/browser-playwright@4.1.3)(jsdom@29.0.2)(vite@8.0.7(@types/node@20.19.39)(esbuild@0.27.7)(jiti@2.6.1))
+
+  packages/dmworksummary:
+    dependencies:
+      '@dmwork/base':
+        specifier: workspace:*
+        version: link:../dmworkbase
+      '@douyinfe/semi-icons':
+        specifier: ^2.93.0
+        version: 2.93.0(react@17.0.2)
+      '@douyinfe/semi-ui':
+        specifier: ^2.93.0
+        version: 2.93.0(@tiptap/suggestion@3.22.2(@tiptap/core@3.22.2(@tiptap/pm@3.22.2))(@tiptap/pm@3.22.2))(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
+      axios:
+        specifier: ^0.25.0
+        version: 0.25.0
+      classnames:
+        specifier: ^2.3.1
+        version: 2.5.1
+      lucide-react:
+        specifier: ^0.577.0
+        version: 0.577.0(react@17.0.2)
+      react-markdown:
+        specifier: '8'
+        version: 8.0.7(@types/react@19.2.14)(react@17.0.2)
+      rehype-sanitize:
+        specifier: ^6.0.0
+        version: 6.0.0
+      remark-breaks:
+        specifier: ^3.0.0
+        version: 3.0.3
+      remark-gfm:
+        specifier: '3'
+        version: 3.0.1
+      unist-util-visit:
+        specifier: ^5.1.0
+        version: 5.1.0
+      wukongimjssdk:
+        specifier: ^1.3.5
+        version: 1.3.5
+    devDependencies:
+      react:
+        specifier: ^17.0.2
+        version: 17.0.2
+      react-dom:
+        specifier: ^17.0.2
+        version: 17.0.2(react@17.0.2)
 
   packages/dmworktodo:
     dependencies:
@@ -16344,6 +16411,16 @@ snapshots:
       lowlight: 1.20.0
       prismjs: 1.30.0
       react: 18.3.1
+      refractor: 3.6.0
+
+  react-syntax-highlighter@15.6.6(react@19.2.5):
+    dependencies:
+      '@babel/runtime': 7.29.2
+      highlight.js: 10.7.3
+      highlightjs-vue: 1.0.0
+      lowlight: 1.20.0
+      prismjs: 1.30.0
+      react: 19.2.5
       refractor: 3.6.0
 
   react-virtuoso@4.18.6(react-dom@17.0.2(react@17.0.2))(react@17.0.2):

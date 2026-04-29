@@ -52,6 +52,7 @@
     "@dmwork/contacts": "workspace:*",
     "@dmwork/datasource": "workspace:*",
     "@dmwork/login": "workspace:*",
+    "@dmwork/summary": "workspace:*",
     "@dmwork/todo": "workspace:*",
     "@douyinfe/semi-icons": "^2.93.0",
     "@douyinfe/semi-ui": "^2.93.0",

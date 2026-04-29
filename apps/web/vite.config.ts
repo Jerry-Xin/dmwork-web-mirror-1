@@ -105,6 +105,13 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: true,
       proxy: {
+        // Summary service API — must be before the general /api/ rule
+        '/summary/api/v1': {
+          target: env.VITE_SUMMARY_API_URL || 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path: string) => path.replace(/^\/summary/, ''),
+        },
         // Todo service API — must be before the general /api/ rule
         '/todo/api/v1': {
           target: env.VITE_TODO_API_URL || 'http://localhost:8080',
@@ -127,6 +134,12 @@ export default defineConfig(({ mode }) => {
           target: apiOrigin,
           changeOrigin: true,
           secure: false,
+        },
+        '/ws/': {
+          target: apiOrigin.replace(/^https?/, m => m === 'https' ? 'wss' : 'ws'),
+          changeOrigin: true,
+          secure: false,
+          ws: true, // 启用 WebSocket 代理
         },
       },
     },

@@ -207,7 +207,7 @@ describe('LoginVM.resumeOidcLoginIfPending', () => {
     const loginSuccessSpy = vi.spyOn(vm, 'loginSuccess').mockImplementation(() => {})
     const result = await vm.resumeOidcLoginIfPending('')
     expect(result).toEqual({ handled: true, success: true })
-    expect(loginSuccessSpy).toHaveBeenCalledWith({ uid: 'u1', token: 't1' })
+    expect(loginSuccessSpy).toHaveBeenCalledWith({ uid: 'u1', token: 't1' }, 'aegis')
     expect(getPendingOidcLogin()).toBeNull()
     expect(vm.oidcResuming).toBe(false)
   })
@@ -297,5 +297,15 @@ describe('integration: clear after cancel', () => {
     clearPendingOidcLogin()
     clearPendingOidcLogin()
     expect(getPendingOidcLogin()).toBeNull()
+  })
+})
+
+describe('LoginVM.loginType setter', () => {
+  it('resets loginAttemptFailed when switching login views', async () => {
+    const { LoginType } = await import('../login_vm')
+    const vm = new LoginVM()
+    vm.loginAttemptFailed = true
+    vm.loginType = LoginType.forgetPassword
+    expect(vm.loginAttemptFailed).toBe(false)
   })
 })

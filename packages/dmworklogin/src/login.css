@@ -365,6 +365,26 @@
     opacity: 0.75;
 }
 
+.wk-login-content-form-oidc-hint {
+    margin: 8px 0 16px;
+    padding: 10px 12px;
+    background: rgba(91, 91, 229, 0.06);
+    border: 1px solid rgba(91, 91, 229, 0.2);
+    border-radius: 8px;
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.7);
+    line-height: 1.6;
+}
+.wk-login-content-form-oidc-hint a {
+    color: #5b5be5;
+    margin: 0 4px;
+    text-decoration: none;
+    font-weight: 500;
+}
+.wk-login-content-form-oidc-hint a:hover {
+    text-decoration: underline;
+}
+
 /* ---- phonelogin wrapper ---- */
 .wk-login-content-phonelogin {
     width: 100%;
@@ -883,4 +903,94 @@
 }
 .wk-login-content-oidc-overlay-cancel {
     margin-top: 4px;
+}
+
+/* ---- Aegis-first layout ---- */
+.wk-login-panel .wk-login-content-sso-primary.semi-button {
+    width: 100%;
+    height: 50px;
+    margin-top: 8px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border: 1px solid #5b5be5;
+    background: #5b5be5;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(91, 91, 229, 0.25);
+    transition: all 0.2s;
+}
+.wk-login-panel .wk-login-content-sso-primary.semi-button:hover,
+.wk-login-panel .wk-login-content-sso-primary.semi-button:focus {
+    background: #4848d4;
+    border-color: #4848d4;
+    box-shadow: 0 6px 16px rgba(91, 91, 229, 0.35);
+    transform: translateY(-1px);
+}
+.wk-login-panel .wk-login-content-sso-primary.semi-button .semi-button-content,
+.wk-login-panel .wk-login-content-sso-primary.semi-button span {
+    color: #fff;
+}
+
+.wk-login-content-sso-helper {
+    margin-top: 8px;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.45);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.wk-login-content-legacy-divider {
+    position: relative;
+    margin: 40px 0 20px;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.4);
+    font-size: 13px;
+}
+.wk-login-content-legacy-divider::before,
+.wk-login-content-legacy-divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 32%;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.08);
+}
+.wk-login-content-legacy-divider::before { left: 0; }
+.wk-login-content-legacy-divider::after { right: 0; }
+.wk-login-content-legacy-divider span {
+    background: #fff;
+    padding: 0 12px;
+}
+
+/* 本地表单整体视觉降级，让 Aegis 按钮成为视觉焦点 */
+.wk-login-content-legacy-form input {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+.wk-login-content-legacy-form input:focus {
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.wk-login-content-form-error-cta {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(255, 153, 0, 0.06);
+    border: 1px solid rgba(255, 153, 0, 0.25);
+    border-radius: 8px;
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.7);
+    line-height: 1.5;
+    text-align: center;
+}
+.wk-login-content-form-error-cta a {
+    color: #5b5be5;
+    margin-left: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+}
+.wk-login-content-form-error-cta a:hover {
+    text-decoration: underline;
 }

@@ -102,9 +102,28 @@ export class WKConfig {
   }
 }
 
+/**
+ * 仅放行 http/https 协议的 URL，防御 javascript:/data: 等协议的注入。
+ * 后端配置接口受保护，但作为深度防御，所有用于 window.open / a[href] 的 URL 都需经过此校验。
+ */
+function sanitizeHttpUrl(value: unknown): string | undefined {
+  if (typeof value !== "string" || value === "") return undefined;
+  try {
+    const u = new URL(value);
+    if (u.protocol === "https:" || u.protocol === "http:") return value;
+  } catch {
+    /* invalid URL */
+  }
+  return undefined;
+}
+
 export class WKRemoteConfig {
   revokeSecond: number = 2 * 60; // 撤回时间
   threadOn: boolean = false; // 子区功能开关，默认关闭
+  /** OIDC 账户中心首页 URL（如 Aegis 个人主页），由后端按环境下发 */
+  oidcAccountUrl?: string;
+  /** OIDC 重置/修改密码 URL，登录页提示 OIDC 用户跳转此处 */
+  oidcResetPasswordUrl?: string;
   requestSuccess: boolean = false;
   private retryCount: number = 0;
   private maxRetries: number = 5; // 最大重试次数
@@ -127,6 +146,8 @@ export class WKRemoteConfig {
       this.requestSuccess = true;
       this.revokeSecond = result["revoke_second"];
       this.threadOn = !!result["thread_on"];
+      this.oidcAccountUrl = sanitizeHttpUrl(result["oidc_account_url"]);
+      this.oidcResetPasswordUrl = sanitizeHttpUrl(result["oidc_reset_password_url"]);
     });
   }
 }
@@ -145,6 +166,11 @@ export class LoginInfo {
   role!: string;
   isWork!: boolean;
   sex!: number;
+  /**
+   * 登录方式标识：'local' 表示用户名/邮箱密码登录，其他值（如 'aegis'）为 OIDC 提供方 id。
+   * 用于 UI 区分入口（如 OIDC 用户跳转 Aegis 账户中心修改密码）。
+   */
+  loginProvider?: string;
 
   /**
    * save 保存登录信息
@@ -158,6 +184,7 @@ export class LoginInfo {
     this.setStorageItemForSID("role", this.role ?? "");
     this.setStorageItemForSID("is_work", this.isWork ? "1" : "0");
     this.setStorageItemForSID("sex", this.sex === 1 ? "1" : "0");
+    this.setStorageItemForSID("login_provider", this.loginProvider ?? "");
   }
 
   // 获取查询参数
@@ -227,6 +254,8 @@ export class LoginInfo {
     } else {
       this.sex = 0;
     }
+    const provider = this.getStorageItemForSID("login_provider");
+    this.loginProvider = provider ? provider : undefined;
   }
   // 是否登录
   isLogined() {
@@ -239,6 +268,7 @@ export class LoginInfo {
     this.token = undefined;
     this.appID = "";
     this.role = "";
+    this.loginProvider = undefined;
     this.removeStorageItemForSID("token");
     this.removeStorageItemForSID("app_id");
     this.removeStorageItemForSID("role");
@@ -248,6 +278,7 @@ export class LoginInfo {
     this.removeStorageItemForSID("short_no");
     this.removeStorageItemForSID("name");
     this.removeStorageItemForSID("sex");
+    this.removeStorageItemForSID("login_provider");
   }
 }
 

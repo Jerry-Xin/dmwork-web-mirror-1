@@ -13,34 +13,6 @@ import { SSO_PROVIDERS } from "./oidc";
 const ENTERPRISE_SSO_ENABLED =
     import.meta.env.VITE_ENABLE_ENTERPRISE_SSO === 'true'
 
-const SSOSection: React.FC<{ vm: LoginVM }> = ({ vm }) => {
-    if (!ENTERPRISE_SSO_ENABLED || SSO_PROVIDERS.length === 0) return null
-    return (
-        <div className="wk-login-content-sso">
-            <div className="wk-login-content-sso-divider">
-                <span>或使用以下方式登录</span>
-            </div>
-            {SSO_PROVIDERS.map((provider) => (
-                <Button
-                    key={provider.id}
-                    className="wk-login-content-sso-btn"
-                    loading={vm.oidcLoading}
-                    disabled={vm.oidcLoading || vm.oidcResuming}
-                    onClick={() => {
-                        vm.startOidcLogin(provider.id).catch((err: unknown) => {
-                            console.error('OIDC login start failed:', err)
-                            Toast.error('无法启动 ' + provider.name + ' 登录')
-                        })
-                    }}
-                >
-                    <IconLock className="wk-login-content-sso-btn-icon" />
-                    使用 {provider.name} 账号登录
-                </Button>
-            ))}
-        </div>
-    )
-}
-
 const OidcResumeEffect: React.FC<{ vm: LoginVM }> = ({ vm }) => {
     const ranRef = useRef(false)
     useEffect(() => {
@@ -224,16 +196,28 @@ class Login extends Component<any, LoginState> {
                     Toast.error("密码不能为空！")
                     return
                 }
+                vm.loginAttemptFailed = false
+                vm.notifyListener()
+                const onFail = (err: any) => {
+                    Toast.error(sanitizeErrorMessage(err.msg))
+                    vm.loginAttemptFailed = true
+                    vm.notifyListener()
+                }
                 const isEmail = isValidEmail(vm.username)
                 if (isEmail) {
-                    vm.requestEmailLogin(vm.username, vm.password).catch((err) => {
-                        Toast.error(sanitizeErrorMessage(err.msg))
-                    })
+                    vm.requestEmailLogin(vm.username, vm.password).catch(onFail)
                 } else {
-                    vm.requestLoginWithUsernameAndPwd(vm.username, vm.password).catch((err) => {
-                        Toast.error(sanitizeErrorMessage(err.msg))
-                    })
+                    vm.requestLoginWithUsernameAndPwd(vm.username, vm.password).catch(onFail)
                 }
+            }
+
+            const startSsoLogin = () => {
+                const provider = SSO_PROVIDERS[0]
+                if (!provider) return
+                vm.startOidcLogin(provider.id).catch((err: unknown) => {
+                    console.error('OIDC login start failed:', err)
+                    Toast.error('无法启动 ' + provider.name + ' 登录')
+                })
             }
 
             return <div className="wk-login">
@@ -321,41 +305,102 @@ class Login extends Component<any, LoginState> {
                         )}
                         <div className="wk-login-content-phonelogin" style={{ "display": vm.loginType === LoginType.phone ? "block" : "none" }}>
                             <div className="wk-login-content-slogan">欢迎回来</div>
-                            <div className="wk-login-content-slogan-sub">登录你的账号以继续</div>
-                            <div className="wk-login-content-form">
-                                <input type="text" name="username" autoComplete="username" placeholder="邮箱 / 用户名" onChange={(v) => {
-                                    vm.username = v.target.value
-                                }} onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}></input>
-                                <input type="password" name="password" autoComplete="current-password" placeholder="密码" onChange={(v) => {
-                                    vm.password = v.target.value
-                                }} onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}></input>
-                                <div className="wk-login-content-form-buttons">
-                                    <Button loading={vm.loginLoading} className="wk-login-content-form-ok" type='primary' theme='solid'
-                                        onMouseDown={(e: React.MouseEvent) => { e.preventDefault() }}
-                                        onClick={handleLogin}>登录</Button>
-                                </div>
-                                <div className="wk-login-content-form-others">
-                                    <div className="wk-login-content-form-scanlogin" onClick={() => {
-                                        vm.loginType = LoginType.qrcode
-                                    }}>
-                                        扫码登录
+                            <div className="wk-login-content-slogan-sub">
+                                {ENTERPRISE_SSO_ENABLED && SSO_PROVIDERS.length > 0
+                                    ? `使用 ${SSO_PROVIDERS[0].name} 登录，已有 ${WKApp.config.appName || 'Octo'} 账号可继续使用`
+                                    : '登录你的账号以继续'}
+                            </div>
+                            {ENTERPRISE_SSO_ENABLED && SSO_PROVIDERS.length > 0 ? (
+                                // SSO 启用：Aegis 作为主 CTA，本地账号下沉为遗留路径
+                                <div className="wk-login-content-form">
+                                    <Button
+                                        className="wk-login-content-sso-primary"
+                                        loading={vm.oidcLoading}
+                                        disabled={vm.oidcLoading || vm.oidcResuming}
+                                        onClick={startSsoLogin}
+                                    >
+                                        <IconLock className="wk-login-content-sso-btn-icon" />
+                                        使用 {SSO_PROVIDERS[0].name} 登录或注册
+                                    </Button>
+                                    <div className="wk-login-content-sso-helper">
+                                        新用户首次点击将自动创建 {SSO_PROVIDERS[0].name} 账号
                                     </div>
-                                    <div className="wk-login-content-form-switch" onClick={() => {
+                                    <div className="wk-login-content-legacy-divider">
+                                        <span>已有 {WKApp.config.appName || 'Octo'} 账号</span>
+                                    </div>
+                                    <div className="wk-login-content-legacy-form">
+                                        <input type="text" name="username" autoComplete="username" placeholder="邮箱 / 用户名" onChange={(v) => {
+                                            vm.username = v.target.value
+                                        }} onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}></input>
+                                        <input type="password" name="password" autoComplete="current-password" placeholder="密码" onChange={(v) => {
+                                            vm.password = v.target.value
+                                        }} onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}></input>
+                                        <div className="wk-login-content-form-buttons">
+                                            <Button loading={vm.loginLoading} className="wk-login-content-form-ok" type='primary' theme='solid'
+                                                onMouseDown={(e: React.MouseEvent) => { e.preventDefault() }}
+                                                onClick={handleLogin}>登录</Button>
+                                        </div>
+                                        {vm.loginAttemptFailed && (
+                                            <div className="wk-login-content-form-error-cta">
+                                                登录不上？企业账号或新用户请
+                                                <a onClick={(e) => { e.preventDefault(); startSsoLogin() }}>
+                                                    使用 {SSO_PROVIDERS[0].name} 登录或注册
+                                                </a>
+                                            </div>
+                                        )}
+                                        <div className="wk-login-content-form-others">
+                                            <div className="wk-login-content-form-scanlogin" onClick={() => {
+                                                vm.loginType = LoginType.qrcode
+                                            }}>
+                                                扫码登录
+                                            </div>
+                                            <div className="wk-login-content-form-switch" onClick={() => {
+                                                vm.loginType = LoginType.forgetPassword
+                                            }}>
+                                                忘记密码
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="wk-login-content-download">
+                                        <AndroidDownloadButton />
+                                    </div>
+                                </div>
+                            ) : (
+                                // 未启用 SSO：保持原有布局（含本地注册入口）
+                                <div className="wk-login-content-form">
+                                    <input type="text" name="username" autoComplete="username" placeholder="邮箱 / 用户名" onChange={(v) => {
+                                        vm.username = v.target.value
+                                    }} onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}></input>
+                                    <input type="password" name="password" autoComplete="current-password" placeholder="密码" onChange={(v) => {
+                                        vm.password = v.target.value
+                                    }} onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}></input>
+                                    <div className="wk-login-content-form-buttons">
+                                        <Button loading={vm.loginLoading} className="wk-login-content-form-ok" type='primary' theme='solid'
+                                            onMouseDown={(e: React.MouseEvent) => { e.preventDefault() }}
+                                            onClick={handleLogin}>登录</Button>
+                                    </div>
+                                    <div className="wk-login-content-form-others">
+                                        <div className="wk-login-content-form-scanlogin" onClick={() => {
+                                            vm.loginType = LoginType.qrcode
+                                        }}>
+                                            扫码登录
+                                        </div>
+                                        <div className="wk-login-content-form-switch" onClick={() => {
                                             vm.loginType = LoginType.register
                                         }}>
                                             没有账号？注册
                                         </div>
-                                    <div className="wk-login-content-form-switch" onClick={() => {
-                                        vm.loginType = LoginType.forgetPassword
-                                    }}>
-                                        忘记密码
+                                        <div className="wk-login-content-form-switch" onClick={() => {
+                                            vm.loginType = LoginType.forgetPassword
+                                        }}>
+                                            忘记密码
+                                        </div>
+                                    </div>
+                                    <div className="wk-login-content-download">
+                                        <AndroidDownloadButton />
                                     </div>
                                 </div>
-                                <SSOSection vm={vm} />
-                                <div className="wk-login-content-download">
-                                    <AndroidDownloadButton />
-                                </div>
-                            </div>
+                            )}
                         </div>
                         <div className="wk-login-content-phonelogin" style={{ "display": vm.loginType === LoginType.register ? "block" : "none" }}>
                             <div className="wk-login-content-slogan">创建账号</div>
@@ -447,6 +492,19 @@ class Login extends Component<any, LoginState> {
                         <div className="wk-login-content-phonelogin" style={{ "display": vm.loginType === LoginType.forgetPassword ? "block" : "none" }}>
                             <div className="wk-login-content-slogan">重置密码</div>
                             <div className="wk-login-content-slogan-sub">输入注册邮箱，我们将发送验证码</div>
+                            {ENTERPRISE_SSO_ENABLED && WKApp.remoteConfig.oidcResetPasswordUrl && (
+                                <div className="wk-login-content-form-oidc-hint">
+                                    企业统一认证账号请前往
+                                    <a
+                                        href={WKApp.remoteConfig.oidcResetPasswordUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {SSO_PROVIDERS[0]?.name || 'Aegis'} 账户中心
+                                    </a>
+                                    修改密码。
+                                </div>
+                            )}
                             <div className="wk-login-content-form">
                                 <input type="email" name="forget-email" autoComplete="email" placeholder="注册邮箱" onChange={(v) => {
                                     vm.forgetEmail = v.target.value

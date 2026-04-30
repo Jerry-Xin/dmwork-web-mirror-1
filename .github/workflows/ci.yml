@@ -9,14 +9,20 @@ on:
 jobs:
   lint-and-build:
     name: Lint & Build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: node:20-bookworm
+      options: --ipc=host
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/cache@v4
         with:
-          node-version: 20
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-
 
       - uses: pnpm/action-setup@v4
       - name: 🔧 Fix git SSH → HTTPS
@@ -35,16 +41,22 @@ jobs:
 
   stylelint:
     name: 🎨 CSS 硬编码颜色检查
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: node:20-bookworm
+      options: --ipc=host
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/cache@v4
         with:
-          node-version: 20
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-
 
       - uses: pnpm/action-setup@v4
       - name: 📦 Install
@@ -66,14 +78,21 @@ jobs:
 
   story-coverage:
     name: 📖 Story 覆盖检查
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: alpine:3.20
+      options: --ipc=host
 
     steps:
+      - name: Install bash + git
+        run: apk add --no-cache bash git
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: 📖 检查新增组件是否有 Story
+        shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
         run: |
@@ -100,14 +119,22 @@ jobs:
 
   storybook-test:
     name: 🧪 Storybook 渲染 & A11y 测试
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 15
+    container:
+      # 对齐 pnpm-lock.yaml 解析的 @playwright/test 1.59.1，避免容器预装浏览器被 pnpm playwright install 重下载
+      image: mcr.microsoft.com/playwright:v1.59.1-jammy
+      options: --ipc=host
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/cache@v4
         with:
-          node-version: 20
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-
 
       - uses: pnpm/action-setup@v4
       - name: 🔧 Fix git SSH → HTTPS
@@ -118,8 +145,6 @@ jobs:
       - name: 📦 Install
         run: pnpm install --frozen-lockfile
 
-      - name: 🎭 Install Playwright Chromium
-        run: pnpm playwright install chromium --with-deps
-
+      # 容器镜像已预装匹配版本的 Chromium，无需再次下载
       - name: 🧪 Run Storybook Tests
         run: pnpm --filter @dmwork/web test:storybook

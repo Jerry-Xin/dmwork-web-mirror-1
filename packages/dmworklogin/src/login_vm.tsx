@@ -1,4 +1,20 @@
 import { WKApp, ProviderListener } from "@dmwork/base";
+import {
+    buildAuthorizeURL,
+    clearPendingOidcLogin,
+    fetchAuthcode,
+    fetchHttpClient,
+    getPendingOidcLogin,
+    getProviderById,
+    isPendingExpired,
+    OidcPollCancelledError,
+    OidcPollNetworkError,
+    OidcPollTimeoutError,
+    OIDC_AUTH_STATUS,
+    parseOidcUrlState,
+    pollAuthStatus,
+    savePendingOidcLogin,
+} from "./oidc";
 
 
 export class LoginStatus {
@@ -116,6 +132,7 @@ export class LoginVM extends ProviderListener {
             clearInterval(this._registerCountdownTimer)
             this._registerCountdownTimer = undefined
         }
+        this._clearOidcLoadingResetTimer()
     }
 
     set loginType(v: LoginType) {
@@ -454,5 +471,143 @@ export class LoginVM extends ProviderListener {
     }
     showAvatar() {
         return this.loginStatus === LoginStatus.scanned && this.uid
+    }
+
+    // ---------- OIDC SSO ----------
+    oidcLoading: boolean = false
+    oidcResuming: boolean = false
+    oidcResumingProviderName?: string
+    private _oidcCancelled: boolean = false
+    private _oidcAbort?: AbortController
+    // Fallback timer that flips oidcLoading back off if a redirect was
+    // intercepted (popup blocker / beforeunload handler / future SPA router).
+    private _oidcLoadingResetTimer?: ReturnType<typeof setTimeout>
+    // Default loading-reset window. Overridable via test seam.
+    static OIDC_LOADING_RESET_MS = 5000
+
+    async startOidcLogin(providerId: string): Promise<void> {
+        const provider = getProviderById(providerId)
+        if (!provider) {
+            console.warn('Unknown OIDC provider:', providerId)
+            return
+        }
+        if (this.oidcLoading) return
+        this.oidcLoading = true
+        this.notifyListener()
+        try {
+            const authcode = await fetchAuthcode(fetchHttpClient)
+            savePendingOidcLogin({
+                providerId,
+                authcode,
+                savedAt: Date.now(),
+            })
+            const returnTo = `${window.location.origin}/login`
+            // Schedule a fallback reset before navigating so a blocked redirect
+            // does not leave the SSO button stuck in a loading state forever.
+            if (this._oidcLoadingResetTimer) clearTimeout(this._oidcLoadingResetTimer)
+            this._oidcLoadingResetTimer = setTimeout(() => {
+                this._oidcLoadingResetTimer = undefined
+                if (this.oidcLoading) {
+                    this.oidcLoading = false
+                    this.notifyListener()
+                }
+            }, LoginVM.OIDC_LOADING_RESET_MS)
+            window.location.href = buildAuthorizeURL(provider, authcode, returnTo)
+        } catch (e) {
+            this.oidcLoading = false
+            this.notifyListener()
+            throw e
+        }
+    }
+
+    async resumeOidcLoginIfPending(search: string = window.location.search): Promise<{
+        handled: boolean
+        success?: boolean
+        error?: string
+    }> {
+        // Guard against re-entry: a parent remount that re-fires OidcResumeEffect
+        // while a previous poll is still in-flight would otherwise orphan the
+        // earlier AbortController and run two concurrent polls on the same authcode.
+        if (this.oidcResuming) return { handled: false }
+        const urlState = parseOidcUrlState(search)
+        const pending = getPendingOidcLogin()
+        // Only trust ?oidc_error=1 when there's a matching pending session.
+        // Otherwise an external link could clear another flow or fake-toast a user.
+        if (urlState.error && pending) {
+            const name = getProviderById(pending.providerId)?.name || 'SSO'
+            clearPendingOidcLogin()
+            return { handled: true, success: false, error: `${name} 登录失败，请重试` }
+        }
+        if (!pending) return { handled: false }
+        if (isPendingExpired(pending)) {
+            clearPendingOidcLogin()
+            return { handled: true, success: false, error: '登录超时，请重新发起' }
+        }
+        const providerName = getProviderById(pending.providerId)?.name || 'SSO'
+        this.oidcResuming = true
+        this.oidcResumingProviderName = providerName
+        this._oidcCancelled = false
+        this._oidcAbort = new AbortController()
+        this.notifyListener()
+        try {
+            const result = await pollAuthStatus({
+                client: fetchHttpClient,
+                authcode: pending.authcode,
+                intervalMs: 2000,
+                maxAttempts: 150,
+                sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+                isCancelled: () => this._oidcCancelled,
+                signal: this._oidcAbort.signal,
+            })
+            if (result.status === OIDC_AUTH_STATUS.SUCCESS && result.result) {
+                clearPendingOidcLogin()
+                this._resetOidcResume()
+                this.loginSuccess(result.result)
+                return { handled: true, success: true }
+            }
+            clearPendingOidcLogin()
+            this._resetOidcResume()
+            return { handled: true, success: false, error: result.msg || `${providerName} 登录失败` }
+        } catch (e) {
+            clearPendingOidcLogin()
+            this._resetOidcResume()
+            if (e instanceof OidcPollTimeoutError) {
+                return { handled: true, success: false, error: '登录超时，请重新发起' }
+            }
+            if (e instanceof OidcPollCancelledError) {
+                return { handled: true, success: false, error: '已取消登录' }
+            }
+            if (e instanceof OidcPollNetworkError) {
+                return { handled: true, success: false, error: '网络异常，请检查网络后重试' }
+            }
+            return { handled: true, success: false, error: '登录失败，请重试' }
+        }
+    }
+
+    cancelOidcLogin(): void {
+        this._oidcCancelled = true
+        // Clear pending up front so a refresh during the sleep window does not
+        // resume the just-cancelled session.
+        clearPendingOidcLogin()
+        // Abort any in-flight fetch so cancel propagates without waiting for
+        // the next sleep tick. (If the poll is currently inside `sleep`, cancel
+        // is still felt one interval later — the sleep itself isn't abortable.)
+        this._oidcAbort?.abort()
+        this._clearOidcLoadingResetTimer()
+    }
+
+    private _resetOidcResume(): void {
+        this.oidcResuming = false
+        this.oidcResumingProviderName = undefined
+        this._oidcAbort = undefined
+        this._clearOidcLoadingResetTimer()
+        this.notifyListener()
+    }
+
+    private _clearOidcLoadingResetTimer(): void {
+        if (this._oidcLoadingResetTimer) {
+            clearTimeout(this._oidcLoadingResetTimer)
+            this._oidcLoadingResetTimer = undefined
+        }
     }
 }

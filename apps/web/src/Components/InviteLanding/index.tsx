@@ -71,6 +71,33 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
         }
     }
 
+    /**
+     * Session expired / 未授权判断：
+     * - 后端返回 401 / 403
+     * - 或错误 msg 提示 token / 登录失效
+     * YUJ-99 / dmwork-web#1047: 已登录但 token 过期的用户需要被明确引导重新登录，
+     * 而不是卡在「加入」按钮点击失败的状态。
+     */
+    private isUnauthorizedError(status: number, msg: string): boolean {
+        if (status === 401 || status === 403) return true;
+        const m = (msg || "").toLowerCase();
+        return (
+            m.includes("unauthorized") ||
+            m.includes("token") ||
+            msg.includes("登录") ||
+            msg.includes("未授权") ||
+            msg.includes("凭证")
+        );
+    }
+
+    private redirectToLoginWithPendingInvite(hint?: string) {
+        // 保留邀请码，登录成功后 Layout.onLogin 会自动加入 Space
+        localStorage.setItem("pendingInviteCode", this.props.inviteCode);
+        if (hint) Toast.warning(hint);
+        // 延迟一点让 Toast 能被用户看到
+        setTimeout(() => this.handleGoLogin(), hint ? 600 : 0);
+    }
+
     private findToken(): string | undefined {
         // 先试 WKApp 的 token
         if (WKApp.loginInfo.token) return WKApp.loginInfo.token;
@@ -97,21 +124,49 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
         return "";
     }
 
+    /**
+     * 计算用于跳转的前端应用 basePath（不含尾斜杠）。
+     *
+     * 防御性处理：如果当前 pathname 落在后端 API 路径（/api 或 /api/vN）下，
+     * 直接用 `window.location.pathname` 作为 basePath 会把加入成功后的跳转
+     * 拼成 `/api/?sid=xxx`，从而命中后端 404 —— 这正是 #1006 的症状
+     * （邀请链接包含 /api/ 前缀时复现）。
+     *
+     * - pathname = "/"               → basePath = ""      → 跳 `/` ✓
+     * - pathname = "/api/"            → basePath = ""      → 跳 `/` ✓（修复点）
+     * - pathname = "/api/v1/..."     → basePath = ""      → 跳 `/` ✓（修复点）
+     * - pathname = "/web/"            → basePath = "/web" → 跳 `/web/` ✓（子路径部署兼容）
+     */
+    private getAppBasePath(): string {
+        const pathname = window.location.pathname || "/";
+        // 剥离可能被污染的后端 API 前缀
+        const stripped = pathname.replace(/^\/api(?:\/v\d+)?(?=\/|$)/, "");
+        // 去掉尾斜杠；返回 '' 表示根
+        return stripped.replace(/\/+$/, "");
+    }
+
     async handleJoin() {
         if (this.joinInProgress) return;
         this.joinInProgress = true;
         this.safeSetState({ joining: true });
         try {
             const token = this.findToken();
+            // 无 token（可能 localStorage 被清 / 跨浏览器访问）：直接走登录引导，避免 API 401
+            if (!token) {
+                this.redirectToLoginWithPendingInvite("请先登录后再加入");
+                return;
+            }
             const apiUrl = WKApp.apiClient.config.apiURL?.replace(/\/+$/, '');
             const resp = await fetch(`${apiUrl}/space/join`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...(token ? { token } : {}) },
+                headers: { 'Content-Type': 'application/json', token },
                 body: JSON.stringify({ invite_code: this.props.inviteCode }),
             });
             if (!resp.ok) {
                 const err = await resp.json().catch(() => ({}));
-                throw new Error(err.msg || "加入失败");
+                const error: any = new Error(err.msg || "加入失败");
+                error.status = resp.status;
+                throw error;
             }
             const result = await resp.json().catch(() => ({}));
             const status: JoinSpaceStatus | undefined = result?.status;
@@ -132,10 +187,17 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
             }
             // 跳转回主界面，带上正确的 sid
             const sid = this.findSid();
-            const basePath = window.location.pathname.replace(/\/+$/, '');
+            // 使用安全的 basePath，避免当 pathname 为 /api/ 时跳到后端 API 路径（#1006）
+            const basePath = this.getAppBasePath();
             window.location.href = `${window.location.origin}${basePath}/${sid ? `?sid=${sid}` : ''}`;
         } catch (e: any) {
             const msg = e?.message || "";
+            const status = e?.status || 0;
+            // session 过期 / 未授权 → 引导重新登录（携带 pendingInviteCode 登录后自动加群）
+            if (this.isUnauthorizedError(status, msg)) {
+                this.redirectToLoginWithPendingInvite("登录已过期，请重新登录后加入");
+                return;
+            }
             if (msg.includes("已满") || msg.includes("SPACE_FULL")) {
                 Toast.error("空间已满，无法加入");
             } else {
@@ -152,8 +214,9 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
         localStorage.setItem("pendingInviteCode", this.props.inviteCode);
         // 跳转到登录页，保留 invite 参数让登录页显示注册入口
         // 添加 action=login 参数让 Layout 跳过 InviteLanding 渲染
-        // 使用动态 basePath，避免硬编码 /web 导致部署路径不匹配
-        const basePath = window.location.pathname.replace(/\/+$/, '');
+        // 使用安全的 basePath，避免硬编码 /web 导致部署路径不匹配，
+        // 同时剥离 /api 前缀防止登录页被错误托管在后端 API 路径下（#1006）
+        const basePath = this.getAppBasePath();
         window.location.href = `${window.location.origin}${basePath}/?invite=${encodeURIComponent(this.props.inviteCode)}&action=login`;
     }
 
@@ -204,10 +267,16 @@ export default class InviteLanding extends Component<InviteLandingProps, InviteL
                         </Button>
                     ) : (
                         <>
-                            <div className="invite-landing-hint">登录或注册后加入该团队</div>
+                            {/* YUJ-99 / dmwork-web#1047: 未登录态必须展示明显的「登录后加入」CTA，
+                                避免用户只看到空白或 App 下载按钮而无处下一步。 */}
+                            <div className="invite-landing-hint">
+                                登录或注册后即可加入该团队
+                            </div>
                             <Button type="primary" size="large"
-                                className="invite-landing-btn" onClick={() => this.handleGoLogin()}>
-                                去登录
+                                className="invite-landing-btn"
+                                data-testid="invite-landing-login-cta"
+                                onClick={() => this.handleGoLogin()}>
+                                登录后加入
                             </Button>
                         </>
                     )}

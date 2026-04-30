@@ -26,6 +26,9 @@ export interface Thread {
   // 补齐后端已有字段
   group_name?: string
   last_message_at?: string
+  // 当前用户子区免打扰状态，仅 GetThread 填充（tri-state）：
+  // null/undefined = 未设置，前端应继承父群组 mute；0 = 显式不静音；1 = 显式静音
+  mute?: number | null
 }
 
 export enum ThreadStatus {

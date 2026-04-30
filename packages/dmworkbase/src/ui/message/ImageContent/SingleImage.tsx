@@ -27,7 +27,7 @@ export default function SingleImage({
   src,
   width,
   height,
-  onClick
+  onClick,
 }: SingleImageProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [maxWidth, setMaxWidth] = useState(FALLBACK_MAX_WIDTH)

@@ -12,6 +12,7 @@ import WKApp from "../../App";
 import RouteContext from "../../Service/Context";
 import { GroupRole } from "../../Service/Const";
 import { Convert } from "../../Service/Convert";
+import { resolveExternalForViewer } from "../../Utils/externalViewer";
 
 export class UserInfoRouteData {
   uid!: string;
@@ -186,6 +187,50 @@ export class UserInfoVM extends ProviderListener {
   // 是否是本人
   isSelf() {
     return WKApp.loginInfo.uid === this.uid;
+  }
+
+  /**
+   * YUJ-67: 相对当前查看 Space 判断该用户是否为"外部"。
+   *
+   * 用途：UserInfo 底部是否隐藏"发送消息"按钮，作为跨 space DM 骚扰 Phase 1
+   * 前端入口收紧的唯一判定源。判定字段沿用 YUJ-64 的 resolveExternalForViewer，
+   * 数据源优先级：
+   *   1. fromSubscriberOfUser.orgData：群成员 subscriber 的归属 space 字段，
+   *      这是从群里点头像进来的主路径，精度最高；
+   *   2. channelInfo.orgData：用户 profile 接口（带 group_no 参数时后端会
+   *      回填群内字段），作为缺失 subscriber 时的降级。
+   * 缺少任何归属信息则按"非外部"对待（兼容老数据 / 1v1 直接打开等场景）。
+   */
+  isExternalToViewer(): boolean {
+    if (this.isSelf()) {
+      return false;
+    }
+
+    // 1) 群成员 subscriber 优先
+    if (this.fromSubscriberOfUser?.orgData) {
+      const org = this.fromSubscriberOfUser.orgData as any;
+      const { isExternal } = resolveExternalForViewer({
+        homeSpaceId: org.home_space_id,
+        homeSpaceName: org.home_space_name,
+        isExternalLegacy: org.is_external,
+        sourceSpaceNameLegacy: org.source_space_name,
+      });
+      if (isExternal) return true;
+    }
+
+    // 2) /users/{uid}?group_no=... 返回的 orgData 作为降级
+    if (this.channelInfo?.orgData) {
+      const org = this.channelInfo.orgData as any;
+      const { isExternal } = resolveExternalForViewer({
+        homeSpaceId: org.home_space_id,
+        homeSpaceName: org.home_space_name,
+        isExternalLegacy: org.is_external,
+        sourceSpaceNameLegacy: org.source_space_name,
+      });
+      if (isExternal) return true;
+    }
+
+    return false;
   }
 
   async reloadChannelInfo() {

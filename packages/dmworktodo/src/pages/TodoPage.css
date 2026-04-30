@@ -1,0 +1,621 @@
+/* ─── TodoPage sidebar ─────────────────────────────────── */
+
+.wk-todo-sidebar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--wk-bg-base);
+  border-right: 1px solid var(--wk-border-subtle);
+}
+
+/* Section label — matches .wk-conv-section */
+.wk-todo-sidebar__section {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--semi-color-text-2, var(--wk-text-tertiary));
+  padding: var(--wk-sp-2) var(--wk-sp-3) var(--wk-sp-1);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* List container — matches .wk-conversationlist */
+.wk-todo-sidebar__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s;
+}
+
+.wk-todo-sidebar__list:hover {
+  scrollbar-color: color-mix(in srgb, var(--wk-text-primary) 15%, transparent) transparent;
+}
+
+.wk-todo-sidebar__list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.wk-todo-sidebar__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wk-todo-sidebar__list::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: var(--wk-r-full);
+  transition: background 0.3s;
+}
+
+.wk-todo-sidebar__list:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--wk-text-primary) 15%, transparent);
+}
+
+/* Sidebar item — matches .wk-conv-compact-item */
+.wk-todo-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 16px;
+  border-radius: 0;
+  cursor: pointer;
+  height: 36px;
+  box-sizing: border-box;
+  position: relative;
+  transition: background 200ms;
+}
+
+.wk-todo-sidebar__item:hover:not(.wk-todo-sidebar__item--selected) {
+  background: var(--wk-bg-item-hover, var(--wk-brand-tint-03, rgba(0,0,0,0.03)));
+}
+
+.wk-todo-sidebar__item--selected {
+  background: var(--wk-brand-tint-06, rgba(0,0,0,0.06));
+  box-shadow: inset 4px 0 0 var(--wk-brand-primary);
+}
+
+.wk-todo-sidebar__item-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wk-text-tertiary);
+}
+
+.wk-todo-sidebar__item-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wk-text-primary);
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wk-todo-sidebar__item--selected .wk-todo-sidebar__item-name {
+  color: var(--wk-brand-primary);
+}
+
+.wk-todo-sidebar__item-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
+}
+
+/* Section header with action button */
+.wk-todo-sidebar__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--wk-sp-2) var(--wk-sp-3) var(--wk-sp-1);
+}
+
+.wk-todo-sidebar__section-header .wk-todo-sidebar__section {
+  padding: 0;
+}
+
+.wk-todo-sidebar__add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--wk-r-xs, 4px);
+  transition: background 150ms, color 150ms;
+}
+
+.wk-todo-sidebar__add-btn:hover {
+  background: var(--wk-bg-item-hover, var(--wk-brand-tint-03));
+  color: var(--wk-brand-primary);
+}
+
+/* ─── New Goal Dialog ──────────────────────────────────── */
+
+.wk-todo-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.wk-todo-dialog {
+  background: var(--wk-bg-surface);
+  border-radius: var(--wk-r-md, 8px);
+  padding: var(--wk-sp-4);
+  width: 360px;
+  max-width: 90vw;
+  box-shadow: var(--wk-shadow-md, 0 4px 24px rgba(0, 0, 0, 0.12));
+}
+
+.wk-todo-dialog__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+  margin-bottom: var(--wk-sp-3);
+}
+
+.wk-todo-dialog__input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-sm);
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 150ms;
+}
+
+.wk-todo-dialog__input:focus {
+  border-color: var(--wk-brand-primary);
+}
+
+.wk-todo-dialog__input::placeholder {
+  color: var(--wk-text-disabled);
+}
+
+.wk-todo-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--wk-sp-2);
+  margin-top: var(--wk-sp-3);
+}
+
+.wk-todo-dialog__btn {
+  padding: 6px 16px;
+  border-radius: var(--wk-r-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 150ms;
+}
+
+.wk-todo-dialog__btn--cancel {
+  background: transparent;
+  color: var(--wk-text-secondary);
+}
+
+.wk-todo-dialog__btn--cancel:hover {
+  background: var(--wk-bg-item-hover, rgba(0, 0, 0, 0.05));
+}
+
+.wk-todo-dialog__btn--create {
+  background: var(--wk-brand-primary);
+  color: #fff;
+}
+
+.wk-todo-dialog__btn--create:hover {
+  opacity: 0.9;
+}
+
+.wk-todo-dialog__btn--create:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wk-todo-dialog__label {
+  font-size: 12px;
+  color: var(--wk-text-tertiary, #999);
+  margin-bottom: 4px;
+  display: block;
+}
+
+
+/* ─── Right panel: Todo list ───────────────────────────── */
+
+.wk-todo-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--wk-bg-surface);
+}
+
+.wk-todo-list__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--wk-sp-2) var(--wk-sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wk-sp-2);
+}
+
+.wk-todo-list__empty {
+  text-align: center;
+  padding: var(--wk-sp-8) 0;
+  color: var(--wk-text-disabled);
+  font-size: 13px;
+}
+
+.wk-todo-list__loading {
+  text-align: center;
+  padding: var(--wk-sp-4) 0;
+  color: var(--wk-text-tertiary);
+  font-size: 13px;
+}
+
+/* ─── Right panel: Detail ──────────────────────────────── */
+
+.wk-todo-detail {
+  padding: var(--wk-sp-4);
+  overflow-y: auto;
+  height: 100%;
+  background: var(--wk-bg-surface);
+}
+
+.wk-todo-detail__back {
+  border: none;
+  background: none;
+  color: var(--wk-text-accent, var(--wk-brand-primary));
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  margin-bottom: var(--wk-sp-3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wk-todo-detail__back:hover {
+  opacity: 0.8;
+}
+
+.wk-todo-detail__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+  margin: 0 0 var(--wk-sp-2);
+  line-height: 1.4;
+}
+
+.wk-todo-detail__status {
+  margin-bottom: var(--wk-sp-3);
+}
+
+.wk-todo-detail__actions {
+  display: flex;
+  gap: var(--wk-sp-2);
+  margin-bottom: var(--wk-sp-4);
+  flex-wrap: wrap;
+}
+
+.wk-todo-detail__action-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-sm);
+  background: var(--wk-bg-surface);
+  color: var(--wk-brand-primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 150ms, border-color 150ms;
+}
+
+.wk-todo-detail__action-btn:hover {
+  background: var(--wk-brand-tint-03, rgba(124, 92, 252, 0.03));
+  border-color: var(--wk-brand-primary);
+}
+
+.wk-todo-detail__desc {
+  color: var(--wk-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: var(--wk-sp-4);
+}
+
+.wk-todo-detail__meta {
+  border-top: 1px solid var(--wk-border-subtle);
+  padding-top: var(--wk-sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--wk-text-secondary);
+}
+
+.wk-todo-detail__meta strong {
+  color: var(--wk-text-primary);
+  font-weight: 500;
+}
+
+.wk-todo-detail__timestamps {
+  color: var(--wk-text-tertiary);
+  font-size: 12px;
+  margin-top: var(--wk-sp-2);
+}
+
+.wk-todo-sidebar__empty {
+  padding: var(--wk-sp-4) var(--wk-sp-3);
+  color: var(--wk-text-disabled);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ─── Goal Card ──────────────────────────────────────────── */
+
+.wk-goal-card {
+  margin: 4px 8px;
+  padding: 10px 12px;
+  border-radius: var(--wk-r-sm, 6px);
+  border: 1px solid var(--wk-border-subtle, rgba(0, 0, 0, 0.06));
+  cursor: pointer;
+  transition: background 150ms, box-shadow 150ms, border-color 150ms;
+  position: relative;
+}
+
+.wk-goal-card:hover {
+  background: var(--wk-bg-base, #f7f8fa);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-color: var(--wk-border-default, #e5e5e5);
+}
+
+.wk-goal-card--selected {
+  background: var(--wk-brand-tint-06, rgba(124, 92, 252, 0.06));
+  border-color: var(--wk-brand-primary, #7C5CFC);
+  box-shadow: inset 3px 0 0 var(--wk-brand-primary, #7C5CFC);
+}
+
+.wk-goal-card--selected:hover {
+  background: var(--wk-brand-tint-06, rgba(124, 92, 252, 0.08));
+}
+
+.wk-goal-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.wk-goal-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-primary, #1a1a1a);
+  line-height: 1.3;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wk-goal-card--selected .wk-goal-card__title {
+  color: var(--wk-brand-primary, #7C5CFC);
+}
+
+.wk-goal-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--wk-r-full, 999px);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.wk-goal-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--wk-text-tertiary, #999);
+  line-height: 1;
+}
+
+.wk-goal-card__stats {
+  font-variant-numeric: tabular-nums;
+}
+
+.wk-goal-card__deadline {
+  white-space: nowrap;
+}
+
+.wk-goal-card__deadline--overdue {
+  color: var(--wk-color-error, #ef4444);
+  font-weight: 500;
+}
+
+/* ─── Detail Side Panel (overlay on right of todo list) ──── */
+
+.wk-todo-side-panel {
+  width: 480px;
+  min-width: 420px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--wk-border-subtle);
+  background: var(--wk-bg-surface);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  animation: wk-todo-slide-in 150ms ease-out;
+}
+
+@keyframes wk-todo-slide-in {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.wk-todo-side-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--wk-sp-3) var(--wk-sp-4);
+  border-bottom: 1px solid var(--wk-border-subtle);
+  flex-shrink: 0;
+}
+
+.wk-todo-side-panel__header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.wk-todo-side-panel__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--wk-r-xs, 4px);
+  font-size: 14px;
+  transition: background 150ms;
+}
+
+.wk-todo-side-panel__close:hover {
+  background: var(--wk-bg-item-hover, rgba(0, 0, 0, 0.05));
+}
+
+.wk-todo-side-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--wk-sp-4);
+}
+
+/* ─── Todo List View ──────────────────────────────────── */
+
+.wk-todo-list-view__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--wk-border-subtle, #f0f0f0);
+  background: var(--wk-bg-surface, #fff);
+  flex-shrink: 0;
+}
+
+.wk-todo-list-view__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--wk-text-primary, #1a1a1a);
+  letter-spacing: -0.2px;
+}
+
+.wk-todo-list-view__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 2px 0;
+  border-radius: var(--wk-r-sm, 6px);
+  cursor: pointer;
+  transition: background 150ms ease, box-shadow 150ms ease;
+  position: relative;
+}
+
+.wk-todo-list-view__item:hover {
+  background: var(--wk-bg-base, #f7f8fa);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.wk-todo-list-view__item--selected {
+  background: var(--wk-brand-tint-06, rgba(124, 92, 252, 0.06));
+}
+
+.wk-todo-list-view__item--selected:hover {
+  background: var(--wk-brand-tint-06, rgba(124, 92, 252, 0.08));
+}
+
+/* ─── Todo list item checkbox ────────────────────────── */
+
+.wk-todo-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid var(--wk-border-default, #d9d9d9);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+  color: transparent;
+  font-size: 11px;
+  padding: 0;
+}
+
+.wk-todo-checkbox:hover {
+  border-color: var(--wk-brand-primary, #7C5CFC);
+}
+
+.wk-todo-checkbox--closed {
+  border-color: var(--wk-color-success, #52c41a);
+  background: var(--wk-color-success, #52c41a);
+  color: #fff;
+}
+
+/* ─── Todo list item title ───────────────────────────── */
+
+.wk-todo-item-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 450;
+  color: var(--wk-text-primary, #1a1a1a);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wk-todo-item-title--closed {
+  text-decoration: line-through;
+  color: var(--wk-text-disabled, #bbb);
+}
+
+/* ─── Todo list item meta (right side) ───────────────── */
+
+.wk-todo-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.wk-todo-item-deadline {
+  font-size: 12px;
+  color: var(--wk-text-tertiary, #999);
+  white-space: nowrap;
+}
+
+.wk-todo-item-deadline--overdue {
+  color: var(--wk-color-error, #ef4444);
+  font-weight: 500;
+}

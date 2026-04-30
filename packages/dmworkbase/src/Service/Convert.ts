@@ -3,6 +3,39 @@ import { Setting } from "wukongimjssdk";
 import { WKSDK, ChannelInfo, Channel, Conversation, Message, MessageStatus, ChannelTypePerson, ChannelTypeGroup,ConversationExtra,Reminder, MessageExtra } from "wukongimjssdk";
 
 
+/**
+ * 将服务端 msg-level 外部来源字段从原始 JSON map 透传到 SDK Message 实例上。
+ * 覆盖字段：from_is_external / from_source_space_name / from_home_space_id /
+ * from_home_space_name。消费方（MessageWrap getter）按 snake_case 属性读取。
+ *
+ * 用于所有「从服务端 JSON 反序列化得到 Message」的路径：
+ *   - Convert.toMessage（conversation/sync 的 recents / message/channel/sync）
+ *   - MergeforwardContent.mapToMessage（合并转发内嵌消息）
+ *   - 未来任何新的 decode 入口应同样调用此方法
+ *
+ * 硬约束：仅做字段拷贝；不修改 resolver 或渲染逻辑。
+ */
+export function applyMsgLevelExternalFields(message: Message, msgMap: any): void {
+    if (!msgMap) return
+
+    const fromIsExternal = msgMap["from_is_external"]
+    if (fromIsExternal !== undefined && fromIsExternal !== null) {
+        (message as any).from_is_external = fromIsExternal === 1 ? 1 : 0
+    }
+    const fromSourceSpaceName = msgMap["from_source_space_name"]
+    if (fromSourceSpaceName !== undefined && fromSourceSpaceName !== null) {
+        (message as any).from_source_space_name = fromSourceSpaceName
+    }
+    const fromHomeSpaceId = msgMap["from_home_space_id"]
+    if (fromHomeSpaceId !== undefined && fromHomeSpaceId !== null) {
+        (message as any).from_home_space_id = fromHomeSpaceId
+    }
+    const fromHomeSpaceName = msgMap["from_home_space_name"]
+    if (fromHomeSpaceName !== undefined && fromHomeSpaceName !== null) {
+        (message as any).from_home_space_name = fromHomeSpaceName
+    }
+}
+
 export class Convert {
     static toConversation(conversationMap: any): Conversation {
         const conversation = new Conversation()
@@ -100,31 +133,12 @@ export class Convert {
 
         message.isDeleted = msgMap["is_deleted"] === 1
 
-        // 外部群成员消息来源标记（YUJ-50 backend / YUJ-53 frontend）：
-        // /message/channel/sync 响应在 msg-level 携带 from_is_external (0|1)
-        // 和 from_source_space_name (string)。Message 是 SDK 内置类，这里
-        // 通过 any 旁路写入，再由 MessageWrap 以 getter 形式读出（见 Model.tsx）。
-        const fromIsExternal = msgMap["from_is_external"]
-        if (fromIsExternal !== undefined && fromIsExternal !== null) {
-            (message as any).from_is_external = fromIsExternal === 1 ? 1 : 0
-        }
-        const fromSourceSpaceName = msgMap["from_source_space_name"]
-        if (fromSourceSpaceName !== undefined && fromSourceSpaceName !== null) {
-            (message as any).from_source_space_name = fromSourceSpaceName
-        }
-
-        // YUJ-64 / YUJ-63：新增 msg-level 字段 from_home_space_id /
-        // from_home_space_name，表示消息发送者真正归属的 Space。消费方
-        // （MessageWrap + 消息头渲染）据此按当前查看 Space 做相对外部判定，
-        // 替换旧的 is_external 绝对值。
-        const fromHomeSpaceId = msgMap["from_home_space_id"]
-        if (fromHomeSpaceId !== undefined && fromHomeSpaceId !== null) {
-            (message as any).from_home_space_id = fromHomeSpaceId
-        }
-        const fromHomeSpaceName = msgMap["from_home_space_name"]
-        if (fromHomeSpaceName !== undefined && fromHomeSpaceName !== null) {
-            (message as any).from_home_space_name = fromHomeSpaceName
-        }
+        // 外部群成员消息来源字段（YUJ-50 / YUJ-53 / YUJ-64 / dmwork-web#1069）：
+        // /message/channel/sync 和 conversation/sync 响应在 msg-level 携带
+        // from_is_external / from_source_space_name / from_home_space_id /
+        // from_home_space_name。统一通过 applyMsgLevelExternalFields 透传，
+        // 保证所有 decode 入口行为一致。
+        applyMsgLevelExternalFields(message, msgMap)
 
         return message
     }

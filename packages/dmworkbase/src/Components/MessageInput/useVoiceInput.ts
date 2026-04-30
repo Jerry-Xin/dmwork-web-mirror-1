@@ -3,25 +3,28 @@ import { Toast } from "@douyinfe/semi-ui";
 import VoiceService, {
   VoiceConfig,
   VoiceContextResponse,
+  VoiceMode,
 } from "../../Service/VoiceService";
 import WKApp from "../../App";
 import { ChatContextResult } from "../Conversation/chatContext";
 
 export interface UseVoiceInputOptions {
   maxDuration?: number;
-  onTranscribed?: (text: string, shouldReplace: boolean) => void;
+  onTranscribed?: (text: string) => void;
   onError?: (error: Error) => void;
   onRecordingFailed?: () => void;
   getChatContext?: () => ChatContextResult;
+  mode?: VoiceMode;
 }
 
 export interface UseVoiceInputReturn {
   isRecording: boolean;
   isTranscribing: boolean;
-  startRecording: () => void;
+  startRecording: (overrideMode?: VoiceMode) => void;
   stopRecordingAndTranscribe: (contextText?: string) => void;
   cancelRecording: () => void;
   isVoiceEnabled: boolean;
+  currentMode: VoiceMode;
 }
 
 function getSupportedMimeType(): string {
@@ -43,11 +46,13 @@ export default function useVoiceInput(
     onError,
     onRecordingFailed,
     getChatContext,
+    mode = "smart",
   } = options;
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+  const [currentMode, setCurrentMode] = useState<VoiceMode>(mode);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -57,6 +62,7 @@ export default function useVoiceInput(
   const streamRef = useRef<MediaStream | null>(null);
   const startTimeRef = useRef<number>(0);
   const contextTextRef = useRef<string | undefined>(undefined);
+  const recordingModeRef = useRef<VoiceMode>(mode);
 
   const getChatContextRef = useRef(getChatContext);
   getChatContextRef.current = getChatContext;
@@ -111,64 +117,75 @@ export default function useVoiceInput(
     chunksRef.current = [];
   }, []);
 
-  const startRecording = useCallback(async () => {
-    if (isRecording) return;
+  const startRecording = useCallback(
+    async (overrideMode?: VoiceMode) => {
+      if (isRecording) {
+        return;
+      }
 
-    voiceContextRef.current = null;
+      // 保存本次录音使用的 mode
+      recordingModeRef.current = overrideMode ?? mode;
+      setCurrentMode(recordingModeRef.current);
 
-    const spaceId = WKApp.shared.currentSpaceId;
-    voiceContextSpaceIdRef.current = spaceId;
+      voiceContextRef.current = null;
 
-    if (spaceId) {
-      const promise = VoiceService.shared
-        .getVoiceContext(spaceId)
-        .then((resp) => {
-          if (voiceContextSpaceIdRef.current === spaceId) {
-            voiceContextRef.current = resp;
-          }
-          return resp;
-        })
-        .catch(() => {
-          return null;
+      const spaceId = WKApp.shared.currentSpaceId;
+      voiceContextSpaceIdRef.current = spaceId;
+
+      if (spaceId) {
+        const promise = VoiceService.shared
+          .getVoiceContext(spaceId)
+          .then((resp) => {
+            if (voiceContextSpaceIdRef.current === spaceId) {
+              voiceContextRef.current = resp;
+            }
+            return resp;
+          })
+          .catch(() => {
+            return null;
+          });
+        voiceContextPromiseRef.current = promise;
+      } else {
+        voiceContextPromiseRef.current = null;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
         });
-      voiceContextPromiseRef.current = promise;
-    } else {
-      voiceContextPromiseRef.current = null;
-    }
+        streamRef.current = stream;
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+        const mimeType = getSupportedMimeType();
+        const recorder = new MediaRecorder(stream, { mimeType });
+        mediaRecorderRef.current = recorder;
+        chunksRef.current = [];
 
-      const mimeType = getSupportedMimeType();
-      const recorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = recorder;
-      chunksRef.current = [];
+        recorder.ondataavailable = (e: BlobEvent) => {
+          if (e.data.size > 0) {
+            chunksRef.current.push(e.data);
+          }
+        };
 
-      recorder.ondataavailable = (e: BlobEvent) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
-      };
+        recorder.start();
+        setIsRecording(true);
 
-      recorder.start();
-      setIsRecording(true);
+        // 记录开始时间
+        startTimeRef.current = Date.now();
 
-      // 记录开始时间
-      startTimeRef.current = Date.now();
-
-      // 使用 setTimeout 替代 setInterval 处理 maxDuration 自动停止
-      maxDurationTimeoutRef.current = setTimeout(() => {
-        stopFnRef.current();
-      }, maxDuration * 1000);
-    } catch (err) {
-      const error =
-        err instanceof Error ? err : new Error("Microphone access denied");
-      if (onError) onError(error);
-      cleanup();
-      if (onRecordingFailed) onRecordingFailed();
-    }
-  }, [isRecording, maxDuration, onError, onRecordingFailed, cleanup]);
+        // 使用 setTimeout 替代 setInterval 处理 maxDuration 自动停止
+        maxDurationTimeoutRef.current = setTimeout(() => {
+          stopFnRef.current();
+        }, maxDuration * 1000);
+      } catch (err) {
+        const error =
+          err instanceof Error ? err : new Error("Microphone access denied");
+        if (onError) onError(error);
+        cleanup();
+        if (onRecordingFailed) onRecordingFailed();
+      }
+    },
+    [isRecording, maxDuration, onError, onRecordingFailed, cleanup]
+  );
 
   const stopRecordingAndTranscribe = useCallback(
     (contextText?: string) => {
@@ -228,11 +245,11 @@ export default function useVoiceInput(
             contextTextRef.current,
             chatContext,
             personalContext,
-            memberContext
+            memberContext,
+            recordingModeRef.current
           );
           if (result.text && onTranscribed) {
-            // 转写结果始终替换输入框所有文本
-            onTranscribed(result.text, true);
+            onTranscribed(result.text);
           }
         } catch (err) {
           // PRD: 转写失败时 Toast「转写失败，请重试」
@@ -286,5 +303,6 @@ export default function useVoiceInput(
     stopRecordingAndTranscribe,
     cancelRecording,
     isVoiceEnabled,
+    currentMode,
   };
 }

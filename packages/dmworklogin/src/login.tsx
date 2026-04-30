@@ -1,5 +1,6 @@
 import React, { Component, useState, useEffect, useRef } from "react";
 import { Button, Spin, Toast } from '@douyinfe/semi-ui';
+import { IconLock } from '@douyinfe/semi-icons';
 import './login.css'
 import { QRCodeSVG } from 'qrcode.react';
 import { WKApp, Provider } from "@dmwork/base"
@@ -7,6 +8,85 @@ import { LoginStatus, LoginType, LoginVM } from "./login_vm";
 import classNames from "classnames";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
 import { validatePassword } from "./passwordStrength";
+import { SSO_PROVIDERS } from "./oidc";
+
+const ENTERPRISE_SSO_ENABLED =
+    import.meta.env.VITE_ENABLE_ENTERPRISE_SSO === 'true'
+
+const SSOSection: React.FC<{ vm: LoginVM }> = ({ vm }) => {
+    if (!ENTERPRISE_SSO_ENABLED || SSO_PROVIDERS.length === 0) return null
+    return (
+        <div className="wk-login-content-sso">
+            <div className="wk-login-content-sso-divider">
+                <span>或使用以下方式登录</span>
+            </div>
+            {SSO_PROVIDERS.map((provider) => (
+                <Button
+                    key={provider.id}
+                    className="wk-login-content-sso-btn"
+                    loading={vm.oidcLoading}
+                    disabled={vm.oidcLoading || vm.oidcResuming}
+                    onClick={() => {
+                        vm.startOidcLogin(provider.id).catch((err: unknown) => {
+                            console.error('OIDC login start failed:', err)
+                            Toast.error('无法启动 ' + provider.name + ' 登录')
+                        })
+                    }}
+                >
+                    <IconLock className="wk-login-content-sso-btn-icon" />
+                    使用 {provider.name} 账号登录
+                </Button>
+            ))}
+        </div>
+    )
+}
+
+const OidcResumeEffect: React.FC<{ vm: LoginVM }> = ({ vm }) => {
+    const ranRef = useRef(false)
+    useEffect(() => {
+        if (ranRef.current) return
+        ranRef.current = true
+        let unmounted = false
+        ;(async () => {
+            const result = await vm.resumeOidcLoginIfPending()
+            if (unmounted || !result.handled) return
+            try {
+                const url = new URL(window.location.href)
+                url.searchParams.delete('oidc_error')
+                window.history.replaceState({}, '', url.toString())
+            } catch {
+                /* noop */
+            }
+            if (result.success === false && result.error) {
+                Toast.error(result.error)
+            }
+        })()
+        return () => {
+            unmounted = true
+            vm.cancelOidcLogin()
+        }
+    }, [vm])
+    return null
+}
+
+const OidcResumingOverlay: React.FC<{ vm: LoginVM }> = ({ vm }) => {
+    if (!vm.oidcResuming) return null
+    const providerName = vm.oidcResumingProviderName || 'SSO'
+    return (
+        <div className="wk-login-content-oidc-overlay">
+            <Spin />
+            <div className="wk-login-content-oidc-overlay-text">
+                {`正在完成 ${providerName} 登录…`}
+            </div>
+            <Button
+                onClick={() => vm.cancelOidcLogin()}
+                className="wk-login-content-oidc-overlay-cancel"
+            >
+                取消
+            </Button>
+        </div>
+    )
+}
 
 
 // Android APK 下载按钮：动态从接口获取最新下载链接
@@ -225,6 +305,8 @@ class Login extends Component<any, LoginState> {
 
                 {/* Right form panel */}
                 <div className="wk-login-panel">
+                    {ENTERPRISE_SSO_ENABLED && <OidcResumeEffect vm={vm} />}
+                    {ENTERPRISE_SSO_ENABLED && <OidcResumingOverlay vm={vm} />}
                     <div className="wk-login-content">
                         {/* Mobile logo fallback */}
                         <div className="wk-login-content-logo">
@@ -270,6 +352,7 @@ class Login extends Component<any, LoginState> {
                                         忘记密码
                                     </div>
                                 </div>
+                                <SSOSection vm={vm} />
                                 <div className="wk-login-content-download">
                                     <AndroidDownloadButton />
                                 </div>

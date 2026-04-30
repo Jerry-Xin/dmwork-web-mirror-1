@@ -97,6 +97,7 @@ import { handleGlobalSearchClick } from "./Pages/Chat/vm";
 import { ApproveGroupMemberCell } from "./Messages/ApproveGroupMember";
 import { notificationUtil } from "./Utils/NotificationUtil";
 import { resolveExternalForViewer } from "./Utils/externalViewer";
+import { copyImageToClipboard } from "./Utils/clipboard";
 import { shouldSkipMessageForSpace } from "./Service/SpaceService";
 import {
   ThreadCreatedCell,
@@ -519,6 +520,15 @@ export default class BaseModule implements IModule {
     if (shouldSkipMessageForSpace(message)) {
       return false;
     }
+    // BotFather 消息额外检查：channelType=Person 绕过了上面的过滤，
+    // 需通过消息体 contentObj.space_id 判断是否属于当前 Space
+    if (message.channel?.channelID === "botfather") {
+      const curSpaceId = WKApp.shared.currentSpaceId;
+      const msgSpaceId = (message.content as any)?.contentObj?.space_id;
+      if (curSpaceId && msgSpaceId && msgSpaceId !== curSpaceId) {
+        return false;
+      }
+    }
 
     // 已屏蔽（免打扰）的 channel 不播提示音、不发通知
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(message.channel);
@@ -625,6 +635,31 @@ export default class BaseModule implements IModule {
         };
       },
       1000
+    );
+
+    // 图片消息：复制图片到剪贴板
+    WKApp.endpoints.registerMessageContextMenus(
+      "contextmenus.copyImage",
+      (message) => {
+        if (message.contentType !== MessageContentType.image) {
+          return null;
+        }
+        const content = message.content as ImageContent;
+        const rawSrc = content.url || content.remoteUrl || "";
+        if (!rawSrc) return null;
+        // 经过 datasource URL 处理，与渲染路径保持一致（补全 base URL、路径改写等）
+        const src = WKApp.dataSource.commonDataSource.getImageURL(rawSrc, { width: content.width || 0, height: content.height || 0 });
+
+        return {
+          title: "复制图片",
+          onClick: () => {
+            copyImageToClipboard(src)
+              .then(() => Toast.success("已复制图片"))
+              .catch((err: Error) => Toast.warning(err.message || "复制失败"));
+          },
+        };
+      },
+      1100
     );
 
     WKApp.endpoints.registerMessageContextMenus(

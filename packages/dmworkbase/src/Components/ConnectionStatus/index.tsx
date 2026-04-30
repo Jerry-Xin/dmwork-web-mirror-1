@@ -71,7 +71,8 @@ export default class ConnectionStatus extends Component<ConnectionStatusProps, C
     async measureLatency() {
         try {
             const start = Date.now()
-            await fetch(`${WKApp.apiClient.config.apiURL}/health`, {
+            const baseUrl = WKApp.apiClient.config.apiURL.replace(/\/+$/, '')
+            await fetch(`${baseUrl}/health`, {
                 method: "GET",
                 cache: "no-cache",
             })

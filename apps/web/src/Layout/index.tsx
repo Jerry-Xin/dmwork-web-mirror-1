@@ -47,7 +47,17 @@ export default class AppLayout extends Component<{}, AppLayoutState> {
 
         this.onLogin = () => {
             try { Notification.requestPermission() } catch(_) {} // 请求通知权限（iOS 不支持，忽略错误）
-            const basePath = (window.location.pathname.replace(/\/login\/?$/, '').replace(/\/index\.html$/, '') || '/').replace(/\/+$/, '')
+            // 计算 app basePath：
+            // 1) 去掉 /login 或 /index.html 尾巴
+            // 2) 剥离可能被污染的后端 API 前缀（/api 或 /api/vN）— 避免当登录页
+            //    意外落在 /api/... 时把 sid 跳到后端 API 路径 → 404 (#1006)
+            // 3) 去掉尾斜杠；空串代表根
+            const rawPath = window.location.pathname
+                .replace(/\/login\/?$/, '')
+                .replace(/\/index\.html$/, '') || '/'
+            const basePath = rawPath
+                .replace(/^\/api(?:\/v\d+)?(?=\/|$)/, '')
+                .replace(/\/+$/, '')
             // 保留原始 sid（如果有），不随机生成新的
             const existingSid = getQueryParam("sid") || ""
             const sidParam = existingSid ? `?sid=${existingSid}` : ""

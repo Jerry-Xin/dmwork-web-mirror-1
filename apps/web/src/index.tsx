@@ -8,6 +8,7 @@ import  { BaseModule, WKApp } from '@dmwork/base';
 import  { LoginModule } from '@dmwork/login';
 import  { DataSourceModule } from '@dmwork/datasource';
 import {ContactsModule} from '@dmwork/contacts';
+import { TodoModule } from '@dmwork/todo';
 import { version as pkgVersion } from '../package.json';
 
 // VITE_API_URL 只填 origin（协议+域名+端口），不要带路径
@@ -37,6 +38,11 @@ if((window as any).__TAURI_IPC__ || (window as any)?.__POWERED_ELECTRON__) {
 WKApp.apiClient.config.tokenCallback = ()=> {
   return WKApp.loginInfo.token
 }
+// 由 APIClient request interceptor 读取当前 space_id，注入 X-Space-Id header。
+// 通过回调注入（而非在 APIClient 内 import WKApp）以避免循环依赖。GH #1038
+WKApp.apiClient.config.spaceIdCallback = () => {
+  return WKApp.shared.currentSpaceId
+}
 WKApp.config.appVersion = import.meta.env.VITE_VERSION || pkgVersion
 WKApp.config.appName = "Octo"
 
@@ -46,6 +52,7 @@ WKApp.shared.registerModule(new BaseModule()); // 基础模块
 WKApp.shared.registerModule(new DataSourceModule()) // 数据源模块
 WKApp.shared.registerModule(new LoginModule()); // 登录模块
 WKApp.shared.registerModule(new ContactsModule()); // 联系模块
+WKApp.shared.registerModule(new TodoModule()); // Todo module
 
 WKApp.shared.startup() // app启动
 

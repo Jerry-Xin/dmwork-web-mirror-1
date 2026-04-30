@@ -1,5 +1,7 @@
 import APIClient from "./APIClient";
 
+export type VoiceMode = "smart" | "append_only" | "edit_only";
+
 export interface VoiceConfig {
   enabled: boolean;
   max_duration: number;
@@ -47,7 +49,8 @@ export default class VoiceService {
     contextText?: string,
     chatContext?: string,
     personalContext?: string,
-    memberContext?: string
+    memberContext?: string,
+    mode?: VoiceMode
   ): Promise<TranscribeResult> {
     const formData = new FormData();
     const ext = audio.type.includes("mp4") ? "mp4" : "webm";
@@ -63,6 +66,9 @@ export default class VoiceService {
     }
     if (memberContext) {
       formData.append("member_context", memberContext);
+    }
+    if (mode) {
+      formData.append("mode", mode);
     }
     return APIClient.shared.post("/voice/transcribe", formData);
   }

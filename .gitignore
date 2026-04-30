@@ -49,6 +49,7 @@ debug-storybook.log
 .gstack/
 dm__test
 .ftre/snapshot
+.omc/
 AGENTS.config.local.json
 .claude/settings.local.json
 **/.claude/settings.local.json
@@ -58,6 +59,7 @@ package-lock.json
 
 # AI/IDE 工件文件（不进仓库）
 .claude/
+.zed/
 .ftre/memory/
 .vscode/settings.json
 **/settings.local.json

@@ -1,24 +1,44 @@
-/* 语音按钮组 */
+/* 语音按钮组 - 一体化按钮风格 */
 .wk-voice-button-group {
   position: relative;
   display: flex;
   align-items: center;
   height: 24px;
+  border-radius: 4px;
+  transition: background-color 0.15s;
 }
 
-/* 语音按钮 */
+/* hover 整个按钮组时显示激活态 */
+.wk-voice-button-group:hover {
+  background-color: var(--wk-bg-hover);
+}
+
+.wk-voice-button-group--active,
+.wk-voice-button-group--active:hover {
+  background-color: var(--wk-bg-hover);
+}
+
+/* 语音按钮 - 麦克风和箭头一体 */
 .wk-voice-button {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
+  justify-content: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 4px 0 6px;
   cursor: pointer;
-  border-radius: 6px;
-  transition: background-color 0.15s;
+  border-radius: 4px;
+  transition: color 0.15s, background-color 0.15s;
   color: var(--wk-icon-muted);
 }
 
+/* hover 状态 - 显示背景色 */
 .wk-voice-button:hover {
+  background-color: var(--wk-bg-hover);
+}
+
+/* hover 时颜色变化（背景由父元素控制） */
+.wk-voice-button-group:hover .wk-voice-button {
   color: var(--wk-text-primary);
 }
 
@@ -26,9 +46,20 @@
   opacity: 0.7;
 }
 
+/* 激活态 - hover 时只改变图标颜色为深色 */
+.wk-voice-button--active {
+  color: var(--wk-text-primary);
+}
+
+.wk-voice-button-group:hover .wk-voice-button--active,
+.wk-voice-button-group--active .wk-voice-button {
+  color: var(--wk-text-primary);
+}
+
 .wk-voice-button--recording {
   background-color: var(--wk-voice-recording-bg);
   color: var(--wk-voice-recording-color);
+  border-radius: 4px;
 }
 
 .wk-voice-button--disabled {
@@ -39,10 +70,11 @@
 
 .wk-voice-button--disabled:hover {
   color: var(--wk-icon-muted);
+  background-color: transparent;
 }
 
 .wk-voice-button--preparing {
-  color: var(--wk-brand-primary, #7f3bf5);
+  color: var(--wk-color-accent);
   opacity: 0.6;
   animation: wk-voice-preparing-pulse 1s ease-in-out infinite;
 }
@@ -67,16 +99,16 @@
   width: 184px;
   height: 48px;
   padding: 4px 16px;
-  background-color: var(--wk-bg-surface, #ffffff);
-  border: 1px solid var(--wk-border-light, rgba(28, 28, 35, 0.05));
+  background-color: var(--wk-bg-surface);
+  border: 1px solid var(--wk-border-subtle);
   border-radius: 1000px;
   box-shadow: 0px 0px 20px 0px var(--wk-black-alpha-08);
   box-sizing: border-box;
 }
 
 [theme-mode="dark"] .wk-voice-floating-indicator {
-  background-color: var(--wk-bg-surface, #2a2a33);
-  border-color: var(--wk-border-light, rgba(255, 255, 255, 0.1));
+  background-color: var(--wk-bg-surface);
+  border-color: var(--wk-border-subtle);
   box-shadow: 0px 0px 20px 0px var(--wk-black-alpha-30);
 }
 
@@ -89,11 +121,11 @@
 }
 
 .wk-voice-floating-text {
-  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 14px;
+  font-family: var(--wk-font-sans);
+  font-size: var(--wk-text-size-md);
   font-weight: 500;
   line-height: 22px;
-  color: var(--wk-text-primary, #1c1c23);
+  color: var(--wk-text-primary);
   white-space: nowrap;
 }
 
@@ -101,7 +133,7 @@
   width: 1px;
   height: 20px;
   margin: 0 8px;
-  background-color: var(--wk-border-color, rgba(28, 28, 35, 0.15));
+  background-color: var(--wk-border-default);
   flex-shrink: 0;
 }
 
@@ -118,8 +150,8 @@
   content: "";
   width: 20px;
   height: 20px;
-  border: 2px solid var(--wk-brand-primary-light, rgba(127, 59, 245, 0.2));
-  border-top-color: var(--wk-brand-primary, #7f3bf5);
+  border: 2px solid var(--wk-accent-tint-12);
+  border-top-color: var(--wk-color-accent);
   border-radius: 50%;
   animation: wk-voice-spin 0.6s linear infinite;
 }
@@ -204,4 +236,14 @@
   50% {
     height: 20px;
   }
+}
+
+/* 箭头样式 - 在按钮内部 */
+.wk-voice-arrow {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.wk-voice-arrow--up {
+  transform: rotate(180deg);
 }

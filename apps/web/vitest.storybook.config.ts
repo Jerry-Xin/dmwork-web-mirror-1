@@ -22,7 +22,10 @@ export default defineConfig({
   ],
   test: {
     name: 'storybook',
-    retry: 2, // CI 环境下 Vite HMR reload 可能导致动态 import 失败，重试2次
+    // 容器化环境已足够稳定，但保留一次重试作为 CI 偶发抖动的兜底
+    retry: 1,
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     browser: {
       enabled: true,
       headless: true,

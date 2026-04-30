@@ -1,4 +1,4 @@
-import { ChannelQrcodeResp, Contacts, IChannelDataSource, ICommonDataSource, WKApp, RequestConfig, GroupRole, hasSpacePrefix, Thread, ChannelTypeCommunityTopic, buildThreadChannelId, ChannelFilesResp } from "@dmwork/base";
+import { ChannelQrcodeResp, Contacts, IChannelDataSource, ICommonDataSource, WKApp, RequestConfig, GroupRole, hasSpacePrefix, Thread, ChannelTypeCommunityTopic, buildThreadChannelId, ChannelFilesResp, parseThreadChannelId } from "@dmwork/base";
 import { Channel, ChannelInfo, ChannelTypeGroup, ChannelTypePerson, WKSDK, Message, MessageContentType,ConversationExtra,Subscriber } from "wukongimjssdk";
 
 const MAX_GROUP_LIST_LIMIT = 100000;
@@ -132,6 +132,10 @@ export class ChannelDataSource implements IChannelDataSource {
             let uid = channel.channelID;
             if (hasSpacePrefix(uid)) uid = uid.substring(uid.indexOf('_') + 1);
             return WKApp.apiClient.put(`users/${uid}/setting`, setting)
+        } else if (channel.channelType === ChannelTypeCommunityTopic) { // 子区
+            const threadInfo = parseThreadChannelId(channel.channelID)
+            if (!threadInfo) return
+            return WKApp.apiClient.put(`groups/${threadInfo.groupNo}/threads/${threadInfo.shortId}/setting`, setting)
         }
     }
 
@@ -296,6 +300,8 @@ export class ChannelDataSource implements IChannelDataSource {
             thread_md_updated_at: data.thread_md_updated_at,
             group_name: data.group_name,
             last_message_at: data.last_message_at,
+            // tri-state: null=未设置(继承父群) 0=显式不静音 1=显式静音
+            mute: data.mute ?? null,
         }
     }
 

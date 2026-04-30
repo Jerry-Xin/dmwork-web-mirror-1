@@ -168,6 +168,7 @@ function dispatchCocraftToBackground(channel: { channelID: string; channelType: 
 
 const origAddMessageListener = WKSDK.shared().chatManager.addMessageListener.bind(WKSDK.shared().chatManager);
 cocraftLog.ok('sidepanel', 'HOOK', 'addMessageListener 已包装');
+const _dispatchedMsgIds = new Set<string>();
 WKSDK.shared().chatManager.addMessageListener = (listener: (msg: any) => void) => {
   cocraftLog.step('sidepanel', 'HOOK', '有组件注册了 messageListener');
   return origAddMessageListener((message: any) => {
@@ -190,8 +191,14 @@ WKSDK.shared().chatManager.addMessageListener = (listener: (msg: any) => void) =
       });
       if (message.content) message.content.text = parsed.content;
       if (parsed.hasActions) {
-        cocraftLog.step('sidepanel', 'ACTIONS', '包含 actions → 转发给 background 处理');
-        dispatchCocraftToBackground(message.channel, parsed);
+        const msgId: string = message.messageID || message.clientMsgNo || '';
+        if (msgId && _dispatchedMsgIds.has(msgId)) {
+          cocraftLog.warn('sidepanel', 'ACTIONS', `消息 ${msgId} 已 dispatch 过 → 跳过重复`);
+        } else {
+          if (msgId) _dispatchedMsgIds.add(msgId);
+          cocraftLog.step('sidepanel', 'ACTIONS', '包含 actions → 转发给 background 处理');
+          dispatchCocraftToBackground(message.channel, parsed);
+        }
       }
     }
     listener(message);

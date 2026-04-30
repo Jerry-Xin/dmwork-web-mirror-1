@@ -5,8 +5,8 @@ export interface CocraftParsedMessage {
   rawMessage: string;
 }
 
-const COCRAFT_TAG_RE = /<cocraft[\s>]/i;
-const TOOL_RESULTS_RE = /<cocraft[^>]*>\s*<tool_results>/i;
+const COCRAFT_TAG_RE = /^\s*<cocraft[\s>][\s\S]*<\/cocraft>\s*$/i;
+const TOOL_RESULTS_RE = /^\s*<cocraft[^>]*>\s*<tool_results>[\s\S]*<\/cocraft>\s*$/i;
 
 export function isCocraftToolResultMessage(text: string | undefined): boolean {
   if (!text) return false;

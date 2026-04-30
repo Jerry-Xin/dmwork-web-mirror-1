@@ -57,6 +57,20 @@ export interface MessageRowUIProps {
   /** 消息是否被编辑过（显示「已编辑」标签） */
   isEdit?: boolean
 
+  /**
+   * 相对当前查看 Space，发送者是否来自外部 Space（YUJ-98 R7）。
+   * 由 bridge 层调用 `resolveExternalForViewer` 计算（基于 message.fromHomeSpaceId
+   * 等字段），UI 只做渲染，不直接依赖 WKApp / WKSDK。
+   */
+  isExternal?: boolean
+
+  /**
+   * 外部来源 Space 名称（相对当前查看 Space 解析后）（YUJ-98 R7）。
+   * 非空且 `isExternal === true` 时，在昵称后以 `@{sourceSpaceName}` 形式
+   * 内联展示，与新组件 `wk-msg-head-space` 行为对齐（YUJ-66 / dmwork-web#1069）。
+   */
+  sourceSpaceName?: string
+
   /** 消息内容（子组件） */
   children: React.ReactNode
 }

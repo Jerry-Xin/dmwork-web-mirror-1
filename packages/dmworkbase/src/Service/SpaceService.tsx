@@ -120,46 +120,10 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
     if (channel.channelType === ChannelTypeGroup) {
         const key = `${cid}_${channel.channelType}`
         const cachedSpaceId = WKApp.shared.channelSpaceMap.get(key)
-
-        /* eslint-disable no-console */
-        // [DEBUG-YUJ-41] 诊断 helper：仅在 return 时调用一次，避免在热路径上引入额外开销。
-        // 由调用方自行决定是否已算出 mySourceSpaceId；未算出时留空，不额外触发 getSubscribes。
-        // 临时代码，随 follow-up fix PR 一起删除。
-        const debugLog = (
-            branch: string,
-            fields: {
-                cachedSpaceId?: string
-                infoSpaceId?: string
-                mySourceSpaceId?: string
-                finalResult: boolean
-            },
-        ) => {
-            const subs = WKSDK.shared().channelManager.getSubscribes(channel)
-            console.log("[DEBUG-YUJ-41]", {
-                branch,
-                cid,
-                currentSpaceId,
-                cachedSpaceId: fields.cachedSpaceId,
-                infoSpaceId: fields.infoSpaceId,
-                mySourceSpaceId: fields.mySourceSpaceId,
-                subsLen: subs ? subs.length : 0,
-                finalResult: fields.finalResult,
-            })
-        }
-        /* eslint-enable no-console */
-
         if (cachedSpaceId) {
-            if (cachedSpaceId === currentSpaceId) {
-                debugLog("cached-match", { cachedSpaceId, finalResult: false })
-                return false
-            }
+            if (cachedSpaceId === currentSpaceId) return false
             // 群归属其他 Space：检查自己是否以当前 Space 身份加入的外部成员
-            const mySourceSpaceId = getMyMembershipSourceSpaceId(channel)
-            if (mySourceSpaceId === currentSpaceId) {
-                debugLog("cached-external-member", { cachedSpaceId, mySourceSpaceId, finalResult: false })
-                return false
-            }
-            debugLog("cached-mismatch", { cachedSpaceId, mySourceSpaceId, finalResult: true })
+            if (getMyMembershipSourceSpaceId(channel) === currentSpaceId) return false
             return true
         }
         // 缓存未命中 → 尝试从已缓存的 channelInfo 获取 space_id
@@ -168,20 +132,11 @@ export function shouldSkipChannelForSpace(channel: Channel): boolean {
         if (infoSpaceId) {
             // 回填 channelSpaceMap 避免下次再查
             WKApp.shared.channelSpaceMap.set(key, infoSpaceId)
-            if (infoSpaceId === currentSpaceId) {
-                debugLog("info-match", { infoSpaceId, finalResult: false })
-                return false
-            }
-            const mySourceSpaceId = getMyMembershipSourceSpaceId(channel)
-            if (mySourceSpaceId === currentSpaceId) {
-                debugLog("info-external-member", { infoSpaceId, mySourceSpaceId, finalResult: false })
-                return false
-            }
-            debugLog("info-mismatch", { infoSpaceId, mySourceSpaceId, finalResult: true })
+            if (infoSpaceId === currentSpaceId) return false
+            if (getMyMembershipSourceSpaceId(channel) === currentSpaceId) return false
             return true
         }
         // channelInfo 也没有 → fail-open，等 channelInfo 回调后 channelListener 会二次检查
-        debugLog("fail-open", { finalResult: false })
     }
 
     return false

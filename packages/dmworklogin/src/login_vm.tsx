@@ -52,6 +52,8 @@ export class LoginVM extends ProviderListener {
     // ---------- 手机登录方式 ----------
     username?:string
     password?:string
+    /** 本地账号登录失败标记，用于在表单中内联展示「使用 Aegis 登录或注册」引导 */
+    loginAttemptFailed: boolean = false
 
     // ---------- 注册方式 ----------
     registerUsername?:string
@@ -137,6 +139,8 @@ export class LoginVM extends ProviderListener {
 
     set loginType(v: LoginType) {
         this._loginType = v
+        // 切换登录视图时清除上一次的失败提示，避免用户切到其他 tab 再切回时看到陈旧的橙色引导卡片
+        this.loginAttemptFailed = false
         if (v === LoginType.qrcode) {
             this.reStartAdvance()
         }
@@ -348,7 +352,7 @@ export class LoginVM extends ProviderListener {
         this.forgetNewPassword = ''
     }
 
-    loginSuccess(data:any) {
+    loginSuccess(data:any, provider: string = 'local') {
         if (!data || !data.uid || !data.token) {
             throw new Error('Invalid login response: missing required fields (uid, token)')
         }
@@ -360,6 +364,7 @@ export class LoginVM extends ProviderListener {
         loginInfo.shortNo = data.short_no ?? ''
         loginInfo.name = data.name ?? ''
         loginInfo.sex = data.sex ?? 0
+        loginInfo.loginProvider = provider
         loginInfo.save()
 
         // 登录/注册成功后，检查是否有待处理的邀请码（来自邀请链接）
@@ -562,7 +567,7 @@ export class LoginVM extends ProviderListener {
             if (result.status === OIDC_AUTH_STATUS.SUCCESS && result.result) {
                 clearPendingOidcLogin()
                 this._resetOidcResume()
-                this.loginSuccess(result.result)
+                this.loginSuccess(result.result, pending.providerId)
                 return { handled: true, success: true }
             }
             clearPendingOidcLogin()

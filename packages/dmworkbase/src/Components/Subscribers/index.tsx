@@ -10,6 +10,7 @@ import WKBase, { WKBaseContext } from "../WKBase";
 import RouteContext, { RouteContextConfig } from "../../Service/Context";
 import { SubscriberList } from "./list";
 import { resolveExternalForViewer } from "../../Utils/externalViewer";
+import { GroupRole } from "../../Service/Const";
 
 export interface SubscribersProps {
   context: RouteContext<any>;
@@ -43,7 +44,15 @@ export class Subscribers extends Component<SubscribersProps> {
           );
         }}
       >
-        <img src={WKApp.shared.avatarUser(subscriber.uid)} alt=""></img>
+        <div className="wk-subscribers-item-avatar-wrap">
+          <img src={WKApp.shared.avatarUser(subscriber.uid)} alt=""></img>
+          {subscriber.role === GroupRole.owner && (
+            <span className="wk-subscribers-item-role-badge">群主</span>
+          )}
+          {subscriber.role === GroupRole.manager && (
+            <span className="wk-subscribers-item-role-badge">管理员</span>
+          )}
+        </div>
         <div className="wk-subscribers-item-name">
           {subscriber.remark || subscriber.name}
         </div>

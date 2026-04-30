@@ -23,17 +23,29 @@ export interface MessageRowProps {
   
   /** 发送者名称 */
   senderName: string
-  
+
   /** 时间戳（格式化后的字符串） */
   timestamp: string
 
   /** 仅时间部分（HH:mm），连续消息 hover 时显示 */
   timeOnly?: string
-  
+
   /** 发送者是否在线（可选） */
   isOnline?: boolean
   /** 消息是否被编辑过（显示「已编辑」标签） */
   isEdit?: boolean
+
+  /**
+   * 相对当前查看 Space，发送者是否来自外部 Space（YUJ-98 R7）。
+   * bridge 层计算；为 true 且 `sourceSpaceName` 非空时，在发送者名称后
+   * 渲染 `@{sourceSpaceName}` 后缀，与新组件 `wk-msg-head-space` 行为一致。
+   */
+  isExternal?: boolean
+
+  /**
+   * 外部来源 Space 名称（相对当前查看 Space 解析后）（YUJ-98 R7）。
+   */
+  sourceSpaceName?: string
   
   /** 选择状态变化回调 */
   onSelect?: (selected: boolean) => void
@@ -86,6 +98,8 @@ export default function MessageRow({
   timeOnly,
   isOnline,
   isEdit,
+  isExternal,
+  sourceSpaceName,
   onSelect,
   children,
   showCheckbox = false,
@@ -161,6 +175,22 @@ export default function MessageRow({
               style={{ cursor: onSenderNameClick ? 'pointer' : undefined }}
               onClick={onSenderNameClick}
             >{senderName}</span>
+            {/*
+              YUJ-98 R7: 发送者名后的 @SpaceName 后缀（企微风格）。
+              R1-R6 五轮都改了新组件 wk-msg-head，但真正上屏的是这个老组件
+              wk-msg-row-header —— Yu 15:13 console 诊断定位到 fiber 数据对、
+              但 DOM 里根本没有 @SpaceName span，即渲染组件缺实现。
+              数据层 fallback 由 bridge/useMessageRow 统一调用 resolveExternalForViewer
+              计算，UI 只做条件渲染，不再直接依赖 WKApp / WKSDK。
+            */}
+            {isExternal && sourceSpaceName && (
+              <span
+                className="wk-msg-row-sender-space"
+                title={`@${sourceSpaceName}`}
+              >
+                @{sourceSpaceName}
+              </span>
+            )}
             {isBot && <AiBadge size="small" />}
             {isEdit && <span className="wk-msg-row-edited">已编辑</span>}
             <span className="wk-msg-row-timestamp">{timestamp}</span>

@@ -316,3 +316,60 @@ export const SearchTreeViewA: Story = {
     await expect(canvas.getByText("运营群")).toBeInTheDocument()
   },
 }
+
+// ─── 外部群 Tag (YUJ-139) ──────────────────────────────────────
+
+/** 外部群 Tag：外部群 item 显示紫色「外部」标签，内部群不显示 */
+const mockExternalItems: ForwardItem[] = [
+  {
+    channelID: "group-internal",
+    channelType: 2,
+    displayName: "内部产品群",
+  },
+  {
+    channelID: "group-external",
+    channelType: 2,
+    displayName: "外部合作群",
+    isExternal: true,
+  },
+  {
+    channelID: "user-alice",
+    channelType: 1,
+    displayName: "Alice",
+    isExternal: true, // 私聊带 isExternal 不应展示 Tag（仅群聊显示）
+  },
+]
+
+export const ExternalGroupTag: Story = {
+  render: () => <Interactive initialItems={mockExternalItems} />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+
+    // 三项都出现
+    await expect(canvas.getByText("内部产品群")).toBeInTheDocument()
+    await expect(canvas.getByText("外部合作群")).toBeInTheDocument()
+    await expect(canvas.getByText("Alice")).toBeInTheDocument()
+
+    // 外部群有「外部」Tag，内部群没有
+    const externalTags = canvas.getAllByText("外部")
+    await expect(externalTags.length).toBe(1)
+
+    // Tag class 应复用 wk-conversationlist-item-external-tag
+    const externalRow = canvas.getByText("外部合作群").closest(".wk-fm-item")
+    await expect(
+      externalRow?.querySelector(".wk-conversationlist-item-external-tag")
+    ).toBeTruthy()
+
+    // 内部群 row 没有外部 Tag
+    const internalRow = canvas.getByText("内部产品群").closest(".wk-fm-item")
+    await expect(
+      internalRow?.querySelector(".wk-conversationlist-item-external-tag")
+    ).toBeNull()
+
+    // 私聊（Alice, channelType=1）即使 isExternal=true 也不应展示 Tag
+    const aliceRow = canvas.getByText("Alice").closest(".wk-fm-item")
+    await expect(
+      aliceRow?.querySelector(".wk-conversationlist-item-external-tag")
+    ).toBeNull()
+  },
+}

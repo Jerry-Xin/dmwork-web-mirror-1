@@ -12,6 +12,8 @@ export class SubscriberListVM extends ProviderListener {
     hasMore: boolean = true
     keyword: string = ""
     filter?: (subscriber: Subscriber) => boolean
+    /** 每次 subscribers 数据加载完成后调用，用于触发预取等副作用 */
+    onSubscribersLoaded?: (subscribers: Subscriber[]) => void
     private _isMounted: boolean = false
     private _delayTimer?: ReturnType<typeof setTimeout>
     constructor(channel: Channel, filter?: (subscriber: Subscriber) => boolean) {
@@ -58,6 +60,7 @@ export class SubscriberListVM extends ProviderListener {
             }
         }
         this.notifyListener()
+        this.onSubscribersLoaded?.(this.subscribers)
 
         // When client-side filtering removes most results, the list may be
         // too short for the user to scroll and trigger the next page load.

@@ -28,6 +28,16 @@ server {
         # HSTS - uncomment when full HTTPS chain is confirmed
         # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
+        # Smart Summary backend — single prefix rule
+        location /summary/api/v1/ {
+            proxy_pass  http://summary-api:8080/api/v1/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            client_max_body_size 100m;
+        }
+
         location /api/ {
             proxy_pass  ${API_URL}/;
             client_max_body_size 1000m;

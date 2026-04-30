@@ -5,6 +5,7 @@ import MainVM from "./vm";
 import { EmptyStateIllustration } from "./EmptyStateIllustration";
 import { Space, SpaceService } from "@dmwork/base";
 import { JoinSpaceModalConnected, NavRail, MeInfo } from "@dmwork/base";
+import { consumeJoinSuccessNotice, showJoinSuccessToast } from "@dmwork/base";
 import { Toast } from "@douyinfe/semi-ui";
 
 // ─── MainContentLeft：纯路由渲染区（Sidebar + 内容） ───────────────────────
@@ -68,12 +69,38 @@ export class MainPage extends Component<{}, MainPageState> {
                 localStorage.removeItem("currentSpaceId");
                 try { WKApp.shared.notifyListener(); } catch (_) {}
             }
+            // YUJ-106 / dmwork-web#1065: InviteLanding 走 window.location.href 跳转后，
+            // Toast 无法跨 full-reload 存活。我们用 sessionStorage 把 notice 带过来，
+            // 在主界面挂载、Space 列表就绪之后再弹出。放在 .then() 内确保 spaces 已加载，
+            // 切换按钮按下时用户 Space 信息可用。
+            this.showPostJoinToastIfPending();
         }).catch((e) => { console.error('[NavRail] Failed to load spaces:', e); });
     }
 
     componentWillUnmount() {
         // 清理菜单刷新回调，避免组件卸载后触发 forceUpdate
         WKApp.menus.setRefresh = undefined;
+    }
+
+    /**
+     * YUJ-106 / dmwork-web#1065 — 消费 InviteLanding 留下的 postJoinNotice
+     * - 跨 Space：双行 toast + 「切换过去」按钮；onSwitch 里调 handleSpaceSelected
+     * - 同 Space / 单 Space：常规单行 toast
+     * 只执行一次（consumeJoinSuccessNotice 读取后即清）。
+     */
+    private showPostJoinToastIfPending() {
+        const notice = consumeJoinSuccessNotice();
+        if (!notice || !notice.spaceId) return;
+        showJoinSuccessToast({
+            entityName: notice.entityName || notice.spaceName || "",
+            spaceName: notice.spaceName || "",
+            crossSpace: !!notice.crossSpace,
+            onSwitch: () => {
+                // 显式切换到归属 Space —— 走与 NavRail 点击相同的路径，
+                // 保证 mittBus('space-changed') + notifyListener 一致。
+                this.handleSpaceSelected(notice.spaceId);
+            },
+        });
     }
 
     handleSpaceSelected = (spaceId: string) => {
@@ -131,11 +158,17 @@ export class MainPage extends Component<{}, MainPageState> {
                                     menusList={vm.menusList}
                                     currentMenus={vm.currentMenus}
                                     onMenuClick={(menus) => {
+                                        const prevMenuId = vm.currentMenus?.id;
                                         vm.currentMenus = menus;
+                                        WKApp.currentMenuId = menus.id;
                                         if (menus.onPress) {
                                             menus.onPress();
                                         } else {
                                             WKApp.routeLeft.popToRoot();
+                                            const stayInChat = prevMenuId === "chat" && menus.id === "chat";
+                                            if (!stayInChat) {
+                                                WKApp.routeRight.popToRoot();
+                                            }
                                         }
                                     }}
                                     // 用户
@@ -178,6 +211,22 @@ export class MainPage extends Component<{}, MainPageState> {
                                 WKApp.routeLeft.setReplaceToRoot = (view) => { context.replaceToRoot(view); };
                                 WKApp.routeLeft.setPop = () => { context.pop(); };
                                 WKApp.routeLeft.setPopToRoot = () => { context.popToRoot(); };
+                                // Bind menu switch callback for showConversation
+                                WKApp.switchToMenuById = (menuId: string) => {
+                                    const target = vm.menusList.find((m: any) => m.id === menuId);
+                                    if (target && vm.currentMenus?.id !== menuId) {
+                                        vm.currentMenus = target;
+                                        WKApp.currentMenuId = menuId;
+                                        // NOTE: do NOT popToRoot() here. routeLeft is a shared
+                                        // stack across tabs; popping it would destroy the detail
+                                        // view (e.g. summary detail page) the user was on,
+                                        // breaking rendering when they later switch back.
+                                    }
+                                };
+                                // Keep currentMenuId in sync with initial / user-driven menu changes
+                                if (vm.currentMenus?.id && WKApp.currentMenuId !== vm.currentMenus.id) {
+                                    WKApp.currentMenuId = vm.currentMenus.id;
+                                }
                             }}
                             contentRight={<EmptyStateIllustration />}
                         />

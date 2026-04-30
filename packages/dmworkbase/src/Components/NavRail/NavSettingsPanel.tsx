@@ -92,6 +92,12 @@ export default class NavSettingsPanel extends Component<NavSettingsPanelProps, N
 
         const { hasNewVersionLocal } = this.state;
 
+        // 仅 OIDC 登录用户 + 后端下发了 oidcAccountUrl 时显示「账户中心」入口。
+        // 普通账号无此入口（应用内修改密码暂未实现）。
+        const provider = WKApp.loginInfo.loginProvider;
+        const accountCenterUrl = WKApp.remoteConfig.oidcAccountUrl;
+        const showAccountCenter = !!provider && provider !== 'local' && !!accountCenterUrl;
+
         return (
             <>
                 {/* 点击外部关闭 mask */}
@@ -124,6 +130,14 @@ export default class NavSettingsPanel extends Component<NavSettingsPanelProps, N
                         </li>
                     )}
                     {/* 暗黑模式入口已关闭 */}
+                    {showAccountCenter && (
+                        <li onClick={() => {
+                            onToggleSetting();
+                            window.open(accountCenterUrl, '_blank', 'noopener,noreferrer');
+                        }}>
+                            账户中心
+                        </li>
+                    )}
                     <li onClick={() => {
                         onToggleSetting();
                         this.fetchChangelog();

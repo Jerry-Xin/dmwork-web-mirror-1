@@ -84,6 +84,7 @@ import { UserInfoRouteData } from "./Components/UserInfo/vm";
 import { IconAlertCircle } from "@douyinfe/semi-icons";
 import { TypingManager } from "./Service/TypingManager";
 import APIClient from "./Service/APIClient";
+import { patchSdkDecodeForExternalFields } from "./Service/Convert";
 import ConversationVM from "./Components/Conversation/vm";
 import { ChannelAvatar } from "./Components/ChannelAvatar";
 import { ScreenshotCell, ScreenshotContent } from "./Messages/Screenshot";
@@ -103,6 +104,8 @@ import {
   ThreadCreatedCell,
   ThreadCreatedContent,
 } from "./Messages/ThreadCreated";
+import { SummaryCardContent } from "./Messages/SummaryCard/SummaryCardContent";
+import { SummaryCardCell } from "./Messages/SummaryCard";
 import { parseThreadChannelId } from "./Service/Thread";
 
 /** execCommand 降级复制，用于 navigator.clipboard 不可用的场景 */
@@ -127,6 +130,13 @@ export default class BaseModule implements IModule {
     return "base";
   }
   init(): void {
+    // dmwork-web#1069 round 2/4：补齐 WKSDK 内部 decode / 构造路径的
+    // msg-level 外部来源字段（Reply.prototype.decode / Message.fromSendPacket /
+    // ChatManager.notifyMessageListeners），使 WebSocket 推送、发送回放、
+    // 引用消息预览都与 Convert.toMessage / MergeforwardContent.mapToMessage
+    // 行为一致。幂等。
+    patchSdkDecodeForExternalFields();
+
     APIClient.shared.logoutCallback = () => {
       WKApp.shared.logout();
     };
@@ -175,6 +185,8 @@ export default class BaseModule implements IModule {
           case MessageContentType.signalMessage: // 端对端加密错误消息
           case MessageContentTypeConst.approveGroupMember: // 审批群成员
             return ApproveGroupMemberCell;
+          case 15: // 智能总结卡片
+            return SummaryCardCell;
           case 98:
             return SignalMessageCell;
           default:
@@ -238,6 +250,8 @@ export default class BaseModule implements IModule {
       MessageContentTypeConst.threadCreated,
       () => new ThreadCreatedContent()
     );
+    // 智能总结卡片
+    WKSDK.shared().register(15, () => new SummaryCardContent());
 
     // 未知消息
     WKApp.messageManager.registerCell(

@@ -251,3 +251,15 @@
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* ── 外部群 Tag ──
+ * 复用会话列表的 .wk-conversationlist-item-external-tag 类名与视觉
+ * （参见 packages/dmworkbase/src/Components/ConversationList/index.css）
+ * 这里再声明一次，保证 ForwardModal 单独渲染（如 Storybook）时样式也生效。
+ * 紫色背景/文字由 Semi UI 的 <Tag color="purple" /> 提供，本规则仅补 layout。
+ */
+.wk-fm-item .wk-conversationlist-item-external-tag {
+  margin-left: var(--wk-sp-1, 4px);
+  font-size: var(--wk-text-size-tiny, 10px);
+  flex-shrink: 0;
+}

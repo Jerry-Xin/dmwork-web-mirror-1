@@ -1,7 +1,8 @@
 import React, { useCallback } from "react"
-import { Channel } from "wukongimjssdk"
+import { Channel, ChannelTypeGroup } from "wukongimjssdk"
 import { X } from "lucide-react"
 import { IconSearchStroked } from "@douyinfe/semi-icons"
+import { Tag } from "@douyinfe/semi-ui"
 import Checkbox from "../Checkbox"
 import AiBadge from "../AiBadge"
 import WKAvatar from "../WKAvatar"
@@ -16,6 +17,8 @@ export interface ForwardItem {
   hasThreads?: boolean
   isThread?: boolean
   parentChannelID?: string
+  /** 外部群（is_external_group === 1）；仅 ChannelTypeGroup 有意义 */
+  isExternal?: boolean
 }
 
 export interface ForwardModalProps {
@@ -54,6 +57,15 @@ function ItemRow({ item, selected, onToggle }: ItemRowProps) {
         <WKAvatar channel={channel} />
       </div>
       <span className="wk-fm-item-name">{item.displayName}</span>
+      {item.channelType === ChannelTypeGroup && item.isExternal && (
+        <Tag
+          size="small"
+          color="purple"
+          className="wk-conversationlist-item-external-tag"
+        >
+          外部
+        </Tag>
+      )}
       {item.isAI && <AiBadge />}
     </div>
   )

@@ -24,7 +24,8 @@
 
 }
 
-.wk-subscribers-item img {
+.wk-subscribers-item img,
+.wk-subscribers-item-avatar-wrap img {
     width: 50px;
     height: 50px;
     border-radius: 40%;
@@ -41,6 +42,29 @@
     text-align: center;
     margin-top: 5px;
     line-height: 12px;
+}
+
+.wk-subscribers-item-avatar-wrap {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+}
+
+.wk-subscribers-item-role-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    background: #fff;
+    color: var(--wk-text-accent);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 6px;
+    white-space: nowrap;
+    border: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
 }
 
 .wk-subscribers-item-external-tag {

@@ -5,7 +5,7 @@ import React from "react";
 import { IconSearchStroked } from "@douyinfe/semi-icons";
 import "./list.css";
 import WKApp from "../../App";
-import WKSDK, { Channel, ChannelTypePerson, Subscriber } from "wukongimjssdk";
+import WKSDK, { Channel, ChannelInfo, ChannelInfoListener, ChannelTypePerson, Subscriber } from "wukongimjssdk";
 import WKAvatar, { isBot } from "../WKAvatar";
 import AiBadge from "../AiBadge";
 import BotDetailModal from "../BotDetailModal";
@@ -14,6 +14,7 @@ import { Tag } from "@douyinfe/semi-ui";
 import { GroupRole } from "../../Service/Const";
 import { debounce, throttle } from "../../Utils/rateLimit";
 import { resolveExternalForViewer } from "../../Utils/externalViewer";
+import { OnlineStatusBadge } from "../ConversationList";
 
 export interface SubscriberListProps {
   channel: Channel;
@@ -34,6 +35,10 @@ export class SubscriberList extends Component<
   SubscriberListProps,
   SubscriberListState
 > {
+  private channelInfoListener!: ChannelInfoListener;
+  // 当前已预取过 channelInfo 的 uid 集合，避免重复发请求
+  private prefetchedUids = new Set<string>();
+
   constructor(props: SubscriberListProps) {
     super(props);
     this.state = {
@@ -41,6 +46,43 @@ export class SubscriberList extends Component<
       botDetailUid: "",
       botDetailVisible: false,
     };
+  }
+
+  componentDidMount() {
+    // 只响应当前成员列表内的 channel 变更，避免全局高频重渲
+    this.channelInfoListener = (channelInfo: ChannelInfo) => {
+      if (!channelInfo?.channel) return;
+      const uid = channelInfo.channel.channelID;
+      if (uid && this.prefetchedUids.has(uid)) {
+        this.setState({});
+      }
+    };
+    WKSDK.shared().channelManager.addListener(this.channelInfoListener);
+  }
+
+  componentWillUnmount() {
+    WKSDK.shared().channelManager.removeListener(this.channelInfoListener);
+    this.prefetchedUids.clear();
+  }
+
+  needShowOnlineStatus(uid: string): boolean {
+    const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
+      new Channel(uid, ChannelTypePerson)
+    );
+    if (!channelInfo) return false;
+    if (channelInfo.online) return true;
+    const btwTime = new Date().getTime() / 1000 - channelInfo.lastOffline;
+    return btwTime > 0 && btwTime < 60 * 60;
+  }
+
+  getOnlineTip(uid: string): string | undefined {
+    const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
+      new Channel(uid, ChannelTypePerson)
+    );
+    if (!channelInfo || channelInfo.online) return undefined;
+    const btwTime = new Date().getTime() / 1000 - channelInfo.lastOffline;
+    if (btwTime < 60) return "刚刚";
+    return `${(btwTime / 60).toFixed(0)}分钟`;
   }
 
   // Store debounced search functions per VM instance
@@ -160,6 +202,18 @@ export class SubscriberList extends Component<
     }
   }
 
+  // 批量预取成员 channelInfo（含在线状态），去重避免重复请求
+  prefetchSubscribersChannelInfo = (subscribers: Subscriber[]) => {
+    for (const item of subscribers) {
+      if (this.prefetchedUids.has(item.uid)) continue;
+      this.prefetchedUids.add(item.uid);
+      const ch = new Channel(item.uid, ChannelTypePerson);
+      if (!WKSDK.shared().channelManager.getChannelInfo(ch)) {
+        WKSDK.shared().channelManager.fetchChannelInfo(ch);
+      }
+    }
+  };
+
   getRoleName = (item: Subscriber) => {
     if (item.role === GroupRole.owner) {
       return "群主";
@@ -176,7 +230,12 @@ export class SubscriberList extends Component<
       <>
       <Provider
         create={() => {
-          return new SubscriberListVM(this.props.channel, this.props.filter);
+          const vm = new SubscriberListVM(this.props.channel, this.props.filter);
+          // 在数据加载完成的回调中触发预取，避免在 render 内产生副作用
+          vm.onSubscribersLoaded = (subscribers) => {
+            this.prefetchSubscribersChannelInfo(subscribers);
+          };
+          return vm;
         }}
         render={(vm: SubscriberListVM) => {
           return (
@@ -217,6 +276,9 @@ export class SubscriberList extends Component<
                       isExternalLegacy: item.orgData?.is_external,
                       sourceSpaceNameLegacy: item.orgData?.source_space_name,
                     });
+                  const showOnline = this.needShowOnlineStatus(item.uid);
+                  const onlineTip = this.getOnlineTip(item.uid);
+
                   return (
                     <div
                       className="wk-subscrierlist-list-item"
@@ -238,6 +300,11 @@ export class SubscriberList extends Component<
                       ) : undefined}
                       <div className="wk-subscrierlist-item-avatar">
                         <WKAvatar src={item.avatar}></WKAvatar>
+                        {showOnline && (
+                          <div className="wk-subscrierlist-item-online-badge">
+                            <OnlineStatusBadge tip={onlineTip} />
+                          </div>
+                        )}
                       </div>
                       <div className="wk-subscrierlist-item-content">
                         <div className="wk-subscrierlist-item-name">

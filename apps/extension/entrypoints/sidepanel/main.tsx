@@ -167,11 +167,18 @@ function dispatchCocraftToBackground(channel: { channelID: string; channelType: 
 }
 
 const origAddMessageListener = WKSDK.shared().chatManager.addMessageListener.bind(WKSDK.shared().chatManager);
-cocraftLog.ok('sidepanel', 'HOOK', 'addMessageListener 已包装');
+const origRemoveMessageListener = WKSDK.shared().chatManager.removeMessageListener.bind(WKSDK.shared().chatManager);
+cocraftLog.ok('sidepanel', 'HOOK', 'addMessageListener / removeMessageListener 已包装');
+// WeakMap: 原始 listener → wrapped listener。让 removeMessageListener 能反查 wrapper，避免 SDK 的 === 比较找不到而泄漏。
+const _listenerWrappers = new WeakMap<(msg: any) => void, (msg: any) => void>();
 const _dispatchedMsgIds = new Set<string>();
 WKSDK.shared().chatManager.addMessageListener = (listener: (msg: any) => void) => {
+  if (_listenerWrappers.has(listener)) {
+    cocraftLog.warn('sidepanel', 'HOOK', '同一 messageListener 重复注册 → 跳过（幂等）');
+    return;
+  }
   cocraftLog.step('sidepanel', 'HOOK', '有组件注册了 messageListener');
-  return origAddMessageListener((message: any) => {
+  const wrapped = (message: any) => {
     const text: string = message.content?.text || '';
     cocraftLog.step('sidepanel', '收到消息', `contentType=${message.contentType} textLen=${text.length}`, text);
     if (isCocraftToolResultMessage(text)) {
@@ -202,7 +209,19 @@ WKSDK.shared().chatManager.addMessageListener = (listener: (msg: any) => void) =
       }
     }
     listener(message);
-  });
+  };
+  _listenerWrappers.set(listener, wrapped);
+  return origAddMessageListener(wrapped);
+};
+WKSDK.shared().chatManager.removeMessageListener = (listener: (msg: any) => void) => {
+  const wrapped = _listenerWrappers.get(listener);
+  if (wrapped) {
+    _listenerWrappers.delete(listener);
+    cocraftLog.step('sidepanel', 'HOOK', '移除 messageListener（反查 wrapper）');
+    return origRemoveMessageListener(wrapped);
+  }
+  // 未通过包装过的 addMessageListener 注册过 —— 直接透传
+  return origRemoveMessageListener(listener);
 };
 
 const origRefreshMessages = ConversationVM.prototype.refreshMessages;

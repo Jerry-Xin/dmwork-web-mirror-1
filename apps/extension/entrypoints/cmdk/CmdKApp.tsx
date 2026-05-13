@@ -33,6 +33,7 @@ import {
   ConnectStatus,
   Mention,
   MessageText,
+  Reply,
   type SendackPacket,
   Setting,
   Subscriber,
@@ -52,6 +53,7 @@ import {
   type ExtensionRuntimeMessage,
 } from "../../utils/extensionRuntime";
 import { formatFileSize, getImageDimensions } from "../../utils/attachment";
+import { buildSelectionMarkdownFile } from "./buildSelectionMarkdownFile";
 
 interface PanelContext {
   selectedText: string;
@@ -82,8 +84,9 @@ interface CategoryItem {
 
 const CreateCategoryModalComponent = CreateCategoryModal as any;
 
-const QUOTE_MAX_LENGTH = 500;
 const TITLE_DISPLAY_LIMIT = 60;
+// 选段超过这个字数走「.md 文件 + 引用消息」两步发送，避免聊天流被巨长引用块淹没
+const LONG_QUOTE_THRESHOLD = 500;
 const MAX_ATTACHMENTS = 20;
 const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
 const SEND_ACK_TIMEOUT = 12000;
@@ -111,31 +114,37 @@ interface FetchDataOptions {
   showLoading?: boolean;
 }
 
-function buildCmdkMessageText(text: string, context: PanelContext | null) {
+function buildCmdkMessageText(
+  text: string,
+  context: PanelContext | null,
+  opts?: { skipQuotedBody?: boolean }
+) {
+  const skipQuotedBody = opts?.skipQuotedBody === true;
   const parts: string[] = [];
   const quotedText = context?.selectedText;
+  const trimmedText = text.trim();
 
-  if (context?.pageUrl) {
-    const label = context.pageTitle || context.pageUrl;
-    const sourceLine = `来自 🌐 [${label}](${context.pageUrl})`;
-    if (quotedText) {
-      const quote =
-        quotedText.length > QUOTE_MAX_LENGTH
-          ? `${quotedText.slice(0, QUOTE_MAX_LENGTH)}…`
-          : quotedText;
-      parts.push(`> ${sourceLine}\n> \n> ${quote.split("\n").join("\n> ")}`);
-    } else {
-      parts.push(`> ${sourceLine}`);
+  // skipQuotedBody=true：长文本场景，来源信息已写入 .md 文件首行，
+  // 引用消息正文只放用户输入（空输入由调用方处理）
+  if (!skipQuotedBody) {
+    if (context?.pageUrl) {
+      const label = context.pageTitle || context.pageUrl;
+      const sourceLine = `来自 🌐 [${label}](${context.pageUrl})`;
+      if (quotedText) {
+        parts.push(
+          `> ${sourceLine}\n> \n> ${quotedText.split("\n").join("\n> ")}`
+        );
+      } else {
+        parts.push(`> ${sourceLine}`);
+      }
+    } else if (quotedText) {
+      parts.push(`> ${quotedText.split("\n").join("\n> ")}`);
     }
-  } else if (quotedText) {
-    const quote =
-      quotedText.length > QUOTE_MAX_LENGTH
-        ? `${quotedText.slice(0, QUOTE_MAX_LENGTH)}…`
-        : quotedText;
-    parts.push(`> ${quote.split("\n").join("\n> ")}`);
   }
 
-  parts.push(text.trim());
+  if (trimmedText) {
+    parts.push(trimmedText);
+  }
 
   return formatMentionTextV2(parts.join("\n\n"));
 }
@@ -738,85 +747,156 @@ export default function CmdKApp() {
     });
   }, []);
 
-  const sendContent = useCallback(async (channel: Channel, content: any) => {
-    applySpaceIdToContent(content, channel);
+  const sendContent = useCallback(
+    async (
+      channel: Channel,
+      content: any
+    ): Promise<{
+      messageID: string;
+      messageSeq: number;
+      clientMsgNo: string;
+      clientSeq: number;
+    }> => {
+      applySpaceIdToContent(content, channel);
 
-    const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
-    const setting = new Setting();
-    if (channelInfo?.orgData?.receipt === 1) {
-      setting.receiptEnabled = true;
-    }
+      const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
+      const setting = new Setting();
+      if (channelInfo?.orgData?.receipt === 1) {
+        setting.receiptEnabled = true;
+      }
 
-    await new Promise<void>((resolve, reject) => {
-      let targetClientSeq: number | null = null;
-      const pendingAcks: SendackPacket[] = [];
-      let settled = false;
+      return await new Promise((resolve, reject) => {
+        let targetClientSeq: number | null = null;
+        let sentMessage: any = null;
+        const pendingAcks: SendackPacket[] = [];
+        let settled = false;
 
-      const cleanup = () => {
-        window.clearTimeout(timeoutId);
-        WKSDK.shared().chatManager.removeMessageStatusListener(listener);
-      };
+        const cleanup = () => {
+          window.clearTimeout(timeoutId);
+          WKSDK.shared().chatManager.removeMessageStatusListener(listener);
+        };
 
-      const settleSuccess = () => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        resolve();
-      };
+        const settleSuccess = (ackPacket: SendackPacket) => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          resolve({
+            messageID: ackPacket.messageID?.toString?.() ?? "",
+            messageSeq: ackPacket.messageSeq,
+            clientMsgNo: sentMessage?.clientMsgNo ?? "",
+            clientSeq: ackPacket.clientSeq,
+          });
+        };
 
-      const settleFailure = (message: string) => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        reject(new Error(message));
-      };
+        const settleFailure = (message: string) => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error(message));
+        };
 
-      const consumeAck = (ackPacket: SendackPacket) => {
-        if (ackPacket.reasonCode === MessageReasonCode.reasonSuccess) {
-          settleSuccess();
-          return;
-        }
-        settleFailure(getSendAckErrorMessage(ackPacket.reasonCode, channel));
-      };
-
-      const listener = (ackPacket: SendackPacket) => {
-        if (targetClientSeq === null) {
-          pendingAcks.push(ackPacket);
-          return;
-        }
-        if (ackPacket.clientSeq !== targetClientSeq) {
-          return;
-        }
-        consumeAck(ackPacket);
-      };
-
-      const timeoutId = window.setTimeout(() => {
-        settleFailure("消息发送超时，请稍后重试");
-      }, SEND_ACK_TIMEOUT);
-
-      WKSDK.shared().chatManager.addMessageStatusListener(listener);
-
-      void (async () => {
-        try {
-          const message = await WKSDK.shared().chatManager.send(
-            content,
-            channel,
-            setting
-          );
-          targetClientSeq = message.clientSeq;
-
-          const matchedAck = pendingAcks.find(
-            (ackPacket) => ackPacket.clientSeq === targetClientSeq
-          );
-          if (matchedAck) {
-            consumeAck(matchedAck);
+        const consumeAck = (ackPacket: SendackPacket) => {
+          if (ackPacket.reasonCode === MessageReasonCode.reasonSuccess) {
+            settleSuccess(ackPacket);
+            return;
           }
-        } catch (sendError: any) {
-          settleFailure(sendError?.message || "发送失败");
+          settleFailure(getSendAckErrorMessage(ackPacket.reasonCode, channel));
+        };
+
+        const listener = (ackPacket: SendackPacket) => {
+          if (targetClientSeq === null) {
+            pendingAcks.push(ackPacket);
+            return;
+          }
+          if (ackPacket.clientSeq !== targetClientSeq) {
+            return;
+          }
+          consumeAck(ackPacket);
+        };
+
+        const timeoutId = window.setTimeout(() => {
+          settleFailure("消息发送超时，请稍后重试");
+        }, SEND_ACK_TIMEOUT);
+
+        WKSDK.shared().chatManager.addMessageStatusListener(listener);
+
+        void (async () => {
+          try {
+            const message = await WKSDK.shared().chatManager.send(
+              content,
+              channel,
+              setting
+            );
+            sentMessage = message;
+            targetClientSeq = message.clientSeq;
+
+            const matchedAck = pendingAcks.find(
+              (ackPacket) => ackPacket.clientSeq === targetClientSeq
+            );
+            if (matchedAck) {
+              consumeAck(matchedAck);
+            }
+          } catch (sendError: any) {
+            settleFailure(sendError?.message || "发送失败");
+          }
+        })();
+      });
+    },
+    []
+  );
+
+  // 等媒体（FileContent / ImageContent）真正上传完 OSS（remoteUrl 写回）后再 resolve。
+  // 失败/超时仍 reject，由调用方决定是否继续后续动作（如发引用消息）。
+  // 30s 是与主端 sendMediaAndWait 一致的兜底；正常上传一般在数秒内完成。
+  const sendMediaContent = useCallback(
+    async (channel: Channel, content: any) => {
+      const ack = await sendContent(channel, content);
+
+      await new Promise<void>((resolve, reject) => {
+        const TIMEOUT = 30_000;
+        let settled = false;
+
+        const finish = (ok: boolean, reason?: string) => {
+          if (settled) return;
+          settled = true;
+          WKSDK.shared().taskManager.removeListener(taskListener);
+          window.clearTimeout(timer);
+          if (ok) {
+            resolve();
+          } else {
+            reject(new Error(reason || "文件上传失败"));
+          }
+        };
+
+        const timer = window.setTimeout(
+          () => finish(false, "文件上传超时，请稍后重试"),
+          TIMEOUT
+        );
+
+        const taskListener = (task: any) => {
+          const taskMessage = task?.message;
+          if (!taskMessage || taskMessage.clientSeq !== ack.clientSeq) {
+            return;
+          }
+          // TaskStatus: 1=success 3=fail
+          if (task.status === 1) {
+            finish(true);
+          } else if (task.status === 3) {
+            finish(false, "文件上传失败");
+          }
+        };
+        WKSDK.shared().taskManager.addListener(taskListener);
+
+        // 已上传过的媒体（如重发）远端 URL 已就位，且不会再触发 taskManager 事件，直接 resolve。
+        if (content?.remoteUrl) {
+          finish(true);
         }
-      })();
-    });
-  }, []);
+      });
+
+      return ack;
+    },
+    [sendContent]
+  );
 
   const sendQueuedAttachments = useCallback(
     async (channel: Channel, files: File[]) => {
@@ -850,8 +930,11 @@ export default function CmdKApp() {
       const attachments = [...pendingAttachmentsRef.current];
       const hasText = trimmedText !== "";
       const hasAttachments = attachments.length > 0;
+      const ctx = context;
+      const longSelection =
+        !!ctx?.selectedText && ctx.selectedText.length > LONG_QUOTE_THRESHOLD;
 
-      if (!hasText && !hasAttachments) return;
+      if (!hasText && !hasAttachments && !longSelection) return;
 
       sendingRef.current = true;
       setSending(true);
@@ -871,6 +954,29 @@ export default function CmdKApp() {
           console.debug("[Extension] requestOpenConversation failed:", err)
         );
 
+      // 失败时若 composer 为空，把用户原始输入回填，避免丢字
+      const restoreTextOnError = () => {
+        if (hasText && !inputContextRef.current?.text?.()?.trim()) {
+          window.setTimeout(() => {
+            inputContextRef.current?.insertText(text);
+          }, 0);
+        }
+      };
+
+      const buildMentionForText = (finalText: string) => {
+        let finalMention = incomingMention ? { ...incomingMention } : undefined;
+        if (finalMention?.entities) {
+          const prefixLength = finalText.length - trimmedText.length;
+          if (prefixLength > 0) {
+            finalMention.entities = finalMention.entities.map((e) => ({
+              ...e,
+              offset: e.offset + prefixLength,
+            }));
+          }
+        }
+        return finalMention;
+      };
+
       try {
         const channel = new Channel(selected.id, selected.type);
         await ensureSdkConnected();
@@ -879,23 +985,66 @@ export default function CmdKApp() {
           await sendQueuedAttachments(channel, attachments);
         }
 
-        if (hasText) {
-          const { content: finalText, mention: parsedMention } =
-            buildCmdkMessageText(trimmedText, context);
-          const messageContent = new MessageText(finalText);
-
-          let finalMention = parsedMention;
-          if (!finalMention && incomingMention) {
-            const prefixLength = finalText.length - trimmedText.length;
-            finalMention = { ...incomingMention };
-            if (finalMention.entities && prefixLength > 0) {
-              finalMention.entities = finalMention.entities.map((e) => ({
-                ...e,
-                offset: e.offset + prefixLength,
-              }));
-            }
+        if (longSelection) {
+          // 1) 把选段写成 .md 文件，等 OSS 上传完成（remoteUrl 落地）后再继续
+          const mdFile = buildSelectionMarkdownFile(ctx!);
+          const fileContent = new FileContent(
+            mdFile,
+            mdFile.name,
+            "md",
+            mdFile.size
+          );
+          let fileAck: Awaited<ReturnType<typeof sendMediaContent>>;
+          try {
+            fileAck = await sendMediaContent(channel, fileContent);
+          } catch (e: any) {
+            setError(e?.message || "长文本附件发送失败，请重试");
+            restoreTextOnError();
+            return;
           }
 
+          // 2) 用户未输入评论时，文件本身已含来源信息，无需再发引用消息
+          if (!hasText) {
+            // 长文本分支独立处理收尾，跳过通用 hasText 路径的引用消息步骤
+          } else {
+            // 3) 构造 Reply 指向刚发出的文件消息（与主端 replyToFileMessage 行为对齐）
+            const reply = new Reply();
+            reply.messageID = fileAck.messageID;
+            reply.messageSeq = fileAck.messageSeq;
+            reply.fromUID = WKApp.loginInfo.uid || "";
+            reply.fromName = WKApp.loginInfo.name || "";
+            // reply.content 必须是带 encode() 的 MessageContent 实例
+            reply.content = fileContent;
+
+            // 4) 引用消息正文：仅用户输入（来源已写入 md 文件首行）
+            const { content: finalText, mention: parsedMention } =
+              buildCmdkMessageText(trimmedText, ctx, { skipQuotedBody: true });
+            const messageContent = new MessageText(finalText);
+
+            const finalMention = parsedMention || buildMentionForText(finalText);
+            if (finalMention) {
+              const mention = new Mention();
+              mention.all = finalMention.all;
+              mention.uids = finalMention.uids;
+              (mention as any).entities = finalMention.entities;
+              messageContent.mention = mention;
+            }
+            messageContent.reply = reply;
+
+            try {
+              await sendContent(channel, messageContent);
+            } catch (e: any) {
+              setError(`文件已发出，但引用消息发送失败：${e?.message || ""}`);
+              restoreTextOnError();
+              return;
+            }
+          }
+        } else if (hasText) {
+          const { content: finalText, mention: parsedMention } =
+            buildCmdkMessageText(trimmedText, ctx);
+          const messageContent = new MessageText(finalText);
+
+          const finalMention = parsedMention || buildMentionForText(finalText);
           if (finalMention) {
             const mention = new Mention();
             mention.all = finalMention.all;
@@ -912,11 +1061,7 @@ export default function CmdKApp() {
         notifyClose("sent");
       } catch (sendError: any) {
         setError(sendError?.message || "发送失败");
-        if (hasText && !inputContextRef.current?.text?.()?.trim()) {
-          window.setTimeout(() => {
-            inputContextRef.current?.insertText(text);
-          }, 0);
-        }
+        restoreTextOnError();
       } finally {
         setSending(false);
         sendingRef.current = false;
@@ -928,6 +1073,7 @@ export default function CmdKApp() {
       notifyClose,
       selected,
       sendContent,
+      sendMediaContent,
       sendQueuedAttachments,
       ensureSdkConnected,
     ]
@@ -936,6 +1082,11 @@ export default function CmdKApp() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // 发送进行中按 Esc 不立即关闭面板，避免长文本两步发送被半路打断丢消息
+        if (sendingRef.current) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
         notifyClose("escape");
       }
@@ -1115,6 +1266,7 @@ export default function CmdKApp() {
   const appLabel = app.cli ? `${app.name} · ${app.cli}` : app.name;
   const quotedText = context.selectedText;
   const selectionCount = quotedText.length;
+  const isLongSelection = selectionCount > LONG_QUOTE_THRESHOLD;
 
   const selectedThread = threads.find(
     (item) =>
@@ -1178,6 +1330,39 @@ export default function CmdKApp() {
         className={`octo-cmdk-panel${isDragging ? " is-dragging" : ""}`}
         style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
       >
+        {sending && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(255,255,255,0.78)",
+              backdropFilter: "blur(2px)",
+              zIndex: 999,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              borderRadius: "inherit",
+              fontSize: 14,
+              color: "#333",
+              pointerEvents: "all",
+            }}
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                border: "3px solid #d0d7de",
+                borderTopColor: "#0969da",
+                borderRadius: "50%",
+                animation: "octo-cmdk-spin 0.8s linear infinite",
+              }}
+            />
+            <div>{isLongSelection ? "正在转换为 .md 并发送…" : "发送中…"}</div>
+            <style>{`@keyframes octo-cmdk-spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
         <div
           className={`octo-cmdk-top${isDragging ? " is-dragging" : ""}`}
           onMouseDown={onDragStart}
@@ -1216,6 +1401,7 @@ export default function CmdKApp() {
           <button
             className="octo-cmdk-close"
             onClick={() => notifyClose("cancel")}
+            disabled={sending}
             title="关闭 (Esc)"
             type="button"
           >
@@ -1233,6 +1419,17 @@ export default function CmdKApp() {
                 <span className="octo-cmdk-quote-count">
                   选中 {selectionCount} 字
                 </span>
+                {isLongSelection && (
+                  <>
+                    <span className="octo-cmdk-quote-sep">·</span>
+                    <span
+                      className="octo-cmdk-quote-count"
+                      title={`超过 ${LONG_QUOTE_THRESHOLD} 字将作为 .md 文件发送`}
+                    >
+                      {sending ? "正在转换为 .md 并发送…" : "将作为 .md 文件发送"}
+                    </span>
+                  </>
+                )}
               </div>
               <div className="octo-cmdk-quote-body">{quotedText}</div>
             </div>

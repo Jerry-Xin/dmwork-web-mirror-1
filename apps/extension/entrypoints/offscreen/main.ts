@@ -399,6 +399,24 @@ async function resolveNotificationTitle(message: Message): Promise<string> {
   return channelInfo.orgData?.displayName || channelInfo.title || message.channel.channelID;
 }
 
+async function resolveSenderName(message: Message): Promise<string> {
+  const fromUID = message.fromUID;
+  if (!fromUID) return "";
+
+  const senderChannel = new Channel(fromUID, ChannelTypePerson);
+  const cached = sdk.channelManager.getChannelInfo(senderChannel);
+  if (cached?.orgData?.displayName || cached?.title) {
+    return cached.orgData?.displayName || cached.title;
+  }
+
+  try {
+    const info = await fetchChannelInfo(senderChannel);
+    return info.orgData?.displayName || info.title || fromUID;
+  } catch {
+    return fromUID;
+  }
+}
+
 async function handleIncomingMessage(message: Message): Promise<void> {
   const auth = currentAuth;
   if (!auth?.loggedIn || !auth.token) {
@@ -423,7 +441,16 @@ async function handleIncomingMessage(message: Message): Promise<void> {
   const body = getMessageBody(message);
   if (!body) return;
   const title = await resolveNotificationTitle(message);
-  await sendNewMessage(message, title, body);
+
+  let displayBody = body;
+  if (message.channel.channelType === ChannelTypeGroup) {
+    const senderName = await resolveSenderName(message);
+    if (senderName) {
+      displayBody = `${senderName}：${body}`;
+    }
+  }
+
+  await sendNewMessage(message, title, displayBody);
 }
 
 function handleAuthExpired(): void {

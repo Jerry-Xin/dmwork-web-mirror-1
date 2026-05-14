@@ -43,79 +43,6 @@ export default function CmdKOverlay() {
     return () => document.removeEventListener('mouseup', onMouseUp, true);
   }, []);
 
-  // QQ 文档走 canvas 渲染，window.getSelection() 拿不到；
-  // 由 injected-qq-doc.ts 通过 postMessage 把文本 + 光标位置传过来。
-  // 这里 + window.pluginCall + iframe 握手 三种 message 来源统一在一个 listener 里 dispatch，
-  // 减少 React effect 重挂带来的反复 attach/detach。
-  useEffect(() => {
-    const extensionOrigin = new URL(browser.runtime.getURL('cmdk.html')).origin;
-
-    const onMessage = (e: MessageEvent) => {
-      const dataType = e.data?.type;
-
-      // 同 frame 同源消息：QQ 文档划词、网页 pluginCall
-      const isSameFrame = e.source === window && e.origin === location.origin;
-
-      if (isSameFrame && dataType === 'QQ_DOC_TEXT_SELECTED') {
-        const text = (e.data.text as string | undefined)?.trim();
-        if (!text) return;
-        const x = typeof e.data.x === 'number' ? e.data.x : 0;
-        const y = typeof e.data.y === 'number' ? e.data.y : 0;
-        const rect = {
-          top: y,
-          bottom: y,
-          left: x,
-          right: x,
-          width: 0,
-          height: 0,
-          x,
-          y,
-          toJSON: () => ({}),
-        } as DOMRect;
-        setSelectionText(text);
-        setSelectionRect(rect);
-        return;
-      }
-
-      if (
-        isSameFrame &&
-        dataType === 'OCTO_PLUGIN_CALL' &&
-        e.data?.sub === 'sendMessage'
-      ) {
-        const value = typeof e.data.value === 'string' ? e.data.value : '';
-        if (!value) return;
-        // openPanel 内部已有 panelOpen 守卫，重复触发会被忽略
-        openPanel(value);
-        return;
-      }
-
-      // 来自扩展 cmdk iframe 的握手 / 关闭通知
-      const isFromIframe =
-        e.origin === extensionOrigin &&
-        e.source === iframeUiRef.current?.iframe.contentWindow;
-
-      if (isFromIframe && dataType === 'CMDK_READY') {
-        const ctx = pendingContextRef.current;
-        if (ctx) {
-          iframeUiRef.current?.iframe.contentWindow?.postMessage(
-            { type: 'CMDK_OPEN', context: ctx },
-            extensionOrigin,
-          );
-          pendingContextRef.current = null;
-        }
-        return;
-      }
-
-      if (isFromIframe && dataType === 'CMDK_CLOSE') {
-        closePanel();
-        return;
-      }
-    };
-
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, [openPanel, closePanel]);
-
   const openPanel = useCallback(
     (overrideText?: string) => {
       if (panelOpen) return;
@@ -197,6 +124,77 @@ export default function CmdKOverlay() {
     document.body.style.overflow = prevOverflowRef.current;
     setPanelOpen(false);
   }, []);
+
+  // QQ 文档划词 / window.pluginCall / cmdk iframe 握手 三种来源统一在同一个 listener 里
+  // 分发，按 e.source / e.origin 二维校验。放在 openPanel / closePanel 之后避免 TDZ。
+  useEffect(() => {
+    const extensionOrigin = new URL(browser.runtime.getURL('cmdk.html')).origin;
+
+    const onMessage = (e: MessageEvent) => {
+      const dataType = e.data?.type;
+
+      // 同 frame 同源消息：QQ 文档划词、网页 pluginCall
+      const isSameFrame = e.source === window && e.origin === location.origin;
+
+      if (isSameFrame && dataType === 'QQ_DOC_TEXT_SELECTED') {
+        const text = (e.data.text as string | undefined)?.trim();
+        if (!text) return;
+        const x = typeof e.data.x === 'number' ? e.data.x : 0;
+        const y = typeof e.data.y === 'number' ? e.data.y : 0;
+        const rect = {
+          top: y,
+          bottom: y,
+          left: x,
+          right: x,
+          width: 0,
+          height: 0,
+          x,
+          y,
+          toJSON: () => ({}),
+        } as DOMRect;
+        setSelectionText(text);
+        setSelectionRect(rect);
+        return;
+      }
+
+      if (
+        isSameFrame &&
+        dataType === 'OCTO_PLUGIN_CALL' &&
+        e.data?.sub === 'sendMessage'
+      ) {
+        const value = typeof e.data.value === 'string' ? e.data.value : '';
+        if (!value) return;
+        // openPanel 内部已有 panelOpen 守卫，重复触发会被忽略
+        openPanel(value);
+        return;
+      }
+
+      // 来自扩展 cmdk iframe 的握手 / 关闭通知
+      const isFromIframe =
+        e.origin === extensionOrigin &&
+        e.source === iframeUiRef.current?.iframe.contentWindow;
+
+      if (isFromIframe && dataType === 'CMDK_READY') {
+        const ctx = pendingContextRef.current;
+        if (ctx) {
+          iframeUiRef.current?.iframe.contentWindow?.postMessage(
+            { type: 'CMDK_OPEN', context: ctx },
+            extensionOrigin,
+          );
+          pendingContextRef.current = null;
+        }
+        return;
+      }
+
+      if (isFromIframe && dataType === 'CMDK_CLOSE') {
+        closePanel();
+        return;
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [openPanel, closePanel]);
 
   useEffect(() => () => {
     if (iframeUiRef.current) {

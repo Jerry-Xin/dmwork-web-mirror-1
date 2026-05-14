@@ -588,6 +588,8 @@ export default class OctoSidepanelLayout extends Component<
       WKSDK.shared().channelManager.fetchChannelInfo(channel);
     }
 
+    this.markRemindersDone(channel);
+
     this.composerInputContext = undefined;
     this.setState({
       selectedChannel: channel,
@@ -602,6 +604,31 @@ export default class OctoSidepanelLayout extends Component<
     if (channel.channelType !== ChannelTypePerson) {
       void this.fetchMembers(channel);
     }
+  }
+
+  // 进入会话即把未完成的 @ reminders 标记为 done，避免侧栏 @ 角标残留。
+  private markRemindersDone(channel: Channel) {
+    const conversation =
+      WKSDK.shared().conversationManager.findConversation(channel);
+    if (!conversation) return;
+
+    const ids: number[] = [];
+    for (const reminder of conversation.reminders ?? []) {
+      if (!reminder.done) {
+        reminder.done = true;
+        ids.push(reminder.reminderID);
+      }
+    }
+    conversation.isMentionMe = false;
+
+    if (ids.length === 0) return;
+
+    void WKSDK.shared()
+      .reminderManager.done(ids)
+      .catch((err: unknown) => {
+        console.debug("[Sidepanel] reminderManager.done failed:", err);
+      });
+    this.bumpConversationsVersion();
   }
 
   private getConversations(): ConversationWrap[] {

@@ -8,7 +8,6 @@ import React, {
 import {
   type MentionModel,
   type MessageInputContext,
-  formatMentionTextV2,
 } from "@dmwork/base/src/Components/MessageInput";
 import type ConversationContext from "@dmwork/base/src/Components/Conversation/context";
 import ChannelPicker from "@dmwork/base/src/Components/ChannelPicker";
@@ -54,13 +53,10 @@ import {
 } from "../../utils/extensionRuntime";
 import { formatFileSize, getImageDimensions } from "../../utils/attachment";
 import { buildSelectionMarkdownFile } from "./buildSelectionMarkdownFile";
-
-interface PanelContext {
-  selectedText: string;
-  pageUrl: string;
-  pageTitle: string;
-  hostname: string;
-}
+import {
+  buildCmdkMessageText,
+  type PanelContext,
+} from "./buildCmdkMessageText";
 
 interface ThreadItem {
   channelId: string;
@@ -112,41 +108,6 @@ const BLOCKED_EXTENSIONS = [
 interface FetchDataOptions {
   sync?: boolean;
   showLoading?: boolean;
-}
-
-function buildCmdkMessageText(
-  text: string,
-  context: PanelContext | null,
-  opts?: { skipQuotedBody?: boolean }
-) {
-  const skipQuotedBody = opts?.skipQuotedBody === true;
-  const parts: string[] = [];
-  const quotedText = context?.selectedText;
-  const trimmedText = text.trim();
-
-  // skipQuotedBody=true：长文本场景，来源信息已写入 .md 文件首行，
-  // 引用消息正文只放用户输入（空输入由调用方处理）
-  if (!skipQuotedBody) {
-    if (context?.pageUrl) {
-      const label = context.pageTitle || context.pageUrl;
-      const sourceLine = `来自 🌐 [${label}](${context.pageUrl})`;
-      if (quotedText) {
-        parts.push(
-          `> ${sourceLine}\n> \n> ${quotedText.split("\n").join("\n> ")}`
-        );
-      } else {
-        parts.push(`> ${sourceLine}`);
-      }
-    } else if (quotedText) {
-      parts.push(`> ${quotedText.split("\n").join("\n> ")}`);
-    }
-  }
-
-  if (trimmedText) {
-    parts.push(trimmedText);
-  }
-
-  return formatMentionTextV2(parts.join("\n\n"));
 }
 
 function applySpaceIdToContent(content: any, channel: Channel) {

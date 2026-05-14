@@ -45,98 +45,148 @@ export default function CmdKOverlay() {
 
   // QQ 文档走 canvas 渲染，window.getSelection() 拿不到；
   // 由 injected-qq-doc.ts 通过 postMessage 把文本 + 光标位置传过来。
+  // 这里 + window.pluginCall + iframe 握手 三种 message 来源统一在一个 listener 里 dispatch，
+  // 减少 React effect 重挂带来的反复 attach/detach。
   useEffect(() => {
+    const extensionOrigin = new URL(browser.runtime.getURL('cmdk.html')).origin;
+
     const onMessage = (e: MessageEvent) => {
-      if (e.source !== window) return;
-      if (e.data?.type !== 'QQ_DOC_TEXT_SELECTED') return;
-      const text = (e.data.text as string | undefined)?.trim();
-      if (!text) return;
-      const x = typeof e.data.x === 'number' ? e.data.x : 0;
-      const y = typeof e.data.y === 'number' ? e.data.y : 0;
-      const rect = {
-        top: y,
-        bottom: y,
-        left: x,
-        right: x,
-        width: 0,
-        height: 0,
-        x,
-        y,
-        toJSON: () => ({}),
-      } as DOMRect;
-      setSelectionText(text);
-      setSelectionRect(rect);
+      const dataType = e.data?.type;
+
+      // 同 frame 同源消息：QQ 文档划词、网页 pluginCall
+      const isSameFrame = e.source === window && e.origin === location.origin;
+
+      if (isSameFrame && dataType === 'QQ_DOC_TEXT_SELECTED') {
+        const text = (e.data.text as string | undefined)?.trim();
+        if (!text) return;
+        const x = typeof e.data.x === 'number' ? e.data.x : 0;
+        const y = typeof e.data.y === 'number' ? e.data.y : 0;
+        const rect = {
+          top: y,
+          bottom: y,
+          left: x,
+          right: x,
+          width: 0,
+          height: 0,
+          x,
+          y,
+          toJSON: () => ({}),
+        } as DOMRect;
+        setSelectionText(text);
+        setSelectionRect(rect);
+        return;
+      }
+
+      if (
+        isSameFrame &&
+        dataType === 'OCTO_PLUGIN_CALL' &&
+        e.data?.sub === 'sendMessage'
+      ) {
+        const value = typeof e.data.value === 'string' ? e.data.value : '';
+        if (!value) return;
+        // openPanel 内部已有 panelOpen 守卫，重复触发会被忽略
+        openPanel(value);
+        return;
+      }
+
+      // 来自扩展 cmdk iframe 的握手 / 关闭通知
+      const isFromIframe =
+        e.origin === extensionOrigin &&
+        e.source === iframeUiRef.current?.iframe.contentWindow;
+
+      if (isFromIframe && dataType === 'CMDK_READY') {
+        const ctx = pendingContextRef.current;
+        if (ctx) {
+          iframeUiRef.current?.iframe.contentWindow?.postMessage(
+            { type: 'CMDK_OPEN', context: ctx },
+            extensionOrigin,
+          );
+          pendingContextRef.current = null;
+        }
+        return;
+      }
+
+      if (isFromIframe && dataType === 'CMDK_CLOSE') {
+        closePanel();
+        return;
+      }
     };
+
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, []);
+  }, [openPanel, closePanel]);
 
-  const openPanel = useCallback(() => {
-    if (panelOpen) return;
-    const sel = window.getSelection();
-    const text = sel?.toString().trim() || selectionText || '';
-    const panelContext: PanelContext = {
-      selectedText: text,
-      pageUrl: location.href,
-      pageTitle: document.title || location.href,
-      hostname: location.hostname,
-    };
+  const openPanel = useCallback(
+    (overrideText?: string) => {
+      if (panelOpen) return;
+      const sel = window.getSelection();
+      // overrideText 由网页通过 window.pluginCall 主动传入，优先级高于 DOM selection
+      const text =
+        overrideText ?? (sel?.toString().trim() || selectionText || '');
+      const panelContext: PanelContext = {
+        selectedText: text,
+        pageUrl: location.href,
+        pageTitle: document.title || location.href,
+        hostname: location.hostname,
+      };
 
-    setSelectionText('');
-    setSelectionRect(null);
+      setSelectionText('');
+      setSelectionRect(null);
 
-    prevOverflowRef.current = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+      prevOverflowRef.current = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
 
-    const host = document.createElement('div');
-    host.setAttribute('data-octo-cmdk-iframe-host', 'true');
-    // tokens.css 里的 dark/light/cc-dark 变量都靠 :host([data-theme=...]) 选中；
-    // shadow host 不随页面 <html> 走，必须自己根据系统偏好打标，否则 dark 变量永不激活
-    host.setAttribute(
-      'data-theme',
-      window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-    );
-    host.style.position = 'fixed';
-    host.style.inset = '0';
-    host.style.zIndex = '2147483647';
-    host.style.background = 'transparent';
-    host.style.opacity = '1';
-    host.style.pointerEvents = 'auto';
+      const host = document.createElement('div');
+      host.setAttribute('data-octo-cmdk-iframe-host', 'true');
+      // tokens.css 里的 dark/light/cc-dark 变量都靠 :host([data-theme=...]) 选中；
+      // shadow host 不随页面 <html> 走，必须自己根据系统偏好打标，否则 dark 变量永不激活
+      host.setAttribute(
+        'data-theme',
+        window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+      );
+      host.style.position = 'fixed';
+      host.style.inset = '0';
+      host.style.zIndex = '2147483647';
+      host.style.background = 'transparent';
+      host.style.opacity = '1';
+      host.style.pointerEvents = 'auto';
 
-    const shadowRoot = host.attachShadow({ mode: 'open' });
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'fixed';
-    wrapper.style.inset = '0';
-    wrapper.style.width = '100vw';
-    wrapper.style.height = '100vh';
-    wrapper.style.background = 'transparent';
-    wrapper.style.opacity = '1';
-    wrapper.style.pointerEvents = 'auto';
+      const shadowRoot = host.attachShadow({ mode: 'open' });
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'fixed';
+      wrapper.style.inset = '0';
+      wrapper.style.width = '100vw';
+      wrapper.style.height = '100vh';
+      wrapper.style.background = 'transparent';
+      wrapper.style.opacity = '1';
+      wrapper.style.pointerEvents = 'auto';
 
-    const iframe = document.createElement('iframe');
-    iframe.src = browser.runtime.getURL('cmdk.html');
-    iframe.style.position = 'fixed';
-    iframe.style.inset = '0';
-    iframe.style.width = '100vw';
-    iframe.style.height = '100vh';
-    iframe.style.maxWidth = 'none';
-    iframe.style.maxHeight = 'none';
-    iframe.style.display = 'block';
-    iframe.style.border = 'none';
-    iframe.style.background = 'transparent';
-    iframe.style.opacity = '1';
-    iframe.allow = 'clipboard-read; clipboard-write';
+      const iframe = document.createElement('iframe');
+      iframe.src = browser.runtime.getURL('cmdk.html');
+      iframe.style.position = 'fixed';
+      iframe.style.inset = '0';
+      iframe.style.width = '100vw';
+      iframe.style.height = '100vh';
+      iframe.style.maxWidth = 'none';
+      iframe.style.maxHeight = 'none';
+      iframe.style.display = 'block';
+      iframe.style.border = 'none';
+      iframe.style.background = 'transparent';
+      iframe.style.opacity = '1';
+      iframe.allow = 'clipboard-read; clipboard-write';
 
-    // 由 CMDK_READY 握手触发 CMDK_OPEN 投递（见 onMessage 中的处理），
-    // 不再用 iframe load 事件 — load 早于 iframe 内 React useEffect 注册 listener
-    pendingContextRef.current = panelContext;
+      // 由 CMDK_READY 握手触发 CMDK_OPEN 投递（见 onMessage 中的处理），
+      // 不再用 iframe load 事件 — load 早于 iframe 内 React useEffect 注册 listener
+      pendingContextRef.current = panelContext;
 
-    wrapper.append(iframe);
-    shadowRoot.append(wrapper);
-    document.documentElement.append(host);
-    iframeUiRef.current = { host, iframe };
-    setPanelOpen(true);
-  }, [panelOpen, selectionText]);
+      wrapper.append(iframe);
+      shadowRoot.append(wrapper);
+      document.documentElement.append(host);
+      iframeUiRef.current = { host, iframe };
+      setPanelOpen(true);
+    },
+    [panelOpen, selectionText],
+  );
 
   const closePanel = useCallback(() => {
     if (iframeUiRef.current) {
@@ -155,30 +205,6 @@ export default function CmdKOverlay() {
     }
     document.body.style.overflow = prevOverflowRef.current;
   }, []);
-
-  // Listen for messages from iframe (READY handshake + close)
-  useEffect(() => {
-    const extensionOrigin = new URL(browser.runtime.getURL('cmdk.html')).origin;
-    const onMessage = (e: MessageEvent) => {
-      // 只信任来自扩展 origin 且源自我们 iframe 的消息
-      if (e.origin !== extensionOrigin) return;
-      if (e.source !== iframeUiRef.current?.iframe.contentWindow) return;
-      if (e.data?.type === 'CMDK_READY') {
-        const ctx = pendingContextRef.current;
-        if (ctx) {
-          iframeUiRef.current.iframe.contentWindow?.postMessage(
-            { type: 'CMDK_OPEN', context: ctx },
-            extensionOrigin,
-          );
-          pendingContextRef.current = null;
-        }
-      } else if (e.data?.type === 'CMDK_CLOSE') {
-        closePanel();
-      }
-    };
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, [closePanel]);
 
   // Cmd+K shortcut
   useEffect(() => {

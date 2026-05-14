@@ -46,6 +46,11 @@ export default defineConfig({
         ],
       },
       {
+        // window.pluginCall 注入脚本 — 任何网页都可加载（main world 注册全局 API）
+        resources: ["/injected-plugin-call.js"],
+        matches: ["<all_urls>"],
+      },
+      {
         resources: ["/cmdk.html"],
         matches: ["<all_urls>"],
       },

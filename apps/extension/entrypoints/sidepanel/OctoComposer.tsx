@@ -893,13 +893,19 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
         await conversationContext.sendMessage(content);
       },
       addAttachment(files: File[]) {
-        updatePendingAttachments((prev) => [...prev, ...files]);
+        // 只更新 ref，不调 setState：主端 addPendingAttachments 紧跟着会调 notifyPendingAttachmentsChange，
+        // 订阅触发的 syncPendingAttachments 会从 ref 读最新值并 setState。
+        // 若此处再 setState 会与订阅 setState 形成 FIFO 竞态，被后者覆盖回旧值。
+        pendingAttachmentsRef.current = [
+          ...pendingAttachmentsRef.current,
+          ...files,
+        ];
       },
       getAttachmentFiles() {
         return pendingAttachmentsRef.current;
       },
     }),
-    [applyPlainText, conversationContext, editor, onExpand, plainText, send, updatePendingAttachments]
+    [applyPlainText, conversationContext, editor, onExpand, plainText, send]
   );
 
   useEffect(() => {

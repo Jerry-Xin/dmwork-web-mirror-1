@@ -380,6 +380,7 @@ const BACKGROUND_HANDLED_TYPES = new Set([
   EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync,
   EXTENSION_MESSAGE_TYPE.sidepanelState,
   EXTENSION_MESSAGE_TYPE.requestOpenConversation,
+  EXTENSION_MESSAGE_TYPE.requestOpenSidePanel,
   EXTENSION_MESSAGE_TYPE.offscreenNewMessage,
   EXTENSION_MESSAGE_TYPE.cocraftDispatch,
 ]);
@@ -465,6 +466,19 @@ async function handleRuntimeMessage(
             console.debug("[Extension] openConversation notify failed:", err);
           });
       });
+      return;
+    }
+
+    case EXTENSION_MESSAGE_TYPE.requestOpenSidePanel: {
+      // 必须同步调用 sidePanel.open()，保留用户手势上下文
+      const windowId = sender?.tab?.windowId;
+      if (windowId && chromeApi?.sidePanel?.open) {
+        chromeApi.sidePanel
+          .open({ windowId })
+          .catch((err: unknown) =>
+            console.debug("[Extension] sidePanel.open failed:", err)
+          );
+      }
       return;
     }
 

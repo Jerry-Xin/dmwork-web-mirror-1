@@ -26,6 +26,7 @@ export const EXTENSION_MESSAGE_TYPE = {
   offscreenNewMessage: "OFFSCREEN_NEW_MESSAGE",
   openConversation: "OPEN_CONVERSATION",
   requestOpenConversation: "REQUEST_OPEN_CONVERSATION",
+  requestOpenSidePanel: "REQUEST_OPEN_SIDE_PANEL",
   sidepanelBadgeSync: "SIDEPANEL_BADGE_SYNC",
   sidepanelState: "SIDEPANEL_STATE",
   getActiveConversation: "GET_ACTIVE_CONVERSATION",
@@ -87,6 +88,10 @@ export interface RequestOpenConversationMessage {
   target: ConversationTarget;
 }
 
+export interface RequestOpenSidePanelMessage {
+  type: typeof EXTENSION_MESSAGE_TYPE.requestOpenSidePanel;
+}
+
 export interface SidepanelBadgeSyncMessage {
   type: typeof EXTENSION_MESSAGE_TYPE.sidepanelBadgeSync;
   hasUnread: boolean;
@@ -126,6 +131,7 @@ export type ExtensionRuntimeMessage =
   | OffscreenNewMessageEvent
   | OpenConversationMessage
   | RequestOpenConversationMessage
+  | RequestOpenSidePanelMessage
   | SidepanelBadgeSyncMessage
   | SidepanelStateMessage
   | GetActiveConversationMessage

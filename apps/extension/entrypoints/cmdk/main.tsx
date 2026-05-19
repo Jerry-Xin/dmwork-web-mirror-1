@@ -32,6 +32,8 @@ StorageService.shared.removeItem = (key) => localStorage.removeItem(key);
 const apiURL = normalizeApiURL(DEFAULT_API_URL);
 WKApp.apiClient.config.apiURL = apiURL;
 WKApp.apiClient.config.tokenCallback = () => WKApp.loginInfo.token;
+// Scope API requests to the current space for multi-space data isolation
+WKApp.apiClient.config.spaceIdCallback = () => WKApp.shared.currentSpaceId;
 WKApp.config.appVersion = pkgVersion;
 WKApp.config.appName = 'Octo';
 WKApp.shared.currentSpaceId = localStorage.getItem('currentSpaceId') || '';

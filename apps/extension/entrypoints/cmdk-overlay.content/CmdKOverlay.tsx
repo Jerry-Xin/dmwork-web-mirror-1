@@ -100,7 +100,7 @@ export default function CmdKOverlay() {
       iframe.style.border = 'none';
       iframe.style.background = 'transparent';
       iframe.style.opacity = '1';
-      iframe.allow = 'clipboard-read; clipboard-write';
+      iframe.allow = 'clipboard-read; clipboard-write; microphone';
 
       // 由 CMDK_READY 握手触发 CMDK_OPEN 投递（见 onMessage 中的处理），
       // 不再用 iframe load 事件 — load 早于 iframe 内 React useEffect 注册 listener

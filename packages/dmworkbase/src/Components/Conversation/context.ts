@@ -1,7 +1,10 @@
 import { Channel, Message, MessageContent } from "wukongimjssdk";
+import type ConversationVMClass from './vm';
 import { MessageInputContext } from "../MessageInput";
 
 export default interface ConversationContext {
+  vm?: ConversationVMClass;
+
   /**
    * 发送消息
    * @param content 消息内容
@@ -94,6 +97,9 @@ export default interface ConversationContext {
 
   // 消息输入框上下文
   messageInputContext(): MessageInputContext;
+
+  _messageInputContext?: MessageInputContext;
+  _pendingInsertText?: string;
 
   /**
    * 设置drag文件到最近会话里的时候会回调设置的此函数

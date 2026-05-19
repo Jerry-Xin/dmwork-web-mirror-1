@@ -28,6 +28,7 @@ import HashIcon from "@dmwork/base/src/Components/Icons/GroupIcon";
 import ThreadIcon from "@dmwork/base/src/Components/Icons/ThreadIcon";
 import { showToast } from "./OctoToast";
 import OctoComposer from "./OctoComposer";
+import FullComposerVoiceButton from "./FullComposerVoiceButton";
 import OctoLightbox from "./OctoLightbox";
 import OctoSpaceSwitcherPopover from "./OctoSpaceSwitcherPopover";
 import OctoSearchPopover from "./OctoSearchPopover";
@@ -931,6 +932,14 @@ export default class OctoSidepanelLayout extends Component<
         </div>
         <div className="octo-fullcomp-foot">
           <span className="octo-fullcomp-hint">⌘↵ 发送 · Esc 收起</span>
+          <FullComposerVoiceButton
+            getCurrentText={() => this.state.fullComposerText}
+            onTranscribed={(text) => {
+              this.setState((prev) => ({
+                fullComposerText: prev.fullComposerText + text,
+              }));
+            }}
+          />
           <button
             className="octo-fullcomp-send"
             onClick={this.submitFullComposer}

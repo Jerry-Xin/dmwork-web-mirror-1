@@ -17,7 +17,8 @@ import type {
 } from "@dmwork/base/src/Components/ChannelPicker";
 import CreateCategoryModal from "@dmwork/base/src/Components/CreateCategoryModal";
 import CategoryService from "@dmwork/base/src/Service/CategoryService";
-import { MessageReasonCode } from "@dmwork/base/src/Service/Const";
+import { ChannelTypeCommunityTopic, MessageReasonCode } from "@dmwork/base/src/Service/Const";
+import { parseThreadChannelId } from "@dmwork/base/src/Service/Thread";
 import {
   WKApp,
   shouldSkipChannelForSpace,
@@ -57,6 +58,11 @@ import {
   buildCmdkMessageText,
   type PanelContext,
 } from "./buildCmdkMessageText";
+import { isInsidePortal } from "./overlaySelectors";
+
+interface MentionWithEntities extends Mention {
+  entities?: MentionModel['entities'];
+}
 
 interface ThreadItem {
   channelId: string;
@@ -624,8 +630,23 @@ export default function CmdKApp() {
   }, [context, fetchData]);
 
   useEffect(() => {
-    if (!selected || selected.type === ChannelTypePerson) {
+    if (!selected) {
       setMembers(undefined);
+      return;
+    }
+
+    if (selected.type === ChannelTypePerson) {
+      const self = new Subscriber();
+      self.uid = WKApp.loginInfo.uid;
+      self.name = WKApp.loginInfo.name || WKApp.loginInfo.uid;
+      const peer = new Subscriber();
+      peer.uid = selected.id;
+      const peerInfo = WKSDK.shared().channelManager.getChannelInfo(
+        new Channel(selected.id, ChannelTypePerson)
+      );
+      peer.name = peerInfo?.title || selected.id;
+      peer.remark = peerInfo?.orgData?.remark || "";
+      setMembers([self, peer]);
       return;
     }
 
@@ -633,17 +654,26 @@ export default function CmdKApp() {
 
     (async () => {
       try {
+        let groupId = selected.id;
+        if (selected.type === ChannelTypeCommunityTopic) {
+          const parsed = parseThreadChannelId(selected.id);
+          if (parsed && parsed.groupNo) {
+            groupId = parsed.groupNo;
+          }
+        }
+
         const data = await WKApp.apiClient.get(
-          `groups/${encodeURIComponent(selected.id)}/members`,
+          `groups/${encodeURIComponent(groupId)}/members`,
           { param: { limit: 1000 } }
         );
 
         if (!cancelled && Array.isArray(data)) {
           setMembers(
-            data.map((member: { uid: string; name: string }) => {
+            data.map((member: { uid: string; name: string; remark?: string }) => {
               const subscriber = new Subscriber();
               subscriber.uid = member.uid;
               subscriber.name = member.name;
+              subscriber.remark = member.remark || "";
               return subscriber;
             })
           );
@@ -984,10 +1014,10 @@ export default function CmdKApp() {
 
             const finalMention = parsedMention || buildMentionForText(finalText);
             if (finalMention) {
-              const mention = new Mention();
+              const mention = new Mention() as MentionWithEntities;
               mention.all = finalMention.all;
               mention.uids = finalMention.uids;
-              (mention as any).entities = finalMention.entities;
+              mention.entities = finalMention.entities;
               messageContent.mention = mention;
             }
             messageContent.reply = reply;
@@ -1007,10 +1037,10 @@ export default function CmdKApp() {
 
           const finalMention = parsedMention || buildMentionForText(finalText);
           if (finalMention) {
-            const mention = new Mention();
+            const mention = new Mention() as MentionWithEntities;
             mention.all = finalMention.all;
             mention.uids = finalMention.uids;
-            (mention as any).entities = finalMention.entities;
+            mention.entities = finalMention.entities;
             messageContent.mention = mention;
           }
 
@@ -1186,25 +1216,7 @@ export default function CmdKApp() {
       if (!document.documentElement.contains(target)) return;
       // 检查点击是否在面板内
       if (panelRef.current && panelRef.current.contains(target)) return;
-      // 检查点击是否在 tippy 弹窗内（mention、emoji 等）
-      if (
-        target.closest("[data-tippy-root]") ||
-        target.closest(".tippy-box") ||
-        target.closest(".tippy-content")
-      )
-        return;
-      // 检查点击是否在 emoji 面板内
-      if (
-        target.closest(".wk-emojitoolbar-emojipanel") ||
-        target.closest(".wk-emojitoolbar")
-      )
-        return;
-      // 检查点击是否在 portal emoji 面板内（OctoComposer portal 到 body 的表情面板）
-      if (
-        target.closest(".octo-composer-emoji-panel") ||
-        target.closest(".octo-composer-emoji-mask")
-      )
-        return;
+      if (isInsidePortal(target)) return;
       // 真的点了空白处，关闭
       notifyClose("cancel");
     },
@@ -1235,7 +1247,7 @@ export default function CmdKApp() {
   );
   const targetIsPrivate = selectedThread?.channelType === ChannelTypePerson;
   const targetIsThread = Boolean(
-    selectedThread?.parentChannelId || selectedThread?.channelType === 5
+    selectedThread?.parentChannelId || selectedThread?.channelType === ChannelTypeCommunityTopic
   );
   const targetGlyph = targetIsPrivate
     ? (selectedThread?.name || selected?.id || "O").slice(0, 1).toUpperCase()

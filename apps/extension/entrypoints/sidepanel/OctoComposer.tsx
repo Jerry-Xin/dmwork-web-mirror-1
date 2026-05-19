@@ -30,6 +30,10 @@ import {
   type MessageInputContext,
 } from "@dmwork/base/src/Components/MessageInput";
 import { createMentionSuggestion } from "@dmwork/base/src/Components/MessageInput/mentionSuggestion";
+import VoiceInputIndicator from "@dmwork/base/src/Components/MessageInput/VoiceInputIndicator";
+import { applyVoiceTranscription } from "@dmwork/base/src/Components/MessageInput/applyVoiceTranscription";
+import { buildChatContext } from "@dmwork/base/src/Components/Conversation/chatContext";
+import type { ChatContextResult } from "@dmwork/base/src/Components/Conversation/chatContext";
 import SlashCommandMenu, {
   type BotCommand,
 } from "@dmwork/base/src/Components/SlashCommandMenu";
@@ -39,6 +43,10 @@ import { ImageContent } from "@dmwork/base/src/Messages/Image";
 import { LottieSticker } from "@dmwork/base/src/Messages/LottieSticker";
 import { showToast } from "./OctoToast";
 import { formatFileSize, getImageDimensions } from "../../utils/attachment";
+
+interface MentionWithEntities extends Mention {
+  entities?: MentionModel['entities'];
+}
 
 const MAX_MESSAGE_LENGTH = 2000;
 const INVISIBLE_CHARS_RE =
@@ -163,8 +171,11 @@ interface OctoComposerProps {
   renderToolbar?: boolean;
 }
 
+// TODO: Remove cast when @tiptap/react exports JSX types compatible with project @types/react
 const EditorContentView = EditorContent as any;
+// TODO: Remove cast when EmojiPanel exports a JSX-compatible component type
 const EmojiPanelComponent = EmojiPanel as any;
+// TODO: Remove cast when SlashCommandMenu exports a JSX-compatible component type
 const SlashCommandMenuComponent = SlashCommandMenu as any;
 
 const COMPOSER_ICONS = {
@@ -283,9 +294,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
       membersRef.current = filtered;
       return;
     }
-    const contextMembers = (((conversationContext as any).vm?.subscribers as
-      | Subscriber[]
-      | undefined) ||
+    const contextMembers = (conversationContext.vm?.subscribers ||
       WKSDK.shared().channelManager.getSubscribes(channel) ||
       []) as Subscriber[];
     const filtered = contextMembers.filter((member) => member.uid !== WKApp.loginInfo.uid);
@@ -375,9 +384,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
           ({ query }) => {
             const source = membersRef.current.length
               ? membersRef.current
-              : ((conversationContext as any).vm?.subscribers as
-                  | Subscriber[]
-                  | undefined) || [];
+              : conversationContext.vm?.subscribers || [];
 
             const items = source
               .filter((member) => member.uid !== WKApp.loginInfo.uid)
@@ -510,14 +517,14 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
           return;
         }
 
-        const vm = (conversationContext as any).vm;
+        const vm = conversationContext.vm;
         const content = new MessageText(textToSend);
 
         if (mentionModel) {
-          const mention = new Mention();
+          const mention = new Mention() as MentionWithEntities;
           mention.all = mentionModel.all;
           mention.uids = mentionModel.uids;
-          (mention as any).entities = mentionModel.entities;
+          mention.entities = mentionModel.entities;
           content.mention = mention;
         }
 
@@ -909,18 +916,17 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
   );
 
   useEffect(() => {
-    const conversationAny = conversationContext as any;
-    conversationAny._messageInputContext = composerContext;
+    conversationContext._messageInputContext = composerContext;
     onContext?.(composerContext);
 
-    if (conversationAny._pendingInsertText) {
-      composerContext.insertText(conversationAny._pendingInsertText);
-      conversationAny._pendingInsertText = undefined;
+    if (conversationContext._pendingInsertText) {
+      composerContext.insertText(conversationContext._pendingInsertText);
+      conversationContext._pendingInsertText = undefined;
     }
 
     return () => {
-      if (conversationAny._messageInputContext === composerContext) {
-        conversationAny._messageInputContext = undefined;
+      if (conversationContext._messageInputContext === composerContext) {
+        conversationContext._messageInputContext = undefined;
       }
     };
   }, [composerContext, conversationContext, onContext]);
@@ -983,11 +989,68 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
   const canSend =
     !sending && (plainText.trim().length > 0 || pendingAttachments.length > 0);
 
+  const getChatContext = useCallback((): ChatContextResult => {
+    const vm = conversationContext.vm;
+    const subscribers = vm?.subscribers ?? membersRef.current ?? [];
+    const channelInfo =
+      channel.channelType === ChannelTypePerson
+        ? WKSDK.shared().channelManager.getChannelInfo(channel) ?? undefined
+        : undefined;
+    return buildChatContext({
+      messages: vm?.messagesOfOrigin ?? [],
+      subscribers,
+      channelType: channel.channelType,
+      loginUID: WKApp.loginInfo.uid,
+      channelInfo,
+    });
+  }, [conversationContext, channel.channelID, channel.channelType]);
+
+  const handleVoiceTranscribed = useCallback(
+    (
+      text: string,
+      replaceMode: "all" | "selection" | "insert",
+      savedSelectedText?: string,
+      savedSelectionRange?: { from: number; to: number }
+    ) => {
+      if (!editor) return;
+
+      applyVoiceTranscription({
+        editor,
+        members: membersRef.current || [],
+        text,
+        replaceMode,
+        savedSelectedText,
+        savedSelectionRange,
+        applyPlainText,
+      });
+    },
+    [applyPlainText, editor]
+  );
+
+  const getEditorCurrentText = useCallback(() => {
+    if (!editor) return "";
+    return editor.state.doc.textBetween(0, editor.state.doc.content.size, " ");
+  }, [editor]);
+
+  const getEditorSelectedText = useCallback(() => {
+    if (!editor) return undefined;
+    const { from, to } = editor.state.selection;
+    if (from === to) return undefined;
+    return editor.state.doc.textBetween(from, to, " ") || undefined;
+  }, [editor]);
+
+  const getEditorSelectionRange = useCallback(() => {
+    if (!editor) return undefined;
+    const { from, to } = editor.state.selection;
+    return from !== to ? { from, to } : undefined;
+  }, [editor]);
+
   return (
     <div
       className={`octo-composer-shell octo-composer-shell-${contextClassName}`}
     >
-      <div className="octo-composer wk-messageinput-box" ref={rootRef}>
+      <div className="wk-messageinput-card">
+        <div className="octo-composer wk-messageinput-box" ref={rootRef}>
         {pendingAttachments.length > 0 && (
           <div className="octo-composer-chips">
             {pendingAttachments.map((file, index) => (
@@ -1078,6 +1141,13 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
               >
                 <ComposerIcon path={COMPOSER_ICONS.expand} />
               </button>
+              <VoiceInputIndicator
+                onTranscribed={handleVoiceTranscribed}
+                getCurrentText={getEditorCurrentText}
+                getSelectedText={getEditorSelectedText}
+                getSelectionRange={getEditorSelectionRange}
+                getChatContext={getChatContext}
+              />
             </div>
 
             <div className="octo-composer-toolbar-spacer" />
@@ -1144,6 +1214,7 @@ const OctoComposer: React.FC<OctoComposerProps> = ({
           style={{ display: "none" }}
           type="file"
         />
+        </div>
       </div>
     </div>
   );

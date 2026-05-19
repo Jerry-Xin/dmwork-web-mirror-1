@@ -672,6 +672,7 @@ export default function VoiceInputIndicator({
       visible={isOnline ? showModeMenu : false}
       onVisibleChange={setShowModeMenu}
       spacing={4}
+      getPopupContainer={() => buttonGroupRef.current || document.body}
     >
       <div
         className={`wk-voice-button-group ${

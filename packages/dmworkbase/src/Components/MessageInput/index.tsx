@@ -21,6 +21,7 @@ import "./index.css";
 import { Notification } from "@douyinfe/semi-ui";
 import SlashCommandMenu, { BotCommand } from "../SlashCommandMenu";
 import VoiceInputIndicator from "./VoiceInputIndicator";
+import { applyVoiceTranscription } from "./applyVoiceTranscription";
 import { ChatContextResult } from "../Conversation/chatContext";
 import { Maximize2, Minimize2 } from "lucide-react";
 import IconClick from "../IconClick";
@@ -182,70 +183,6 @@ export interface MessageInputContext {
   focus: () => void;
 }
 
-interface MemberInfo {
-  uid: string;
-  name: string;
-}
-
-// 解析语音输入中的 @提及，转换为 Tiptap content
-function parseMentionMarkers(
-  text: string,
-  members: MemberInfo[]
-): Array<{
-  type: string;
-  text?: string;
-  attrs?: { id: string; label: string };
-}> {
-  const result: Array<{
-    type: string;
-    text?: string;
-    attrs?: { id: string; label: string };
-  }> = [];
-  const regex = /@(\S+?)(?=\s|$)/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    const name = match[1];
-    const matchStart = match.index;
-
-    // 添加 @ 之前的普通文本
-    if (matchStart > lastIndex) {
-      result.push({ type: "text", text: text.slice(lastIndex, matchStart) });
-    }
-
-    const isAll = name === "所有人" || name.toLowerCase() === "all";
-    const member = members.find(
-      (m) => m.name === name || m.name.toLowerCase() === name.toLowerCase()
-    );
-
-    if (isAll) {
-      result.push({
-        type: "mention",
-        attrs: { id: "-1", label: "所有人" },
-      });
-      result.push({ type: "text", text: " " });
-    } else if (member) {
-      result.push({
-        type: "mention",
-        attrs: { id: member.uid, label: member.name },
-      });
-      result.push({ type: "text", text: " " });
-    } else {
-      // 未识别的 @，保留原文
-      result.push({ type: "text", text: match[0] });
-    }
-
-    lastIndex = match.index + match[0].length;
-  }
-
-  // 添加剩余文本
-  if (lastIndex < text.length) {
-    result.push({ type: "text", text: text.slice(lastIndex) });
-  }
-
-  return result;
-}
 
 // 保持 membersRef 在模块级别供 formatMentionTextV2 使用
 let membersRef: React.MutableRefObject<Array<Subscriber> | undefined>;
@@ -1055,97 +992,14 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
               ) => {
                 if (!editor) return;
 
-                const hasMention = /@\S+?(?=\s|$)/.test(text);
-
-                // 根据保存的选中文本内容查找当前文档中的位置
-                // 使用 ProseMirror doc.descendants 遍历，正确处理 mention 等原子节点
-                const findSelectionRange = (
-                  searchText: string
-                ): { from: number; to: number } | null => {
-                  let found: { from: number; to: number } | null = null;
-                  editor.state.doc.descendants((node, pos) => {
-                    if (found) return false; // 已找到，停止遍历
-                    if (node.isText && node.text) {
-                      const idx = node.text.indexOf(searchText);
-                      if (idx !== -1) {
-                        found = {
-                          from: pos + idx,
-                          to: pos + idx + searchText.length,
-                        };
-                        return false; // 停止遍历
-                      }
-                    }
-                  });
-                  return found;
-                };
-
-                if (hasMention && props.members && props.members.length > 0) {
-                  const memberInfos: MemberInfo[] = props.members.map((s) => ({
-                    uid: s.uid,
-                    name: s.remark || s.name || s.uid,
-                  }));
-                  for (const s of props.members) {
-                    if (s.name && s.remark && s.remark !== s.name) {
-                      memberInfos.push({ uid: s.uid, name: s.name });
-                    }
-                  }
-
-                  const content = parseMentionMarkers(text, memberInfos);
-
-                  if (replaceMode === "all") {
-                    // 替换全部内容
-                    editor.commands.setContent({
-                      type: "doc",
-                      content: [{ type: "paragraph", content }],
-                    });
-                  } else if (replaceMode === "selection" && savedSelectedText) {
-                    // 替换选中部分：优先使用保存的位置，文本匹配作为兜底
-                    const range =
-                      savedSelectionRange ||
-                      findSelectionRange(savedSelectedText);
-                    if (range) {
-                      editor
-                        .chain()
-                        .setTextSelection(range)
-                        .insertContent(content)
-                        .run();
-                    } else {
-                      // 找不到原文本，回退到替换全部
-                      editor.commands.setContent({
-                        type: "doc",
-                        content: [{ type: "paragraph", content }],
-                      });
-                    }
-                  } else {
-                    // 插入到光标处
-                    editor.commands.insertContent(content);
-                  }
-                } else {
-                  if (replaceMode === "all") {
-                    // 替换全部内容
-                    editor.commands.setContent(text);
-                  } else if (replaceMode === "selection" && savedSelectedText) {
-                    // 替换选中部分：优先使用保存的位置，文本匹配作为兜底
-                    const range =
-                      savedSelectionRange ||
-                      findSelectionRange(savedSelectedText);
-                    if (range) {
-                      editor
-                        .chain()
-                        .setTextSelection(range)
-                        .insertContent(text)
-                        .run();
-                    } else {
-                      // 找不到原文本，回退到替换全部
-                      editor.commands.setContent(text);
-                    }
-                  } else {
-                    // 插入到光标处
-                    editor.commands.insertContent(text);
-                  }
-                }
-
-                editor.commands.focus();
+                applyVoiceTranscription({
+                  editor,
+                  members: props.members || [],
+                  text,
+                  replaceMode,
+                  savedSelectedText,
+                  savedSelectionRange,
+                });
               }}
               getCurrentText={() => {
                 if (!editor) return "";
